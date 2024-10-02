@@ -1,0 +1,29 @@
+{
+    "name": "kavac/purchase",
+    "description": "",
+    "keywords": ["kavac", "purchase"],
+    "authors": [
+        {
+            "name": "Ing. Roldan Vargas",
+            "email": "roldandvg@gmail.com"
+        }
+    ],
+    "require": {},
+    "require-dev": {},
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {
+
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\Purchase\\": ""
+        },
+        "files": [
+            "Helpers/Helper.php"
+        ]
+    }
+}

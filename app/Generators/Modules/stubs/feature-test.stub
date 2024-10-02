@@ -1,0 +1,34 @@
+<?php
+
+namespace $NAMESPACE$;
+
+use Tests\TestCase;
+use Illuminate\Foundation\Testing\WithFaker;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+[NO SE DEBEN IMPORTAR ACA NINGUNA REFERENCIA A OTRO MODULO]
+
+/**
+ * @class $CLASS$
+ * @brief [descripción detallada]
+ *
+ * [descripción corta]
+ *
+ * @author [autor de la clase] [correo del autor]
+ *
+ * @license
+ *     [LICENCIA DE SOFTWARE CENDITEL](http://conocimientolibre.cenditel.gob.ve/licencia-de-software-v-1-3/)
+ */
+class $CLASS$ extends TestCase
+{
+    /**
+     * Una funcionalidad básica como ejemplo de prueba.
+     *
+     * @return void
+     */
+    public function testExample()
+    {
+        $response = $this->get('/');
+
+        $response->assertStatus(200);
+    }
+}

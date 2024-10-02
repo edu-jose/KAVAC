@@ -1,0 +1,45 @@
+<?php
+
+namespace $NAMESPACE$;
+
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Contracts\Queue\ShouldQueue;
+[NO SE DEBEN IMPORTAR ACA NINGUNA REFERENCIA A OTRO MODULO]
+
+/**
+ * @class $CLASS$
+ * @brief [descripción detallada]
+ *
+ * [descripción corta]
+ *
+ * @author [autor de la clase] [correo del autor]
+ *
+ * @license
+ *     [LICENCIA DE SOFTWARE CENDITEL](http://conocimientolibre.cenditel.gob.ve/licencia-de-software-v-1-3/)
+ */
+class $CLASS$ implements ShouldQueue
+{
+    use InteractsWithQueue;
+
+    /**
+     * Crea un detector de eventos.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        //
+    }
+
+    /**
+     * Gestiona el evento
+     *
+     * @param     object    $event    Objeto con información del evento
+     *
+     * @return    void    [descripción de los datos devueltos]
+     */
+    public function handle($event)
+    {
+        //
+    }
+}

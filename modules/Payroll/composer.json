@@ -1,0 +1,29 @@
+{
+    "name": "kavac/payroll",
+    "description": "",
+    "keywords": ["kavac", "payroll"],
+    "authors": [
+        {
+            "name": "Ing. Roldan Vargas",
+            "email": "roldandvg@gmail.com"
+        }
+    ],
+    "require": {},
+    "require-dev": {},
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {
+
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\Payroll\\": ""
+        },
+        "files": [
+            "Helpers/Helper.php"
+        ]
+    }
+}

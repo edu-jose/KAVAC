@@ -1,0 +1,27 @@
+var classModules_1_1DigitalSignature_1_1Repositories_1_1ReportRepositorySign =
+[
+    [ "__construct", "dc/d5e/classModules_1_1DigitalSignature_1_1Repositories_1_1ReportRepositorySign.html#a095c5d389db211932136b53f25f39685", null ],
+    [ "reportsignFile", "dc/d5e/classModules_1_1DigitalSignature_1_1Repositories_1_1ReportRepositorySign.html#afc40f57181b03b419a1f52e3285bc54b", null ],
+    [ "setConfig", "dc/d5e/classModules_1_1DigitalSignature_1_1Repositories_1_1ReportRepositorySign.html#a94271e36f2ecdb7425672d371a74e630", null ],
+    [ "setFooter", "dc/d5e/classModules_1_1DigitalSignature_1_1Repositories_1_1ReportRepositorySign.html#a059f1faf0609cc35f233ebcf596a5683", null ],
+    [ "setHeader", "dc/d5e/classModules_1_1DigitalSignature_1_1Repositories_1_1ReportRepositorySign.html#a2ef978f9e437a61735835ed1013a32e6", null ],
+    [ "show", "dc/d5e/classModules_1_1DigitalSignature_1_1Repositories_1_1ReportRepositorySign.html#a75f056931199cf33c3ea85a66a3651db", null ],
+    [ "showPdfSign", "dc/d5e/classModules_1_1DigitalSignature_1_1Repositories_1_1ReportRepositorySign.html#a49ea6bb3985278eeee10236a7aceaf60", null ],
+    [ "$auth", "dc/d5e/classModules_1_1DigitalSignature_1_1Repositories_1_1ReportRepositorySign.html#aca35a583530ea2e5d8a66cc7dd536ea1", null ],
+    [ "$barCodeStyle", "dc/d5e/classModules_1_1DigitalSignature_1_1Repositories_1_1ReportRepositorySign.html#a309738a03a05defbc23862adbff8ac90", null ],
+    [ "$filename", "dc/d5e/classModules_1_1DigitalSignature_1_1Repositories_1_1ReportRepositorySign.html#ad062065e14940affe82df3cbc477375b", null ],
+    [ "$fileNameSign", "dc/d5e/classModules_1_1DigitalSignature_1_1Repositories_1_1ReportRepositorySign.html#a1182a7737ce0e0cf10b21a88dcf97475", null ],
+    [ "$format", "dc/d5e/classModules_1_1DigitalSignature_1_1Repositories_1_1ReportRepositorySign.html#a587175885c7f92ee54019f88fb71f82d", null ],
+    [ "$headerTextY", "dc/d5e/classModules_1_1DigitalSignature_1_1Repositories_1_1ReportRepositorySign.html#ae5e26ae0cb10ec0e3048219b7dbfa97f", null ],
+    [ "$headerY", "dc/d5e/classModules_1_1DigitalSignature_1_1Repositories_1_1ReportRepositorySign.html#a8d38ca4cfc55bffe8bdec376801eb5a8", null ],
+    [ "$institution", "dc/d5e/classModules_1_1DigitalSignature_1_1Repositories_1_1ReportRepositorySign.html#a2e7d46b169e36d30793be811a8291d57", null ],
+    [ "$lineStyle", "dc/d5e/classModules_1_1DigitalSignature_1_1Repositories_1_1ReportRepositorySign.html#ae23bad816cc4cc2d87b8c88563f3979e", null ],
+    [ "$orientation", "dc/d5e/classModules_1_1DigitalSignature_1_1Repositories_1_1ReportRepositorySign.html#a5fcb441b59de281ece0705abdbc06a83", null ],
+    [ "$pdf", "dc/d5e/classModules_1_1DigitalSignature_1_1Repositories_1_1ReportRepositorySign.html#a3504cdffb204ddadc5a14d37875dcefe", null ],
+    [ "$qrCodeStyle", "dc/d5e/classModules_1_1DigitalSignature_1_1Repositories_1_1ReportRepositorySign.html#a9bdaf833383845bab0dc5aaf457b17f4", null ],
+    [ "$reportDate", "dc/d5e/classModules_1_1DigitalSignature_1_1Repositories_1_1ReportRepositorySign.html#a10aecc6c78fc05e422a0c87a52ab2efb", null ],
+    [ "$subject", "dc/d5e/classModules_1_1DigitalSignature_1_1Repositories_1_1ReportRepositorySign.html#a6f8306c425a912f301d653dea3bd3725", null ],
+    [ "$title", "dc/d5e/classModules_1_1DigitalSignature_1_1Repositories_1_1ReportRepositorySign.html#a5ef02115477cfad473df2455da5a908e", null ],
+    [ "$units", "dc/d5e/classModules_1_1DigitalSignature_1_1Repositories_1_1ReportRepositorySign.html#a2fb58617214143c4f26aa61d3ae046af", null ],
+    [ "$urlVerify", "dc/d5e/classModules_1_1DigitalSignature_1_1Repositories_1_1ReportRepositorySign.html#a5beaef4aadc1d501923e4aa635929940", null ]
+];

@@ -1,0 +1,32 @@
+<?php
+
+namespace $NAMESPACE$;
+
+use Illuminate\Http\Resources\Json\ResourceCollection;
+[NO SE DEBEN IMPORTAR ACA NINGUNA REFERENCIA A OTRO MODULO]
+
+/**
+ * @class $CLASS$
+ * @brief [descripción detallada]
+ *
+ * [descripción corta]
+ *
+ * @author [autor de la clase] [correo del autor]
+ *
+ * @license
+ *     [LICENCIA DE SOFTWARE CENDITEL](http://conocimientolibre.cenditel.gob.ve/licencia-de-software-v-1-3/)
+ */
+class $CLASS$ extends ResourceCollection
+{
+    /**
+     * Transforma el recurso de colección en un arreglo.
+     *
+     * @param  \Illuminate\Http\Request     Objeto con datos de la petición
+     *
+     * @return array    Devuelve un arreglo con los datos de la colección
+     */
+    public function toArray($request)
+    {
+        return parent::toArray($request);
+    }
+}

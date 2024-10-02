@@ -1,0 +1,121 @@
+<?php
+
+namespace Modules\Budget\Database\Seeders;
+
+use Illuminate\Database\Seeder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
+use App\Models\NotificationSetting;
+use Modules\Budget\Models\BudgetAccount;
+use Modules\Budget\Models\BudgetCentralizedAction;
+use Modules\Budget\Models\BudgetCompromise;
+use Modules\Budget\Models\BudgetModification;
+use Modules\Budget\Models\BudgetProject;
+use Modules\Budget\Models\BudgetSpecificAction;
+use Modules\Budget\Models\BudgetSubSpecificFormulation;
+
+/**
+ * @class BudgetNotificationSettingsTableSeeder
+ * @brief Información por defecto para configuración de notificación de presupuesto
+ *
+ * Gestiona la información por defecto a registrar inicialmente para la configuración de notificación de presupuesto
+ *
+ * @author Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
+ *
+ * @license
+ *     [LICENCIA DE SOFTWARE CENDITEL](http://conocimientolibre.cenditel.gob.ve/licencia-de-software-v-1-3/)
+ */
+class BudgetNotificationSettingsTableSeeder extends Seeder
+{
+    /**
+     * Método que ejecuta el seeder e inserta los datos en la base de datos.
+     *
+     * @return void
+     */
+    public function run()
+    {
+        Model::unguard();
+
+        $notifySettings = [
+            [
+                'module' => 'budget',
+                'module_name' => 'Presupuesto',
+                'model' => BudgetAccount::class,
+                'name' => 'Cuenta Presupuestaria',
+                'slug' => 'budget_account',
+                'description' => 'Gestión de Catálogo de cuentas presupuestarias',
+                'message' => 'Se ha generado un evento en el catálogo de cuentas presupuestarías'
+            ],
+            [
+                'module' => 'budget',
+                'module_name' => 'Presupuesto',
+                'model' => BudgetCentralizedAction::class,
+                'name' => 'Acciones Centralizadas',
+                'slug' => 'budget_centralized_action',
+                'description' => 'Gestión de Acciones Centralizadas',
+                'message' => 'Se ha generado un evento en acciones centralizadas'
+            ],
+            [
+                'module' => 'budget',
+                'module_name' => 'Presupuesto',
+                'model' => BudgetCompromise::class,
+                'name' => 'Compromisos Presupuestarios',
+                'slug' => 'budget_compromise',
+                'description' => 'Gestión de compromisos presupuestarios',
+                'message' => 'Se ha generado un evento en compromisos presupuestarios'
+            ],
+            [
+                'module' => 'budget',
+                'module_name' => 'Presupuesto',
+                'model' => BudgetModification::class,
+                'name' => 'Modificaciones Presupuestarias',
+                'slug' => 'budget_modification',
+                'description' => 'Gestión de modificaciones presupuestarias',
+                'message' => 'Se ha generado un evento en modificaciones presupuestarias'
+            ],
+            [
+                'module' => 'budget',
+                'module_name' => 'Presupuesto',
+                'model' => BudgetProject::class,
+                'name' => 'Proyectos',
+                'slug' => 'budget_projects',
+                'description' => 'Gestión de proyectos',
+                'message' => 'Se ha generado un evento en proyectos'
+            ],
+            [
+                'module' => 'budget',
+                'module_name' => 'Presupuesto',
+                'model' => BudgetSpecificAction::class,
+                'name' => 'Acciones Específicas',
+                'slug' => 'budget_specific_actions',
+                'description' => 'Gestión de acciones específicas',
+                'message' => 'Se ha generado un evento en acciones específicas'
+            ],
+            [
+                'module' => 'budget',
+                'module_name' => 'Presupuesto',
+                'model' => BudgetSubSpecificFormulation::class,
+                'name' => 'Formulación de Presupuesto',
+                'slug' => 'budget_subspecific_formulations',
+                'description' => 'Gestión de formulaciones presupuestarias',
+                'message' => 'Se ha generado un evento en formulación presupuestaria'
+            ],
+        ];
+
+        DB::transaction(function () use ($notifySettings) {
+            foreach ($notifySettings as $setting) {
+                NotificationSetting::updateOrCreate(
+                    ['model' => $setting['model']],
+                    [
+                        'module' => $setting['module'],
+                        'module_name' => $setting['module_name'],
+                        'name' => $setting['name'],
+                        'slug' => $setting['slug'],
+                        'description' => $setting['description'],
+                        'message' => $setting['message']
+                    ]
+                );
+            }
+        });
+    }
+}

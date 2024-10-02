@@ -1,0 +1,24 @@
+{
+    "name": "kavac/projecttracking",
+    "description": "",
+    "keywords": ["kavac", "project", "tracking"],
+    "authors": [
+        {
+            "name": "Ing. Roldan Vargas",
+            "email": "roldandvg@gmail.com"
+        }
+    ],
+    "require": {},
+    "require-dev": {},
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {}
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\ProjectTracking\\": ""
+        }
+    }
+}
