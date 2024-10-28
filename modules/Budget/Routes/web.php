@@ -45,13 +45,13 @@ Route::group(
                 Route::get('settings', 'BudgetSettingController@index')->name('budget.settings.index');
                 Route::post('settings', 'BudgetSettingController@store')->name('budget.settings.store');
                 /* Rutas para la gestión de los tipos de financiamiento */
-                Route::resource('financement-types', BudgetFinancementTypesController::class, ['as' => 'budget']);
+                Route::resource('financement-types', 'BudgetFinancementTypesController', ['as' => 'budget']);
                 Route::get(
                     'get-financement-types',
                     'BudgetFinancementTypesController@getFinancementTypes'
                 )->name('budget.FinancementTypes.list');
                 /* Rutas para la gestión de las fuentes de financiamiento */
-                Route::resource('financement-sources', BudgetFinancementSourcesController::class, ['as' => 'budget']);
+                Route::resource('financement-sources', 'BudgetFinancementSourcesController', ['as' => 'budget']);
                 Route::get(
                     'get-financement-sources/{budget_financement_type_id?}',
                     'BudgetFinancementSourcesController@getFinancementSources'
