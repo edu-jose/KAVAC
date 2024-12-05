@@ -171,14 +171,29 @@
     @parent
     <script>
         $(document).ready(function() {
-            @if ($formulation->assigned)
+            @if ($formulation->assigned && !$formulation->confirmed)
                 /**
                  * Muestra un mensaje al usuario en caso de que la formulación de presupuesto
                  * ya se encuentra asignada
                  */
                 $.gritter.add({
                     title: '{{ __('Advertencia!') }}',
-                    text: '{{ __('Este presupuesto ya se encuentra asignado y no puede ser modificado') }}',
+                    text: '{{ __('Este presupuesto ya se encuentra asignado y no puede ser eliminado') }}',
+                    class_name: 'growl-danger',
+                    image: "{{ asset('images/screen-warning.png') }}",
+                    sticky: false,
+                    time: 2000
+                });
+            @endif
+
+            @if ($formulation->assigned && $formulation->confirmed)
+                /**
+                 * Muestra un mensaje al usuario en caso de que la formulación de presupuesto
+                 * ya se encuentra asignada
+                 */
+                $.gritter.add({
+                    title: '{{ __('Advertencia!') }}',
+                    text: '{{ __('Este presupuesto ya se encuentra confirmado y no puede ser modificado') }}',
                     class_name: 'growl-danger',
                     image: "{{ asset('images/screen-warning.png') }}",
                     sticky: false,
@@ -191,7 +206,7 @@
                 if (el.is(':checked')) {
                     bootbox.confirm(
                         '{{ __(
-                            'Esta seguro de asignar esta formulación?. Una vez asignado no puede ser modificado'
+                            'Esta seguro de asignar esta formulación?. Una vez asignado no puede ser eliminado'
                             )
                         }}',
                         function(result) {
@@ -209,10 +224,6 @@
 
         var printFormulated = (id, esp) => {
             location.href = window.app_url + '/budget/print-formulated/' + id;
-        };
-
-        var export = (id, esp) => {
-            location.href = window.app_url + '/budget/export/' + id;
         };
     </script>
 @endsection

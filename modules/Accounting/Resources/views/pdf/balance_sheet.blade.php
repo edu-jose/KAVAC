@@ -145,6 +145,8 @@
                 <tr style="background-color: #BDBDBD;">
                     <td style="font-size: 9rem;"></td>
                     <td style="font-size: 9rem; font-weight: bold;" align="right">TOTAL PASIVO + PATRIMONIO</td>
+                    <td style="font-size: 9rem;"></td>
+                    <td style="font-size: 9rem;"></td>
                     <td style="font-size: 9rem; font-weight: bold;" align="right">
                         {{ number_format($totPasivePatrimonialLast, (int) $currency->decimal_places, ',', '.') }}</td>
                 </tr>

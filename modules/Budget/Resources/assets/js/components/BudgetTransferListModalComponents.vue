@@ -35,19 +35,7 @@
                             role="tabpanel"
                         >
                             <div class="row">
-                                <div class="col-md-2">
-                                    <div class="form-group">
-                                        <strong>Fecha de creación:</strong>
-                                        <div class="row" style="margin: 1px 0">
-                                            <span class="col-md-12">
-                                                {{
-                                                    format_date(record.approved_at)
-                                                }}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-10">
+                                <div class="col-md-12">
                                     <div class="form-group">
                                         <strong>Institución:</strong>
                                         <div class="row" style="margin: 1px 0">
@@ -57,7 +45,37 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <strong>Código de Traspaso:</strong>
+                                        <div class="row" style="margin: 1px 0">
+                                            <span class="col-md-12">
+                                                {{ record.code }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <strong>Fecha de creación:</strong>
+                                        <div class="row" style="margin: 1px 0">
+                                            <span class="col-md-12">
+                                                {{ format_date(record.approved_at) }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4" v-if="record.status == 'AP'">
+                                    <div class="form-group">
+                                        <strong>Fecha de aprobación:</strong>
+                                        <div class="row" style="margin: 1px 0">
+                                            <span class="col-md-12">
+                                                {{  record.approved_date == null ? format_date(record.approved_at) : format_date(record.approved_date) }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
                                     <div class="form-group">
                                         <strong>Nro. Documento:</strong>
                                         <div class="row" style="margin: 1px 0">
@@ -67,7 +85,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-4">
                                     <div class="form-group">
                                         <strong>Ver Documento:</strong>
                                         <div class="row" style="margin: 1px 0">
@@ -106,10 +124,10 @@
                         <thead>
                             <tr>
                                 <th colspan="4" class="border-right">
-                                    Datos de Origen
+                                    CUENTA CEDENTES
                                 </th>
                                 <th colspan="4">
-                                    Datos de Destino
+                                    CUENTA A ACREDITAR
                                 </th>
                             </tr>
                             <tr>

@@ -52,6 +52,7 @@ class BudgetSubSpecificFormulation extends Model implements Auditable
         'year',
         'total_formulated',
         'assigned',
+        'confirmed',
         'budget_specific_action_id',
         'currency_id',
         'institution_id',
@@ -206,7 +207,7 @@ class BudgetSubSpecificFormulation extends Model implements Auditable
 
         return $query->where('budget_specific_action_id', $specific_action_id)
                      ->where('document_status_id', $documentStatus->id)
-                     ->where('assigned', true)
+                     ->where('confirmed', true)
                      ->orderBy('year', 'desc')->first();
     }
 

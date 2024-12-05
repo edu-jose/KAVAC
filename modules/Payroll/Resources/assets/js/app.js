@@ -793,13 +793,26 @@ Vue.component('payroll-report-workers-by-payroll', () =>
     )
 );
 /**
+ * Componentes para gestionar la creación de los reportes de talento humano / REPORTE HISTÓRICO DE CARGOS
+ *
+ * @author Natanael Rojo <ndrojo@cenditel.gob.ve> | <rojonatanael99@gmail.com>
+ */
+Vue.component('payroll-report-historical-position', () =>
+    import(
+        /* webpackChunkName: "payroll-report-historical-position" */
+        './components/reports/PayrollReportHistoricalPosition.vue'
+    )
+);
+
+/**
  * Componentes para gestionar la creación de los reportes de talento humano / Reporte de Trabajadores por nómina
  *
  * @author Juan Rosas <juan.rosasr01@gmail.com>
+ * @author Ing. Roldan Vargas <rvargas at cenditel.gob.ve>
  */
 Vue.component('payroll-report-payment-receipt', () =>
     import(
-        /* webpackChunkName: "payroll-report-workers-by-payroll" */
+        /* webpackChunkName: "payroll-report-payment-receipt" */
         './components/reports/PayrollReportPaymentReceiptsComponent.vue'
     )
 );
@@ -821,7 +834,7 @@ Vue.component('payroll-graph-charts', () =>
  */
 Vue.component('payroll-report-benefit-advances', () =>
     import(
-        /* webpackChunkName: "payroll-report-advance-benefits" */
+        /* webpackChunkName: "payroll-report-benefit-advances" */
         './components/reports/benefits/PayrollReportBenefitAdvancesComponent.vue'
     )
 );
@@ -831,7 +844,7 @@ Vue.component('payroll-report-benefit-advances', () =>
  */
 Vue.component('payroll-report-family-burden', () =>
     import(
-        /* webpackChunkName: "payroll-report-advance-benefits" */
+        /* webpackChunkName: "payroll-report-family-burden" */
         './components/reports/PayrollReportFamilyBurden.vue'
     )
 );
@@ -964,7 +977,7 @@ Vue.component('payroll-disabilities', () =>
 
 /**
  * Componente para listar, crear, actualizar y borrar datos niveles de escolaridad
- * 
+ *
  * @author José Briceño <josejorgebriceno9@gmail.com>
  */
 Vue.component('payroll-schooling-levels', () =>
@@ -993,7 +1006,7 @@ Vue.component('payroll-holidays', () =>
 
 /**
  * Componente para crear un archivo txt de nómina
- * 
+ *
  * @author José Briceño <josejorgebriceno9@gmail.com>
  */
 Vue.component('payroll-text-file', () =>
@@ -1015,7 +1028,7 @@ Vue.component('payroll-supervised-groups', () =>
 
 /**
  * Componente para listar, actualizar, generar y borrar un archivo txt de nómina
- * 
+ *
  * @author José Briceño <josejorgebriceno9@gmail.com>
  */
 Vue.component('payroll-text-file-list', () =>

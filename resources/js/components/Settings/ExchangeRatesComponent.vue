@@ -168,6 +168,7 @@
                     from_currency_id: '0',
                     to_currency_id: '0',
                 };
+                this.errors = [];
             },
         },
         created() {

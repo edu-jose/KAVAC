@@ -590,13 +590,33 @@
         //validate product
         let option_name;
         if (vm.record.product_type == '') {
-          bootbox.alert("Debe seleccionar un tipo de producto");
+          bootbox.alert({
+            title: 'Advertencia',
+            message: "Debe seleccionar un tipo de producto",
+            closeButton: false,
+            buttons: {
+              ok: {
+                label: "Cerrar",
+                className: 'btn-light'
+              }
+            }
+          });
           return false;
         }
         product.product_type = vm.record.product_type;
         if (vm.record.product_type == 'Producto') {
           if (vm.record.sale_warehouse_inventory_product_id == '') {
-            bootbox.alert("Debe seleccionar un producto");
+            bootbox.alert({
+              title: 'Advertencia',
+              message: "Debe seleccionar un producto",
+              closeButton: false,
+              buttons: {
+                ok: {
+                  label: "Cerrar",
+                  className: 'btn-light'
+                }
+              }
+            });
             return false;
           }
           product.sale_warehouse_inventory_product_id = vm.record.sale_warehouse_inventory_product_id;
@@ -615,7 +635,17 @@
         }
         else if (vm.record.product_type == 'Servicio') {
           if (vm.record.sale_type_good_id == '') {
-            bootbox.alert("Debe seleccionar un servicio");
+            bootbox.alert({
+              title: 'Advertencia',
+              message: "Debe seleccionar un servicio",
+              closeButton: false,
+              buttons: {
+                ok: {
+                  label: "Cerrar",
+                  className: 'btn-light'
+                }
+              }
+            });
             return false;
           }
           product.sale_warehouse_inventory_product_id = '';
@@ -644,7 +674,17 @@
           }
         }
         if (vm.record.measurement_unit_id == '') {
-          bootbox.alert("Debe seleccionar una unidad de medida");
+          bootbox.alert({
+            title: 'Advertencia',
+            message: "Debe seleccionar una unidad de medida",
+            closeButton: false,
+            buttons: {
+              ok: {
+                label: "Cerrar",
+                className: 'btn-light'
+              }
+            }
+          });
           return false;
         }
         product.measurement_unit_id = vm.record.measurement_unit_id;
@@ -659,17 +699,47 @@
         };
 
         if (vm.record.value <= 0) {
-          bootbox.alert("El Costo debe ser mayor que 0");
+          bootbox.alert({
+            title: 'Advertencia',
+            message: "El Costo debe ser mayor que 0",
+            closeButton: false,
+            buttons: {
+              ok: {
+                label: "Cerrar",
+                className: 'btn-light'
+              }
+            }
+          });
           return false;
         }
         product.value = vm.record.value;
         if (vm.record.quantity <= 0) {
-          bootbox.alert("La cantidad de productos debe ser mayor que 0");
+          bootbox.alert({
+            title: 'Advertencia',
+            message: "La cantidad de productos debe ser mayor que 0",
+            closeButton: false,
+            buttons: {
+              ok: {
+                label: "Cerrar",
+                className: 'btn-light'
+              }
+            }
+          });
           return false;
         }
 
         if (vm.record.has_quantity_max && vm.record.quantity > vm.record.quantity_max_value) {
-          bootbox.alert("La cantidad de productos (" + vm.record.quantity + ") debe ser menor o igual a la cantidad disponible en inventario (" + vm.record.quantity_max_value + ")");
+          bootbox.alert({
+            title: 'Advertencia',
+            message: "La cantidad de productos (" + vm.record.quantity + ") debe ser menor o igual a la cantidad disponible en inventario (" + vm.record.quantity_max_value + ")",
+            closeButton: false,
+            buttons: {
+              ok: {
+                label: "Cerrar",
+                className: 'btn-light'
+              }
+            }
+          });
           return false;
         }
 
@@ -678,7 +748,17 @@
         product.total_without_tax = product.quantity * product.value;
 
         if (vm.record.currency_id == '') {
-          bootbox.alert("La cantidad de productos debe ser mayor que 0");
+          bootbox.alert({
+            title: 'Advertencia',
+            message: "La cantidad de productos debe ser mayor que 0",
+            closeButton: false,
+            buttons: {
+              ok: {
+                label: "Cerrar",
+                className: 'btn-light'
+              }
+            }
+          });
           return false;
         }
         product.currency_id = vm.record.currency_id;

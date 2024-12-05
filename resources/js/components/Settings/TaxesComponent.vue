@@ -113,7 +113,7 @@
                                     <label>Activo:</label>
                                     <div
                                         class="custom-control custom-switch"
-                                        data-toggle="tooltip" 
+                                        data-toggle="tooltip"
                                         title="Indique si el impuesto esta o no activo"
                                     >
                                         <input
@@ -265,8 +265,9 @@
                     affect_tax: false,
                     active: false,
                     operation_date: '',
-                    percentage: 0,
+                    percentage: '',
                 };
+                this.errors = [];
             },
 
             /**

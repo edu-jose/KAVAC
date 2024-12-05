@@ -48,13 +48,14 @@ final class PayrollExceptionTypeController extends Controller
             'description' => ['nullable', 'max:200'],
             'affect_id'   => ['nullable', 'integer'],
             'sign'        => ['required_with:affect_id'],
-            'value_max'   => ['nullable', 'integer'],
+            'value_max'   => ['required', 'integer'],
         ];
 
         /* Define los mensajes de validación para las reglas del formulario */
         $this->messages = [
             'name.required' => 'El campo nombre es obligatorio.',
             'sign.required_with' => 'El campo signo es requerido si se indica el inside sobre.',
+            'value_max.required' => 'El campo valor máximo por periodo es obligatorio.'
         ];
     }
 
@@ -184,7 +185,7 @@ final class PayrollExceptionTypeController extends Controller
     public function getPayrollExceptionTypes()
     {
         $payrollExceptionTypes = PayrollExceptionType::query()
-            ->select('id', 'name as text')
+            ->select('id', 'name as text', 'value_max')
             ->get()
             ->toArray();
 

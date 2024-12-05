@@ -13,7 +13,6 @@ use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
 use Maatwebsite\Excel\Concerns\SkipsOnFailure;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
-use Modules\Payroll\Models\PayrollHistorySalaryAdjustment;
 use Modules\Payroll\Models\PayrollSalaryTabulator;
 use Modules\Payroll\Models\PayrollSalaryAdjustment;
 
@@ -22,6 +21,7 @@ use Modules\Payroll\Models\PayrollSalaryAdjustment;
  * @brief Importa un archivo de ajuste salarial del personal
  *
  * @author Ing. Henry Paredes <hparedes@cenditel.gob.ve>
+ * @author Fabián Palmera <fapalmera@cenditel.gob.ve>
  *
  * @license
  *     [LICENCIA DE SOFTWARE CENDITEL](http://conocimientolibre.cenditel.gob.ve/licencia-de-software-v-1-3/)
@@ -58,7 +58,7 @@ class SalaryAdjustmentImport implements
                         \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($row['fecha_de_generacion'])
                     )) : null;
 
-        $increase_of_date =
+        $start_increase_date =
             isset($row['fecha_de_aumento']) ?
                 (is_string($row['fecha_de_aumento']) ?
                     $row['fecha_de_aumento'] :
@@ -89,16 +89,12 @@ class SalaryAdjustmentImport implements
                     'increase_of_type'                   => $type_name,
                     'value'                              => $row['valor'],
                     'payroll_salary_tabulator_id'        => $payrollSalaryTabulator->id,
+                    'start_increase_date'                => $start_increase_date,
+                    'end_increase_date'                  => $end_increase_date,
                 ]);
 
                 $payrollSalaryAdjustment->created_at = $created_date;
                 $payrollSalaryAdjustment->save();
-
-                PayrollHistorySalaryAdjustment::firstOrCreate([
-                    'increase_of_date'                   => $increase_of_date,
-                    'end_increase_date'                  => $end_increase_date,
-                    'payroll_salary_adjustment_id'       => $payrollSalaryAdjustment->id
-                ]);
         }
     }
 

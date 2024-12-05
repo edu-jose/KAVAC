@@ -370,9 +370,14 @@ export default {
         },
         'record.subproject_name'(subproject_id) {
             const vm = this;
-            if (subproject_id) {
+            if (subproject_id && vm.record.subprojects_list?.length > 0) {
                 const subprojec = vm.subprojects_list.find(subproject => subproject.id == subproject_id);
-                const productTypeIds = subprojec.product_types_ids.join(',');
+                let productTypeIds = [];
+                if (subprojec.product_type_ids.length > 1) {
+                    productTypeIds = subprojec.product_types_ids.join(',');
+                } else {
+                    productTypeIds = subprojec.product_type_ids[0];
+                }
                 const url = vm.setUrl('projecttracking/get-activities-by-product-types');
                 axios.get(
                     `${url}/${productTypeIds}`,
@@ -453,12 +458,11 @@ export default {
                 vm.dependencies_list = response.data;
             });
         },
-        getSubProjectsByProject() {
+        async getSubProjectsByProject() {
             const vm = this;
-            vm.subprojects_list = [],
-                axios.get(`${window.app_url}/projecttracking/get-subprojects-by-project/${vm.record.project_name}`).then(response => {
-                    vm.subprojects_list = response.data;
-                });
+            vm.subprojects_list = [];
+            const response = await axios.get(`${window.app_url}/projecttracking/get-subprojects-by-project/${vm.record.project_name}`);
+            vm.subprojects_list = response.data;
         },
         getSubprojects() {
             const vm = this;
@@ -491,19 +495,24 @@ export default {
                 }
             }
         },
-        getProjectNameAndSubProjectName() {
+        async getProjectNameAndSubProjectName() {
             const vm = this;
-            for (let project of vm.projects_list) {
-                if (vm.record.project_name == project.id && project.id) {
-                    let name = project.responsable_id.first_name ? project.responsable_id.first_name : project.responsable_id.name;
-                    vm.record.name = project.name;
-                    vm.record.responsable = name + ' ' + project.responsable_id.last_name;
-                    vm.record.dependency = project.dependency_id.name;
-                    vm.record.start_date = project.start_date;
-                    vm.record.end_date = project.end_date;
+            const subproject_name = vm.record.subproject_name;
+            await vm.getSubProjectsByProject();
+            if (subproject_name != '') {
+                for (let subproject of vm.subprojects_list) {
+                    if (subproject_name == subproject.id && subproject.id) {
+                        vm.record.subproject_name = subproject_name;
+                        let name = subproject.responsable_id.first_name ? subproject.responsable_id.first_name : subproject.responsable_id.name;
+                        vm.record.name = subproject.name;
+                        vm.record.responsable = name + ' ' + subproject.responsable_id.last_name;
+                        vm.record.dependency = subproject.dependency_id.name;
+                        vm.record.start_date = subproject.start_date;
+                        vm.record.end_date = subproject.end_date;
+                    }
                 }
             }
-            vm.getSubProjectsByProject();
+            // vm.getSubProjectsByProject();
         },
         getSubProjectName() {
             const vm = this;
@@ -984,13 +993,15 @@ export default {
 
                     vm.record.id = recordEdit.id;
 
-                    if (recordEdit.project_name) {
+                    if (recordEdit.project_name && recordEdit.subproject_name) {
+                        vm.record.active = 'subproject';
+                        vm.record.project_name = recordEdit.project_name;
+                        vm.record.subproject_name = recordEdit.subproject_name;
+                        vm.getProjectNameAndSubProjectName();
+                    } else if (recordEdit.project_name) {
                         vm.record.active = 'project';
                         vm.record.project_name = recordEdit.project_name;
                         vm.getProjectName();
-                    } else if (recordEdit.subproject_name) {
-                        vm.record.active = 'subproject';
-                        vm.record.subproject_name = recordEdit.subproject_name;
                     } else {
                         vm.record.active = 'product';
                         vm.record.product_name = recordEdit.product_name;
@@ -1173,6 +1184,7 @@ export default {
     created() {
         const vm = this;
         vm.getProjects();
+        vm.getSubprojects();
         vm.getProducts();
         vm.getStaff_Classifications();
         vm.getActivities();

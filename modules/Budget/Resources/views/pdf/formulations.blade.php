@@ -1,3 +1,6 @@
+@php
+    use Carbon\Carbon;
+@endphp
 <table width="100%" cellpadding="4" style="font-size: 8rem">
     <tbody>
         <tr>
@@ -46,7 +49,7 @@
         <thead>
             <tr>
                 <td width="99.4%" style="border: solid 1px #000;" bgcolor="#D3D3D3">{{ $formulation->specificAction->code }} -
-                    {{ strip_tags($formulation->specificAction->name) }}
+                    {{ strip_tags($formulation->specificAction->name) . ' ' . '(' . Carbon::parse($formulation->date)->format("d-m-Y") . ')' }}
                 </td>
             </tr>
             <tr style="font-weight: bold;">

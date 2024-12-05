@@ -33,6 +33,7 @@ class PaymentTypeResource extends JsonResource
             'payment_periodicity'   => $this->resource->payment_periodicity,
             'periods_number'        => '',
             'order'                 => $this->resource->order,
+            'ordinary_payment'      => $this->resource->ordinary_payment,
             'receipt'               => $this->resource->receipt,
             'individual'            => $this->resource->individual,
             'skip_moments'          => $this->resource->skip_moments,

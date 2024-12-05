@@ -1134,7 +1134,7 @@ if (! function_exists('unidad')) {
                 $unitText = __("UN");
                 break;
             case 0:
-                $unitText = "";
+                $unitText = __("CERO");
                 break;
         }
         return $unitText;

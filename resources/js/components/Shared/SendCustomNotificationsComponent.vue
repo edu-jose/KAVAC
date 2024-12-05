@@ -173,7 +173,7 @@ export default {
     },
     async created() {
         const vm = this;
-        vm.record.message = "Solicitud Prosupuestaria Numero " + vm.id;
+        vm.record.message = "Solicitud Presupuestaria Numero " + vm.id;
     },
 };
 </script>

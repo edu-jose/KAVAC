@@ -10,8 +10,10 @@ use Illuminate\Http\Request;
 use App\Roles\Models\RoleUser;
 use App\Roles\Models\Permission;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 use App\Models\NotificationSetting;
 use App\Http\Controllers\Controller;
+use App\Roles\Models\PermissionRole;
 use App\Roles\Models\PermissionUser;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -115,7 +117,9 @@ class UserController extends Controller
         $password = generate_hash();
         // Objeto con información del usuario registrado
         $user = User::create([
-            'name' => (!isset($profile)) ? $request->first_name : trim($profile->first_name . ' ' . $profile->last_name ?? ''),
+            'name' => (!isset($profile))
+                    ? $request->first_name
+                    : trim($profile->first_name . ' ' . $profile->last_name ?? ''),
             'email' => $request->email,
             'username' => $request->username,
             'password' => bcrypt($password),
@@ -245,11 +249,6 @@ class UserController extends Controller
                 ),
             ]);
 
-            $user->name = $request->first_name;
-            $user->email = $request->email;
-            $user->username = $request->username;
-            $user->save();
-
             $profile = Profile::where('user_id', $user->id)->first();
 
             if (!$request->staff && !$profile) {
@@ -262,12 +261,20 @@ class UserController extends Controller
 
                 // Encontrar o crear el perfil para el nuevo empleado
                 $profile = Profile::where('employee_id', $request->staff)->first() ?? new Profile();
+            } elseif ($request->staff && !$profile) {
+                // Encontrar el perfil para el nuevo empleado
+                $profile = Profile::where('employee_id', $request->staff)->first();
             }
+
+            $user->name = $request->first_name ?? $profile->first_name;
+            $user->email = $request->email;
+            $user->username = $request->username;
+            $user->save();
 
             // Asignar los valores al perfil
             $profile->user_id = $user->id;
             $profile->institution_id = $request->institution_id ?? $profile->institution_id ?? null;
-            $profile->first_name = $request->first_name;
+            $profile->first_name = $request->first_name ?? $profile->first_name;
             $profile->save();
 
             $roleUser = RoleUser::where('user_id', $user->id)->get();
@@ -375,29 +382,18 @@ class UserController extends Controller
         ], [
             'roles_attach_permissions.required' => __('Se requiere asignar al menos un permiso a un rol'),
         ]);
-
-        foreach (Role::all() as $r) {
-            $r->detachAllPermissions();
-        }
-
-        // Arreglo con listado de roles y permisos asociados
-        $rolesAndPerms = [];
-
-        // Crea un arreglo de permisos asociados a los diferentes roles seleccionados
-        foreach ($request->roles_attach_permissions as $role_perm) {
-            list($role_id, $perm_id) = explode("_", $role_perm);
-            if (!array_key_exists($role_id, $rolesAndPerms)) {
-                $rolesAndPerms[$role_id] = [];
+        $groupPermissions = array_reduce($request->roles_attach_permissions, function ($carry, $item) {
+            $key = explode("_", $item)[0];
+            if (!isset($carry[$key])) {
+                $carry[$key] = [];
             }
-            array_push($rolesAndPerms[$role_id], $perm_id);
-        }
+            $carry[$key][] = explode("_", $item)[1];
+            return $carry;
+        }, []);
 
-        // Asigna los distintos permisos a los roles
-        foreach ($rolesAndPerms as $roleId => $roleValues) {
+        foreach ($groupPermissions as $roleId => $permissions) {
             $role = Role::find($roleId);
-            if ($role) {
-                $role->syncPermissions($roleValues);
-            }
+            $role->syncPermissions($permissions);
         }
 
         return response()->json(['result' => true], 200);
@@ -742,11 +738,11 @@ class UserController extends Controller
      * @param     Request    $request    Datos de la petición
      * @param     User       $user       Usuario a desbloquear
      *
-     * @return    JsonResponse$user->blocked_at = \Illuminate\Support\Facades\Date::setNull();$user->blocked_at = \Illuminate\Support\Facades\Date::setNull();
+     * @return     JsonResponse
      */
     public function unlock(Request $request, User $user)
     {
-        $user->blocked_at = null;
+        $user->blocked_at = \Illuminate\Support\Facades\Date::setNull();
         $user->save();
         $request->session()->flash('message', ['type' => 'other', 'text' => 'Usuario desbloqueado']);
         return response()->json(['result' => true], 200);

@@ -408,6 +408,18 @@ export default {
                 page: data.page,
                 orderBy: data.orderBy
             }).catch(error => {
+                if (
+                    error.response.data.result == false &&
+                    error.response.status == 422
+                ) {
+                    vm.showMessage(
+                        "custom",
+                        "Error",
+                        "danger",
+                        "screen-error",
+                        error.response.data.message
+                    );
+                }
                 console.error(error);
             });
         };

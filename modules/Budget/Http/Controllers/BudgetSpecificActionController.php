@@ -343,7 +343,7 @@ class BudgetSpecificActionController extends Controller
         foreach ($specificActions as $specificAction) {
             if (count($specificAction->subSpecificFormulations) > 0) {
                 foreach ($specificAction->subSpecificFormulations as $formulation) {
-                    if ($formulation->assigned == true) {
+                    if ($formulation->confirmed == true) {
                         $specificAction->disabled = true;
                         array_push($records, $specificAction);
                     } else {
@@ -389,7 +389,7 @@ class BudgetSpecificActionController extends Controller
             /* Objeto que determina si la acción específica ya fue formulada para el último presupuesto */
             $existsFormulation = BudgetSubSpecificFormulation::where([
                 'budget_specific_action_id' => $specificAction->id,
-                'assigned' => true
+                'confirmed' => true
             ])->orderBy('year', 'desc')->first();
 
             if ($source === 'report') {
@@ -481,7 +481,7 @@ class BudgetSpecificActionController extends Controller
                 [
                     'year' => $formulated_year,
                     'budget_specific_action_id' => $sp_acc->id,
-                    'assigned' => true
+                    'confirmed' => true
                 ]
             )->first() : '';
 

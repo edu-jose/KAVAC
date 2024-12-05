@@ -475,12 +475,32 @@
                 vm.record.warehouse_inventory_products = [];
                 if ((vm.validateValue).length > 0) {
                     $.each(vm.validateValue, function (index, campo) {
-                        bootbox.alert("La cantidad de producto a movilizar (Código: " + campo + ") es mayor a la cantidad disponible");
+                        bootbox.alert({
+                            title: 'Advertencia',
+                            message: "La cantidad de producto a movilizar (Código: " + campo + ") es mayor a la cantidad disponible",
+                            closeButton: false,
+                            buttons: {
+                                ok: {
+                                    label: "Cerrar",
+                                    className: 'btn-light'
+                                }
+                            }
+                        });
                     });
                     return false;
                 }
                 if (!vm.selected.length > 0){
-                    bootbox.alert("Debe agregar al menos un elemento a la solicitud");
+                    bootbox.alert({
+                        title: "Advertencia",
+                        message: "Debe agregar al menos un elemento a la solicitud",
+                        closeButton: false,
+                        buttons: {
+                            ok: {
+                                label: "Cerrar",
+                                className: 'btn-light'
+                            }
+                        }
+                    });
                     return false;
                 };
                 $.each(vm.selected,function(index,campo){
@@ -490,7 +510,17 @@
                     if (element) {
                         var value = element.value;
                         if (value == "") {
-                            bootbox.alert("Debe ingresar la cantidad solicitada para cada insumo seleccionado");
+                            bootbox.alert({
+                                title: "Advertencia",
+                                message: "Debe ingresar la cantidad solicitada para cada insumo seleccionado",
+                                closeButton: false,
+                                buttons: {
+                                    ok: {
+                                        label: "Cerrar",
+                                        className: 'btn-light'
+                                    }
+                                }
+                            });
                             return false;
                         }
                         vm.record.warehouse_inventory_products.push({

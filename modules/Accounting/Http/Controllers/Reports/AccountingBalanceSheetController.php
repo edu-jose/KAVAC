@@ -5,12 +5,12 @@ namespace Modules\Accounting\Http\Controllers\Reports;
 use DateTime;
 use Carbon\Carbon;
 use App\Models\Parameter;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Date;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Repositories\ReportRepository;
-use Illuminate\Http\JsonResponse;
 use Modules\Accounting\Models\Profile;
 use Modules\Accounting\Models\Setting;
 use Modules\Accounting\Models\Currency;
@@ -21,6 +21,7 @@ use Modules\Accounting\Models\AccountingAccount;
 use Modules\Accounting\Models\AccountingReportHistory;
 use Modules\Accounting\Exports\AccountingBalanceSheetExport;
 use Modules\DigitalSignature\Repositories\ReportRepositorySign;
+use Modules\Accounting\Http\Controllers\AccountingBaseController;
 
 /**
  * @class AccountingBalanceSheetController
@@ -34,7 +35,7 @@ use Modules\DigitalSignature\Repositories\ReportRepositorySign;
  *     [LICENCIA DE SOFTWARE CENDITEL](http://conocimientolibre.cenditel.gob.ve/licencia-de-software-v-1-3/)
  */
 
-class AccountingBalanceSheetController extends Controller
+class AccountingBalanceSheetController extends AccountingBaseController
 {
     /**
      * Establece el trigger de salto de página
@@ -543,130 +544,9 @@ class AccountingBalanceSheetController extends Controller
         $mesAnterior = $fecha->subMonth();
         $initDate2 = $mesAnterior->copy()->startOfMonth();
         $endDate2 = $mesAnterior->copy()->endOfMonth();
-
-        if (count(explode('-', $endDate)) > 1) {
-            $query = AccountingAccount::with([
-                'entryAccount.entries' => function ($query) use ($formDate, $endDate, $institution_id, $is_admin) {
-                    if ($institution_id) {
-                        if (
-                            $query->whereBetween('from_date', [$formDate, $endDate])->where('approved', true)
-                            ->where('institution_id', $institution_id)
-                        ) {
-                            $query->whereBetween('from_date', [$formDate, $endDate])->where('approved', true)
-                                ->where('institution_id', $institution_id);
-                        }
-                    } else {
-                        if ($is_admin) {
-                            if ($query->whereBetween('from_date', [$formDate, $endDate])->where('approved', true)) {
-                                $query->whereBetween('from_date', [$formDate, $endDate])->where('approved', true);
-                            }
-                        }
-                    }
-                },
-            ]);
-            $currency_id = $this->currency->id;
-            $lastMonthBalances = AccountingAccount::select(
-                'accounting_accounts.denomination',
-                'accounting_accounts.id',
-                'accounting_entries.id as entry_id',
-                DB::raw(
-                    "CONCAT(
-                        accounting_accounts.group, '.',
-                        accounting_accounts.subgroup, '.',
-                        accounting_accounts.item, '.',
-                        accounting_accounts.generic, '.',
-                        accounting_accounts.specific, '.',
-                        accounting_accounts.subspecific, '.',
-                        accounting_accounts.institutional
-                    ) AS code_account"
-                ),
-                'accounting_entries.reference',
-                'accounting_entries.concept',
-                'accounting_entries.from_date',
-                DB::raw(
-                    "CASE
-                        WHEN accounting_accounts.group IN ('1', '4', '6') THEN
-                            (
-                                SELECT SUM(debit - assets)
-                                FROM accounting_entry_accounts
-                                WHERE accounting_entry_accounts.accounting_account_id = accounting_accounts.id
-                                AND accounting_entry_accounts.accounting_entry_id = accounting_entries.id
-                                AND accounting_entry_accounts.deleted_at IS NULL
-                            )
-                        WHEN accounting_accounts.group IN ('2', '3', '5') THEN
-                            (
-                                SELECT SUM(assets - debit)
-                                FROM accounting_entry_accounts
-                                WHERE accounting_entry_accounts.accounting_account_id = accounting_accounts.id
-                                AND accounting_entry_accounts.accounting_entry_id = accounting_entries.id
-                                AND accounting_entry_accounts.deleted_at IS NULL
-                            )
-                        ELSE 0
-                    END AS total"
-                )
-            )
-                ->leftJoin('accounting_entry_accounts', 'accounting_accounts.id', '=', 'accounting_entry_accounts.accounting_account_id')
-                ->leftJoin('accounting_entries', 'accounting_entry_accounts.accounting_entry_id', '=', 'accounting_entries.id')
-                ->whereIn('accounting_accounts.group', [1, 2, 3])
-                ->where(function ($query) use ($formDate, $institution_id, $is_admin) {
-                    if ($institution_id) {
-                        if (
-                            $query->where('accounting_entries.from_date', '<', $formDate)
-                            ->where('accounting_entries.approved', true)
-                            ->where('accounting_entries.institution_id', $institution_id)
-                        ) {
-                            $query->where('accounting_entries.from_date', '<', $formDate)
-                                ->where('accounting_entries.approved', true)
-                                ->where('accounting_entries.institution_id', $institution_id)
-                                ->where('accounting_entries.deleted_at', null);
-                        }
-                    } else {
-                        if ($is_admin) {
-                            if (
-                                $query->where('accounting_entries.from_date', '<', $formDate)
-                                ->where('accounting_entries.approved', true)
-                            ) {
-                                $query->where('accounting_entries.from_date', '<', $formDate)
-                                    ->where('accounting_entries.approved', true)
-                                    ->where('accounting_entries.deleted_at', null);
-                            }
-                        }
-                    }
-                })
-                ->whereRaw('accounting_entry_accounts.deleted_at IS NULL')
-                ->groupBy('accounting_accounts.denomination', 'accounting_entries.id', 'accounting_accounts.id', 'accounting_accounts.group', 'accounting_accounts.subgroup', 'accounting_accounts.item', 'accounting_accounts.generic', 'accounting_accounts.specific', 'accounting_accounts.subspecific', 'accounting_accounts.institutional', 'accounting_entries.reference', 'accounting_entries.concept', 'accounting_entries.from_date')
-                ->orderBy('accounting_entries.from_date', 'ASC')
-                ->get();
-        } else {
-            $query = AccountingAccount::with([
-                'entryAccount.entries' => function ($query) use ($date, $institution_id, $is_admin) {
-                    if ($institution_id) {
-                        if (
-                            $query->whereYear('from_date', $date)->where('approved', true)
-                            ->where('institution_id', $institution_id)
-                        ) {
-                            $query->whereYear('from_date', $date)->where('approved', true)
-                                ->where('institution_id', $institution_id);
-                        }
-                    } else {
-                        if ($is_admin) {
-                            if ($query->whereYear('from_date', $date)->where('approved', true)) {
-                                $query->whereYear('from_date', $date)->where('approved', true);
-                            }
-                        }
-                    }
-                },
-            ]);
-            $lastMonthBalances = [];
-        }
-        $query = $query->whereIn('group', [1, 2, 3])
-            ->orderBy('group', 'ASC')
-            ->orderBy('subgroup', 'ASC')
-            ->orderBy('item', 'ASC')
-            ->orderBy('generic', 'ASC')
-            ->orderBy('specific', 'ASC')
-            ->orderBy('subspecific', 'ASC')
-            ->orderBy('denomination', 'ASC')->get();
+        $rest = $this->balanceSheetCalculation($formDate, $endDate, $institution_id, $is_admin, $date);
+        $lastMonthBalances = $rest['lastMonthBalances'] ?? null;
+        $query = $rest['query'] ?? null;
         foreach ($query as $account) {
             if (!$account->entryAccount->isEmpty()) {
                 foreach ($account->entryAccount as $entrie) {

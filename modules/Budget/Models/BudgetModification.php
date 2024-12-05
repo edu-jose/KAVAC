@@ -73,7 +73,8 @@ class BudgetModification extends Model implements Auditable
         'document',
         'institution_id',
         'document_status_id',
-        'status'
+        'status',
+        'approved_date'
     ];
 
     /**

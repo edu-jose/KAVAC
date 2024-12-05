@@ -420,7 +420,17 @@
             createScheme() {
                 const vm = this;
                 if(!Object.values(vm.record.data_source).some(arr => Array.isArray(arr) && arr.length > 0)){
-                    bootbox.alert("Debe agregar al menos un parámetro de tiempo a la solicitud");
+                    bootbox.alert({
+                        title: "Advertencia",
+                        message: "Debe agregar al menos un parámetro de tiempo a la solicitud",
+                        closeButton: false,
+                        buttons: {
+                            ok: {
+                                label: "Cerrar",
+                                className: 'btn-light'
+                            }
+                        }
+                    });
 					return false;
 				};
                 vm.createRecord('payroll/guard-schemes');

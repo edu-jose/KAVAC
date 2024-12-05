@@ -188,12 +188,16 @@ class PayrollPaymentTypeController extends Controller
         $this->validate($request, $this->validateRules, $this->messages);
 
         /* Objeto asociado al modelo PayrollPaymentType */
+
         $payrollPaymentType = PayrollPaymentType::create([
             'code' => $request->code,
             'name' => $request->name,
             'payment_periodicity' => $request->payment_periodicity,
             'order' => !empty($request->order)
                 ? $request->order
+                : false,
+                'ordinary_payment' => $request->ordinary_payment === true
+                ? $request->ordinary_payment
                 : false,
             'receipt' => !empty($request->receipt)
                 ? $request->receipt
@@ -249,11 +253,12 @@ class PayrollPaymentTypeController extends Controller
 
         if (
             !is_null($request->star_operation_date)
-                && ($payrollPaymentType->start_date
+                && (
+                    $payrollPaymentType->start_date
                 != $request->start_date
                 || $payrollPaymentType->payment_periodicity
                 != $request->payment_periodicity
-            )
+                )
         ) {
             $createPeriods = true;
             $startDate = \DateTime::createFromFormat('Y-m-d', $request->star_operation_date);
@@ -281,6 +286,9 @@ class PayrollPaymentTypeController extends Controller
         $payrollPaymentType->order = !empty($request->order)
             ? $request->order
             : false;
+        $payrollPaymentType->ordinary_payment = $request->ordinary_payment === true
+        ? $request->ordinary_payment
+        : false;
         $payrollPaymentType->receipt = !empty($request->receipt)
             ? $request->receipt
             : false;
@@ -390,11 +398,11 @@ class PayrollPaymentTypeController extends Controller
     {
         $payrollPaymentTypes = PayrollPaymentType::query()
             ->get(['id', 'code', 'name', 'receipt'])
-            ->map(fn($model) => [
+            ->map(fn ($model) => [
                 'id' => $model->id,
                 'text' => $model->code . ' - ' . $model->name,
                 'payroll_ids' => $model->payrollPaymentPeriods
-                    ->where('payment_status', 'pending')
+                    ->whereIn('payment_status', ['pending', 'approved'])
                     ->map(fn(PayrollPaymentPeriod $period) => $period?->payroll?->id)
                     ->filter(fn($id) => !empty($id))
                     ->values()

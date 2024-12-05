@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Modules\Payroll\Actions\PayrollPaymentRelationshipAction;
 use Modules\Payroll\Exceptions\FailedPayrollConceptException;
+use Modules\Payroll\Models\DocumentStatus;
 use Modules\Payroll\Models\Institution;
 use Modules\Payroll\Models\Parameter;
 use Modules\Payroll\Models\Payroll;
@@ -22,7 +23,6 @@ use Modules\Payroll\Models\PayrollAriRegister;
 use Modules\Payroll\Models\PayrollConcept;
 use Modules\Payroll\Models\PayrollConceptType;
 use Modules\Payroll\Models\PayrollSalaryTabulator;
-use Modules\Payroll\Models\PayrollSalaryTabulatorScale;
 use Modules\Payroll\Models\PayrollStaff;
 use Modules\Payroll\Models\PayrollStaffPayroll;
 use Modules\Payroll\Repositories\PayrollAssociatedParametersRepository;
@@ -75,25 +75,9 @@ class PayrollUpdatePaymentRelationship implements ShouldQueue
     public function handle()
     {
         try {
-            $created_at = now();
             $payrollParameters = new PayrollAssociatedParametersRepository();
-            $date = new DateTime($this->data['created_at']);
-            $date->format('Y-m-d H:i:s');
-
             /* Objeto asociado al modelo Payroll */
-            $payroll = Payroll::query()->updateOrCreate(
-                [
-                    'id' => $this->data['id'],
-                ],
-                [
-                    'name' => $this->data['name'],
-                    'payroll_payment_period_id' => $this->data['payroll_payment_period_id'],
-                    'payroll_parameters' => json_encode($this->data['payroll_parameters']),
-                    'status' => 'En Proceso',
-                ]
-            );
-
-            $payroll->created_at = $date ?? $created_at;
+            $payroll = Payroll::query()->find($this->data['id']);
 
             $this->data['payroll_parameters'] = $this->payrollPaymentAction->getPayrollParameters($payroll->id);
 
@@ -336,12 +320,14 @@ class PayrollUpdatePaymentRelationship implements ShouldQueue
             }
             /* Se capturan los conceptos de la nomina */
             $payroll->concept_types = $types;
-            $payroll->status = "Completado";
+            $payroll->document_status_id = DocumentStatus::query()->where('action', 'EL')->value('id');
             $payroll->save();
 
             $user = User::without(['roles', 'permissions'])->where('id', $this->data['user_id'])->first();
             $user->notify(new SystemNotification('Exito', 'Nomina ejecutada con exito'));
         } catch (\Exception $e) {
+            $payroll = Payroll::where('id', $this->data['id'])->update(['document_status_id' => null]);
+
             $user = User::without(['roles', 'permissions'])->where('id', $this->data['user_id'])->first();
             Log::critical("Se generó un error en el procesamiento de la nómina en el archivo [{$e->getFile()}] en la línea [{$e->getLine()}]. Código del error: {$e->getCode()}, Detalles: {$e->getMessage()}.\n Se muestra a continuación una traza de los archivos que generaron el error: {$e->getTraceAsString()}");
             if ($e instanceof FailedPayrollConceptException) {
@@ -406,11 +392,11 @@ class PayrollUpdatePaymentRelationship implements ShouldQueue
     /**
      * Se ejecuta cuando falla la ejecución de la nómina
      *
-     * @param \Exception $exception Excepción que generó la falla
+     * @param \Throwable $exception Excepción que generó la falla
      *
      * @return void
      */
-    public function failed(\Exception $exception)
+    public function failed(\Throwable $exception)
     {
         $user = User::without(['roles', 'permissions'])->where('id', $this->data['user_id'])->first();
         if ($exception instanceof MaxAttemptsExceededException) {
@@ -476,12 +462,34 @@ class PayrollUpdatePaymentRelationship implements ShouldQueue
         foreach ($matchs[0] as $match) {
             $id = substr($match, (strpos($match, '(') + 1), strpos($match, ')') - (strpos($match, '(') + 1));
             $payrollSalaryTabulator = PayrollSalaryTabulator::find($id);
+            $salaryAdjustments = null;
+
+            if ($payrollSalaryTabulator) {
+                /* Revisar si el tabulador salarial tiene ajustes por la fecha del periodo final */
+                $salaryAdjustmentWithEndDate = $payrollSalaryTabulator->payrollSalaryAdjustments()
+                    ->whereNotNull('end_increase_date')
+                    ->whereDate('start_increase_date', '<=', $period_end)
+                    ->whereDate('end_increase_date', '>=', $period_end);
+
+                if ($salaryAdjustmentWithEndDate->get()->isNotEmpty()) {
+                    $salaryAdjustments = $salaryAdjustmentWithEndDate->first();
+                }
+
+                $salaryAdjustmentWithoutEndDate = $payrollSalaryTabulator->payrollSalaryAdjustments()
+                    ->whereNull('end_increase_date')
+                    ->whereDate('start_increase_date', '<=', $period_end);
+
+                if ($salaryAdjustmentWithoutEndDate->get()->isNotEmpty()) {
+                    $salaryAdjustments = $salaryAdjustmentWithoutEndDate->first();
+                }
+            }
 
             if ($payrollSalaryTabulator->payroll_salary_tabulator_type == 'horizontal') {
                 /* Se carga el escalafón horizontal asociado al tabulador */
                 $payrollSalaryTabulator->load(['payrollHorizontalSalaryScale' => function ($q) {
                     $q->with('payrollScales');
                 }]);
+
                 foreach ($payrollParameters->loadData('associatedWorkerFile') as $parameter) {
                     if (!empty($parameter['children'])) {
                         foreach ($parameter['children'] as $children) {
@@ -506,45 +514,27 @@ class PayrollUpdatePaymentRelationship implements ShouldQueue
                                                     ($record[Str::snake($children['required'][0]) . '_count'] >= $scl->from) &&
                                                     ($record[Str::snake($children['required'][0]) . '_count'] <= $scl->to)
                                                 ) {
-                                                    $tabScale = PayrollSalaryTabulatorScale::query()
-                                                        ->where('payroll_salary_tabulator_id', $payrollSalaryTabulator->id)
-                                                        ->where('payroll_horizontal_scale_id', $scale['id'])
-                                                        ->where('payroll_vertical_scale_id', null)
-                                                        ->first();
-                                                    if ($payrollSalaryTabulator->percentage) {
-                                                        $formula = str_replace(
-                                                            $match,
-                                                            $tabScale['value'] / 100,
-                                                            $formula ?? $concept['formula']
-                                                        );
-                                                    } else {
-                                                        $formula = str_replace(
-                                                            $match,
-                                                            $tabScale['value'],
-                                                            $formula ?? $concept['formula']
-                                                        );
-                                                    }
+                                                    $formula = addTabulatorValuetoFormula(
+                                                        $payrollSalaryTabulator,
+                                                        $salaryAdjustments,
+                                                        $scale,
+                                                        null,
+                                                        $concept,
+                                                        $match,
+                                                        $formula
+                                                    );
                                                 }
                                             } else {
                                                 if ($scl == $record[Str::snake($children['required'][0]) . '_count']) {
-                                                    $tabScale = PayrollSalaryTabulatorScale::query()
-                                                        ->where('payroll_salary_tabulator_id', $payrollSalaryTabulator->id)
-                                                        ->where('payroll_horizontal_scale_id', $scale['id'])
-                                                        ->where('payroll_vertical_scale_id', null)
-                                                        ->first();
-                                                    if ($payrollSalaryTabulator->percentage) {
-                                                        $formula = str_replace(
-                                                            $match,
-                                                            $tabScale['value'] / 100,
-                                                            $formula ?? $concept['formula']
-                                                        );
-                                                    } else {
-                                                        $formula = str_replace(
-                                                            $match,
-                                                            $tabScale['value'],
-                                                            $formula ?? $concept['formula']
-                                                        );
-                                                    }
+                                                    $formula = addTabulatorValuetoFormula(
+                                                        $payrollSalaryTabulator,
+                                                        $salaryAdjustments,
+                                                        $scale,
+                                                        null,
+                                                        $concept,
+                                                        $match,
+                                                        $formula
+                                                    );
                                                 }
                                             }
                                         } elseif ($children['type'] == 'date') {
@@ -556,70 +546,42 @@ class PayrollUpdatePaymentRelationship implements ShouldQueue
                                                     (age($record[$children['required'][0]], $period_end, true) >= $scl->from) &&
                                                     (age($record[$children['required'][0]], $period_end, true) <= $scl->to)
                                                 ) {
-                                                    $tabScale = PayrollSalaryTabulatorScale::query()
-                                                        ->where('payroll_salary_tabulator_id', $payrollSalaryTabulator->id)
-                                                        ->where('payroll_horizontal_scale_id', $scale['id'])
-                                                        ->where('payroll_vertical_scale_id', null)
-                                                        ->first();
-                                                    if ($payrollSalaryTabulator->percentage) {
-                                                        $formula = str_replace(
-                                                            $match,
-                                                            $tabScale['value'] / 100,
-                                                            $formula ?? $concept['formula']
-                                                        );
-                                                    } else {
-                                                        $formula = str_replace(
-                                                            $match,
-                                                            $tabScale['value'],
-                                                            $formula ?? $concept['formula']
-                                                        );
-                                                    }
+                                                    $formula = addTabulatorValuetoFormula(
+                                                        $payrollSalaryTabulator,
+                                                        $salaryAdjustments,
+                                                        $scale,
+                                                        null,
+                                                        $concept,
+                                                        $match,
+                                                        $formula
+                                                    );
                                                 }
                                             } else {
                                                 if ($scl == age($record[$children['required'][0]], $period_end)) {
-                                                    $tabScale = PayrollSalaryTabulatorScale::query()
-                                                        ->where('payroll_salary_tabulator_id', $payrollSalaryTabulator->id)
-                                                        ->where('payroll_horizontal_scale_id', $scale['id'])
-                                                        ->where('payroll_vertical_scale_id', null)
-                                                        ->first();
-                                                    if ($payrollSalaryTabulator->percentage) {
-                                                        $formula = str_replace(
-                                                            $match,
-                                                            $tabScale['value'] / 100,
-                                                            $formula ?? $concept['formula']
-                                                        );
-                                                    } else {
-                                                        $formula = str_replace(
-                                                            $match,
-                                                            $tabScale['value'],
-                                                            $formula ?? $concept['formula']
-                                                        );
-                                                    }
+                                                    $formula = addTabulatorValuetoFormula(
+                                                        $payrollSalaryTabulator,
+                                                        $salaryAdjustments,
+                                                        $scale,
+                                                        null,
+                                                        $concept,
+                                                        $match,
+                                                        $formula
+                                                    );
                                                 }
                                             }
                                         } else {
                                             /* Se identifica el valor según el expediente del trabajador
                                             y se sustituye por su valor en el tabulador */
                                             if (json_decode($scale['value']) == $record[$children['required'][0]]) {
-                                                $tabScale = PayrollSalaryTabulatorScale::query()
-                                                    ->where('payroll_salary_tabulator_id', $payrollSalaryTabulator->id)
-                                                    ->where('payroll_horizontal_scale_id', $scale['id'])
-                                                    ->where('payroll_vertical_scale_id', null)
-                                                    ->first();
-
-                                                if ($payrollSalaryTabulator->percentage) {
-                                                    $formula = str_replace(
-                                                        $match,
-                                                        $tabScale['value'] / 100,
-                                                        $formula ?? $concept['formula']
-                                                    );
-                                                } else {
-                                                    $formula = str_replace(
-                                                        $match,
-                                                        $tabScale['value'],
-                                                        $formula ?? $concept['formula']
-                                                    );
-                                                }
+                                                $formula = addTabulatorValuetoFormula(
+                                                    $payrollSalaryTabulator,
+                                                    $salaryAdjustments,
+                                                    $scale,
+                                                    null,
+                                                    $concept,
+                                                    $match,
+                                                    $formula
+                                                );
                                             }
                                         }
                                     }
@@ -639,6 +601,7 @@ class PayrollUpdatePaymentRelationship implements ShouldQueue
                 $payrollSalaryTabulator->load(['payrollVerticalSalaryScale' => function ($q) {
                     $q->with('payrollScales');
                 }]);
+
                 foreach ($payrollParameters->loadData('associatedWorkerFile') as $parameter) {
                     if (!empty($parameter['children'])) {
                         foreach ($parameter['children'] as $children) {
@@ -661,45 +624,27 @@ class PayrollUpdatePaymentRelationship implements ShouldQueue
                                                     ($record[Str::snake($children['required'][0]) . '_count'] >= $scl->from) &&
                                                     ($record[Str::snake($children['required'][0]) . '_count'] <= $scl->to)
                                                 ) {
-                                                    $tabScale = PayrollSalaryTabulatorScale::query()
-                                                        ->where('payroll_salary_tabulator_id', $payrollSalaryTabulator->id)
-                                                        ->where('payroll_horizontal_scale_id', null)
-                                                        ->where('payroll_vertical_scale_id', $scale['id'])
-                                                        ->first();
-                                                    if ($payrollSalaryTabulator->percentage) {
-                                                        $formula = str_replace(
-                                                            $match,
-                                                            $tabScale['value'] / 100,
-                                                            $formula ?? $concept['formula']
-                                                        );
-                                                    } else {
-                                                        $formula = str_replace(
-                                                            $match,
-                                                            $tabScale['value'],
-                                                            $formula ?? $concept['formula']
-                                                        );
-                                                    }
+                                                    $formula = addTabulatorValuetoFormula(
+                                                        $payrollSalaryTabulator,
+                                                        $salaryAdjustments,
+                                                        null,
+                                                        $scale,
+                                                        $concept,
+                                                        $match,
+                                                        $formula
+                                                    );
                                                 }
                                             } else {
                                                 if ($scl == $record[Str::snake($children['required'][0]) . '_count']) {
-                                                    $tabScale = PayrollSalaryTabulatorScale::query()
-                                                        ->where('payroll_salary_tabulator_id', $payrollSalaryTabulator->id)
-                                                        ->where('payroll_horizontal_scale_id', null)
-                                                        ->where('payroll_vertical_scale_id', $scale['id'])
-                                                        ->first();
-                                                    if ($payrollSalaryTabulator->percentage) {
-                                                        $formula = str_replace(
-                                                            $match,
-                                                            $tabScale['value'] / 100,
-                                                            $formula ?? $concept['formula']
-                                                        );
-                                                    } else {
-                                                        $formula = str_replace(
-                                                            $match,
-                                                            $tabScale['value'],
-                                                            $formula ?? $concept['formula']
-                                                        );
-                                                    }
+                                                    $formula = addTabulatorValuetoFormula(
+                                                        $payrollSalaryTabulator,
+                                                        $salaryAdjustments,
+                                                        null,
+                                                        $scale,
+                                                        $concept,
+                                                        $match,
+                                                        $formula
+                                                    );
                                                 }
                                             }
                                         } elseif ($children['type'] == 'date') {
@@ -711,70 +656,42 @@ class PayrollUpdatePaymentRelationship implements ShouldQueue
                                                     (age($record[$children['required'][0]], $period_end, true) >= $scl->from) &&
                                                     (age($record[$children['required'][0]], $period_end, true) <= $scl->to)
                                                 ) {
-                                                    $tabScale = PayrollSalaryTabulatorScale::query()
-                                                        ->where('payroll_salary_tabulator_id', $payrollSalaryTabulator->id)
-                                                        ->where('payroll_horizontal_scale_id', null)
-                                                        ->where('payroll_vertical_scale_id', $scale['id'])
-                                                        ->first();
-                                                    if ($payrollSalaryTabulator->percentage) {
-                                                        $formula = str_replace(
-                                                            $match,
-                                                            $tabScale['value'] / 100,
-                                                            $formula ?? $concept['formula']
-                                                        );
-                                                    } else {
-                                                        $formula = str_replace(
-                                                            $match,
-                                                            $tabScale['value'],
-                                                            $formula ?? $concept['formula']
-                                                        );
-                                                    }
+                                                    $formula = addTabulatorValuetoFormula(
+                                                        $payrollSalaryTabulator,
+                                                        $salaryAdjustments,
+                                                        null,
+                                                        $scale,
+                                                        $concept,
+                                                        $match,
+                                                        $formula
+                                                    );
                                                 }
                                             } else {
                                                 if ($scl == age($record[$children['required'][0]], $period_end)) {
-                                                    $tabScale = PayrollSalaryTabulatorScale::query()
-                                                        ->where('payroll_salary_tabulator_id', $payrollSalaryTabulator->id)
-                                                        ->where('payroll_horizontal_scale_id', null)
-                                                        ->where('payroll_vertical_scale_id', $scale['id'])
-                                                        ->first();
-                                                    if ($payrollSalaryTabulator->percentage) {
-                                                        $formula = str_replace(
-                                                            $match,
-                                                            $tabScale['value'] / 100,
-                                                            $formula ?? $concept['formula']
-                                                        );
-                                                    } else {
-                                                        $formula = str_replace(
-                                                            $match,
-                                                            $tabScale['value'],
-                                                            $formula ?? $concept['formula']
-                                                        );
-                                                    }
+                                                    $formula = addTabulatorValuetoFormula(
+                                                        $payrollSalaryTabulator,
+                                                        $salaryAdjustments,
+                                                        null,
+                                                        $scale,
+                                                        $concept,
+                                                        $match,
+                                                        $formula
+                                                    );
                                                 }
                                             }
                                         } else {
                                             /* Se identifica el valor según el expediente del trabajador
                                             y se sustituye por su valor en el tabulador */
                                             if (json_decode($scale['value']) == $record[$children['required'][0]]) {
-                                                $tabScale = PayrollSalaryTabulatorScale::query()
-                                                    ->where('payroll_salary_tabulator_id', $payrollSalaryTabulator->id)
-                                                    ->where('payroll_horizontal_scale_id', null)
-                                                    ->where('payroll_vertical_scale_id', $scale['id'])
-                                                    ->first();
-
-                                                if ($payrollSalaryTabulator->percentage) {
-                                                    $formula = str_replace(
-                                                        $match,
-                                                        $tabScale['value'] / 100,
-                                                        $formula ?? $concept['formula']
-                                                    );
-                                                } else {
-                                                    $formula = str_replace(
-                                                        $match,
-                                                        $tabScale['value'],
-                                                        $formula ?? $concept['formula']
-                                                    );
-                                                }
+                                                $formula = addTabulatorValuetoFormula(
+                                                    $payrollSalaryTabulator,
+                                                    $salaryAdjustments,
+                                                    null,
+                                                    $scale,
+                                                    $concept,
+                                                    $match,
+                                                    $formula
+                                                );
                                             }
                                         }
                                     }
@@ -798,6 +715,7 @@ class PayrollUpdatePaymentRelationship implements ShouldQueue
                         $q->with('payrollScales');
                     },
                 ]);
+
                 foreach ($payrollParameters->loadData('associatedWorkerFile') as $parameter) {
                     if (!empty($parameter['children'])) {
                         foreach ($parameter['children'] as $children) {
@@ -842,45 +760,27 @@ class PayrollUpdatePaymentRelationship implements ShouldQueue
                                                                                         ($recordV[Str::snake($childrenV['required'][0]) . '_count'] >= $sclV->from) &&
                                                                                         ($recordV[Str::snake($childrenV['required'][0]) . '_count'] <= $sclV->to)
                                                                                     ) {
-                                                                                        $tabScale = PayrollSalaryTabulatorScale::query()
-                                                                                            ->where('payroll_salary_tabulator_id', $payrollSalaryTabulator->id)
-                                                                                            ->where('payroll_horizontal_scale_id', $scale['id'])
-                                                                                            ->where('payroll_vertical_scale_id', $scaleV['id'])
-                                                                                            ->first();
-                                                                                        if ($payrollSalaryTabulator->percentage) {
-                                                                                            $formula = str_replace(
-                                                                                                $match,
-                                                                                                $tabScale['value'] / 100,
-                                                                                                $formula ?? $concept['formula']
-                                                                                            );
-                                                                                        } else {
-                                                                                            $formula = str_replace(
-                                                                                                $match,
-                                                                                                $tabScale['value'],
-                                                                                                $formula ?? $concept['formula']
-                                                                                            );
-                                                                                        }
+                                                                                        $formula = addTabulatorValuetoFormula(
+                                                                                            $payrollSalaryTabulator,
+                                                                                            $salaryAdjustments,
+                                                                                            $scale,
+                                                                                            $scaleV,
+                                                                                            $concept,
+                                                                                            $match,
+                                                                                            $formula
+                                                                                        );
                                                                                     }
                                                                                 } else {
                                                                                     if ($sclV == $recordV[Str::snake($childrenV['required'][0]) . '_count']) {
-                                                                                        $tabScale = PayrollSalaryTabulatorScale::query()
-                                                                                            ->where('payroll_salary_tabulator_id', $payrollSalaryTabulator->id)
-                                                                                            ->where('payroll_horizontal_scale_id', $scale['id'])
-                                                                                            ->where('payroll_vertical_scale_id', $scaleV['id'])
-                                                                                            ->first();
-                                                                                        if ($payrollSalaryTabulator->percentage) {
-                                                                                            $formula = str_replace(
-                                                                                                $match,
-                                                                                                $tabScale['value'] / 100,
-                                                                                                $formula ?? $concept['formula']
-                                                                                            );
-                                                                                        } else {
-                                                                                            $formula = str_replace(
-                                                                                                $match,
-                                                                                                $tabScale['value'],
-                                                                                                $formula ?? $concept['formula']
-                                                                                            );
-                                                                                        }
+                                                                                        $formula = addTabulatorValuetoFormula(
+                                                                                            $payrollSalaryTabulator,
+                                                                                            $salaryAdjustments,
+                                                                                            $scale,
+                                                                                            $scaleV,
+                                                                                            $concept,
+                                                                                            $match,
+                                                                                            $formula
+                                                                                        );
                                                                                     }
                                                                                 }
                                                                             } elseif ($childrenV['type'] == 'date') {
@@ -892,70 +792,42 @@ class PayrollUpdatePaymentRelationship implements ShouldQueue
                                                                                         (age($recordV[$childrenV['required'][0]], $period_end, true) >= $sclV->from) &&
                                                                                         (age($recordV[$childrenV['required'][0]], $period_end, true) <= $sclV->to)
                                                                                     ) {
-                                                                                        $tabScale = PayrollSalaryTabulatorScale::query()
-                                                                                            ->where('payroll_salary_tabulator_id', $payrollSalaryTabulator->id)
-                                                                                            ->where('payroll_horizontal_scale_id', $scale['id'])
-                                                                                            ->where('payroll_vertical_scale_id', $scaleV['id'])
-                                                                                            ->first();
-                                                                                        if ($payrollSalaryTabulator->percentage) {
-                                                                                            $formula = str_replace(
-                                                                                                $match,
-                                                                                                $tabScale['value'] / 100,
-                                                                                                $formula ?? $concept['formula']
-                                                                                            );
-                                                                                        } else {
-                                                                                            $formula = str_replace(
-                                                                                                $match,
-                                                                                                $tabScale['value'],
-                                                                                                $formula ?? $concept['formula']
-                                                                                            );
-                                                                                        }
+                                                                                        $formula = addTabulatorValuetoFormula(
+                                                                                            $payrollSalaryTabulator,
+                                                                                            $salaryAdjustments,
+                                                                                            $scale,
+                                                                                            $scaleV,
+                                                                                            $concept,
+                                                                                            $match,
+                                                                                            $formula
+                                                                                        );
                                                                                     }
                                                                                 } else {
                                                                                     if ($sclV == age($recordV[$childrenV['required'][0]], $period_end)) {
-                                                                                        $tabScale = PayrollSalaryTabulatorScale::query()
-                                                                                            ->where('payroll_salary_tabulator_id', $payrollSalaryTabulator->id)
-                                                                                            ->where('payroll_horizontal_scale_id', $scale['id'])
-                                                                                            ->where('payroll_vertical_scale_id', $scaleV['id'])
-                                                                                            ->first();
-                                                                                        if ($payrollSalaryTabulator->percentage) {
-                                                                                            $formula = str_replace(
-                                                                                                $match,
-                                                                                                $tabScale['value'] / 100,
-                                                                                                $formula ?? $concept['formula']
-                                                                                            );
-                                                                                        } else {
-                                                                                            $formula = str_replace(
-                                                                                                $match,
-                                                                                                $tabScale['value'],
-                                                                                                $formula ?? $concept['formula']
-                                                                                            );
-                                                                                        }
+                                                                                        $formula = addTabulatorValuetoFormula(
+                                                                                            $payrollSalaryTabulator,
+                                                                                            $salaryAdjustments,
+                                                                                            $scale,
+                                                                                            $scaleV,
+                                                                                            $concept,
+                                                                                            $match,
+                                                                                            $formula
+                                                                                        );
                                                                                     }
                                                                                 }
                                                                             } else {
                                                                                 /* Se identifica el valor según el expediente del trabajador
                                                                                 y se sustituye por su valor en el tabulador */
                                                                                 if (json_decode($scaleV['value']) == $recordV[$childrenV['required'][0]]) {
-                                                                                    $tabScale = PayrollSalaryTabulatorScale::query()
-                                                                                        ->where('payroll_salary_tabulator_id', $payrollSalaryTabulator->id)
-                                                                                        ->where('payroll_horizontal_scale_id', $scale['id'])
-                                                                                        ->where('payroll_vertical_scale_id', $scaleV['id'])
-                                                                                        ->first();
-
-                                                                                    if ($payrollSalaryTabulator->percentage) {
-                                                                                        $formula = str_replace(
-                                                                                            $match,
-                                                                                            $tabScale['value'] / 100,
-                                                                                            $formula ?? $concept['formula']
-                                                                                        );
-                                                                                    } else {
-                                                                                        $formula = str_replace(
-                                                                                            $match,
-                                                                                            $tabScale['value'],
-                                                                                            $formula ?? $concept['formula']
-                                                                                        );
-                                                                                    }
+                                                                                    $formula = addTabulatorValuetoFormula(
+                                                                                        $payrollSalaryTabulator,
+                                                                                        $salaryAdjustments,
+                                                                                        $scale,
+                                                                                        $scaleV,
+                                                                                        $concept,
+                                                                                        $match,
+                                                                                        $formula
+                                                                                    );
                                                                                 }
                                                                             }
                                                                         }
@@ -995,45 +867,27 @@ class PayrollUpdatePaymentRelationship implements ShouldQueue
                                                                                         ($recordV[Str::snake($childrenV['required'][0]) . '_count'] >= $sclV->from) &&
                                                                                         ($recordV[Str::snake($childrenV['required'][0]) . '_count'] <= $sclV->to)
                                                                                     ) {
-                                                                                        $tabScale = PayrollSalaryTabulatorScale::query()
-                                                                                            ->where('payroll_salary_tabulator_id', $payrollSalaryTabulator->id)
-                                                                                            ->where('payroll_horizontal_scale_id', $scale['id'])
-                                                                                            ->where('payroll_vertical_scale_id', $scaleV['id'])
-                                                                                            ->first();
-                                                                                        if ($payrollSalaryTabulator->percentage) {
-                                                                                            $formula = str_replace(
-                                                                                                $match,
-                                                                                                $tabScale['value'] / 100,
-                                                                                                $formula ?? $concept['formula']
-                                                                                            );
-                                                                                        } else {
-                                                                                            $formula = str_replace(
-                                                                                                $match,
-                                                                                                $tabScale['value'],
-                                                                                                $formula ?? $concept['formula']
-                                                                                            );
-                                                                                        }
+                                                                                        $formula = addTabulatorValuetoFormula(
+                                                                                            $payrollSalaryTabulator,
+                                                                                            $salaryAdjustments,
+                                                                                            $scale,
+                                                                                            $scaleV,
+                                                                                            $concept,
+                                                                                            $match,
+                                                                                            $formula
+                                                                                        );
                                                                                     }
                                                                                 } else {
                                                                                     if ($sclV == $recordV[Str::snake($childrenV['required'][0]) . '_count']) {
-                                                                                        $tabScale = PayrollSalaryTabulatorScale::query()
-                                                                                            ->where('payroll_salary_tabulator_id', $payrollSalaryTabulator->id)
-                                                                                            ->where('payroll_horizontal_scale_id', $scale['id'])
-                                                                                            ->where('payroll_vertical_scale_id', $scaleV['id'])
-                                                                                            ->first();
-                                                                                        if ($payrollSalaryTabulator->percentage) {
-                                                                                            $formula = str_replace(
-                                                                                                $match,
-                                                                                                $tabScale['value'] / 100,
-                                                                                                $formula ?? $concept['formula']
-                                                                                            );
-                                                                                        } else {
-                                                                                            $formula = str_replace(
-                                                                                                $match,
-                                                                                                $tabScale['value'],
-                                                                                                $formula ?? $concept['formula']
-                                                                                            );
-                                                                                        }
+                                                                                        $formula = addTabulatorValuetoFormula(
+                                                                                            $payrollSalaryTabulator,
+                                                                                            $salaryAdjustments,
+                                                                                            $scale,
+                                                                                            $scaleV,
+                                                                                            $concept,
+                                                                                            $match,
+                                                                                            $formula
+                                                                                        );
                                                                                     }
                                                                                 }
                                                                             } elseif ($childrenV['type'] == 'date') {
@@ -1045,70 +899,42 @@ class PayrollUpdatePaymentRelationship implements ShouldQueue
                                                                                         (age($recordV[$childrenV['required'][0]], $period_end, true) >= $sclV->from) &&
                                                                                         (age($recordV[$childrenV['required'][0]], $period_end, true) <= $sclV->to)
                                                                                     ) {
-                                                                                        $tabScale = PayrollSalaryTabulatorScale::query()
-                                                                                            ->where('payroll_salary_tabulator_id', $payrollSalaryTabulator->id)
-                                                                                            ->where('payroll_horizontal_scale_id', $scale['id'])
-                                                                                            ->where('payroll_vertical_scale_id', $scaleV['id'])
-                                                                                            ->first();
-                                                                                        if ($payrollSalaryTabulator->percentage) {
-                                                                                            $formula = str_replace(
-                                                                                                $match,
-                                                                                                $tabScale['value'] / 100,
-                                                                                                $formula ?? $concept['formula']
-                                                                                            );
-                                                                                        } else {
-                                                                                            $formula = str_replace(
-                                                                                                $match,
-                                                                                                $tabScale['value'],
-                                                                                                $formula ?? $concept['formula']
-                                                                                            );
-                                                                                        }
+                                                                                        $formula = addTabulatorValuetoFormula(
+                                                                                            $payrollSalaryTabulator,
+                                                                                            $salaryAdjustments,
+                                                                                            $scale,
+                                                                                            $scaleV,
+                                                                                            $concept,
+                                                                                            $match,
+                                                                                            $formula
+                                                                                        );
                                                                                     }
                                                                                 } else {
                                                                                     if ($sclV == age($recordV[$childrenV['required'][0]], $period_end)) {
-                                                                                        $tabScale = PayrollSalaryTabulatorScale::query()
-                                                                                            ->where('payroll_salary_tabulator_id', $payrollSalaryTabulator->id)
-                                                                                            ->where('payroll_horizontal_scale_id', $scale['id'])
-                                                                                            ->where('payroll_vertical_scale_id', $scaleV['id'])
-                                                                                            ->first();
-                                                                                        if ($payrollSalaryTabulator->percentage) {
-                                                                                            $formula = str_replace(
-                                                                                                $match,
-                                                                                                $tabScale['value'] / 100,
-                                                                                                $formula ?? $concept['formula']
-                                                                                            );
-                                                                                        } else {
-                                                                                            $formula = str_replace(
-                                                                                                $match,
-                                                                                                $tabScale['value'],
-                                                                                                $formula ?? $concept['formula']
-                                                                                            );
-                                                                                        }
+                                                                                        $formula = addTabulatorValuetoFormula(
+                                                                                            $payrollSalaryTabulator,
+                                                                                            $salaryAdjustments,
+                                                                                            $scale,
+                                                                                            $scaleV,
+                                                                                            $concept,
+                                                                                            $match,
+                                                                                            $formula
+                                                                                        );
                                                                                     }
                                                                                 }
                                                                             } else {
                                                                                 /* Se identifica el valor según el expediente del trabajador
                                                                                 y se sustituye por su valor en el tabulador */
                                                                                 if (json_decode($scaleV['value']) == $recordV[$childrenV['required'][0]]) {
-                                                                                    $tabScale = PayrollSalaryTabulatorScale::query()
-                                                                                        ->where('payroll_salary_tabulator_id', $payrollSalaryTabulator->id)
-                                                                                        ->where('payroll_horizontal_scale_id', $scale['id'])
-                                                                                        ->where('payroll_vertical_scale_id', $scaleV['id'])
-                                                                                        ->first();
-
-                                                                                    if ($payrollSalaryTabulator->percentage) {
-                                                                                        $formula = str_replace(
-                                                                                            $match,
-                                                                                            $tabScale['value'] / 100,
-                                                                                            $formula ?? $concept['formula']
-                                                                                        );
-                                                                                    } else {
-                                                                                        $formula = str_replace(
-                                                                                            $match,
-                                                                                            $tabScale['value'],
-                                                                                            $formula ?? $concept['formula']
-                                                                                        );
-                                                                                    }
+                                                                                    $formula = addTabulatorValuetoFormula(
+                                                                                        $payrollSalaryTabulator,
+                                                                                        $salaryAdjustments,
+                                                                                        $scale,
+                                                                                        $scaleV,
+                                                                                        $concept,
+                                                                                        $match,
+                                                                                        $formula
+                                                                                    );
                                                                                 }
                                                                             }
                                                                         }
@@ -1156,45 +982,27 @@ class PayrollUpdatePaymentRelationship implements ShouldQueue
                                                                                         ($recordV[Str::snake($childrenV['required'][0]) . '_count'] >= $sclV->from) &&
                                                                                         ($recordV[Str::snake($childrenV['required'][0]) . '_count'] <= $sclV->to)
                                                                                     ) {
-                                                                                        $tabScale = PayrollSalaryTabulatorScale::query()
-                                                                                            ->where('payroll_salary_tabulator_id', $payrollSalaryTabulator->id)
-                                                                                            ->where('payroll_horizontal_scale_id', $scale['id'])
-                                                                                            ->where('payroll_vertical_scale_id', $scaleV['id'])
-                                                                                            ->first();
-                                                                                        if ($payrollSalaryTabulator->percentage) {
-                                                                                            $formula = str_replace(
-                                                                                                $match,
-                                                                                                $tabScale['value'] / 100,
-                                                                                                $formula ?? $concept['formula']
-                                                                                            );
-                                                                                        } else {
-                                                                                            $formula = str_replace(
-                                                                                                $match,
-                                                                                                $tabScale['value'],
-                                                                                                $formula ?? $concept['formula']
-                                                                                            );
-                                                                                        }
+                                                                                        $formula = addTabulatorValuetoFormula(
+                                                                                            $payrollSalaryTabulator,
+                                                                                            $salaryAdjustments,
+                                                                                            $scale,
+                                                                                            $scaleV,
+                                                                                            $concept,
+                                                                                            $match,
+                                                                                            $formula
+                                                                                        );
                                                                                     }
                                                                                 } else {
                                                                                     if ($sclV == $recordV[Str::snake($childrenV['required'][0]) . '_count']) {
-                                                                                        $tabScale = PayrollSalaryTabulatorScale::query()
-                                                                                            ->where('payroll_salary_tabulator_id', $payrollSalaryTabulator->id)
-                                                                                            ->where('payroll_horizontal_scale_id', $scale['id'])
-                                                                                            ->where('payroll_vertical_scale_id', $scaleV['id'])
-                                                                                            ->first();
-                                                                                        if ($payrollSalaryTabulator->percentage) {
-                                                                                            $formula = str_replace(
-                                                                                                $match,
-                                                                                                $tabScale['value'] / 100,
-                                                                                                $formula ?? $concept['formula']
-                                                                                            );
-                                                                                        } else {
-                                                                                            $formula = str_replace(
-                                                                                                $match,
-                                                                                                $tabScale['value'],
-                                                                                                $formula ?? $concept['formula']
-                                                                                            );
-                                                                                        }
+                                                                                        $formula = addTabulatorValuetoFormula(
+                                                                                            $payrollSalaryTabulator,
+                                                                                            $salaryAdjustments,
+                                                                                            $scale,
+                                                                                            $scaleV,
+                                                                                            $concept,
+                                                                                            $match,
+                                                                                            $formula
+                                                                                        );
                                                                                     }
                                                                                 }
                                                                             } elseif ($childrenV['type'] == 'date') {
@@ -1206,72 +1014,42 @@ class PayrollUpdatePaymentRelationship implements ShouldQueue
                                                                                         (age($recordV[$childrenV['required'][0]], $period_end, true) >= $sclV->from) &&
                                                                                         (age($recordV[$childrenV['required'][0]], $period_end, true) <= $sclV->to)
                                                                                     ) {
-                                                                                        $tabScale = PayrollSalaryTabulatorScale::query()
-                                                                                            ->where('payroll_salary_tabulator_id', $payrollSalaryTabulator->id)
-                                                                                            ->where('payroll_horizontal_scale_id', $scale['id'])
-                                                                                            ->where('payroll_vertical_scale_id', $scaleV['id'])
-                                                                                            ->first();
-                                                                                        if ($payrollSalaryTabulator->percentage) {
-                                                                                            $formula = str_replace(
-                                                                                                $match,
-                                                                                                $tabScale['value'] / 100,
-                                                                                                $formula ?? $concept['formula']
-                                                                                            );
-                                                                                        } else {
-                                                                                            $formula = str_replace(
-                                                                                                $match,
-                                                                                                $tabScale['value'],
-                                                                                                $formula ?? $concept['formula']
-                                                                                            );
-                                                                                        }
+                                                                                        $formula = addTabulatorValuetoFormula(
+                                                                                            $payrollSalaryTabulator,
+                                                                                            $salaryAdjustments,
+                                                                                            $scale,
+                                                                                            $scaleV,
+                                                                                            $concept,
+                                                                                            $match,
+                                                                                            $formula
+                                                                                        );
                                                                                     }
                                                                                 } else {
                                                                                     if ($sclV == age($recordV[$childrenV['required'][0]], $period_end)) {
-                                                                                        $tabScale = PayrollSalaryTabulatorScale::query()
-                                                                                            ->where('payroll_salary_tabulator_id', $payrollSalaryTabulator->id)
-                                                                                            ->where('payroll_horizontal_scale_id', $scale['id'])
-                                                                                            ->where('payroll_vertical_scale_id', $scaleV['id'])
-                                                                                            ->first();
-                                                                                        if ($payrollSalaryTabulator->percentage) {
-                                                                                            $formula = str_replace(
-                                                                                                $match,
-                                                                                                $tabScale['value'] / 100,
-                                                                                                $formula ?? $concept['formula']
-                                                                                            );
-                                                                                        } else {
-                                                                                            $formula = str_replace(
-                                                                                                $match,
-                                                                                                $tabScale['value'],
-                                                                                                $formula ?? $concept['formula']
-                                                                                            );
-                                                                                        }
+                                                                                        $formula = addTabulatorValuetoFormula(
+                                                                                            $payrollSalaryTabulator,
+                                                                                            $salaryAdjustments,
+                                                                                            $scale,
+                                                                                            $scaleV,
+                                                                                            $concept,
+                                                                                            $match,
+                                                                                            $formula
+                                                                                        );
                                                                                     }
                                                                                 }
                                                                             } else {
                                                                                 /* Se identifica el valor según el expediente del trabajador
                                                                                 y se sustituye por su valor en el tabulador */
                                                                                 if (json_decode($scaleV['value']) == $recordV[$childrenV['required'][0]]) {
-                                                                                    $tabScale = PayrollSalaryTabulatorScale::query()
-                                                                                        ->where('payroll_salary_tabulator_id', $payrollSalaryTabulator->id)
-                                                                                        ->where('payroll_horizontal_scale_id', $scale['id'])
-                                                                                        ->where('payroll_vertical_scale_id', $scaleV['id'])
-                                                                                        ->first();
-
-                                                                                    if (isset($tabScale)) {
-                                                                                        if ($payrollSalaryTabulator->percentage) {
-                                                                                            $formula = str_replace(
-                                                                                                $match,
-                                                                                                $tabScale['value'] / 100,
-                                                                                                $formula ?? $concept['formula']
-                                                                                            );
-                                                                                        } else {
-                                                                                            $formula = str_replace(
-                                                                                                $match,
-                                                                                                $tabScale['value'],
-                                                                                                $formula ?? $concept['formula']
-                                                                                            );
-                                                                                        }
-                                                                                    }
+                                                                                    $formula = addTabulatorValuetoFormula(
+                                                                                        $payrollSalaryTabulator,
+                                                                                        $salaryAdjustments,
+                                                                                        $scale,
+                                                                                        $scaleV,
+                                                                                        $concept,
+                                                                                        $match,
+                                                                                        $formula
+                                                                                    );
                                                                                 }
                                                                             }
                                                                         }
@@ -1311,45 +1089,27 @@ class PayrollUpdatePaymentRelationship implements ShouldQueue
                                                                                         ($recordV[Str::snake($childrenV['required'][0]) . '_count'] >= $sclV->from) &&
                                                                                         ($recordV[Str::snake($childrenV['required'][0]) . '_count'] <= $sclV->to)
                                                                                     ) {
-                                                                                        $tabScale = PayrollSalaryTabulatorScale::query()
-                                                                                            ->where('payroll_salary_tabulator_id', $payrollSalaryTabulator->id)
-                                                                                            ->where('payroll_horizontal_scale_id', $scale['id'])
-                                                                                            ->where('payroll_vertical_scale_id', $scaleV['id'])
-                                                                                            ->first();
-                                                                                        if ($payrollSalaryTabulator->percentage) {
-                                                                                            $formula = str_replace(
-                                                                                                $match,
-                                                                                                $tabScale['value'] / 100,
-                                                                                                $formula ?? $concept['formula']
-                                                                                            );
-                                                                                        } else {
-                                                                                            $formula = str_replace(
-                                                                                                $match,
-                                                                                                $tabScale['value'],
-                                                                                                $formula ?? $concept['formula']
-                                                                                            );
-                                                                                        }
+                                                                                        $formula = addTabulatorValuetoFormula(
+                                                                                            $payrollSalaryTabulator,
+                                                                                            $salaryAdjustments,
+                                                                                            $scale,
+                                                                                            $scaleV,
+                                                                                            $concept,
+                                                                                            $match,
+                                                                                            $formula
+                                                                                        );
                                                                                     }
                                                                                 } else {
                                                                                     if ($sclV == $recordV[Str::snake($childrenV['required'][0]) . '_count']) {
-                                                                                        $tabScale = PayrollSalaryTabulatorScale::query()
-                                                                                            ->where('payroll_salary_tabulator_id', $payrollSalaryTabulator->id)
-                                                                                            ->where('payroll_horizontal_scale_id', $scale['id'])
-                                                                                            ->where('payroll_vertical_scale_id', $scaleV['id'])
-                                                                                            ->first();
-                                                                                        if ($payrollSalaryTabulator->percentage) {
-                                                                                            $formula = str_replace(
-                                                                                                $match,
-                                                                                                $tabScale['value'] / 100,
-                                                                                                $formula ?? $concept['formula']
-                                                                                            );
-                                                                                        } else {
-                                                                                            $formula = str_replace(
-                                                                                                $match,
-                                                                                                $tabScale['value'],
-                                                                                                $formula ?? $concept['formula']
-                                                                                            );
-                                                                                        }
+                                                                                        $formula = addTabulatorValuetoFormula(
+                                                                                            $payrollSalaryTabulator,
+                                                                                            $salaryAdjustments,
+                                                                                            $scale,
+                                                                                            $scaleV,
+                                                                                            $concept,
+                                                                                            $match,
+                                                                                            $formula
+                                                                                        );
                                                                                     }
                                                                                 }
                                                                             } elseif ($childrenV['type'] == 'date') {
@@ -1361,70 +1121,42 @@ class PayrollUpdatePaymentRelationship implements ShouldQueue
                                                                                         (age($recordV[$childrenV['required'][0]], $period_end, true) >= $sclV->from) &&
                                                                                         (age($recordV[$childrenV['required'][0]], $period_end, true) <= $sclV->to)
                                                                                     ) {
-                                                                                        $tabScale = PayrollSalaryTabulatorScale::query()
-                                                                                            ->where('payroll_salary_tabulator_id', $payrollSalaryTabulator->id)
-                                                                                            ->where('payroll_horizontal_scale_id', $scale['id'])
-                                                                                            ->where('payroll_vertical_scale_id', $scaleV['id'])
-                                                                                            ->first();
-                                                                                        if ($payrollSalaryTabulator->percentage) {
-                                                                                            $formula = str_replace(
-                                                                                                $match,
-                                                                                                $tabScale['value'] / 100,
-                                                                                                $formula ?? $concept['formula']
-                                                                                            );
-                                                                                        } else {
-                                                                                            $formula = str_replace(
-                                                                                                $match,
-                                                                                                $tabScale['value'],
-                                                                                                $formula ?? $concept['formula']
-                                                                                            );
-                                                                                        }
+                                                                                        $formula = addTabulatorValuetoFormula(
+                                                                                            $payrollSalaryTabulator,
+                                                                                            $salaryAdjustments,
+                                                                                            $scale,
+                                                                                            $scaleV,
+                                                                                            $concept,
+                                                                                            $match,
+                                                                                            $formula
+                                                                                        );
                                                                                     }
                                                                                 } else {
                                                                                     if ($sclV == age($recordV[$childrenV['required'][0]], $period_end)) {
-                                                                                        $tabScale = PayrollSalaryTabulatorScale::query()
-                                                                                            ->where('payroll_salary_tabulator_id', $payrollSalaryTabulator->id)
-                                                                                            ->where('payroll_horizontal_scale_id', $scale['id'])
-                                                                                            ->where('payroll_vertical_scale_id', $scaleV['id'])
-                                                                                            ->first();
-                                                                                        if ($payrollSalaryTabulator->percentage) {
-                                                                                            $formula = str_replace(
-                                                                                                $match,
-                                                                                                $tabScale['value'] / 100,
-                                                                                                $formula ?? $concept['formula']
-                                                                                            );
-                                                                                        } else {
-                                                                                            $formula = str_replace(
-                                                                                                $match,
-                                                                                                $tabScale['value'],
-                                                                                                $formula ?? $concept['formula']
-                                                                                            );
-                                                                                        }
+                                                                                        $formula = addTabulatorValuetoFormula(
+                                                                                            $payrollSalaryTabulator,
+                                                                                            $salaryAdjustments,
+                                                                                            $scale,
+                                                                                            $scaleV,
+                                                                                            $concept,
+                                                                                            $match,
+                                                                                            $formula
+                                                                                        );
                                                                                     }
                                                                                 }
                                                                             } else {
                                                                                 /* Se identifica el valor según el expediente del trabajador
                                                                                 y se sustituye por su valor en el tabulador */
                                                                                 if (json_decode($scaleV['value']) == $recordV[$childrenV['required'][0]]) {
-                                                                                    $tabScale = PayrollSalaryTabulatorScale::query()
-                                                                                        ->where('payroll_salary_tabulator_id', $payrollSalaryTabulator->id)
-                                                                                        ->where('payroll_horizontal_scale_id', $scale['id'])
-                                                                                        ->where('payroll_vertical_scale_id', $scaleV['id'])
-                                                                                        ->first();
-
-                                                                                    if ($payrollSalaryTabulator->percentage) {
-                                                                                        $formula = str_replace(
-                                                                                            $match,
-                                                                                            $tabScale['value'] / 100,
-                                                                                            $formula ?? $concept['formula']
-                                                                                        );
-                                                                                    } else {
-                                                                                        $formula = str_replace(
-                                                                                            $match,
-                                                                                            $tabScale['value'],
-                                                                                            $formula ?? $concept['formula']
-                                                                                        );
-                                                                                    }
+                                                                                    $formula = addTabulatorValuetoFormula(
+                                                                                        $payrollSalaryTabulator,
+                                                                                        $salaryAdjustments,
+                                                                                        $scale,
+                                                                                        $scaleV,
+                                                                                        $concept,
+                                                                                        $match,
+                                                                                        $formula
+                                                                                    );
                                                                                 }
                                                                             }
                                                                         }
@@ -1467,45 +1199,27 @@ class PayrollUpdatePaymentRelationship implements ShouldQueue
                                                                                     ($recordV[Str::snake($childrenV['required'][0]) . '_count'] >= $sclV->from) &&
                                                                                     ($recordV[Str::snake($childrenV['required'][0]) . '_count'] <= $sclV->to)
                                                                                 ) {
-                                                                                    $tabScale = PayrollSalaryTabulatorScale::query()
-                                                                                        ->where('payroll_salary_tabulator_id', $payrollSalaryTabulator->id)
-                                                                                        ->where('payroll_horizontal_scale_id', $scale['id'])
-                                                                                        ->where('payroll_vertical_scale_id', $scaleV['id'])
-                                                                                        ->first();
-                                                                                    if ($payrollSalaryTabulator->percentage) {
-                                                                                        $formula = str_replace(
-                                                                                            $match,
-                                                                                            $tabScale['value'] / 100,
-                                                                                            $formula ?? $concept['formula']
-                                                                                        );
-                                                                                    } else {
-                                                                                        $formula = str_replace(
-                                                                                            $match,
-                                                                                            $tabScale['value'],
-                                                                                            $formula ?? $concept['formula']
-                                                                                        );
-                                                                                    }
+                                                                                    $formula = addTabulatorValuetoFormula(
+                                                                                        $payrollSalaryTabulator,
+                                                                                        $salaryAdjustments,
+                                                                                        $scale,
+                                                                                        $scaleV,
+                                                                                        $concept,
+                                                                                        $match,
+                                                                                        $formula
+                                                                                    );
                                                                                 }
                                                                             } else {
                                                                                 if ($sclV == $recordV[Str::snake($childrenV['required'][0]) . '_count']) {
-                                                                                    $tabScale = PayrollSalaryTabulatorScale::query()
-                                                                                        ->where('payroll_salary_tabulator_id', $payrollSalaryTabulator->id)
-                                                                                        ->where('payroll_horizontal_scale_id', $scale['id'])
-                                                                                        ->where('payroll_vertical_scale_id', $scaleV['id'])
-                                                                                        ->first();
-                                                                                    if ($payrollSalaryTabulator->percentage) {
-                                                                                        $formula = str_replace(
-                                                                                            $match,
-                                                                                            $tabScale['value'] / 100,
-                                                                                            $formula ?? $concept['formula']
-                                                                                        );
-                                                                                    } else {
-                                                                                        $formula = str_replace(
-                                                                                            $match,
-                                                                                            $tabScale['value'],
-                                                                                            $formula ?? $concept['formula']
-                                                                                        );
-                                                                                    }
+                                                                                    $formula = addTabulatorValuetoFormula(
+                                                                                        $payrollSalaryTabulator,
+                                                                                        $salaryAdjustments,
+                                                                                        $scale,
+                                                                                        $scaleV,
+                                                                                        $concept,
+                                                                                        $match,
+                                                                                        $formula
+                                                                                    );
                                                                                 }
                                                                             }
                                                                         } elseif ($childrenV['type'] == 'date') {
@@ -1517,70 +1231,42 @@ class PayrollUpdatePaymentRelationship implements ShouldQueue
                                                                                     (age($recordV[$childrenV['required'][0]], $period_end, true) >= $sclV->from) &&
                                                                                     (age($recordV[$childrenV['required'][0]], $period_end, true) <= $sclV->to)
                                                                                 ) {
-                                                                                    $tabScale = PayrollSalaryTabulatorScale::query()
-                                                                                        ->where('payroll_salary_tabulator_id', $payrollSalaryTabulator->id)
-                                                                                        ->where('payroll_horizontal_scale_id', $scale['id'])
-                                                                                        ->where('payroll_vertical_scale_id', $scaleV['id'])
-                                                                                        ->first();
-                                                                                    if ($payrollSalaryTabulator->percentage) {
-                                                                                        $formula = str_replace(
-                                                                                            $match,
-                                                                                            $tabScale['value'] / 100,
-                                                                                            $formula ?? $concept['formula']
-                                                                                        );
-                                                                                    } else {
-                                                                                        $formula = str_replace(
-                                                                                            $match,
-                                                                                            $tabScale['value'],
-                                                                                            $formula ?? $concept['formula']
-                                                                                        );
-                                                                                    }
+                                                                                    $formula = addTabulatorValuetoFormula(
+                                                                                        $payrollSalaryTabulator,
+                                                                                        $salaryAdjustments,
+                                                                                        $scale,
+                                                                                        $scaleV,
+                                                                                        $concept,
+                                                                                        $match,
+                                                                                        $formula
+                                                                                    );
                                                                                 }
                                                                             } else {
                                                                                 if ($sclV == age($recordV[$childrenV['required'][0]], $period_end)) {
-                                                                                    $tabScale = PayrollSalaryTabulatorScale::query()
-                                                                                        ->where('payroll_salary_tabulator_id', $payrollSalaryTabulator->id)
-                                                                                        ->where('payroll_horizontal_scale_id', $scale['id'])
-                                                                                        ->where('payroll_vertical_scale_id', $scaleV['id'])
-                                                                                        ->first();
-                                                                                    if ($payrollSalaryTabulator->percentage) {
-                                                                                        $formula = str_replace(
-                                                                                            $match,
-                                                                                            $tabScale['value'] / 100,
-                                                                                            $formula ?? $concept['formula']
-                                                                                        );
-                                                                                    } else {
-                                                                                        $formula = str_replace(
-                                                                                            $match,
-                                                                                            $tabScale['value'],
-                                                                                            $formula ?? $concept['formula']
-                                                                                        );
-                                                                                    }
+                                                                                    $formula = addTabulatorValuetoFormula(
+                                                                                        $payrollSalaryTabulator,
+                                                                                        $salaryAdjustments,
+                                                                                        $scale,
+                                                                                        $scaleV,
+                                                                                        $concept,
+                                                                                        $match,
+                                                                                        $formula
+                                                                                    );
                                                                                 }
                                                                             }
                                                                         } else {
                                                                             /* Se identifica el valor según el expediente del trabajador
                                                                             y se sustituye por su valor en el tabulador */
                                                                             if (json_decode($scaleV['value']) == $recordV[$childrenV['required'][0]]) {
-                                                                                $tabScale = PayrollSalaryTabulatorScale::query()
-                                                                                    ->where('payroll_salary_tabulator_id', $payrollSalaryTabulator->id)
-                                                                                    ->where('payroll_horizontal_scale_id', $scale['id'])
-                                                                                    ->where('payroll_vertical_scale_id', $scaleV['id'])
-                                                                                    ->first();
-
-                                                                                if ($payrollSalaryTabulator->percentage) {
-                                                                                    $formula = str_replace(
-                                                                                        $match,
-                                                                                        $tabScale['value'] / 100,
-                                                                                        $formula ?? $concept['formula']
-                                                                                    );
-                                                                                } else {
-                                                                                    $formula = str_replace(
-                                                                                        $match,
-                                                                                        $tabScale['value'],
-                                                                                        $formula ?? $concept['formula']
-                                                                                    );
-                                                                                }
+                                                                                $formula = addTabulatorValuetoFormula(
+                                                                                    $payrollSalaryTabulator,
+                                                                                    $salaryAdjustments,
+                                                                                    $scale,
+                                                                                    $scaleV,
+                                                                                    $concept,
+                                                                                    $match,
+                                                                                    $formula
+                                                                                );
                                                                             }
                                                                         }
                                                                     }

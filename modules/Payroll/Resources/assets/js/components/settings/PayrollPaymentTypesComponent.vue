@@ -1,11 +1,13 @@
 <template>
     <section id="payrollPaymentTypesFormComponent">
-        <a class="btn-simplex btn-simplex-md btn-simplex-primary" href="javascript:;" title="Registros de tipos de nómina"
-            data-toggle="tooltip" @click="addRecord('add_payroll_payment_type', 'payroll/payment-types', $event)">
+        <a class="btn-simplex btn-simplex-md btn-simplex-primary" href="javascript:;"
+            title="Registros de tipos de nómina" data-toggle="tooltip"
+            @click="addRecord('add_payroll_payment_type', 'payroll/payment-types', $event)">
             <i class="icofont icofont-law-document ico-3x"></i>
             <span>Tipos de<br>Nómina</span>
         </a>
-        <div class="modal fade text-left" tabindex="-1" role="dialog" id="add_payroll_payment_type" style="overflow-y: scroll;">
+        <div class="modal fade text-left" tabindex="-1" role="dialog" id="add_payroll_payment_type"
+            style="overflow-y: scroll;">
             <div class="modal-dialog vue-crud" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -54,8 +56,8 @@
                                 <div class="form-group is-required">
                                     <label for="name">Nombre:</label>
                                     <input type="text" id="name" placeholder="Nombre" data-toggle="tooltip"
-                                        title="Indique el nombre del tipo de nómina (requerido)" class="form-control input-sm"
-                                        v-model="record.name">
+                                        title="Indique el nombre del tipo de nómina (requerido)"
+                                        class="form-control input-sm" v-model="record.name">
                                 </div>
                             </div>
                             <!-- ./nombre -->
@@ -96,26 +98,39 @@
                                         <div class="custom-control custom-switch" data-toggle="tooltip"
                                             title="¿Omitir momentos presupuestarios?">
                                             <input type="checkbox" class="custom-control-input" id="skipMoments"
-                                                v-model="record.skip_moments" :value="true" @change="updateCheckValues()">
+                                                v-model="record.skip_moments" :value="true"
+                                                @change="updateCheckValues()">
                                             <label class="custom-control-label" for="skipMoments"></label>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             <!-- ./omitir momentos presupuestarios -->
+                            <!-- Tipo de nomina ordinaria -->
+                            <div class="col-md-4">
+                                <div class=" form-group">
+                                    <label>¿Tipo de nomina ordinaria?</label>
+                                    <div class="col-12">
+                                        <div class="custom-control custom-switch" data-toggle="tooltip"
+                                            title="¿Tipo de nomina ordinaria?">
+                                            <input type="checkbox" class="custom-control-input" id="ordinaryPayment"
+                                                v-model="record.ordinary_payment" :value="true">
+                                            <label class="custom-control-label" for="ordinaryPayment"></label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- ./Tipo de nomina ordinaria -->
                             <!-- periodicidad de pago -->
                             <div class="col-md-4">
                                 <div class="form-group is-required" v-if="userPermission == false">
                                     <label>Periodicidad de pago</label>
-                                    <select2
-                                        :options="payment_periodicities"
-                                        @input="initVars()"
+                                    <select2 :options="payment_periodicities" @input="initVars()"
                                         v-model="record.payment_periodicity"></select2>
                                 </div>
                                 <div class="form-group is-required" v-if="userPermission == true">
                                     <label>Periodicidad de pago</label>
-                                    <select2 :options="payment_periodicities"
-                                        @change="initVars()"
+                                    <select2 :options="payment_periodicities" @change="initVars()"
                                         v-model="record.payment_periodicity" disabled="true"></select2>
                                 </div>
 
@@ -133,8 +148,9 @@
                             <div class="col-md-4" v-if="record.payment_periodicity">
                                 <div class="form-group is-required">
                                     <label>Fecha de inicio del primer período:</label>
-                                    <input type="date" id="start_date" placeholder="Fecha de inicio" data-toggle="tooltip"
-                                        title="Indique la fecha de inicio del primer período" class="form-control input-sm"
+                                    <input type="date" id="start_date" placeholder="Fecha de inicio"
+                                        data-toggle="tooltip" title="Indique la fecha de inicio del primer período"
+                                        class="form-control input-sm"
                                         @input="record.periods_number = ''; record.payroll_payment_periods = [];"
                                         :min="starOperationDate" v-model="record.start_date">
                                 </div>
@@ -152,7 +168,8 @@
                             <div v-if="finance" class="col-md-4">
                                 <div :class="['form-group', !moment_close_permission ? 'is-required' : '']">
                                     <label>Método de pago</label>
-                                    <select2 :options="finance_payment_methods" v-model="record.finance_payment_method_id">
+                                    <select2 :options="finance_payment_methods"
+                                        v-model="record.finance_payment_method_id">
                                     </select2>
                                 </div>
                             </div>
@@ -192,7 +209,8 @@
                             <!-- Tabla con los periodos actuales -->
                             <div class="col-12 modal-body modal-table" v-if="record.id != ''">
                                 <h6>Períodos Actuales:</h6>
-                                <v-client-table :columns="periods_columns" :data="savedPeriods" :options="table_options">
+                                <v-client-table :columns="periods_columns" :data="savedPeriods"
+                                    :options="table_options">
                                     <div slot="start_date" slot-scope="props" class="text-center">
                                         <span>
                                             {{ props.row.start_date.includes("-") ? format_date(props.row.start_date) :
@@ -209,8 +227,8 @@
                                         <span>
                                             {{
                                                 (props.row.payment_status == 'pending')
-                                                ? (props.row.in_payroll ? 'Pendiente - Nómina' : 'Pendiente')
-                                                : 'Generado'
+                                                    ? (props.row.in_payroll ? 'Pendiente - Nómina' : 'Pendiente')
+                                                    : 'Generado'
                                             }}
                                         </span>
                                     </div>
@@ -256,6 +274,11 @@
                     </div>
                     <div class="modal-body modal-table">
                         <v-client-table :columns="columns" :data="records" :options="table_options">
+                            <div slot="ordinary_payment" slot-scope="props" class="text-center">
+                                <span> {{
+                                    props.row.ordinary_payment == true ? 'Si' : 'No'
+                                    }} </span>
+                            </div>
                             <div slot="payment_periodicity" slot-scope="props" class="text-center">
                                 <span> {{ getPaymentPeriodicity(props.row.payment_periodicity) }} </span>
                             </div>
@@ -290,6 +313,7 @@ export default {
                 order: false,
                 receipt: false,
                 individual: false,
+                ordinary_payment: false,
                 skip_moments: false,
                 payment_periodicity: '',
                 periods_number: '',
@@ -311,7 +335,7 @@ export default {
             view_periods: false,
             errors: [],
             records: [],
-            columns: ['code', 'name', 'payment_periodicity', 'id'],
+            columns: ['code', 'name', 'payment_periodicity', 'ordinary_payment', 'id'],
             periods_columns: ['number', 'start_date', 'start_day', 'end_date', 'end_day', 'payment_status'],
             payment_periodicities: [
                 { "id": "", "text": "Seleccione..." },
@@ -362,6 +386,7 @@ export default {
             'code': 'Código',
             'name': 'Nombre',
             'payment_periodicity': 'Periodicidad',
+            'ordinary_payment': 'Ordinaria',
             'id': 'Acción',
             'number': 'N°',
             'start_date': 'Inicio de Período',

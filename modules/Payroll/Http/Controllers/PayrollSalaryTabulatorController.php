@@ -14,6 +14,7 @@ use Modules\Payroll\Models\PayrollStaffType;
 use Modules\Payroll\Rules\PayrollSalaryScales;
 use Modules\Payroll\Imports\SalaryTabulatorImport;
 use Modules\Payroll\Models\PayrollSalaryTabulator;
+use Modules\Payroll\Models\PayrollSalaryAdjustment;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Modules\Payroll\Models\PayrollSalaryTabulatorScale;
 use Modules\Payroll\Exports\PayrollSalaryTabulatorExport;
@@ -306,9 +307,9 @@ class PayrollSalaryTabulatorController extends Controller
      *
      * @return    \Illuminate\Http\JsonResponse|\Symfony\Component\HttpFoundation\BinaryFileResponse
      */
-    public function export($id)
+    public function export($salaryTabulatorId)
     {
-        $payrollSalaryTabulator = PayrollSalaryTabulator::where('id', $id)->first();
+        $payrollSalaryTabulator = PayrollSalaryTabulator::find($salaryTabulatorId);
         if ($payrollSalaryTabulator) {
             $export = new PayrollSalaryTabulatorExport(PayrollSalaryTabulator::class);
             $export->setSalaryTabulatorId($payrollSalaryTabulator->id);
@@ -336,11 +337,7 @@ class PayrollSalaryTabulatorController extends Controller
             }, 'payrollHorizontalSalaryScale' => function ($query) {
                 $query->with('payrollScales')->get();
             }, 'payrollSalaryTabulatorScales',
-            'payrollSalaryAdjustments' => function ($query) {
-                $query->with(['payrollHistorySalaryAdjustments' => function ($query) {
-                    $query->orderBy('created_at', 'desc')->get();
-                }]);
-            }
+            'payrollSalaryAdjustments'
         ])->find($id);
         return response()->json(['record' => $payrollSalaryTabulator], 200);
     }

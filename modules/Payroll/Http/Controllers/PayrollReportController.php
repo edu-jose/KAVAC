@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\Source;
 use App\Models\Parameter;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
@@ -38,6 +39,7 @@ use Modules\Payroll\Models\PayrollSupervisedGroupStaff;
 use Modules\Payroll\Models\PayrollTimeSheet;
 use Modules\Payroll\Models\PayrollSocioeconomic;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Illuminate\Support\Facades\App;
 
 /**
  * @class      PayrollReportController
@@ -53,6 +55,8 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 class PayrollReportController extends Controller
 {
     use ValidatesRequests;
+
+    protected $periods;
 
     /**
      * Define la configuración de la clase
@@ -155,6 +159,8 @@ class PayrollReportController extends Controller
             $body = 'payroll::pdf.payroll-relationship-concepts';
         } elseif ($request->current == 'family-burden') {
             $body = 'payroll::pdf.payroll-family-burden';
+        } elseif ($request->current == 'historical-position') {
+            $body = 'payroll::pdf.payroll-historical-position';
         } else {
             $body = '';
         }
@@ -171,6 +177,57 @@ class PayrollReportController extends Controller
         if ($request->current == 'vacation-requests') {
             $records = PayrollVacationRequest::find($request->input('id'));
             $pdf->setHeader("Reporte de solicitudes de vacaciones");
+        } elseif ($request->current == 'historical-position') {
+            $this->periods = [];
+            $historicPositions = '';
+            $records = PayrollStaffPayroll::where(
+                'payroll_staff_id',
+                $request->payroll_staff_id
+            )->whereHas('payroll', function ($query) use ($request) {
+                $query->whereHas('payrollPaymentPeriod', function ($q) use ($request) {
+                    if ($request->start_date) {
+                        $q->where('start_date', '>=', $request->start_date);
+                    }
+                    if ($request->end_date) {
+                        $q->where('end_date', '<=', $request->end_date);
+                    }
+                });
+            })->orderBy('created_at', 'desc')->get()->map(
+                function ($payrollStaffPayroll) {
+                    $basicData = (object)$payrollStaffPayroll->basic_payroll_staff_data;
+                    $conceptTypesArr = $payrollStaffPayroll->concept_type;
+                    $institution = $payrollStaffPayroll->payrollStaff->payrollEmployment->department->institution;
+                    $totalSalary = 0;
+
+                    if (count($conceptTypesArr) > 0) {
+                        foreach ($conceptTypesArr as $conceptTypes) {
+                            foreach ($conceptTypes as $conceptType) {
+                                if ($conceptType['sign'] === '+') {
+                                    $totalSalary += (float)$conceptType['value'];
+                                } elseif ($conceptType['sign'] === '-') {
+                                    $totalSalary -= (float)$conceptType['value'];
+                                }
+                            }
+                        }
+                    }
+                    return [
+                        'payroll_id' => $payrollStaffPayroll->payroll_id,
+                        'payroll_staff_id' => $payrollStaffPayroll->payroll_staff_id,
+                        'full_name' => $basicData->full_name,
+                        'id_number' => $basicData->id_number,
+                        'position' => $basicData->position,
+                        //'position_start_date' => $this->periods[Str::slug($basicData->position)]['start_date'],
+                        'position_start_date' => $payrollStaffPayroll->payroll->payrollPaymentPeriod->start_date,
+                        //'position_end_date' => $this->periods[Str::slug($basicData->position)]['end_date'],
+                        'position_end_date' => $payrollStaffPayroll->payroll->payrollPaymentPeriod->end_date,
+                        'institution' => $institution,
+                        'start_date' => Carbon::parse($basicData->start_date)->format('d-m-Y'),
+                        'total_salary' => $totalSalary
+                    ];
+                }
+            );
+
+            $pdf->setHeader("Reporte histórico de cargo");
         } elseif ($request->current == 'registers') {
             $payrollRegister = Payroll::find($request->input('id'));
             $records = $payrollRegister->payrollStaffPayrolls;
@@ -193,6 +250,8 @@ class PayrollReportController extends Controller
                 )
                     ->where('status', 'approved')
                     ->where('institution_id', $institution->id)->get();
+            } elseif ($request->current == 'staff-vacation-enjoyment') {
+                //pass
             } else {
                 $records = PayrollVacationRequest::whereBetween('start_date', [$request->start_date, now()])
                     ->where('status', 'approved')
@@ -649,6 +708,16 @@ class PayrollReportController extends Controller
     public function paymentReceipt(): View
     {
         return view('payroll::reports.payroll-report-payment-receipt');
+    }
+
+    /**
+     * Reporte Histórico de cargos
+     *
+     * @return \Illuminate\View\View
+     */
+    public function historicalPosition(): View
+    {
+        return view('payroll::reports.payroll-historical-positions');
     }
 
     /**

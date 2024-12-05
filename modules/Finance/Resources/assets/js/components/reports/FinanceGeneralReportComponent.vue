@@ -7,7 +7,7 @@
                 </div>
                 <strong>Cuidado!</strong> Debe verificar los siguientes errores antes de continuar:
                 <button type="button" class="close" data-dismiss="alert" aria-label="Close"
-                        @click.prevent="errors = []">
+                    @click.prevent="errors = []">
                     <span aria-hidden="true">
                         <i class="now-ui-icons ui-1_simple-remove"></i>
                     </span>
@@ -17,47 +17,45 @@
                 </ul>
             </div>
             <div class="row">
-                <div class="col-3" id="reportType">
-                    <div>
-                        <label class="control-label is-required">Tipo de reporte</label>
+                <div class="col-4" id="reportType">
+                    <div class="form-group is-required">
+                        <label class="control-label">Tipo de reporte</label>
                         <select2 :options="reportType" v-model="reportTypeId"></select2>
                     </div>
                 </div>
-                <div class="col-3 mb-3">
+                <div class="col-4" id="initialDate">
+                    <div class="form-group is-required">
+                        <label class="control-label">Fecha inicial</label>
+                        <input type="date" class="form-control input-sm" v-model="dateIni">
+                    </div>
+                </div>
+                <div class="col-4" id="finalDate">
+                    <div class="form-group is-required">
+                        <label class="control-label">Fecha final</label>
+                        <input type="date" class="form-control input-sm" v-model="dateEnd" :min="dateIni ? dateIni : ''"
+                            :disabled="dateIni ? false : true">
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div v-if="reportTypeId != 'movement'" class="col-4" id="receivers">
+                    <div style="margin-top: 15px;">
+                        <label class="control-label">Proveedor / Beneficiario</label>
+                        <select2 :options="receivers" v-model="receiverId" :disabled="all"></select2>
+                    </div>
+                </div>
+                <div class="col-4" id="documentStatus">
+                    <div style="margin-top: 15px;">
+                        <label class="control-label">Estatus</label>
+                        <select2 :options="documentStatusList" v-model="action" :disabled="all"></select2>
+                    </div>
+                </div>
+                <div class="col-4 mb-3" style="margin-top: 15px;">
                     <label class="control-label"> Todos </label>
                     <div class="custom-control custom-switch">
                         <input type="checkbox" class="custom-control-input" id="consolidated" :value="true"
                             v-model="all">
                         <label class="custom-control-label" for="consolidated"></label>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div v-if="reportTypeId != 'movement'" class="col-3" id="receivers">
-                    <div>
-                        <label class="control-label">Proveerdor / Beneficiario</label>
-                        <select2 :options="receivers" v-model="receiverId" :disabled="all"></select2>
-                    </div>
-                </div>
-                <div class="col-3" id="documentStatus">
-                    <div>
-                        <label class="control-label">Estatus</label>
-                        <select2 :options="documentStatusList" v-model="action" :disabled="all"></select2>
-                    </div>
-                </div>
-            </div>
-            <div class="row mt-4">
-                <div class="col-3" id="initialDate">
-                    <div class="is-required">
-                        <label class="control-label">Fecha inicial</label>
-                        <input type="date" class="form-control input-sm" v-model="dateIni">
-                    </div>
-                </div>
-                <div class="col-3" id="finalDate">
-                    <div class="is-required">
-                        <label class="control-label">Fecha final</label>
-                        <input type="date" class="form-control input-sm" v-model="dateEnd" :min="dateIni ? dateIni : ''"
-                            :disabled="dateIni ? false : true">
                     </div>
                 </div>
             </div>
@@ -87,10 +85,10 @@ export default {
             all: false,
             errors: [],
             reportType: [
-                {id: '', text: 'Seleccione...'},
-                {id: 'order', text: 'Órdenes de pago', disabled: false},
-                {id: 'execute', text: 'Emisiones de pago'},
-                {id: 'movement', text: 'Movimientos bancarios', disabled: false},
+                { id: '', text: 'Seleccione...' },
+                { id: 'order', text: 'Órdenes de pago', disabled: false },
+                { id: 'execute', text: 'Emisiones de pago' },
+                { id: 'movement', text: 'Movimientos bancarios', disabled: false },
             ],
             reportTypeId: null,
             routes: {
@@ -106,6 +104,17 @@ export default {
         vm.getDocumentStatusList();
     },
     methods: {
+        reset() {
+            const vm = this;
+
+            vm.reportTypeId = null;
+            vm.dateIni = '';
+            vm.dateEnd = '';
+            vm.receiverId = '';
+            vm.action = '';
+            vm.all = false;
+        },
+
         async getReceivers() {
             const vm = this;
             await axios.get('/finance/pay-orders/list/get-receivers').then(response => {
@@ -125,6 +134,8 @@ export default {
         },
         async generateReport() {
             const vm = this;
+
+            vm.loading = true;
             let postData = {
                 receiverId: vm.receiverId,
                 action: vm.action,
@@ -134,9 +145,10 @@ export default {
             };
             vm.all && (postData.all = true);
 
-            if (vm.reportTypeId == null) {
+            if (vm.reportTypeId == null || vm.reportTypeId == '') {
                 vm.errors = [];
                 vm.errors.push('Seleccione un tipo de reporte');
+                vm.loading = false;
                 return;
             }
 
@@ -152,13 +164,16 @@ export default {
                         document.body.appendChild(link);
                         link.click();
                     }
-                    
+                    vm.reset();
+                    vm.loading = false;
+                    vm.errors = [];
                 }).catch(error => {
+                    vm.loading = false;
                     let { errors } = JSON.parse(
-                    String.fromCharCode.apply(
-                        null,
-                        new Uint8Array(error.response.data)
-                    )
+                        String.fromCharCode.apply(
+                            null,
+                            new Uint8Array(error.response.data)
+                        )
                     );
                     vm.errors = [];
 
@@ -167,7 +182,7 @@ export default {
                             vm.errors.push(errors[index][0]);
                         }
                     }
-                })
+                });
         }
     },
     watch: {
@@ -176,8 +191,6 @@ export default {
             if (newVal) {
                 vm.receiverId = '';
                 vm.action = '';
-                vm.dateIni = '';
-                vm.dateEnd = '';
             }
         }
     }

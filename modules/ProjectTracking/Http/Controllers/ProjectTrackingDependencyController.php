@@ -16,7 +16,7 @@ use Modules\ProjectTracking\Models\ProjectTrackingDependency;
  * @class ProjectTrackingDependencyController
  * @brief Clase que gestiona las dependencias
  *
- * @author  William Páez <wpaez@cenditel.gob.ve>
+ * @author William Páez <wpaez@cenditel.gob.ve>
  *
  * @license
  *     [LICENCIA DE SOFTWARE CENDITEL](http://conocimientolibre.cenditel.gob.ve/licencia-de-software-v-1-3/)
@@ -48,18 +48,23 @@ class ProjectTrackingDependencyController extends Controller
      */
     public function __construct()
     {
-        {
-            /* Define las reglas de validación para el formulario */
-            $this->validateRules = [
-                'name'                                  => ['required'],
-                'description'                           => ['nullable', 'max:250'],
-            ];
+        /**
+ * Establece permisos de acceso para cada método del controlador
+*/
+        $this->middleware('permission:project.tracking.dependency.create', ['only' => ['store']]);
+        $this->middleware('permission:project.tracking.dependency.edit', ['only' => ['update']]);
+        $this->middleware('permission:project.tracking.dependency.delete', ['only' => 'destroy']);
 
-            /* Define los mensajes de validación para las reglas del formulario */
-            $this->messages = [
-                'name.required'                                  => 'El campo nombre es obligatorio.',
-            ];
-            }
+        /* Define las reglas de validación para el formulario */
+        $this->validateRules = [
+            'name'                                  => ['required'],
+            'description'                           => ['nullable', 'max:250'],
+        ];
+
+        /* Define los mensajes de validación para las reglas del formulario */
+        $this->messages = [
+            'name.required'                                  => 'El campo nombre es obligatorio.',
+        ];
     }
 
     /**
@@ -131,7 +136,10 @@ class ProjectTrackingDependencyController extends Controller
             'name' => ['required', 'max:100', 'unique:project_tracking_dependencies,name']
             ]
         );
-        $projecttrackingDependency = ProjectTrackingDependency::create(['name' => $request->name, 'description' => $request->description]);
+        $projecttrackingDependency = ProjectTrackingDependency::create([
+            'name' => $request->name,
+            'description' => $request->description
+        ]);
         return response()->json(['record' => $projecttrackingDependency, 'message' => 'Success'], 200);
     }
 
@@ -171,7 +179,11 @@ class ProjectTrackingDependencyController extends Controller
         $this->validate(
             $request,
             [
-            'name' => ['required', 'max:100', 'unique:project_tracking_dependencies,name,' . $projecttrackingDependency->id],
+            'name' => [
+                'required',
+                'max:100',
+                'unique:project_tracking_dependencies,name,' . $projecttrackingDependency->id
+            ],
             'description' => ['nullable', 'max:200']
             ]
         );
@@ -206,6 +218,8 @@ class ProjectTrackingDependencyController extends Controller
      */
     public function getProjectTrackingDependencies()
     {
-        return response()->json(template_choices('Modules\ProjectTracking\Models\ProjectTrackingDependency', 'name', '', true));
+        return response()->json(
+            template_choices('Modules\ProjectTracking\Models\ProjectTrackingDependency', 'name', '', true)
+        );
     }
 }

@@ -34,8 +34,8 @@
                 <div class="col-md-4" id="helpPayrollVacationRequestDate">
                     <div class="form-group is-required">
                         <label>Fecha de la solicitud:</label>
-                        <input type="date" readonly data-toggle="tooltip" title="Fecha de generación de la solicitud"
-                            class="form-control input-sm" v-model="record.created_at">
+                        <input type="date" data-toggle="tooltip" title="Fecha de generación de la solicitud"
+                            class="form-control input-sm no-restrict" v-model="record.created_at">
                         <input type="hidden" v-model="record.id">
                     </div>
                 </div>
@@ -78,7 +78,7 @@
                     <div class="form-group is-required" style="z-index: unset;">
                         <label>Fecha de inicio de vacaciones:</label>
                         <input type="date" id="start_date" data-toggle="tooltip" title="Fecha de inicio de vacaciones"
-                            @input="getcalculate()" :min="getMinDate()" class="form-control input-sm no-restrict"
+                            @input="getcalculate()" class="form-control input-sm no-restrict"
                             v-model="record.start_date">
                     </div>
                 </div>
@@ -89,7 +89,7 @@
                         <label>Fecha de culminación de vacaciones:</label>
                         <input type="date" id="end_date" data-toggle="tooltip"
                             title="Fecha de culminación de vacaciones" class="form-control input-sm no-restrict"
-                            v-model="record.end_date" :min="getMinDate()" :max="getMaxDate()" @input="getcalculate();">
+                            v-model="record.end_date" :max="getMaxDate()" @input="getcalculate();">
                     </div>
                 </div>
                 <!-- ./fecha de culminación de vacaciones -->
@@ -223,6 +223,7 @@ export default {
                 payroll_staff_id: ''
             },
             pending_days: '',
+            fiscal_year: '',
 
             errors: [],
             records: [],
@@ -290,6 +291,7 @@ export default {
     created() {
         const vm = this;
         vm.reset();
+        vm.getFiscalYear();
     },
 
     updated() {
@@ -393,6 +395,12 @@ export default {
                         let period_years = [];
                         let requested_period_years = [];
 
+                        // Verificar que la fecha de la solicitud sea despues de la fecha del ingreso del empleado 
+                        let start_date = new Date(vm.payroll_staff.payroll_employment.start_date);
+                        let created_at_old_year = new Date(start_date.getFullYear(), 0);
+                        let diff_period = (start_date - created_at_old_year) / 86_400_000;
+                        let is_employed = false;
+
                         for (var i = parseInt(payroll_staff_year); i <= year_now; i++) {
                             let year_id = i - parseInt(payroll_staff_year);
 
@@ -400,6 +408,11 @@ export default {
                                 period++
                                 let year = null;
                                 let find = false;
+
+                                if(vm.fiscal_year && i > vm.fiscal_year) {
+                                    break;
+                                }
+
                                 if (period < vm.payroll_vacation_policy.vacation_period_per_year) {
                                     if (requested_period.length > 0) {
                                         for (periods of requested_period) {
@@ -945,6 +958,18 @@ export default {
             let arrayDate = newDate.split("/");
             return arrayDate[2] + '-' + arrayDate[1] + '-' + arrayDate[0];
 
+        },
+
+        /**
+         * Obtiene los datos de los años fiscales registrados
+         *
+         * @author Natanael Rojo <rojonatanael99@gmail.com>
+         */
+        async getFiscalYear() {
+            const vm = this;
+            axios.get(`${window.app_url}/fiscal-years/opened/list`).then(response => {
+                vm.fiscal_year = response.data.records[0].id;
+            });
         },
 
         getMaxDate() {

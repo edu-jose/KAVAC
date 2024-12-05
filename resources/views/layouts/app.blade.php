@@ -547,7 +547,17 @@
 
                             const userDetail = new User(user.name, user.username, user.email, roles, permissions);
 
-                            bootbox.alert(userDetail.showInfo());
+                            bootbox.alert({
+                                title: "{{ __('Detalles del usuario') }}",
+                                message: userDetail.showInfo(),
+                                closeButton: false,
+                                buttons: {
+                                    ok: {
+                                        label: "Cerrar",
+                                        className: 'btn-light'
+                                    }
+                                }
+                            });
                         }).catch(error => {
                             logs('app', 315, error, 'view_user_info');
                         });

@@ -1758,7 +1758,7 @@ class FinancePaymentExecuteController extends Controller
                 'concept' => $financePayOrder['concept'],
                 'amount' => $financePaymentExecute['paid_amount'],
                 'currency_id' => $financePaymentExecute['currency_id'],
-                'finance_bank_account_id' => $financePayOrder['finance_bank_account_id'],
+                'finance_bank_account_id' => $financePaymentExecute['finance_bank_account_id'],
                 'institution_id' => $financePayOrder['institution_id'],
             ]);
             $accountingEntry = \Modules\Accounting\Models\AccountingEntry::where('reference', $financePaymentExecute["code"])->first();

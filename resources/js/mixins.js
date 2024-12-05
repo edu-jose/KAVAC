@@ -558,7 +558,11 @@ Vue.mixin({
 
             await axios.get(url).then(response => {
                 if (typeof (response.data.records) !== "undefined") {
-                    vm.records = response.data.records;
+                    vm.records = response.data.records || [];
+
+                }
+                if (response.data?.tableRef) {
+                    vm.$refs[response.data.tableRef].refresh();
                 }
             }).catch(error => {
                 vm.logs('mixins.js', 285, error, 'readRecords');
@@ -681,7 +685,6 @@ Vue.mixin({
         async initUpdate(id, event) {
             let vm = this;
             vm.errors = [];
-
             let recordEdit = await JSON.parse(JSON.stringify(vm.records.filter((rec) => {
                 return rec.id === id;
             })[0])) || vm.reset();
@@ -794,7 +797,7 @@ Vue.mixin({
                                 return rec.id !== id;
                             })));
                             if (typeof (vm.$refs.tableResults) !== "undefined") {
-                                vm.$refs.tableResults.refresh;
+                                vm.$refs.tableResults.refresh();
                             }
                             vm.showMessage('destroy');
                         }).catch(error => {
@@ -1318,6 +1321,64 @@ Vue.mixin({
             await axios.get(`${window.app_url}/receivers`).then(response => {
                 if (response.data.records.length > 0) {
                     vm.receivers = response.data.records;
+                }
+            }).catch(error => {
+                console.error(error);
+            });
+        },
+        /**
+         * Listado de localidades por parroquia
+         *
+         * @author     Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
+         */
+        getLocalities(parishId) {
+            const vm = this;
+            vm.localities = [];
+            if (parishId) {
+                axios.get(`${window.app_url}/get-localities/${parishId}`).then((response) => {
+                    vm.localities = response.data?.records || [];
+                });
+            }
+        },
+        /**
+         * Listado de localidades
+         *
+         * @author     Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
+         */
+        async getAllLocalities(listAttribute = 'localities') {
+            const vm = this;
+            await axios.get(`${window.app_url}/get-all-localities`).then(response => {
+                if (response.data.records.length > 0) {
+                    vm[listAttribute] = response.data.records;
+                }
+            }).catch(error => {
+                console.error(error);
+            });
+        },
+        /**
+         * Listado de regiones por estado
+         *
+         * @author     Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
+         */
+        getRegions(estateId) {
+            const vm = this;
+            vm.regions = [];
+            if (estateId) {
+                axios.get(`${window.app_url}/get-regions/${estateId}`).then((response) => {
+                    vm.regions = response.data?.records || [];
+                });
+            }
+        },
+        /**
+         * Listado de localidades
+         *
+         * @author     Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
+         */
+        async getAllRegions(listAttribute = 'regions') {
+            const vm = this;
+            await axios.get(`${window.app_url}/get-all-regions`).then(response => {
+                if (response.data.records.length > 0) {
+                    vm[listAttribute] = response.data.records;
                 }
             }).catch(error => {
                 console.error(error);

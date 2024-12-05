@@ -708,10 +708,14 @@ Route::group([
         ['as' => 'payroll', 'except' => ['show']]
     );
 
-    /* Ruta para gestionar la importación de carga de ajuste en tablas salariales */
+    /* Ruta para gestionar la exportación de carga de ajuste en tablas salariales */
     Route::get('salary-adjustments/export', 'PayrollSalaryAdjustmentController@export')->name('payroll.salary-adjustments.export');
 
-    /* Ruta para gestionar la exportación de la planilla de ajuste en tablas salariales */
+    /* Ruta para gestionar la exportación de carga de tabulador salarial con ajuste */
+    Route::get('salary-adjustments/export/{adjustment}', 'PayrollSalaryAdjustmentController@exportSalaryAdjustmentTabulator')
+        ->name('payroll.salary-adjustments.export-salary');
+
+    /* Ruta para gestionar la importación de la planilla de ajuste en tablas salariales */
     Route::post('salary-adjustments/import', 'PayrollSalaryAdjustmentController@import')->name('payroll.salary-adjustments.import');
 
     /* Ruta que obtiene un listado de los ajustes en las tablas salariales */
@@ -782,7 +786,7 @@ Route::group([
         'PayrollVacationRequestController@getVacationRequests'
     );
 
-     /* Ruta que obtiene un listado de las suspension de solicitud de vacaiones de un trabajador */
+    /* Ruta que obtiene un listado de las suspension de solicitud de vacaiones de un trabajador */
     Route::get(
         'get-suspension-vacation-requests/{staff_id}',
         'PayrollSuspensionVacationRequestController@getSuspensionVacationRequests'
@@ -1068,7 +1072,7 @@ Route::group([
             ->name('payroll.reports.showPdfSign');
 
         /* Ruta que permite generar el reporte de los registros de nómina asociados a un pago */
-        Route::post('registers/create', 'PayrollReportController@   create')
+        Route::post('registers/create', 'PayrollReportController@create')
             ->name('payroll.reports.registers.create');
 
         /* ruta que permite generar el reporte de las solicitudes de vacaciones */
@@ -1082,6 +1086,12 @@ Route::group([
             ->name('payroll.reports.employment-status');
         Route::post('employment-status/create', 'PayrollReportController@create')
             ->name('payroll.reports.employment-status.create');
+
+        /* Ruta que permite generar el reporte del historico de cargos de un empleado */
+        Route::get('historical-position', 'PayrollReportController@historicalPosition')
+            ->name('payroll.reports.historical-position');
+        Route::post('historical-position/create', 'PayrollReportController@create')
+            ->name('payroll.reports.historical-position.create');
 
         /* Ruta que permite generar el reporte de los empleados */
         Route::get('staffs', 'PayrollReportController@staffs')
@@ -1150,6 +1160,10 @@ Route::group([
             'payment-receipts/create',
             [PayrollReportController::class, 'paymentReceiptCreate']
         )->name('payroll.reports.payment-receipts.create');
+
+        /* Rutas para gestionar el reporte de Histórico de cargos */
+        Route::get('historical-positions', 'PayrollReportController@historicalPosition')
+        ->name('payroll.reports.historical-positions');
     });
 
     /* Ruta que permite generar los reportes de conceptos como archivos .xlsx */

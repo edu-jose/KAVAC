@@ -265,19 +265,25 @@ class EmploymentStaffImport implements
             isset($data['fecha_de_ingreso_a_la_institucion']) &&
             $data['fecha_de_ingreso_a_la_institucion'] &&
             !is_null($data['fecha_de_ingreso_a_la_institucion']) &&
-            trim($data['fecha_de_ingreso_a_la_institucion']) != '' &&
-            is_numeric($data['fecha_de_ingreso_a_la_institucion'])
+            trim($data['fecha_de_ingreso_a_la_institucion']) != ''
         ) {
-            $data['fecha_de_ingreso_a_la_institucion'] = Date::excelToDateTimeObject($data['fecha_de_ingreso_a_la_institucion']);
+            if (is_numeric($data['fecha_de_ingreso_a_la_institucion'])) {
+                $data['fecha_de_ingreso_a_la_institucion'] = Date::excelToDateTimeObject($data['fecha_de_ingreso_a_la_institucion']);
+            } elseif (is_string($data['fecha_de_ingreso_a_la_institucion'])) {
+                $data['fecha_de_ingreso_a_la_institucion'] = Carbon::parse($data['fecha_de_ingreso_a_la_institucion'])->format('Y-m-d');
+            }
         }
         if (
             isset($data['fecha_de_egreso_de_la_institucion']) &&
             $data['fecha_de_egreso_de_la_institucion'] &&
             !is_null($data['fecha_de_egreso_de_la_institucion']) &&
-            trim($data['fecha_de_egreso_de_la_institucion']) != '' &&
-            is_numeric($data['fecha_de_egreso_de_la_institucion'])
+            trim($data['fecha_de_egreso_de_la_institucion']) != ''
         ) {
-            $data['fecha_de_egreso_de_la_institucion'] = Date::excelToDateTimeObject($data['fecha_de_egreso_de_la_institucion']);
+            if (is_numeric($data['fecha_de_egreso_de_la_institucion'])) {
+                $data['fecha_de_egreso_de_la_institucion'] = Date::excelToDateTimeObject($data['fecha_de_egreso_de_la_institucion']);
+            } elseif (is_string($data['fecha_de_egreso_de_la_institucion'])) {
+                $data['fecha_de_egreso_de_la_institucion'] = Carbon::parse($data['fecha_de_egreso_de_la_institucion'])->format('Y-m-d');
+            }
         }
 
         if (isset($data['tipo_de_cargo']) && $data['tipo_de_cargo'] && !is_null($data['tipo_de_cargo']) && trim($data['tipo_de_cargo']) != '') {

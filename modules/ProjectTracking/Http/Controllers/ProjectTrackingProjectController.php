@@ -48,6 +48,11 @@ class ProjectTrackingProjectController extends Controller
      */
     public function __construct()
     {
+        /** Establece permisos de acceso para cada método del controlador */
+        $this->middleware('permission:project.tracking.project.create', ['only' => ['store']]);
+        $this->middleware('permission:project.tracking.project.edit', ['only' => ['update']]);
+        $this->middleware('permission:project.tracking.project.delete', ['only' => 'destroy']);
+
         /* Establece permisos de acceso para cada método del controlador */
         // $this->middleware('permission:asset.setting.building');
         /* Define las reglas de validación para el formulario */

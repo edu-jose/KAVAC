@@ -32,6 +32,6 @@ class BudgetDatabaseSeeder extends Seeder
         /* Seeder para roles y permisos disponibles en el módulo */
         $this->call(BudgetRoleAndPermissionsTableSeeder::class);
         /* Seeder que carga los datos de los tipos y fuentes de financiamiento */
-        // $this->call(BudgetFinancementTypesAndSourcesTableSeeder::class);
+        $this->call(BudgetFinancementTypesAndSourcesTableSeeder::class);
     }
 }

@@ -380,7 +380,7 @@ class BudgetProjectController extends Controller
                 foreach ($budgetProject->specificActions as $specificAction) {
                     if (count($specificAction->subSpecificFormulations) > 0) {
                         foreach ($specificAction->subSpecificFormulations as $formulation) {
-                            if ($formulation->assigned == true) {
+                            if ($formulation->confirmed == true) {
                                 $budgetProject->disabled = true;
                                 if (!in_array($budgetProject, $records)) {
                                     array_push($records, $budgetProject);
@@ -463,7 +463,7 @@ class BudgetProjectController extends Controller
     {
         $project_assinegnet = [['id' => '', 'text' => 'Seleccione...']];
         $budgetProjectAssinegnets = BudgetProject::where('active', true)->with(['specificActions.subSpecificFormulations' => function ($query) {
-                $query->where('assigned', true);
+                $query->where('confirmed', true);
         }])->get();
         foreach ($budgetProjectAssinegnets as $budgetProjectAssinegnet) {
             if ($budgetProjectAssinegnet && count($budgetProjectAssinegnet->specificActions) > 0) {

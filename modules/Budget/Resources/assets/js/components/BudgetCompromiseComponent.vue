@@ -1787,9 +1787,17 @@ export default {
                 $("#add_account")
                     .find(".close")
                     .click();
-                bootbox.alert(
-                    "Debe indicar los datos del compromiso antes de agregar cuentas"
-                );
+                bootbox.alert({
+                    title: "Advertencia",
+                    message: "Debe indicar los datos del compromiso antes de agregar cuentas",
+                    closeButton: false,
+					buttons: {
+						ok: {
+							label: "Cerrar",
+							className: 'btn-light'
+						}
+					}
+                });
             }
 
             if (vm.editIndex != null) {

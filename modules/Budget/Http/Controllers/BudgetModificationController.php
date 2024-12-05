@@ -193,7 +193,7 @@ class BudgetModificationController extends Controller
                 /* Obtiene la formulación correspondiente a la acción específica seleccionada */
                 $formulation = BudgetSubSpecificFormulation::where('budget_specific_action_id', $account['from_specific_action_id'])
                     ->where('document_status_id', $documentStatus->id)
-                    ->where('assigned', true)
+                    ->where('confirmed', true)
                     ->orderBy('year', 'desc')->first();
 
                 if ($formulation) {
@@ -349,7 +349,7 @@ class BudgetModificationController extends Controller
                 /* Obtiene la formulación correspondiente a la acción específica seleccionada */
                 $formulation = BudgetSubSpecificFormulation::where('budget_specific_action_id', $account['from_specific_action_id'])
                     ->where('document_status_id', $documentStatus->id)
-                    ->where('assigned', true)
+                    ->where('confirmed', true)
                     ->orderBy('year', 'desc')->first();
 
                 if ($formulation) {
@@ -611,7 +611,13 @@ class BudgetModificationController extends Controller
 
             if ($request->documentFiles) {
                 // Elimina cualquier documento previamente cargado a la modificación presupuestaria
-                Document::where(['documentable_type' => BudgetModification::class, 'documentable_id' => $budgetModification->id])->delete();
+                Document::where(
+                    [
+                        'documentable_type' => BudgetModification::class,
+                        'documentable_id' => $budgetModification->id
+                    ]
+                )->whereNotIn('id', $request->documentFiles)->delete();
+
                 //Verifica si tiene documentos para establecer la relación
                 foreach ($request->documentFiles as $file) {
                     $doc = Document::find($file);
@@ -648,7 +654,7 @@ class BudgetModificationController extends Controller
                 /* Obtiene la formulación correspondiente a la acción específica seleccionada */
                 $formulation = BudgetSubSpecificFormulation::where('id', $account['budget_sub_specific_formulation_id'])
                     ->where('document_status_id', $documentStatus->id)
-                    ->where('assigned', true)
+                    ->where('confirmed', true)
                     ->orderBy('year', 'desc')->first();
 
                 if ($formulation) {
@@ -699,6 +705,8 @@ class BudgetModificationController extends Controller
         if ($query) {
             // Actualiza el estatus del registro con el valor status en la solicitud.
             $query->status = $request->status;
+            // Actualiza la fecha de aprobación del registro con el valor approved_date en la solicitud.
+            $query->approved_date = $request->approved_date;
             $query->save();
 
             return response()->json([
@@ -738,8 +746,8 @@ class BudgetModificationController extends Controller
                 $tp = '';
                 break;
         }
-
         $records = ($tp) ? BudgetModification::where('type', $tp)->get() : [];
+
         return response()->json([
             'records' => $records
         ], 200);

@@ -13,9 +13,9 @@ use Modules\ProjectTracking\Models\ProjectTrackingSubProject;
 
 /**
  * @class ProjectTrackingSettingsController
- * @brief Controlador dedicado a conectar las distintas funcionalidades para la configuracion de modulo seguimiento
+ * @brief controlador dedicado a conectar las distintas funcionalidades para la configuracion del modulo de Seguimiento
  *
- * Controlador dedicado a conectar las distintas funcionalidades para la configuracion de modulo seguimiento
+ * controlador dedicado a conectar las distintas funcionalidades para la configuracion del modulo de Seguimiento
  *
  * @author    Francisco Escala <fjescala@gmail.com>
  *
@@ -24,8 +24,16 @@ use Modules\ProjectTracking\Models\ProjectTrackingSubProject;
  */
 class ProjectTrackingSettingsController extends Controller
 {
+    public function __construct()
+    {
+        /** Establece permisos de acceso a los metodos del controlador */
+        $this->middleware('permission:project.tracking.setting.index', ['only' => ['index']]);
+    }
+
     /**
-     * Configuración general del módulo de seguimiento de proyectos
+     * Muestra la vista de configuración del módulo de seguimiento
+     *
+     * @method    index
      *
      * @author    Oscar González <xxmaestroyixx@gmail.com/ojgonzalez@cenditel.gob.ve>
      *

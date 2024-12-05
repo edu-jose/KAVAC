@@ -178,10 +178,19 @@
                 class="btn btn-primary btn-sm"
                 data-toggle="tooltip"
                 title="Generar Reporte"
-                @click="getPdf"
+                @click="getPdf(false)"
             >
                 <span>Generar reporte</span>
                 <i class="fa fa-print"></i>
+            </button>
+            <button
+                class="btn btn-primary btn-sm"
+                data-toggle="tooltip"
+                title="Generar Reporte"
+                @click="getPdf(true)"
+            >
+                <span>Exportar reporte</span>
+                <i class="fa fa-file-excel-o"></i>
             </button>
         </div>
         <!-- Final card-footer -->
@@ -324,7 +333,7 @@ export default {
             };
         },
 
-        getPdf() {
+        getPdf(xml) {
             let formulationIds = [];
 
             for (this.params.formulation_id of this.params.formulation_id) {
@@ -336,7 +345,8 @@ export default {
                 `&start_date=${this.params.start_date}` +
                 `&end_date=${this.params.end_date}` +
                 `&all_specific_actions=${this.all_specific_actions}` +
-                `&is_project=${this.isProject}`
+                `&is_project=${this.isProject}` +
+                `&xml=${xml}`
             );
 
             this.reset();

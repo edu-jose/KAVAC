@@ -17,6 +17,7 @@ use Maatwebsite\Excel\Concerns\WithStrictNullComparison;
  * @brief Clase que exporta el listado de ajustes salariales
  *
  * @author Ing. Henry Paredes <hparedes@cenditel.gob.ve>
+ * @author Fabián Palmera <fapalmera@cenditel.gob.ve>
  *
  * @license
  *     [LICENCIA DE SOFTWARE CENDITEL](http://conocimientolibre.cenditel.gob.ve/licencia-de-software-v-1-3/)
@@ -40,9 +41,6 @@ class PayrollSalaryAdjustmentExport implements
     {
         $payrollSalaryAdjustment = PayrollSalaryAdjustment::with([
             'payrollSalaryTabulator',
-            'payrollHistorySalaryAdjustments' => function ($query) {
-                return $query->orderBy('created_at', 'desc');
-            }
         ])->get();
 
         return $payrollSalaryAdjustment;
@@ -86,9 +84,9 @@ class PayrollSalaryAdjustmentExport implements
 
         $value = $row->value ? $row->value : 0;
         return [
-            Carbon::parse($row->created_at)->format("Y-m-d"),
-            $row->payrollHistorySalaryAdjustments[0]->increase_of_date,
-            $row->payrollHistorySalaryAdjustments[0]->end_increase_date,
+            $row->created_at->format("Y-m-d"),
+            $row->start_increase_date->format("Y-m-d"),
+            $row->end_increase_date?->format("Y-m-d"),
             $type_name,
             $value,
             $row->payrollSalaryTabulator->name,

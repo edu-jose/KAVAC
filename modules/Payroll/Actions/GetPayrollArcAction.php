@@ -161,28 +161,32 @@ final class GetPayrollArcAction
             fn ($query) => $query->whereIn('id', $payrollStaffs)
         )
         ->get()->map(function ($resource) use ($arcConceptIds) {
-            $dataPayrolls = $resource->payrollStaffPayrolls->map(function ($item) use ($arcConceptIds) {
-                $assignmentsTotal = 0;
-                $deductionsTotal = 0;
+            $dataPayrolls = $resource->payrollStaffPayrolls
+                ->filter(function ($item) {
+                    return !is_null($item->payroll);
+                })
+                ->map(function ($item) use ($arcConceptIds) {
+                    $assignmentsTotal = 0;
+                    $deductionsTotal = 0;
 
-                foreach ($item->concept_type['Asignaciones'] as $concept) {
-                    if (in_array($concept['id'], $arcConceptIds)) {
-                        $assignmentsTotal += $concept['value'];
+                    foreach ($item->concept_type as $type => $concepts) {
+                        foreach ($concepts as $concept) {
+                            if (in_array($concept['id'], $arcConceptIds)) {
+                                if ('+' === $concept['sign']) {
+                                    $assignmentsTotal += $concept['value'];
+                                } elseif ('-' === $concept['sign']) {
+                                    $deductionsTotal += $concept['value'];
+                                }
+                            }
+                        }
                     }
-                }
 
-                foreach ($item->concept_type['Deducciones'] as $concept) {
-                    if (in_array($concept['id'], $arcConceptIds)) {
-                        $deductionsTotal += $concept['value'];
-                    }
-                }
-
-                return [
-                    'payroll_id' => $item->payroll_id,
-                    'payroll_payment_period' => Carbon::parse($item->payroll->payrollPaymentPeriod->end_date)->format('m'),
-                    'total_value' => $assignmentsTotal - $deductionsTotal,
-                ];
-            });
+                    return [
+                        'payroll_id' => $item->payroll_id,
+                        'payroll_payment_period' => Carbon::parse($item->payroll->payrollPaymentPeriod->end_date)->format('m'),
+                        'total_value' => $assignmentsTotal - $deductionsTotal,
+                    ];
+                });
 
             $groupedData = $dataPayrolls->groupBy('payroll_payment_period')->map(function ($items, $month) {
                 $totalValue = $items->sum('total_value');

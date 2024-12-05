@@ -46,6 +46,11 @@ class ProjectTrackingPriorityController extends Controller
      */
     public function __construct()
     {
+        /** Establece permisos de acceso para cada método del controlador */
+        $this->middleware('permission:project.tracking.priority.create', ['only' => ['store']]);
+        $this->middleware('permission:project.tracking.priority.edit', ['only' => ['update']]);
+        $this->middleware('permission:project.tracking.priority.delete', ['only' => 'destroy']);
+
         /* Define las reglas de validación para el formulario */
         $this->validateRules = [
             'name'                                  => ['required'],
@@ -124,7 +129,10 @@ class ProjectTrackingPriorityController extends Controller
         $this->validate($request, [
             'name' => ['required', 'max:100', 'unique:project_tracking_priorities,name']
         ]);
-        $projecttrackingPriority = ProjectTrackingPriority::create(['name' => $request->name, 'description' => $request->description]);
+        $projecttrackingPriority = ProjectTrackingPriority::create([
+            'name' => $request->name,
+            'description' => $request->description
+        ]);
         return response()->json(['record' => $projecttrackingPriority, 'message' => 'Success'], 200);
     }
 
@@ -162,7 +170,11 @@ class ProjectTrackingPriorityController extends Controller
     {
         $projecttrackingPriority = ProjectTrackingPriority::find($id);
         $this->validate($request, [
-            'name' => ['required', 'max:100', 'unique:project_tracking_priorities,name,' . $projecttrackingPriority->id],
+            'name' => [
+                'required',
+                'max:100',
+                'unique:project_tracking_priorities,name,' . $projecttrackingPriority->id
+            ],
             'description' => ['nullable', 'max:200']
         ]);
         $projecttrackingPriority->name  = $request->name;
@@ -196,6 +208,8 @@ class ProjectTrackingPriorityController extends Controller
      */
     public function getProjectTrackingPriorities()
     {
-        return response()->json(template_choices('Modules\ProjectTracking\Models\ProjectTrackingPriority', 'name', '', true));
+        return response()->json(
+            template_choices('Modules\ProjectTracking\Models\ProjectTrackingPriority', 'name', '', true)
+        );
     }
 }

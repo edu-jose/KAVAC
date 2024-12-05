@@ -211,7 +211,17 @@ export default {
 
                         if ('' == fromDate && '' == toDate) return false;
                         if (fromDate && toDate && fromDate > toDate) {
-                            bootbox.alert("La fecha de inicio debe ser menor que la fecha de fin");
+                            bootbox.alert({
+                                title: "Advertencia",
+                                message: "La fecha de inicio debe ser menor que la fecha de fin",
+                                closeButton: false,
+                                buttons: {
+                                    ok: {
+                                        label: "Cerrar",
+                                        className: 'btn-light'
+                                    }
+                                }
+                            });
                             return false;
                         }
                         vm.loading = true;

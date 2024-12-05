@@ -2,11 +2,11 @@
 
 namespace Modules\Payroll\Exports;
 
+use Illuminate\Database\Eloquent\Collection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
-use Illuminate\Database\Eloquent\Collection;
-use Modules\Payroll\Models\PayrollSalaryTabulatorScale;
 use Modules\Payroll\Models\PayrollSalaryTabulator;
+use Modules\Payroll\Models\PayrollSalaryTabulatorScale;
 
 /**
  * @class PayrollSalaryTabulatorExport
@@ -55,11 +55,10 @@ class PayrollSalaryTabulatorExport extends \App\Exports\DataExport implements
      */
     public function collection()
     {
-        $payrollSalaryTabulator = PayrollSalaryTabulator::where('id', $this->payrollSalaryTabulatorId)->first();
+        $payrollSalaryTabulator = PayrollSalaryTabulator::find($this->payrollSalaryTabulatorId);
         $fields  = [];
         $records = [];
         if ($payrollSalaryTabulator) {
-            $payrollSalaryAdjustments = $payrollSalaryTabulator->payrollSalaryAdjustments();
             $payrollSalaryTabulatorScales = PayrollSalaryTabulatorScale::where([
                 'payroll_salary_tabulator_id' => $this->payrollSalaryTabulatorId
             ])->with([
@@ -68,39 +67,21 @@ class PayrollSalaryTabulatorExport extends \App\Exports\DataExport implements
                 'payrollVerticalScale'
             ])->get();
 
-            $salary_collection = $payrollSalaryAdjustments->get();
-            if ($salary_collection->isNotEmpty()) {
-                $payrollSalaryAdjustments = $payrollSalaryAdjustments->orderBy('created_at', 'desc')->get();
-                $payrollHistorySalaryAdjustments =
-                    $payrollSalaryAdjustments[0]
-                    ->payrollHistorySalaryAdjustments()
-                    ->orderBy('created_at', 'desc')->get();
-
-                $salary_values = json_decode($payrollHistorySalaryAdjustments[0]->salary_values);
-            }
-
             $count = 0;
-            $type = $salary_collection->isNotEmpty() ? $payrollSalaryAdjustments[0]->increase_of_type : null;
 
             foreach ($payrollSalaryTabulatorScales as $payrollSalaryTabulatorScale) {
                 if (($payrollSalaryTabulator->payroll_horizontal_salary_scale_id > 0) && ($payrollSalaryTabulator->payroll_vertical_salary_scale_id > 0)) {
                     $horizontalScale = $payrollSalaryTabulatorScale->payrollHorizontalScale;
                     $verticalScale = $payrollSalaryTabulatorScale->payrollVerticalScale;
                     $fields[$horizontalScale->name . '-' . $verticalScale->name] =
-                        isset($payrollSalaryAdjustments) && ($type == 'different') && isset($payrollHistorySalaryAdjustments) ?
-                            $salary_values[$count]->value :
                             $payrollSalaryTabulatorScale->value;
                 } elseif ($payrollSalaryTabulator->payroll_horizontal_salary_scale_id > 0) {
                     $horizontalScale = $payrollSalaryTabulatorScale->payrollHorizontalScale;
                     $fields[$horizontalScale->name] =
-                        isset($payrollSalaryAdjustments) && ($type == 'different') && isset($payrollHistorySalaryAdjustments) ?
-                            $salary_values[$count]->value :
                             $payrollSalaryTabulatorScale->value;
                 } elseif ($payrollSalaryTabulator->payroll_vertical_salary_scale_id > 0) {
                     $verticalScale = $payrollSalaryTabulatorScale->payrollVerticalScale;
                     $fields[$verticalScale->name] =
-                    isset($payrollSalaryAdjustments) && ($type == 'different') && isset($payrollHistorySalaryAdjustments) ?
-                        $salary_values[$count]->value :
                         $payrollSalaryTabulatorScale->value;
                 }
                 $count++;

@@ -615,8 +615,8 @@ $(document).ready(function() {
             message: appInfo.showAbout(),
             buttons: {
                 ok: {
-                    label: "OK",
-                    className: 'btn-primary'
+                    label: "Cerrar",
+                    className: 'btn-light'
                 }
             },
         });
@@ -673,7 +673,13 @@ $(document).ready(function() {
         bootbox.alert({
             className: 'modal-credits',
             closeButton: false,
-            message: appInfo.showLicense()
+            message: appInfo.showLicense(),
+            buttons: {
+                ok: {
+                    label: "Cerrar",
+                    className: 'btn-light'
+                }
+            },
         });
 
         $('.bootbox.modal [data-bb-handler="ok"]').attr('title', 'Haga clic para cerrar esta ventana');
@@ -812,7 +818,17 @@ function delete_record(url) {
                 },
                 error: function(jqxhr, textStatus, error) {
                     var err = textStatus + ", " + error;
-                    bootbox.alert('Error interno del servidor al eliminar el registro.');
+                    bootbox.alert({
+                        title: 'Error',
+                        message: 'Error interno del servidor al eliminar el registro.',
+                        closeButton: false,
+                        buttons: {
+                            ok: {
+                                label: "Cerrar",
+                                className: 'btn-light'
+                            }
+                        }
+                    });
                     logs('resources/js/custom.js', 406, `Error con la petición solicitada. Detalles: ${err}`, 'delete_record');
                 }
             });

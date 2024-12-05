@@ -12,7 +12,10 @@ use App\Traits\ModelsTrait;
  * @class ProjectTrackingProjectType
  * @brief Gestiona la información, procesos, consultas y relaciones asociadas al modelo
  *
+ * Gestiona el modelo de datos para los tipos de proyecto
+ *
  * @author José Jorge Briceño <josejorgebriceno9@gmail.com>
+ * @author Natanael Rojo <ndrojo@cenditel.gob.ve> | <rojonatanael99@gmail.com>
  *
  * @license
  *     [LICENCIA DE SOFTWARE CENDITEL](http://conocimientolibre.cenditel.gob.ve/licencia-de-software-v-1-3/)

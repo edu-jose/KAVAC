@@ -1,6 +1,8 @@
 <?php
 
+use Illuminate\Support\Str;
 use Modules\Budget\Models\BudgetSubSpecificFormulation;
+use Modules\Budget\Models\CodeSetting;
 
 if (! function_exists('budget_available')) {
     /**
@@ -75,5 +77,38 @@ if (! function_exists('budget_check_opened_account')) {
         }
 
         return $opened;
+    }
+}
+
+if (! function_exists('generate_budget_availability_code')) {
+    function generate_budget_availability_code($prefix, $code_length, $suffix, $model, $field)
+    {
+        $separator = config('budget.budget_availability.separator');
+        $newCode = 1;
+
+        $targetModel = $model::select($field)->where($field, 'like', "{$prefix}{$separator}%" . ($suffix ? "{$separator}{$suffix}" : ""))
+            ->withTrashed()->orderBy('id', 'desc')->first();
+
+        $codeSetting = CodeSetting::where([
+                'module' => 'purchase',
+                'table'  => 'purchase_budgetary_availabilities',
+                'field'  => 'code',
+                'type'   => null
+            ])->first();
+
+        if ($targetModel && $codeSetting) {
+            $segments = explode($separator, $codeSetting->format_code);
+            $position = array_search(true, array_map(fn($segment) => ctype_digit($segment) && $segment == str_repeat('0', strlen($segment)), $segments));
+
+            $segmentsNew = explode($separator, $targetModel?->$field ?? '');
+
+            $newCode += (int) $segmentsNew[$position];
+        }
+
+        if (strlen((string)$newCode) > $code_length) {
+            return ["error" => "El nuevo código excede la longitud permitida"];
+        }
+
+        return "{$prefix}{$separator}{$newCode}" . ($suffix ? "{$separator}{$suffix}" : "");
     }
 }

@@ -124,6 +124,7 @@
         var hasStaff = () => {
             $(".staff_name").show();
             if ($('#staff').val() !== "") {
+                document.getElementById("first_name").value = '';
                 $(".staff_name").hide();
             }
         }

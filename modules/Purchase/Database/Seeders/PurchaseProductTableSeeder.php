@@ -8,7 +8,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use Modules\Purchase\Imports\PurchaseProductImport;
 
 /**
- * @class PurchaseProductTableSeederTableSeeder
+ * @class PurchaseProductTableSeeder
  * @brief Carga la información de la base de datos con los registros iniciales de productos del módulo de compras
  *
  * @author Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
@@ -16,7 +16,7 @@ use Modules\Purchase\Imports\PurchaseProductImport;
  * @license
  *     [LICENCIA DE SOFTWARE CENDITEL](http://conocimientolibre.cenditel.gob.ve/licencia-de-software-v-1-3/)
  */
-class PurchaseProductTableSeederTableSeeder extends Seeder
+class PurchaseProductTableSeeder extends Seeder
 {
     /**
      * Ejecuta los seeds de la base de datos

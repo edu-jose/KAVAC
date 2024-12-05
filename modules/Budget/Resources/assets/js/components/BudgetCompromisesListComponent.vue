@@ -306,6 +306,7 @@
                 axios.get(`${window.app_url}/budget/compromises/list/all`, {params: params})
                 .then(response => {
                         vm.$refs.tableResults.data = response.data.data;
+                        vm.$refs.tableResults.count = response.data.count;
                     });
             },
 
@@ -450,13 +451,11 @@
         async mounted() {
             const vm = this;
             vm.loadingState(true); // Inicio de spinner de carga.
-            // Obtener la lista de todos los compromisos.
+
             let url = this.setUrl('budget/compromises/list/all');
             axios.get(url).then(response => {
                 this.cancelBudgetCompromisePermission = response.data.cancelBudgetCompromisePermission;
                 this.approveBudgetCompromisePermission = response.data.approveBudgetCompromisePermission;
-                // Variable usada para el reseteo de los filtros de la tabla.
-                this.tmpRecords = response.data.records;
             });
             await vm.queryLastFiscalYear();
             await vm.getOpenedFiscalYears();

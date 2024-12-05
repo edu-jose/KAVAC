@@ -293,6 +293,15 @@ class AccountingRoleAndPermissionsTableSeeder extends Seeder
                 'short_description' => 'reporte pdf de Balance General'
             ],
             [
+                'name'              => 'Reporte pdf de Flujo de Efectivo',
+                'slug'              => 'accounting.report.cashflowstatement',
+                'description'       => 'Acceso para generar reporte pdf de Flujo de Efectivo',
+                'model'             => '',
+                'model_prefix'      => 'contabilidad',
+                'slug_alt'          => 'reporte_flujo_de_efectivo.pdf',
+                'short_description' => 'reporte pdf de Flujo de Efectivo'
+            ],
+            [
                 'name'              => 'Reporte pdf de Estado de Resultados',
                 'slug'              => 'accounting.report.stateofresults',
                 'description'       => 'Acceso para generar reporte pdf de Estado de Resultados',

@@ -105,8 +105,8 @@
                     </div>
                     <div class="col-12 mt-4">
                         <label for="all_specific_actions">
-                            Seleccionar todas las acciones especificas de este
-                            Proyecto / Acción Centralizada
+                            <strong>Seleccionar todas las acciones especificas de este
+                                Proyecto / Acción Centralizada</strong>
                         </label>
                         <div class="custom-control custom-switch">
                             <input
@@ -154,48 +154,95 @@
                 <div class="col-12" v-if="all_specific_actions">
                     <br />
                 </div>
-                <div class="col-4" id="budgetAvailabilityInitDate">
-                    <label>
-                        <strong>Desde:</strong>
-                    </label>
-                    <div class="form-group is-required mt-2">
-                        <label class="control-label">
-                            Partida Presupuestaria
+                <div class="row col-12" v-if="!consolidated">
+                    <div class="col-6 mt-4">
+                        <label for="all_budget_items">
+                            <strong>Seleccionar todas las Partidas Presupuestarias</strong>
                         </label>
-                        <select2
-                            v-model="initialCode"
-                            :options="budgetItemsArray"
-                        ></select2>
+                        <div class="custom-control custom-switch">
+                            <input
+                                type="checkbox"
+                                class="custom-control-input"
+                                id="all_budget_items"
+                                value="true"
+                                name="all_budget_items"
+                                v-model="all_budget_items"
+                            >
+                            <label
+                                class="custom-control-label"
+                                for="all_budget_items"
+                            ></label>
+                        </div>
                     </div>
-                    <div class="form-group is-required mt-3">
-                        <label class="control-label">Desde:</label>
-                        <input
-                            type="date"
-                            class="form-control input-sm"
-                            v-model="initialDate"
-                        />
+                    <div class="col-12" id="budget_items_ids" v-if="!all_budget_items">
+                        <div class="form-group is-required mt-4">
+                            <label class="control-label">
+                                <strong>Partidas Presupuestarias</strong>
+                            </label>
+                            <v-multiselect
+                                :options="budgetItemsArray"
+                                :taggable="false"
+                                :hide_selected="false"
+                                :close-on-select="false"
+                                track_by="text"
+                                :group_values="'children'"
+                                :group_label="'text'"
+                                :group_select="true"
+                                :limit="10"
+                                :selected="budget_items_ids"
+                                v-model="budget_items_ids"
+                            >
+                            </v-multiselect>
+                        </div>
                     </div>
                 </div>
-                <div class="col-4" id="budgetAvailabilityEndDate">
-                    <label>
-                        <strong>Hasta:</strong>
-                    </label>
-                    <div class="form-group is-required mt-2">
-                        <label class="control-label">
-                            Partida Presupuestaria
-                        </label>
-                        <select2
-                            v-model="finalCode"
-                            :options="budgetItemsArray"
-                        ></select2>
+                <div class="col-12" v-if="all_budget_items">
+                    <br />
+                </div>
+                <div class="row col-12">
+                    <div class="col-4" id="budgetAvailabilityInitDate">
+                        <div v-if="consolidated">
+                            <label><strong>Desde:</strong></label>
+                            <div class="form-group is-required mt-2">
+                                <label class="control-label"
+                                    >Partida Presupuestaria</label
+                                >
+                                <select2
+                                    v-model="initialCode"
+                                    :options="budgetItemsArray"
+                                ></select2>
+                            </div>
+                        </div>
+                        <div class="form-group is-required mt-3">
+                            <label class="control-label">Desde:</label>
+                            <input
+                                type="date"
+                                class="form-control input-sm"
+                                v-model="initialDate"
+                            />
+                        </div>
                     </div>
-                    <div class="form-group is-required mt-3">
-                        <label class="control-label">Hasta:</label>
-                        <input
-                            type="date"
-                            class="form-control input-sm"
-                            v-model="finalDate"
-                        />
+                    <div class="col-4" id="budgetAvailabilityEndDate">
+                        <div v-if="consolidated">
+                            <label><strong>Hasta:</strong></label>
+                            <div class="form-group is-required mt-2">
+                                <label class="control-label"
+                                    >Partida Presupuestaria</label
+                                >
+                                <select2
+                                    v-model="finalCode"
+                                    :options="budgetItemsArray"
+                                ></select2>
+                            </div>
+                        </div>
+                        <div class="form-group is-required mt-3">
+                            <label class="control-label">Hasta:</label>
+                            <input
+                                type="date"
+                                class="form-control input-sm"
+                                v-model="finalDate"
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
@@ -206,8 +253,18 @@
             <button
                 class="btn btn-primary btn-sm"
                 data-toggle="tooltip"
+                title="Exportar Reporte"
+                @click="generateReport(true)"
+                id="budgetAvailabilityExportarReport"
+            >
+                <span>Exportar reporte</span>
+                <i class="fa fa-file-excel-o"></i>
+            </button>
+            <button
+                class="btn btn-primary btn-sm"
+                data-toggle="tooltip"
                 title="Generar Reporte"
-                @click="generateReport"
+                @click="generateReport(false)"
                 id="budgetAvailabilityGenerateReport"
             >
                 <span>Generar reporte</span>
@@ -248,12 +305,15 @@ export default {
             centralized_action_id: "",
             specific_actions_ids: [],
             all_specific_actions: false,
+            all_budget_items: false,
             consolidated: false,
             budgetItemsArray: JSON.parse(this.budgetItems),
+            budget_items_ids: [],
             budgetProjectsArray: JSON.parse(this.budgetProjects),
             budgetCentralizedActionsArray: JSON.parse(
                 this.budgetCentralizedActions
             ),
+            exportReport: false,
             errors: [],
             specific_actions: [],
         };
@@ -307,6 +367,16 @@ export default {
             }
         );
 
+        $("#all_budget_items").on(
+            "change",
+            function () {
+                vm.all_budget_items = this.checked;
+                if (vm.all_budget_items) {
+                    vm.budget_items_ids = [];
+                }
+            }
+        );
+
         $("#consolidated").on(
             "change",
             function () {
@@ -342,8 +412,18 @@ export default {
         reset() {
             const vm = this;
             vm.all_specific_actions = false;
+            vm.all_budget_items = false;
             vm.specific_actions_ids = "";
             document.getElementById("all_specific_actions").checked = false;
+            document.getElementById("all_budget_items").checked = false;
+            vm.initialDate = "";
+            vm.finalDate = "";
+            vm.initialCode = 0;
+            vm.finalCode = 0;
+            vm.project_id = "";
+            vm.exportReport = false;
+            vm.centralized_action_id = [];
+            vm.budget_items_ids = [];
         },
 
         getSpecificActions(type) {
@@ -374,26 +454,25 @@ export default {
             $("#specific_action_id").attr("disabled", len == 0);
         },
 
-        generateReport: function () {
+        async generateReport (export_report) {
             this.errors = [];
-            if (!this.consolidated) {
+            this.exportReport = export_report;
+            let specific_actions_ids = [];
+            let budget_items_ids = [];
+            let initialDate_ = new Date(this.initialDate);
+            let finalDate_ = new Date(this.finalDate);
 
-                if (!this.initialDate) {
-                    this.errors.push("El campo fecha Desde es obligatorio");
-                }
-                if (!this.finalDate) {
-                    this.errors.push("El campo fecha Hasta es obligatorio");
-                }
-                if (!this.initialCode) {
-                    this.errors.push(
-                        "El campo Desde: Partida Presupuestario es obligatorio"
-                    );
-                }
-                if (!this.finalCode) {
-                    this.errors.push(
-                        "El campo Hasta: Partida Presupuestario es obligatorio"
-                    );
-                }
+            if (initialDate_.getTime() >= finalDate_.getTime()) {
+                this.errors.push("La fecha inicial es incorrecta");
+            }
+
+            if (!this.initialDate) {
+                this.errors.push("El campo desde es obligatorio");
+            }
+            if (!this.finalDate) {
+                this.errors.push("El campo hasta es obligatorio");
+            }
+            if (!this.consolidated) {
                 if (!this.project_id && !this.centralized_action_id) {
                     this.errors.push(
                         "El campo Proyecto o Acción Centralizada es obligatorio"
@@ -406,46 +485,87 @@ export default {
                 }
                 else {
                     if (!this.all_specific_actions) {
-                        this.specific_actions_ids =
+                        specific_actions_ids =
                             this.specific_actions_ids.map(function (object) {
                                 return object.id;
                             });
                     }
+                    else {
+                        specific_actions_ids = this.specific_actions_ids;
+                    }
                 }
-                let initialDate_ = new Date(this.initialDate);
-                let finalDate_ = new Date(this.finalDate);
-
-                if (initialDate_.getTime() >= finalDate_.getTime()) {
-                    this.errors.push("La fecha inicial es incorrecta");
+                if (!this.all_budget_items && this.budget_items_ids.length == 0) {
+                    this.errors.push(
+                        "Debe seleccionar al menos una partida presupuestaria"
+                    );
+                } else if (!this.all_budget_items && this.budget_items_ids) {
+                    budget_items_ids = this.budget_items_ids.map(function (object) {
+                        return object.ID;
+                    });
+                } else {
+                    budget_items_ids = [];
                 }
 
                 if (this.errors.length === 0) {
-                    window.open(
-                        `${this.url}?initialDate=${this.initialDate}
-                        &finalDate=${this.finalDate}
-                        &initialCode=${this.initialCode}
-                        &finalCode=${this.finalCode}
-                        &accountsWithMovements=${this.accountsWithMovements}
-                        &project_id=${this.project_id ? this.project_id : this.centralized_action_id}
-                        &project_type=${this.project_id ? "project" : "centralized_action"}
-                        &specific_actions_ids=${this.specific_actions_ids}`
-                    );
-                    this.reset();
+                    const vm = this;
+                    const mimeType = vm.exportReport ? 'text/csv;charset=utf-8;' : 'application/pdf' // CSV or PDF;
+                    const exten = vm.exportReport ? 'csv' : 'pdf';
+
+                    vm.loading = true;
+                    let postData = {
+                        initialDate: this.initialDate,
+                        finalDate: this.finalDate,
+                        initialCode: this.initialCode,
+                        finalCode: this.finalCode,
+                        accountsWithMovements: this.accountsWithMovements,
+                        project_id: this.project_id ? this.project_id : this.centralized_action_id,
+                        project_type: this.project_id ? "project" : "centralized_action",
+                        specific_actions_ids: specific_actions_ids,
+                        budget_items_ids: budget_items_ids,
+                        all_budget_items: this.all_budget_items,
+                        exportReport: this.exportReport
+                    };
+
+                    try {
+                        const response = await axios.post(vm.url, postData, {
+                            responseType: 'blob',
+                            timeout: 60000 // 60 seconds
+                        });
+
+                        if (response.status === 200) {
+                            const url = window.URL.createObjectURL(new Blob([response.data], { type: mimeType }));
+                            const link = document.createElement('a');
+                            link.href = url;
+                            link.setAttribute('download', `file.${exten}`);
+                            document.body.appendChild(link);
+                            link.click();
+
+                            // Eliminar el objeto URL después de la descarga
+                            window.URL.revokeObjectURL(url);
+                        }
+                    } catch (error) {
+                        try {
+                            let { errors } = JSON.parse(
+                                String.fromCharCode.apply(
+                                    null,
+                                    new Uint8Array(error.response.data)
+                                )
+                            );
+                            vm.errors = [];
+
+                            for (let index in errors) {
+                                if (errors[index]) {
+                                    vm.errors.push(errors[index][0]);
+                                }
+                            }
+                        } catch (parseError) {
+                            console.error('Error procesando la respuesta del error', parseError);
+                        }
+                    } finally {
+                        vm.loading = false;
+                    }
                 }
             } else {
-                let initialDate_ = new Date(this.initialDate);
-                let finalDate_ = new Date(this.finalDate);
-
-                if (initialDate_.getTime() >= finalDate_.getTime()) {
-                    this.errors.push("La fecha inicial es incorrecta");
-                }
-
-                if (!this.initialDate) {
-                    this.errors.push("El campo desde es obligatorio");
-                }
-                if (!this.finalDate) {
-                    this.errors.push("El campo hasta es obligatorio");
-                }
                 if (!this.initialCode) {
                     this.errors.push(
                         "El campo Desde: Partida Presupuestario es obligatorio"
@@ -476,7 +596,9 @@ export default {
                         &finalCode=${this.finalCode}
                         &accountsWithMovements=${this.accountsWithMovements}
                         &projects_ids=${projects_ids}
-                        &centralized_actions_ids=${centralized_actions_ids}`);
+                        &centralized_actions_ids=${centralized_actions_ids}
+                        &exportReport=${this.exportReport}
+                    `);
                 }
             }
         },

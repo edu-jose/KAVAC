@@ -222,23 +222,23 @@ class AppManagementController extends Controller
         }
         if ($user) {
             // Objeto con información del usuario a consultar
-            $users = User::where('name', 'like', "{$user}%")
-                ->orWhere('name', 'like', "%{$user}%")
-                ->orWhere('name', 'like', "%{$user}")
-                ->orWhere('username', 'like', "{$user}%")
-                ->orWhere('username', 'like', "%{$user}%")
-                ->orWhere('username', 'like', "%{$user}")->get('id');
+            $users = User::where(function ($q) use ($user) {
+                $q->where('name', 'like', "%{$user}%")
+                  ->orWhere('username', 'like', "%{$user}%");
+            });
 
-            if (!$users->isEmpty()) {
-                $auditables = $auditables->whereIn('user_id', $users);
+            if (!$users->get()->isEmpty()) {
+                $auditables = $auditables->whereIn('user_id', $users->pluck('id')->toArray());
             } else {
-                return response()->json(['result' => false, 'message' => __('El usuario no está registrado')], 200);
+                return response()->json(['result' => false, 'message' => __('El usuario no está registrado')], 422);
             }
         }
         if ($module_restore) {
-            $auditables = $auditables->where('auditable_type', 'like', "{$module_restore}%")
-                ->orWhere('auditable_type', 'like', "%{$module_restore}%")
-                ->orWhere('auditable_type', 'like', "%{$module_restore}");
+            $auditables = $auditables->where(function ($q) use ($module_restore) {
+                $q->where('auditable_type', 'like', "{$module_restore}%")
+                  ->orWhere('auditable_type', 'like', "%{$module_restore}%")
+                  ->orWhere('auditable_type', 'like', "%{$module_restore}");
+            });
         }
 
         // Arreglo con registros a auditar según la acción ejecutada
@@ -264,7 +264,7 @@ class AppManagementController extends Controller
         $auditables = $auditables->paginate($request->limit);
 
         foreach ($auditables->items() as $audit) {
-            if ($audit->user_id !== null) {
+            if (true) {
                 switch ($audit->event) {
                     case 'created':
                         // texto con la clase text-success
@@ -293,12 +293,18 @@ class AppManagementController extends Controller
                 // Texto con el modelo de usuario a utilizar
                 $model_user = ($audit->user_type === "App\User") ? User::class : $audit->user_type;
                 // Objeto con información del usuario
-                $user = $model_user::find($audit->user_id);
+                $user = null;
+                if ($audit?->user_id) {
+                    $user = $model_user::find($audit->user_id);
+                }
 
+                if (!$user) {
+                    $aplication = 'Aplicación (generado por el sistema)';
+                }
                 // Nombre completo del usuario
-                $name = ($user) ? $user->name : '';
+                $name = ($user) ? $user->name : $aplication;
                 // Nombre de usuario con el cual accede a la aplicación
-                $username = ($user) ? $user->username : '';
+                $username = ($user) ? $user->username : $aplication;
 
                 array_push($records, [
                     'id' => secure_record($audit->id),
@@ -310,6 +316,7 @@ class AppManagementController extends Controller
                 ]);
             }
         }
+
         return response()->json(
             [
                 'result' => true,

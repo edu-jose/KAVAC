@@ -301,7 +301,17 @@
                 let product = '';
                 vm.record.sale_warehouse_products = [];
                 if(!vm.selected.length > 0){
-                    bootbox.alert("Debe agregar al menos un elemento a la solicitud");
+                    bootbox.alert({
+                        title: "Advertencia",
+                        message: "Debe agregar al menos un elemento a la solicitud",
+                        closeButton: false,
+                        buttons: {
+                            ok: {
+                                label: "Cerrar",
+                                className: 'btn-light'
+                            }
+                        }
+                    });
                     return false;
                 };
 

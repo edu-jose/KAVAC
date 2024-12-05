@@ -10,6 +10,5 @@
     "TechnicalSupport": false,
     "Warehouse": true,
     "Sale": false,
-    "Prueba": true,
-    "ProjectTracking": true
+    "ProjectTracking": false
 }

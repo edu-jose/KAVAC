@@ -272,7 +272,6 @@ class PayrollTimeSheetParameterController extends Controller
             ->get();
 
         $records = [];
-
         foreach ($parameters as $key => $parameter) {
             $records[$key] = [
                 'id' => $parameter->id,
@@ -281,15 +280,18 @@ class PayrollTimeSheetParameterController extends Controller
             ];
 
             foreach ($parameter->payrollParameterTimeSheetParameters as $param) {
-                $pValue = json_decode($param->parameter->p_value);
-                $exceptionType = PayrollExceptionType::find($pValue->exception_type);
+                $pValue = json_decode($param->parameter->p_value, true);
+                $exceptionType = PayrollExceptionType::find($pValue["exception_type"]);
 
                 $records[$key]['parameters'][$exceptionType->name][] = [
                     'id' => $param->parameter->id,
                     'group' => $exceptionType->name,
                     'max' => $exceptionType->value_max ?? null,
+                    'max_value_allowed_per_time_sheet' => isset(
+                        $pValue["max_value_allowed_per_time_sheet"]
+                    ) ? $pValue["max_value_allowed_per_time_sheet"] : null,
                     'affectGroup' => $exceptionType->affect?->name,
-                    'text' => $pValue->acronym . ' - ' . $pValue->name,
+                    'text' => $pValue["acronym"] . ' - ' . $pValue["name"],
                 ];
             }
         }

@@ -142,18 +142,15 @@
                         </div>
                         <div class="col-md-4" id="helpCodeCredits">
                             <div class="form-group">
-                                {!! Form::label('budgetary_availabilities_code', __('Código de la Disponibilidad Presupuestaria manual'), []) !!}
-                                {!! Form::text(
-                                    'budgetary_availabilities_code',
-                                    $bamCode ? $bamCode->format_code : old('budgetary_availabilities_code'),
-                                    [
-                                        'class' => 'form-control input-sm',
-                                        'data-toggle' => 'tooltip',
-                                        'title' => __('Formato para el código de la disponibilidad presupuestaria manual'),
-                                        'placeholder' => 'Ej. XXX-00000000-YYYY',
-                                        'readonly' => $bamCode ? true : false,
-                                    ],
-                                ) !!}
+                                {!! Form::label('budgetary_availabilities_code', __('Código de la Disponibilidad Presupuestaria'), []) !!}
+                                {!! Form::text('budgetary_availabilities_code', ($bamCode)
+                                    ? $bamCode->format_code : old('budgetary_availabilities_code'), [
+                                    'class' => 'form-control input-sm', 'data-toggle' => 'tooltip',
+                                    'title' => __('Formato para el código de la disponibilidad presupuestaria'),
+                                    'placeholder' => (config('budget.budget_availability.active')) ? '' : 'Ej. XXX-00000000-YYYY',
+                                    'readonly' => ($bamCode) ? true : false
+                                    ])
+                                !!}
                             </div>
                         </div>
                     </div>

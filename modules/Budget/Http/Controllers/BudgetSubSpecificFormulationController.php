@@ -63,7 +63,9 @@ class BudgetSubSpecificFormulationController extends Controller
     public function index()
     {
         $records = BudgetSubSpecificFormulation::all();
-        return view('budget::formulations.list');
+        $hasConfirmPermission = auth()->user()->hasPermission('budget.formulation.confirm');
+
+        return view('budget::formulations.list', compact('hasConfirmPermission'));
     }
 
     /**
@@ -268,6 +270,10 @@ class BudgetSubSpecificFormulationController extends Controller
         if (isset($request->assigned) && $request->assigned) {
             // Instrucciones para la asignación de presupuesto
             $formulation->assigned = $request->assigned;
+            $formulation->save();
+        } elseif (isset($request->confirmed) && $request->confirmed) {
+            // Instrucciones para la confirmación de presupuesto
+            $formulation->confirmed = $request->confirmed;
             $documentStatus = DocumentStatus::where('action', 'AP')->first();
             $formulation->document_status_id = $documentStatus->id;
             $formulation->save();
@@ -284,10 +290,10 @@ class BudgetSubSpecificFormulationController extends Controller
                     ['year' => $formulation->year]
                 )
             ]);
-        } elseif ($formulation->assigned) {
+        } elseif ($formulation->confirmed) {
             $request->session()->flash('message', [
                 'type' => 'other', 'icon' => 'screen-ok',
-                'text' => 'La formulación de presupuesto ya se encuentra asignada y no puede ser modificada'
+                'text' => 'La formulación de presupuesto ya se encuentra confirmada y no puede ser modificada'
             ]);
         } else {
             $this->validate($request, [

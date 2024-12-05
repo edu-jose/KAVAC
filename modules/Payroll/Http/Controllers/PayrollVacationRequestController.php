@@ -2,9 +2,10 @@
 
 namespace Modules\Payroll\Http\Controllers;
 
+use Carbon\Carbon;
+use App\Models\User;
 use App\Models\FiscalYear;
 use App\Models\CodeSetting;
-use App\Models\User;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -13,9 +14,11 @@ use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Storage;
 use Modules\Payroll\Models\Institution;
 use Illuminate\Contracts\Support\Renderable;
+use Modules\Payroll\Models\PayrollEmployment;
 use Modules\Payroll\Models\PayrollVacationRequest;
 use Modules\Payroll\Imports\VacationsRequestImport;
 use Modules\Payroll\Jobs\PayrollVacationsExportJob;
+use Modules\Payroll\Rules\PayrollCheckVacationRequest;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Modules\Payroll\Exports\PayrollVacationRequestExport;
 
@@ -70,8 +73,8 @@ class PayrollVacationRequestController extends Controller
             'payroll_staff_id'     => ['required'],
             'vacation_period_year' => ['required'],
             'days_requested'       => ['required'],
-            'start_date'           => ['required', 'before:end_date'],
-            'end_date'             => ['required', 'after:start_date']
+            'start_date'           => ['required', 'date', 'before:end_date', new PayrollCheckVacationRequest()],
+            'end_date'             => ['required', 'date', 'after:start_date', new PayrollCheckVacationRequest()]
         ];
 
         /* Define los mensajes de validación para las reglas del formulario */
@@ -82,7 +85,15 @@ class PayrollVacationRequestController extends Controller
             'start_date.required'           => 'El campo fecha de inicio de las vacaciones es obligatorio.',
             'start_date.before'           => 'El campo fecha de inicio debe ser menor a la fecha de culminación.',
             'end_date.required'             => 'El campo fecha de culminación de las vacaciones es obligatorio.',
-            'end_date.after'             => 'El campo fecha de culminación debe ser mayor a la fecha de inicio.'
+            'end_date.after'             => 'El campo fecha de culminación debe ser mayor a la fecha de inicio.',
+            'created_at.required'       => 'El campo fecha de solicitud es obligatorio.',
+            'created_at.after_or_equal' => 'El campo fecha de solicitud debe ser mayor a un año después de la fecha del solicitud del empleado.',
+            'payroll_staff_date.required'  => 'El campo fecha de ingreso del empleado es obligatorio.',
+        ];
+
+        $this->attributes = [
+            'start_date' => 'Fecha de inicio',
+            'end_date' => 'Fecha de culminación'
         ];
     }
 
@@ -121,8 +132,8 @@ class PayrollVacationRequestController extends Controller
      */
     public function import(Request $request): JsonResponse
     {
-        /* Obtiene el usuario autenticado */
-        $user =  User::where('id', auth()->user()->id)->toBase()->get()->first();
+        /** Obtiene el usuario autenticado */
+        $user =  User::where('id', auth()->user()->id)->first();
 
         /* Encuentra la institución del usuario */
         $profileUser = $user->profile;
@@ -137,8 +148,8 @@ class PayrollVacationRequestController extends Controller
         /* Carga el archivo de Excel a importar y lo almacena temporalmente */
         $excelFilePath = $request->file('file')->store('', 'temporary');
 
-        /* Crea el nombre del archivo de errores para la importación */
-        $errorsFilePath = 'import' . uniqid() . '.errors';
+        /** Crea el nombre del archivo de errores para la importación */
+        $errorsFilePath = 'import_' . uniqid() . '_.errors' . '.xlsx';
 
         /* Crea el archivo de errores en el disco temporal */
         Storage::disk('temporary')->put($errorsFilePath, '');
@@ -147,13 +158,13 @@ class PayrollVacationRequestController extends Controller
         $currentFiscalYear = FiscalYear::select('year')
             ->where(['active' => true, 'closed' => false])->orderBy('year', 'desc')->first();
 
-        /* Importa el archivo de Excel */
+        /** Importa el archivo de Excel */
         Excel::import(
             new VacationsRequestImport(
                 $errorsFilePath,
                 $currentFiscalYear,
                 $user,
-                $institution->id
+                $institution->id,
             ),
             $excelFilePath,
             'temporary',
@@ -223,8 +234,34 @@ class PayrollVacationRequestController extends Controller
      */
     public function store(Request $request)
     {
-        $this->validate($request, $this->validateRules, $this->messages);
+        // Validar que la fecha de solicitud sea un año despues de la fecha de ingreso del empleado
+        $payrollEmployment = PayrollEmployment::where('payroll_staff_id', $request->payroll_staff_id)->first();
+        $staff_date = Carbon::parse($payrollEmployment->start_date)->addYear()->toDateString();
 
+        $request->request->add([
+            'payroll_staff_date' => $staff_date,
+        ]);
+
+        $this->validateRules = array_merge($this->validateRules, [
+            'payroll_staff_date' => ['required', 'date'],
+            'created_at' => ['required', 'date', 'after_or_equal:payroll_staff_date']
+        ]);
+
+        $this->validate($request, $this->validateRules, $this->messages, $this->attributes);
+
+        $currentFiscalYear = FiscalYear::select('year')
+            ->where(['active' => true, 'closed' => false])->orderBy('year', 'desc')->first();
+
+        /* Validar que el año de la fecha de solicitud sea menor que el año fiscal */
+        $year_created = Carbon::parse($request->created_at);
+
+        if ($year_created->year > $currentFiscalYear->year) {
+            $request->session()->flash('message', ['type' => 'error']);
+            $errors[0] = ["El año de la fecha de solicitud ingresada debe ser menor al año fiscal."];
+            return response()->json(['result' => true, 'errors' => $errors], 422);
+        }
+
+        // Validar que haya un formato de código para la solicitud de vacaciones
         $codeSetting = CodeSetting::where('table', 'payroll_vacation_requests')->first();
         if (is_null($codeSetting)) {
             $request->session()->flash(
@@ -236,9 +273,6 @@ class PayrollVacationRequestController extends Controller
             );
             return response()->json(['result' => false, 'redirect' => route('payroll.settings.index')], 200);
         }
-
-        $currentFiscalYear = FiscalYear::select('year')
-            ->where(['active' => true, 'closed' => false])->orderBy('year', 'desc')->first();
 
         $code  = generate_registration_code(
             $codeSetting->format_prefix,
@@ -268,7 +302,8 @@ class PayrollVacationRequestController extends Controller
             'start_date'           => $request->input('start_date'),
             'end_date'             => $request->input('end_date'),
             'payroll_staff_id'     => $request->input('payroll_staff_id'),
-            'institution_id'       => $institution->id
+            'institution_id'       => $institution->id,
+            'created_at'           => $request->created_at
             ]
         );
 
@@ -326,7 +361,33 @@ class PayrollVacationRequestController extends Controller
     {
         /* Objeto asociado al modelo PayrollVacationRequest */
         $payrollVacationRequest = PayrollVacationRequest::find($id);
-        $this->validate($request, $this->validateRules, $this->messages);
+
+        // Validar que la fecha de solicitud sea un año despues de la fecha de ingreso del empleado
+        $payrollEmployment = PayrollEmployment::where('payroll_staff_id', $request->payroll_staff_id)->first();
+        $staff_date = Carbon::parse($payrollEmployment->start_date)->addYear()->toDateString();
+
+        $request->request->add([
+            'payroll_staff_date' => $staff_date,
+        ]);
+
+        $this->validateRules = array_merge($this->validateRules, [
+            'payroll_staff_date' => ['required', 'date'],
+            'created_at' => ['required', 'date', 'after_or_equal:payroll_staff_date']
+        ]);
+
+        $this->validate($request, $this->validateRules, $this->messages, $this->attributes);
+
+        $currentFiscalYear = FiscalYear::select('year')
+            ->where(['active' => true, 'closed' => false])->orderBy('year', 'desc')->first();
+
+        /* Validar que el año de la fecha de solicitud sea menor que el año fiscal */
+        $year_created = Carbon::parse($request->created_at);
+
+        if ($year_created->year > $currentFiscalYear->year) {
+            $request->session()->flash('message', ['type' => 'error']);
+            $errors[0] = ["El año de la fecha de solicitud ingresada debe ser menor al año fiscal."];
+            return response()->json(['result' => true, 'errors' => $errors], 422);
+        }
 
         // Verificar si se edito el campo de periodos vacacionales
         if (isset($request->old_vacation_period_year)) {
@@ -383,7 +444,8 @@ class PayrollVacationRequestController extends Controller
             'start_date'           => $request->input('start_date'),
             'end_date'             => $request->input('end_date'),
             'payroll_staff_id'     => $request->input('payroll_staff_id'),
-            'institution_id'       => $institution->id
+            'institution_id'       => $institution->id,
+            'created_at'           => $request->input('created_at')
             ]
         );
 

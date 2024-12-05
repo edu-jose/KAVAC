@@ -237,6 +237,13 @@ class BudgetRoleAndPermissionsTableSeeder extends Seeder
                 'slug_alt' => 'formulacion.ver', 'short_description' => 'ver formulación',
             ],
             [
+                'name' => 'Confirmar formulaciones de presupuesto',
+                'slug' => 'budget.formulation.confirm',
+                'description' => 'Acceso para confirmar formulaciones de presupuesto',
+                'model' => 'Modules\Budget\Models\BudgetFormulation', 'model_prefix' => 'presupuesto',
+                'slug_alt' => 'formulacion.confirmar', 'short_description' => 'confirmar formulación',
+            ],
+            [
                 'name' => 'Crear crédito adicional',
                 'slug' => 'budget.aditionalcredit.create',
                 'description' => 'Acceso para crear crédito adicional',

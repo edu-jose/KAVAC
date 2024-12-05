@@ -1,23 +1,26 @@
 <?php
 
-namespace Modules\ProjectTracking\Models;
+namespace Modules\Accounting\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use OwenIt\Auditing\Contracts\Auditable;
 use OwenIt\Auditing\Auditable as AuditableTrait;
 use App\Traits\ModelsTrait;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * @class ProjectTrackingSettings
- * @brief Gestiona la información, procesos, consultas y relaciones asociadas al modelo
+ * @class AccountingTypeActivity
+ * @brief [descripción detallada]
  *
- * @author Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
+ * [descripción corta]
+ *
+ * @author [autor de la clase] [correo del autor]
  *
  * @license
  *     [LICENCIA DE SOFTWARE CENDITEL](http://conocimientolibre.cenditel.gob.ve/licencia-de-software-v-1-3/)
  */
-class ProjectTrackingSettings extends Model implements Auditable
+class AccountingTypeActivity extends Model implements Auditable
 {
     use SoftDeletes;
     use AuditableTrait;
@@ -35,5 +38,15 @@ class ProjectTrackingSettings extends Model implements Auditable
      *
      * @var array $fillable
      */
-    protected $fillable = [];
+    protected $fillable = ['name'];
+
+    /**
+     * Get all of the accountingAccounts for the AccountingTypeOfActivity
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function accountingAccounts(): HasMany
+    {
+        return $this->hasMany(AccountingAccount::class);
+    }
 }

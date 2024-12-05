@@ -261,6 +261,19 @@ class PayrollController extends Controller
         $params['user_id'] = $user->id;
         $params['institution_id'] = $user->profile?->institution_id ?? null;
 
+        $payroll = Payroll::query()->create(
+            [
+                'name' => $request->input('name'),
+                'status' => 'En Proceso',
+                'code' => $code,
+                'payroll_payment_period_id' => $request->input('payroll_payment_period_id'),
+                'payroll_parameters' => json_encode($request->input('payroll_parameters')),
+                'created_at' => (new DateTime($request->input('created_at')))->format('Y-m-d H:i:s'),
+                'document_status_id' => DocumentStatus::query()->where('action', 'PR')->value('id')
+            ]
+        );
+        $params['id'] = $payroll->id;
+
         PayrollCreatePaymentRelationship::dispatch($params);
 
         $request->session()->flash('message', ['type' => 'other', 'title' => '¡Éxito!',
@@ -362,6 +375,19 @@ class PayrollController extends Controller
         $params = $request->all();
         $params['user_id'] = $user->id;
         $params['institution_id'] = $user->profile?->institution_id ?? null;
+        Payroll::query()->updateOrCreate(
+            [
+                'id' => $request->input('id'),
+            ],
+            [
+                'name' => $request->input('name'),
+                'status' => 'En Proceso',
+                'payroll_payment_period_id' => $request->input('payroll_payment_period_id'),
+                'payroll_parameters' => json_encode($request->input('payroll_parameters')),
+                'created_at' => (new DateTime($request->input('created_at')))->format('Y-m-d H:i:s'),
+                'document_status_id' => DocumentStatus::query()->where('action', 'PR')->value('id')
+            ]
+        );
         PayrollUpdatePaymentRelationship::dispatch($params);
 
         $request->session()->flash('message', ['type' => 'other', 'title' => '¡Éxito!',
@@ -403,7 +429,7 @@ class PayrollController extends Controller
     public function vueInfo($id)
     {
         /* Objeto asociado al modelo Payroll */
-        $payroll = Payroll::with(['payrollStaffPayrolls', 'payrollPaymentPeriod.payrollPaymentType.payrollConcepts'])->find($id);
+        $payroll = Payroll::with(['payrollPaymentPeriod.payrollPaymentType.payrollConcepts'])->find($id);
         return response()->json(['record' => $payroll], 200);
     }
 
@@ -419,7 +445,7 @@ class PayrollController extends Controller
         return response()->json(
             [
                 'records' => PayrollResource::collection(Payroll::query()
-                    ->with(['payrollPaymentPeriod.payrollPaymentType.payrollConcepts'])->get())
+                    ->with(['payrollPaymentPeriod.payrollPaymentType.payrollConcepts', 'documentStatus'])->get())
             ],
             200
         );
@@ -441,11 +467,15 @@ class PayrollController extends Controller
             DB::transaction(function () use ($request, $id) {
                 if (auth()->user()->hasPermission('payroll.registers.moment.close')) {
                     $payroll = Payroll::find($id);
+                    $payroll->document_status_id = DocumentStatus::query()->where('action', 'CE')->value('id');
+                    $payroll->save();
                     $payrollPaymentPeriod = $payroll->payrollPaymentPeriod;
                     $payrollPaymentPeriod->payment_status = 'generated';
                     $payrollPaymentPeriod->save();
                 } else {
                     $payroll = Payroll::find($id);
+                    $payroll->document_status_id = DocumentStatus::query()->where('action', 'CE')->value('id');
+                    $payroll->save();
 
                     if ($payroll?->payrollPaymentPeriod?->payrollPaymentType?->skip_moments == true) {
                         $payrollPaymentPeriod = $payroll->payrollPaymentPeriod;
@@ -513,6 +543,9 @@ class PayrollController extends Controller
                                 $institution = Institution::where('default', true)->first();
                             } else {
                                 $user_profile = Profile::with('institution')->where('user_id', auth()->user()->id)->first();
+                                if (empty($user_profile)) {
+                                    throw new \Exception("El usuario autenticado no pertenece a ninguna institución.", 422);
+                                }
 
                                 $institution = $user_profile['institution'];
                             }
@@ -654,6 +687,9 @@ class PayrollController extends Controller
                                         if (count($totals['NA']) > 0) {
                                             if ($rec != null) { // Probar obtener receiver por el key
                                                 $codeSettingOrder = CodeSetting::where("model", \Modules\Finance\Models\FinancePayOrder::class)->first();
+                                                if (!$codeSettingOrder) {
+                                                    throw new \Exception("Debe configurar previamente el formato para el código de la orden de pago en el módulo de finanzas.", 422);
+                                                }
                                                 $newCode = generate_registration_code(
                                                     $codeSettingOrder->format_prefix,
                                                     strlen($codeSettingOrder->format_digits),
@@ -783,6 +819,10 @@ class PayrollController extends Controller
                             /** @todo Validar pendingAmount */
                             $codeSetting = CodeSetting::where("model", \Modules\Finance\Models\FinancePayOrder::class)->first();
 
+                            if (!$codeSetting) {
+                                throw new \Exception("Debe configurar previamente el formato para el código de la orden de pago en el módulo de finanzas.", 422);
+                            }
+
                             $code = generate_registration_code(
                                 $codeSetting->format_prefix,
                                 strlen($codeSetting->format_digits),
@@ -888,6 +928,11 @@ class PayrollController extends Controller
                             );
 
                             $codeSetting = CodeSetting::where("model", \Modules\Finance\Models\FinancePaymentExecute::class)->first();
+
+                            if (!$codeSetting) {
+                                throw new \Exception("Debe configurar previamente el formato para el código de la emisión de pago en el módulo de finanzas.", 422);
+                            }
+
                             $codePayment = generate_registration_code(
                                 $codeSetting->format_prefix,
                                 strlen($codeSetting->format_digits),
@@ -982,6 +1027,11 @@ class PayrollController extends Controller
 
                         foreach ($deductionToPayOrder as $dPayOrder) {
                             $codeSetting = CodeSetting::where("model", \Modules\Finance\Models\FinancePayOrder::class)->first();
+
+                            if (!$codeSetting) {
+                                throw new \Exception("Debe configurar previamente el formato para el código de la orden de pago en el módulo de finanzas.", 422);
+                            }
+
                             $codeD = generate_registration_code(
                                 $codeSetting->format_prefix,
                                 strlen($codeSetting->format_digits),
@@ -1091,7 +1141,7 @@ class PayrollController extends Controller
                 }
             });
         } catch (\Exception $e) {
-            Log::error($e->getMessage());
+            Log::error($e);
             $message = str_replace("\n", "", $e->getMessage());
             if (strpos($message, 'ERROR') !== false && strpos($message, 'DETAIL') !== false) {
                 $pattern = '/ERROR:(.*?)DETAIL/';
@@ -1199,7 +1249,8 @@ class PayrollController extends Controller
             /* Objeto asociado al modelo Payroll */
             $payroll = Payroll::with([
                 'payrollPaymentPeriod.payrollPaymentType.payrollConcepts.currency',
-                'payrollPaymentPeriod.payrollPaymentType.payrollConcepts.budgetAccount'
+                'payrollPaymentPeriod.payrollPaymentType.payrollConcepts.budgetAccount',
+                'purchaseCommonBudgetaryAvailability'
             ])->find($id);
 
             $round = Parameter::where('p_key', 'round')->where('required_by', 'payroll')->first();
@@ -1372,7 +1423,8 @@ class PayrollController extends Controller
             /* Objeto asociado al modelo Payroll */
             $payroll = Payroll::with([
                 'payrollPaymentPeriod.payrollPaymentType.payrollConcepts.currency',
-                'payrollPaymentPeriod.payrollPaymentType.payrollConcepts.budgetAccount'
+                'payrollPaymentPeriod.payrollPaymentType.payrollConcepts.budgetAccount',
+                'purchaseCommonBudgetaryAvailability'
             ])->find($id);
 
             $round = Parameter::where('p_key', 'round')->where('required_by', 'payroll')->first();
@@ -1868,9 +1920,12 @@ class PayrollController extends Controller
     {
         try {
             $payroll = Payroll::find($id);
+
             /** @todo Se valida la información de las cuentas asociadas */
             $this->payrollValidateAccounts($payroll);
 
+            $payroll->document_status_id = DocumentStatus::query()->where('action', 'AP')->value('id');
+            $payroll->save();
             $payrollPaymentPeriod = $payroll->payrollPaymentPeriod;
             $payrollPaymentPeriod->payment_status = 'approved';
             $payrollPaymentPeriod->save();
@@ -1919,6 +1974,10 @@ class PayrollController extends Controller
      */
     public function payrollValidateAccounts(Payroll $model)
     {
+        if ($model?->payrollPaymentPeriod?->payrollPaymentType?->skip_moments == true) {
+            return;
+        }
+
         $number_decimals = Parameter::where('p_key', 'number_decimals')->where('required_by', 'payroll')->first();
         $round = Parameter::where('p_key', 'round')->where('required_by', 'payroll')->first();
         $nameDecimalFunction = $round->p_value == 'false' ? 'currency_format' : 'round';

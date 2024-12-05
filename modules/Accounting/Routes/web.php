@@ -156,6 +156,34 @@ Route::group(['middleware' => ['web', 'auth', 'verified'], 'prefix' => 'accounti
         'Reports\AccountingCheckupBalanceController@pdfVueSign'
     );
 
+    /* Rutas para reporte de estados de flujo de efectivo */
+    Route::get(
+        'report/cashFlowStatement/{report}',
+        'Reports\AccountingCashFlowStatementController@pdf'
+    );
+
+    /* Rutas para reporte de balance general */
+    Route::get(
+        'report/cashFlowStatement/sheet/{report}',
+        'Reports\AccountingCashFlowStatementController@export'
+    );
+
+    Route::get(
+        'report/cashFlowStatement/pdfVue/{date}/{level}/{currency}/{zero?}',
+        'Reports\AccountingCashFlowStatementController@pdfVue'
+    );
+
+    /* Rutas para reporte de balance general con firma electrónica */
+    Route::get(
+        'report/cashFlowStatementSign/{report}',
+        'Reports\AccountingCashFlowStatementController@pdfSign'
+    );
+
+    Route::get(
+        'report/cashFlowStatementSign/pdfVue/{date}/{level}/{currency}/{zero?}',
+        'Reports\AccountingCashFlowStatementController@pdfVueSign'
+    );
+
     /* Rutas para reporte del Mayor Analítico */
     Route::post(
         'report/analyticalMajor/AccAccount',
@@ -339,7 +367,16 @@ Route::group(['middleware' => ['web', 'auth', 'verified'], 'prefix' => 'accounti
         ['as' => 'accounting']
     );
 
-    Route::get('get-categories/', 'AccountingSettingCategoryController@getCategories');
+    Route::get(
+        'get-categories/',
+        'AccountingSettingCategoryController@getCategories'
+    );
+
+    Route::resource(
+        'type-activities',
+        'AccountingTypeActivityController',
+        ['as' => 'accounting']
+    );
 
      /* Ruta para visualizar el interfaz para firmar documento PDF */
     Route::get('viewSignfile', function () {

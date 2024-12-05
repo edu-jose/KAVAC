@@ -153,10 +153,10 @@
                             <thead>
                                 <tr>
                                     <th colspan="4" class="border-right">
-                                        Datos de Origen
+                                        CUENTA CEDENTES
                                     </th>
                                     <th colspan="4">
-                                        Datos de Destino
+                                        CUENTA A ACREDITAR
                                     </th>
                                     <th>
                                         <a class="btn btn-sm btn-info btn-action btn-tooltip" href="#"

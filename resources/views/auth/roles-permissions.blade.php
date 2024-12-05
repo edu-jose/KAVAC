@@ -21,7 +21,7 @@
     $module = "";
 @endphp
 <div class="row" id="permissions">
-    @foreach (App\Roles\Models\Permission::orderBy('model_prefix')->get() as $permission)
+    @foreach (App\Roles\Models\Permission::orderBy('model_prefix')->orderBy('model')->get() as $permission)
         @if ($module != $permission->model_prefix)
             @php
                 $module = $permission->model_prefix;

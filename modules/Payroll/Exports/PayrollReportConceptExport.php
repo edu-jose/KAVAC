@@ -114,8 +114,7 @@ class PayrollReportConceptExport implements WithHeadings, ShouldAutoSize, WithMa
             'Tipo de concepto',
             'Tipo de nómina',
             'Beneficiario',
-            'Cuenta contable del beneficiario',
-            'Genera orden de pago'
+            'Cuenta contable del beneficiario'
         ];
     }
 
@@ -182,8 +181,7 @@ class PayrollReportConceptExport implements WithHeadings, ShouldAutoSize, WithMa
             $conceptTypeName ?? '',
             $payrollPaymentTypeNames ?? '',
             $receiver ?? 'No definido',
-            $receiverAccount ?? 'No definido',
-            $row->pay_order ? 'Si' : 'No'
+            $receiverAccount ?? 'No definido'
         ];
     }
 }

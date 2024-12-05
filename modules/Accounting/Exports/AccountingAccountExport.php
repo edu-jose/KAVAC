@@ -6,6 +6,7 @@ use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Modules\Accounting\Models\AccountingAccount;
+use Modules\Accounting\Models\AccountingTypeActivity;
 
 /**
  * @class AccountingAccountExport
@@ -23,6 +24,7 @@ class AccountingAccountExport extends \App\Exports\DataExport implements
     ShouldAutoSize,
     WithMapping
 {
+    protected $accTypeActivity = [];
     /**
      * Obtiene la colección de registros a exportar
      *
@@ -30,6 +32,22 @@ class AccountingAccountExport extends \App\Exports\DataExport implements
      */
     public function collection()
     {
+        $AccountingTypeActivity = AccountingTypeActivity::select('id', 'slug')->get();
+
+        foreach ($AccountingTypeActivity as $key => $value) {
+            $abr = '';
+
+            if ($value->slug == 'actividad-operativa') {
+                $abr = 'AO';
+            } elseif ($value->slug == 'actividad-de-inversion') {
+                $abr = 'AI';
+            } elseif ($value->slug == 'actividad-de-financiamiento') {
+                $abr = 'AF';
+            }
+
+            $this->accTypeActivity[$value->id] = $abr;
+        }
+
         return AccountingAccount::where('active', true)->with('parent')->get();
     }
 
@@ -49,6 +67,7 @@ class AccountingAccountExport extends \App\Exports\DataExport implements
             'ACTIVA',
             'ORIGINAL',
             'SUB-ESPECIFICA',
+            'TIPO DE ACTIVIDAD',
         ];
     }
 
@@ -70,6 +89,7 @@ class AccountingAccountExport extends \App\Exports\DataExport implements
             $record->active ? 'SI' : 'NO',
             $record->original ? 'SI' : 'NO',
             $record->parent_id ? $record->parent->code : null,
+            $this->accTypeActivity[$record->accounting_type_activity_id] ?? null,
         ];
     }
 }

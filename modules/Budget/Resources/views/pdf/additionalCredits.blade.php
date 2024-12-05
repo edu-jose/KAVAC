@@ -6,6 +6,16 @@
                 {{ date_format(new DateTime($records['approved_at']), 'd-m-Y') }}
             </td>
         </tr>
+        @if ($records['status'] == 'AP')
+            <tr>
+                <td style="font-weight: bold;">Fecha de aprobación:</td>
+                <td width="175%">
+                    {{ $records['approved_date'] == null ?
+                        date_format(new DateTime($records['approved_at']), 'd-m-Y') :
+                        date_format(new DateTime($records['approved_date']), 'd-m-Y') }}
+                </td>
+            </tr>
+        @endif
         <tr>
             <td style="font-weight: bold;">Institución:</td>
             <td width="175%">

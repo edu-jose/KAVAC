@@ -194,7 +194,7 @@
                     <tbody>
                         <tr v-for="(account, index) in records" data-formulated="false" :id="account.id"
                             :class="account.specific === '00' ? 'disable-row' : ''" class="accounts"
-                            :data-code="account.code" :data-index="index" :key="index">
+                            :data-code="account.code.trim()" :data-index="index" :key="index">
                             <td>
                                 <i v-if="account.locked" class="fa fa-ban text-white"
                                     title="Elemento bloqueado, de solo lectura" data-toggle="tooltip"></i>
@@ -797,7 +797,17 @@ export default {
 
         validateCurrency() {
             if (!this.record.currency_id) {
-                bootbox.alert('Debe seleccionar primero un tipo de moneda');
+                bootbox.alert({
+                    title: 'Advertencia',
+                    message: 'Debe seleccionar primero un tipo de moneda',
+                    closeButton: false,
+					buttons: {
+						ok: {
+							label: "Cerrar",
+							className: 'btn-light'
+						}
+					}
+                });
                 return false;
             }
         },
@@ -1332,6 +1342,7 @@ export default {
                 }
             }).then(response => {
                 if (response.data.result && response.data.records) {
+                    console.log(response.data.records);
                     $.each(response.data.records, function (i, row) {
                         let objData = {};
                         $.each(row, function (j, col) {

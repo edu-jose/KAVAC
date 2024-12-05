@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use OwenIt\Auditing\Contracts\Auditable;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use OwenIt\Auditing\Auditable as AuditableTrait;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @class Parish
@@ -87,6 +88,16 @@ class Parish extends Model implements Auditable
     }
 
     /**
+     * Get all of the localities for the Parish
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function localities(): HasMany
+    {
+        return $this->hasMany(Locality::class);
+    }
+
+    /**
      * Scope para buscar y filtrar datos de Parroquias
      *
      * @author     Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
@@ -98,16 +109,41 @@ class Parish extends Model implements Auditable
      */
     public function scopeSearch($query, $search)
     {
-        return $query->where(DB::raw('upper(name)'), 'LIKE', '%' . $search . '%')
-                     ->orWhere('code', 'LIKE', '%' . $search . '%')
-                     ->orWhereHas('municipality', function ($qMun) use ($search) {
-                         $qMun->where(DB::raw('upper(name)'), 'LIKE', '%' . $search . '%')
-                              ->orWhere('code', 'LIKE', '%' . $search . '%')
-                              ->orWhereHas('estate', function ($qEst) use ($search) {
-                                  $qEst->where(DB::raw('upper(name)'), 'LIKE', '%' . $search . '%')
-                                       ->orWhere('code', 'LIKE', '%' . $search . '%');
-                              });
-                     });
+        return $query->where(
+            DB::raw('upper(name)'),
+            'LIKE',
+            '%' . strtoupper($search) . '%'
+        )->orWhere(
+            'code',
+            'LIKE',
+            '%' . $search . '%'
+        )->orWhereHas(
+            'municipality',
+            function ($qMun) use ($search) {
+                $qMun->where(
+                    DB::raw('upper(name)'),
+                    'LIKE',
+                    '%' . strtoupper($search) . '%'
+                )->orWhere(
+                    'code',
+                    'LIKE',
+                    '%' . $search . '%'
+                )->orWhereHas(
+                    'estate',
+                    function ($qEst) use ($search) {
+                        $qEst->where(
+                            DB::raw('upper(name)'),
+                            'LIKE',
+                            '%' . strtoupper($search) . '%'
+                        )->orWhere(
+                            'code',
+                            'LIKE',
+                            '%' . $search . '%'
+                        );
+                    }
+                );
+            }
+        );
     }
 
     /**

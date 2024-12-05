@@ -1,9 +1,12 @@
 <?php
 
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Modules\Payroll\Models\PayrollStaff;
 use Modules\Payroll\Models\PayrollRelationship;
 use Modules\Payroll\Models\PayrollSalaryTabulator;
+use Modules\Payroll\Models\PayrollSalaryTabulatorScale;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Modules\Payroll\Transformers\PayrollSalaryTabulatorResource;
 
@@ -489,9 +492,70 @@ if (!function_exists('getPayrollSalaryTabulators')) {
             ->whereIn('id', $salaryTabulatorIds)
             ->with(
                 'payrollSalaryTabulatorScales.payrollHorizontalScale',
-                'payrollSalaryTabulatorScales.payrollVerticalScale'
+                'payrollSalaryTabulatorScales.payrollVerticalScale',
             )->get()
         );
         return $payrollSalaryTabulators;
+    }
+}
+
+if (!function_exists('addTabulatorValuetoFormula')) {
+    /**
+     * Se identifica el valor según el expediente del trabajador y se sustituye por su valor en el tabulador.
+     *
+     * @param object $salaryTabulator Tabulador salarial
+     * @param object $salaryAdjustment Ajuste en tabla salarial
+     * @param object|null $scale Escala horizontal
+     * @param object|null $scaleV Escala vertical
+     * @param array|Modules\Payroll\Models\PayrollConcept $concept Concepto de nomina
+     * @param array $match Match
+     * @param object $formula Formula
+     *
+     * @return array
+     */
+    function addTabulatorValuetoFormula($salaryTabulator, $salaryAdjustment, $scale, $scaleV, $concept, $match, $formula)
+    {
+        $tabScale = PayrollSalaryTabulatorScale::query()
+            ->where('payroll_salary_tabulator_id', $salaryTabulator->id)
+            ->where('payroll_horizontal_scale_id', $scale['id'] ?? null)
+            ->where('payroll_vertical_scale_id', $scaleV['id'] ?? null)
+            ->first();
+
+        // Si hay ajuste salarial añadir valores correspondientes a la escala del tabulador
+        if ($salaryAdjustment) {
+            if ($salaryAdjustment->increase_of_type == 'absolute_value') {
+                $tabScale['value'] = json_encode($tabScale['value'] + $salaryAdjustment->value);
+            } elseif ($salaryAdjustment->increase_of_type == 'percentage') {
+                $tabScale['value'] = json_encode($tabScale['value'] * $salaryAdjustment->value / 100);
+            } else {
+                $salary_values = $salaryAdjustment->salary_values ? json_decode($salaryAdjustment->salary_values) : null;
+                if ($salary_values) {
+                    foreach ($salary_values as $salary) {
+                        if ($tabScale['id'] == $salary->id) {
+                            $tabScale['value'] = $salary->value;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (isset($tabScale)) {
+            if ($salaryTabulator->percentage) {
+                $formula = str_replace(
+                    $match,
+                    $tabScale['value'] / 100,
+                    $formula ?? $concept['formula']
+                );
+            } else {
+                $formula = str_replace(
+                    $match,
+                    $tabScale['value'],
+                    $formula ?? $concept['formula']
+                );
+            }
+        }
+
+        return $formula;
     }
 }

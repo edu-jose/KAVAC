@@ -54,13 +54,13 @@
                         aria-label="Eliminar registro">
                         <i class="fa fa-trash-o"></i>
                     </button>
-                    <button class="btn btn-success btn-xs btn-icon btn-action btn-tooltip" type="button" disabled
-                        aria-label="Asignar Presupuesto">
+                    <button class="btn btn-secondary btn-xs btn-icon btn-action btn-tooltip" type="button" disabled
+                        aria-label="Confirmar Presupuesto">
                         <i class="fa fa-check"></i>
                     </button>
                 </template>
                 <template v-else>
-                    <button v-if="!props.row.assigned" class="btn btn-warning btn-xs btn-icon btn-action btn-tooltip"
+                    <button v-if="!props.row.confirmed" class="btn btn-warning btn-xs btn-icon btn-action btn-tooltip"
                         type="button" title="Modificar registro" aria-label="Editar registro" data-placement="bottom"
                         data-toggle="tooltip" @click="editForm(props.row.id)">
                         <i class="fa fa-edit"></i>
@@ -70,9 +70,9 @@
                         data-toggle="tooltip" type="button" @click="deleteRecord(props.row.id, '')">
                         <i class="fa fa-trash-o"></i>
                     </button>
-                    <button v-if="!props.row.assigned" class="btn btn-success btn-xs btn-icon btn-action btn-tooltip"
-                        type="button" data-placement="bottom" data-toggle="tooltip" title="Asignar Presupuesto"
-                        aria-label="Asignar Presupuesto" @click="asignR(props.row.id)">
+                    <button v-if="props.row.assigned && !props.row.confirmed" class="btn btn-secondary btn-xs btn-icon btn-action btn-tooltip"
+                        type="button" data-placement="bottom" data-toggle="tooltip" title="Confirmar Presupuesto"
+                        aria-label="Confirmar Presupuesto" @click="confirmR(props.row.id)">
                         <i class="fa fa-check"></i>
                     </button>
                 </template>
@@ -102,6 +102,7 @@
 
 <script>
 export default {
+    props: ["has_confirm_permission"],
     data() {
         return {
             records: [],
@@ -109,6 +110,10 @@ export default {
             assigned: {
                 _method: "PUT",
                 assigned: "1",
+            },
+            confirmed: {
+                _method: "PUT",
+                confirmed: "1",
             },
             columns: [
                 "date",
@@ -222,9 +227,9 @@ export default {
         asignR(id) {
             const vm = this;
             var dialog = bootbox.confirm({
-                title: "Esta seguro de asignar esta formulación?",
+                title: "¿Está seguro de asignar esta formulación?",
                 message:
-                    "Una vez asignado no puede ser modificado",
+                    " ",
                 size: "medium",
                 buttons: {
                     cancel: {
@@ -240,6 +245,60 @@ export default {
                             method: "post",
                             url: `${window.app_url}/budget/subspecific-formulations/${id}`,
                             data: vm.assigned,
+                        })
+                            .then((response) => {
+                                vm.errors = [];
+                                vm.showMessage("store");
+                            })
+                            .catch(error => {
+                                if (typeof (error.response) !== "undefined") {
+                                    vm.showMessage(
+                                        'custom', 'Acceso Denegado', 'danger', 'screen-error', error.response.data.message
+                                    );
+                                }
+                            });
+                    }
+                },
+            });
+            setTimeout(function () {
+                vm.initRecords(vm.route_list, "");
+            }, 2000);
+        },
+
+        confirmR(id) {
+            const vm = this;
+
+            if (
+                vm.has_confirm_permission == ''
+                || vm.has_confirm_permission == false
+                || vm.has_confirm_permission == 0
+            ) {
+                vm.showMessage(
+                    'custom', 'Acceso Denegado', 'danger', 'screen-error',
+                    'No tiene permisos para acceder a esta funcionalidad'
+                );
+
+                return;
+            }
+            var dialog = bootbox.confirm({
+                title: "¿Está seguro de confirmar esta formulación?",
+                message:
+                    "Una vez confirmado el presupuesto no puede ser modificado ni eliminado",
+                size: "medium",
+                buttons: {
+                    cancel: {
+                        label: '<i class="fa fa-times"></i> Cancelar',
+                    },
+                    confirm: {
+                        label: '<i class="fa fa-check"></i> Confirmar',
+                    },
+                },
+                callback: function (result) {
+                    if (result) {
+                        axios({
+                            method: "post",
+                            url: `${window.app_url}/budget/subspecific-formulations/${id}`,
+                            data: vm.confirmed,
                         })
                             .then((response) => {
                                 vm.errors = [];

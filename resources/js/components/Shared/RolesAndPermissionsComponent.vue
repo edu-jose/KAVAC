@@ -26,54 +26,67 @@
                             </div>
                         </div>
                     </div>
-                    <table class="table table-hover table-striped dt-responsive table-roles-permissions">
-                        <thead>
-                            <tr>
-                                <th class="text-center border-right col-2" rowspan="2">PERMISOS</th>
-                                <th class="text-center col-10" :colspan="roles.length">ROLES</th>
-                            </tr>
-                            <tr>
-                                <th class="text-center" :title="role.description" data-toggle="tooltip"
-                                    v-for="(role, index) in roles" :key="index">
-                                    <p-check class="p-icon p-plain" color="text-success" off-color="text-gray"
-                                             v-model="allPermissionByRol" :value="role.id"
-                                             @change="togglePermissionsByRol(role.id)"
-                                             data-toggle="tooltip" title="Seleccionar todos los permisos para este rol" toggle>
-                                        <i class="fa fa-unlock" slot="extra"></i>
-                                        <i class="fa fa-lock" slot="off-extra"></i>
-                                        <label slot="off-label"></label>
-                                    </p-check>
-                                    {{ role.name }}
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody v-for="(moduleGroup, index) in moduleGroups" :key="index">
-                            <tr>
-                                <td>&#160;</td>
-                                <td class="text-center" :colspan="roles.length">
-                                    <span class="card-title text-uppercase text-module">
-                                        Módulo [{{ getGroupName(moduleGroup) }}]
-                                    </span>
-                                </td>
-                            </tr>
-                            <tr v-for="(filteredPermission, index) in filteredPermissions" :key="index">
-                                <td class="text-uppercase">
-                                    {{ filteredPermission.short_description || filteredPermission.name }}
-                                </td>
-                                <td v-for="(cellRole, idx) in roles" class="text-center" :key="idx">
-                                    <p-check class="p-icon p-plain" :class="'role_' + cellRole.id" color="text-success"
-                                             off-color="text-gray" data-toggle="tooltip" :title="'Rol: ' + cellRole.name"
-                                             :value="cellRole.id + '_' + filteredPermission.id"
-                                             :name="cellRole.id + '_' + filteredPermission.id"
-                                             v-model="record.roles_attach_permissions" toggle>
-                                        <i class="fa fa-unlock" slot="extra"></i>
-                                        <i class="fa fa-lock" slot="off-extra"></i>
-                                        <label slot="off-label"></label>
-                                    </p-check>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <div class="table-container-with-vscroll">
+                        <table class="table table-hover table-striped dt-responsive table-roles-permissions">
+                            <thead>
+                                <tr>
+                                    <th class="text-center border-right col-2" rowspan="2" style="z-index:2">PERMISOS</th>
+                                    <th class="text-center col-10" :colspan="roles.length">ROLES</th>
+                                </tr>
+                                <tr>
+                                    <th class="text-center" :title="role.description" data-toggle="tooltip"
+                                        v-for="(role, index) in roles" :key="index">
+                                        <!--<p-check
+                                            class="p-icon p-plain" color="text-success" off-color="text-gray"
+                                            v-model="allPermissionByRol" :value="role.id" :id="'checkAllRole' + role.id"
+                                            @change="togglePermissionsByRol(role.id)"
+                                            data-toggle="tooltip" title="Seleccionar todos los permisos para este rol"
+                                            toggle
+                                        >
+                                            <i class="fa fa-unlock" slot="extra"></i>
+                                            <i class="fa fa-lock" slot="off-extra"></i>
+                                            <label slot="off-label"></label>
+                                        </p-check>-->
+                                        {{ role.name }}
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody v-for="(moduleGroup, index) in moduleGroups" :key="index">
+                                <tr>
+                                    <td>&#160;</td>
+                                    <td class="text-center" :colspan="roles.length">
+                                        <span class="card-title text-uppercase text-module">
+                                            Módulo [{{ getGroupName(moduleGroup) }}]
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr
+                                    v-for="(filteredPermission, index) in filterGroupPermissions(moduleGroup)" :key="index"
+                                    :class="{ 'odd-row': index % 2 !== 0, 'even-row': index % 2 === 0 }"
+                                >
+                                    <td class="text-uppercase">
+                                        {{ filteredPermission.short_description || filteredPermission.name }}
+                                    </td>
+                                    <td v-for="(cellRole, idx) in roles" class="text-center" :key="idx">
+                                        <label class="checkbox-container-lock-unlock">
+                                            <input
+                                                type="checkbox" :value="cellRole.id + '_' + filteredPermission.id"
+                                                :name="cellRole.id + '_' + filteredPermission.id"
+                                                v-model="record.roles_attach_permissions"
+                                                :class="'role_' + cellRole.id"
+                                            />
+                                            <span class="checkmark-lock-unlock">
+                                                <i
+                                                    class="fas fa-lock" data-toggle="tooltip"
+                                                    :title="'Seleccione para otorgar o eliminar este permiso al rol ' + cellRole.name"
+                                                ></i>
+                                            </span>
+                                        </label>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -122,7 +135,8 @@
                 search: '',
                 showGroups: [],
                 roles: [],
-                permissions: []
+                permissions: [],
+                permissionsByGroup: []
             }
         },
         props: ['rolesPermissionsUrl', 'saveUrl'],
@@ -225,7 +239,7 @@
                 }
                 else {
                     let perms = vm.record.roles_attach_permissions.filter(function(value, index) {
-                        return value.indexOf(`${roleId}_`) < 0;
+                        return !value.startsWith(`${roleId}_`);
                     });
                     vm.record.roles_attach_permissions = perms;
                 }
@@ -270,11 +284,12 @@
                     if (response.data.result) {
                         vm.roles = response.data.roles;
                         vm.permissions = response.data.permissions;
-                        vm.roles.forEach(function(role) {
+                        /*vm.roles.forEach(function(role) {
                             role.permissions.forEach(function(perm) {
                                 vm.record.roles_attach_permissions.push(`${role.id}_${perm.id}`);
                             });
-                        });
+                        });*/
+                        vm.record.roles_attach_permissions = vm.roles.flatMap(role => role.permissions.map(perm => `${role.id}_${perm.id}`));
                         vm.setModuleGroups();
                     }
                 }).catch(error => {

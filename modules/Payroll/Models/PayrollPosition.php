@@ -43,7 +43,8 @@ class PayrollPosition extends Model implements Auditable
         'name',
         'description',
         'number_positions_assigned',
-        'responsible'
+        'responsible',
+        'process_type'
     ];
 
     /**

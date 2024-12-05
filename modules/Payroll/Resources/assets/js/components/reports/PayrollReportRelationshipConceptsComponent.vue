@@ -22,7 +22,7 @@
             <div class="row">
                 <div class="col-md-4">
                     <div class="form-group" style="z-index: unset">
-                        <label>Tipo de pago</label>
+                        <label>Tipo de nómina</label>
                         <v-multiselect
                             @input="errors = []"
                             track_by="text"

@@ -26,6 +26,35 @@ class ProjectTrackingTaskController extends Controller
     use ValidatesRequests;
 
     /**
+     * Arreglo con las reglas de validación sobre los datos de un formulario
+     *
+     * @var array $validateRules
+     */
+    protected $validateRules;
+    /**
+     * Arreglo con los mensajes para las reglas de validación
+     *
+     * @var array $messages
+     */
+    protected $messages;
+
+    /**
+     * Define la configuración de la clase
+     *
+     * @author    Natanael Rojo <ndrojo@cenditel.gob.ve> | <rojonatanael99@gmail.com>
+     *
+     * @return    void
+     */
+    public function __construct()
+    {
+        /** Establece permisos de acceso para cada método del controlador */
+        $this->middleware('permission:project.tracking.task.index', ['only' => ['index']]);
+        $this->middleware('permission:project.tracking.task.create', ['only' => ['store']]);
+        $this->middleware('permission:project.tracking.task.edit', ['only' => ['update']]);
+        $this->middleware('permission:project.tracking.task.delete', ['only' => 'destroy']);
+    }
+
+    /**
      * Muestra el listado de tareas
      *
      * @author    Oscar González <xxmaestroyixx@gmail.com/ojgonzalez@cenditel.gob.ve>
@@ -96,21 +125,38 @@ class ProjectTrackingTaskController extends Controller
         ];
         $messages = [];
         foreach ($request->input('tasks', []) as $index => $task) {
-            $messages["tasks.{$index}.project_name.required"] = "El campo Proyecto en la tarea " . ($index + 1) . " es obligatorio";
-            $messages["tasks.{$index}.subproject_name.required"] = "El campo Subproyecto en la tarea " . ($index + 1) . " es obligatorio";
-            $messages["tasks.{$index}.product_name.required"] = "El campo Producto en la tarea " . ($index + 1) . " es obligatorio";
-            $messages["tasks.{$index}.activity_plan_id.required"] = "El campo Actividad en la tarea " . ($index + 1) . " es obligatorio";
-            $messages["tasks.{$index}.name.required"] = "El campo Nombre en la tarea " . ($index + 1) . " es obligatorio";
-            $messages["tasks.{$index}.description.max"] = "El campo Descripción en la tarea " . ($index + 1) . " no debe superar los 250 caracteres";
-            $messages["tasks.{$index}.employers_id.required"] = "El campo responsable de la tarea en la tarea " . ($index + 1) . " es obligatorio";
-            $messages["tasks.{$index}.priority_id.required"] = "El campo Prioridad en la tarea " . ($index + 1) . " es obligatorio";
-            $messages["tasks.{$index}.start_date.required"] = "El campo Fecha de inicio en la tarea " . ($index + 1) . " es obligatorio";
-            $messages["tasks.{$index}.end_date.required"] = "El campo Fecha de fin en la tarea " . ($index + 1) . " es obligatorio";
-            $messages["tasks.{$index}.end_date.after_or_equal"] = "La fecha de inicio no puede ser posterior a la fecha de fin en la tarea " . ($index + 1);
-            $messages["tasks.{$index}.start_date.before_or_equal"] = "La fecha de fin no puede ser anterior a la fecha de inicio en la tarea " . ($index + 1);
-            $messages["tasks.{$index}.weight.integer"] = "El campo Peso en la tarea " . ($index + 1) . " debe ser un valor numerico";
-            $messages["tasks.{$index}.weight.between"] = "El campo Peso en la tarea " . ($index + 1) . " debe estar entre 1 y 100";
-            $messages["tasks.{$index}.activity_status_id.required"] = "El campo estatus de la actividad  en la tarea " . ($index + 1) . " es obligatorio";
+            $messages["tasks.{$index}.project_name.required"] = "El campo Proyecto en la tarea "
+             . ($index + 1) . " es obligatorio";
+            $messages["tasks.{$index}.subproject_name.required"] = "El campo Subproyecto en la tarea "
+             . ($index + 1) . " es obligatorio";
+            $messages["tasks.{$index}.product_name.required"] = "El campo Producto en la tarea "
+            . ($index + 1) . " es obligatorio";
+            $messages["tasks.{$index}.activity_plan_id.required"] = "El campo Actividad en la tarea "
+             . ($index + 1) . " es obligatorio";
+            $messages["tasks.{$index}.name.required"] = "El campo Nombre en la tarea "
+             . ($index + 1) . " es obligatorio";
+            $messages["tasks.{$index}.description.max"] = "El campo Descripción en la tarea "
+             . ($index + 1) . " no debe superar los 250 caracteres";
+            $messages["tasks.{$index}.employers_id.required"] = "El campo responsable de la tarea en la tarea "
+             . ($index + 1) . " es obligatorio";
+            $messages["tasks.{$index}.priority_id.required"] = "El campo Prioridad en la tarea "
+             . ($index + 1) . " es obligatorio";
+            $messages["tasks.{$index}.start_date.required"] = "El campo Fecha de inicio en la tarea "
+             . ($index + 1) . " es obligatorio";
+            $messages["tasks.{$index}.end_date.required"] = "El campo Fecha de fin en la tarea "
+             . ($index + 1) . " es obligatorio";
+            $messages["tasks.{$index}.end_date.after_or_equal"] =
+            "La fecha de inicio no puede ser posterior a la fecha de fin en la tarea "
+             . ($index + 1);
+            $messages["tasks.{$index}.start_date.before_or_equal"] =
+            "La fecha de fin no puede ser anterior a la fecha de inicio en la tarea "
+             . ($index + 1);
+            $messages["tasks.{$index}.weight.integer"] = "El campo Peso en la tarea "
+             . ($index + 1) . " debe ser un valor numerico";
+            $messages["tasks.{$index}.weight.between"] = "El campo Peso en la tarea "
+             . ($index + 1) . " debe estar entre 1 y 100";
+            $messages["tasks.{$index}.activity_status_id.required"] = "El campo estatus de la actividad  en la tarea "
+             . ($index + 1) . " es obligatorio";
         }
 
         $this->validate($request, $rules, $messages);
@@ -341,8 +387,14 @@ class ProjectTrackingTaskController extends Controller
             $endDateEntity = Carbon::parse($entity->end_date);
             $startDateTask = Carbon::parse($request->tasks[$currentIndex]['start_date']);
             $endDateTask = Carbon::parse($request->tasks[$currentIndex]['end_date']);
-            if (!$startDateTask->between($startDateEntity, $endDateEntity) && !$endDateTask->between($startDateEntity, $endDateEntity)) {
-                $fail("La fecha de inicio y fin de la tarea " . $currentIndex + 1 . " debe estar entre {$startDateEntity->format('d/m/Y')} y {$endDateEntity->format('d/m/Y')}.");
+            if (
+                !$startDateTask->between($startDateEntity, $endDateEntity)
+                && !$endDateTask->between($startDateEntity, $endDateEntity)
+            ) {
+                $fail(
+                    "La fecha de inicio y fin de la tarea " . $currentIndex + 1 .
+                    " debe estar entre {$startDateEntity->format('d/m/Y')} y {$endDateEntity->format('d/m/Y')}."
+                );
             }
         }
     }

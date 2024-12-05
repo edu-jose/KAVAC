@@ -2,34 +2,35 @@
 
 namespace Modules\Finance\Http\Controllers;
 
-use App\Models\CodeSetting;
-use App\Models\DocumentStatus;
-use App\Models\FiscalYear;
-use App\Models\Profile;
 use App\Models\Tax;
-use App\Rules\DateBeforeFiscalYear;
-use Illuminate\Contracts\Support\Renderable;
-use Illuminate\Foundation\Validation\ValidatesRequests;
+use App\Models\Profile;
+use App\Models\FiscalYear;
+use App\Models\CodeSetting;
 use Illuminate\Http\Request;
+use App\Models\DocumentStatus;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
+use App\Rules\DateBeforeFiscalYear;
 use Illuminate\Support\Facades\Log;
-use Modules\Accounting\Jobs\AccountingManageEntries;
+use Nwidart\Modules\Facades\Module;
+use App\Repositories\ReportRepository;
+use Modules\Budget\Models\BudgetStage;
 use Modules\Accounting\Models\Accountable;
-use Modules\Accounting\Models\AccountingAccount;
+use Modules\Accounting\Models\Institution;
+use Modules\Budget\Models\BudgetCompromise;
+use Illuminate\Contracts\Support\Renderable;
+use Modules\Accounting\Models\BudgetAccount;
+use Modules\Budget\Models\BudgetAccountOpen;
 use Modules\Accounting\Models\AccountingEntry;
+use Modules\Budget\Models\BudgetSpecificAction;
+use Modules\Accounting\Models\AccountingAccount;
+use Modules\Budget\Models\BudgetCompromiseDetail;
 use Modules\Accounting\Models\AccountingEntryable;
+use Modules\Finance\Models\FinanceBankingMovement;
+use Modules\Accounting\Jobs\AccountingManageEntries;
 use Modules\Accounting\Models\AccountingEntryAccount;
 use Modules\Accounting\Models\AccountingEntryCategory;
-use Modules\Accounting\Models\BudgetAccount;
-use Modules\Accounting\Models\Institution;
-use Modules\Budget\Models\BudgetAccountOpen;
-use Modules\Budget\Models\BudgetCompromise;
-use Modules\Budget\Models\BudgetCompromiseDetail;
-use Modules\Budget\Models\BudgetSpecificAction;
-use Modules\Budget\Models\BudgetStage;
-use Modules\Finance\Models\FinanceBankingMovement;
-use Nwidart\Modules\Facades\Module;
+use Illuminate\Foundation\Validation\ValidatesRequests;
 
 /**
  * @class FinanceMovementsController *
@@ -825,17 +826,23 @@ class FinanceMovementsController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function vueList()
+    public function vueList(Request $request)
     {
         $movements = FinanceBankingMovement::with([
             'financeBankAccount.financeBankingAgency.financeBank', 'financeBankAccount.financeAccountType',
             'currency', 'institution', 'accountingEntryPivot.accountingEntry.accountingAccounts.account',
             'budgetCompromise.budgetCompromiseDetails.budgetSubSpecificFormulation',
             'budgetCompromise.budgetCompromiseDetails.budgetAccount',
-        ])->orderBy('payment_date', 'asc')->orderBy('id', 'asc')->get();
+        ])
+        ->orderBy('payment_date', 'asc')
+        ->orderBy('id', 'asc')
+        ->search($request->query('query'))
+        ->paginate($request->limit ?? 10);
 
         return response()->json([
-            'records' => $movements,
+            // 'records' => $movements,
+            'data' => $movements->items(),
+            'count' => $movements->total(),
             'cancelBankMovementPermission' => auth()->user()->hasPermission('finance.movements.cancel'),
         ], 200);
     }
@@ -854,6 +861,58 @@ class FinanceMovementsController extends Controller
             'budgetCompromise.budgetCompromiseDetails.budgetSubSpecificFormulation',
             'budgetCompromise.budgetCompromiseDetails.budgetAccount'])->get();
         return response()->json(['record' => $movements], 200);
+    }
+
+    /**
+     * Genera el reporte del movimiento bancario
+     *
+     * @author Francisco J. P. Ruiz <fjpenya@cenditel.gob.ve | javierrupe19@gmail.com>
+     *
+     * @param integer $id ID del movimiento bancario
+     *
+     * @return void
+     */
+    public function pdf($id)
+    {
+        $movements = FinanceBankingMovement::query()
+        ->with([
+            'financeBankAccount',
+            'currency',
+            'institution',
+            'documentStatus',
+            'accountingEntryPivot.accountingEntry.accountingAccounts.account',
+            'budgetCompromise.budgetCompromiseDetails.budgetSubSpecificFormulation',
+            'budgetCompromise.budgetCompromiseDetails.budgetAccount'
+        ])->find($id);
+
+        $pdf = new ReportRepository();
+        $filename = "banking-movement-$movements->code.pdf";
+        // $file = storage_path() . '/reports/' . $filename;
+        $year = explode("-", $movements->payment_date)[0];
+        $pdf->setConfig(
+            [
+                'institution'   => $movements->institution,
+                'reportDate'    => date("d-m-Y", strtotime(now())),
+                'urlVerify'     => url(''),
+                'orientation'   => 'P',
+                'filename'      => $filename
+            ]
+        );
+        $pdf->setHeader(
+            "MOVIMIENTO BANCARIO Nº $movements->code",
+            "En ejercicio fiscal: $year",
+            true,
+            false,
+            '',
+            'C',
+            'C'
+        );
+        $pdf->setFooter();
+        $pdf->setBody(
+            'finance::movements.report',
+            true,
+            ['record' => $movements]
+        );
     }
 
     /**

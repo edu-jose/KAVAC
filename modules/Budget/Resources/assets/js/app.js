@@ -15,15 +15,17 @@ import BudgetSubSpecificFormulationList from './components/BudgetSubSpecificForm
 import BudgetSubSpecificFormulation from './components/BudgetSubSpecificFormulationComponent.vue';
 import BudgetModification from './components/BudgetModificationComponent.vue';
 import BudgetModificationList from './components/BudgetModificationListComponent.vue';
+import BudgetApproveModification from './components/BudgetApproveModificationComponent.vue';
 import BudgetCompromisesList from './components/BudgetCompromisesListComponent.vue';
 import BudgetCompromise from './components/BudgetCompromiseComponent.vue';
 import BudgetCompromiseInfo from './components/BudgetCompromiseInfoComponent.vue';
 import BudgetAvailability from './components/BudgetAvailabilityComponent.vue';
 import BudgetProjectsReport from './components/reports/BudgetProjectsReportComponent.vue';
 import BudgetFormulatedReport from './components/reports/BudgetFormulatedReportComponent.vue';
+import BudgetCompromiseReport from './components/reports/BudgetCompromiseReportComponent.vue';
 import BudgetAnalyticalMajor from './components/BudgetAnalyticalMajorComponent.vue';
 import BudgetCancelCompromise from './components/BudgetCancelCompromiseComponent.vue'
-
+import BudgetConsolidated from './components/reports/BudgetConsolidatedComponent.vue';
 /**
  * Componente para mostrar listado del clasificador de cuentas presupuestarias
  *
@@ -127,6 +129,13 @@ Vue.component('budget-formulation-subspecific', BudgetSubSpecificFormulation);
 Vue.component('budgetmod', BudgetModification);
 
 /**
+ * Componente para getionar las modificaciones presupuestarias
+ *
+ * @author Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
+ */
+Vue.component('budget-approve-modification', BudgetApproveModification);
+
+/**
  * Componente para mostrar listado de créditos adicionales
  *
  * @author Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
@@ -183,6 +192,13 @@ Vue.component('budget-projects-report', BudgetProjectsReport);
 Vue.component('budget-formulated-report', BudgetFormulatedReport);
 
 /**
+* Componente para mostrar vista de reporte de compromisos
+*
+* @author Natanael Rojo <ndrojo@cenditel.gob.ve> | <rojonatanael99@gmail.com>
+*/
+Vue.component('budget-compromise-report', BudgetCompromiseReport);
+
+/**
  * Componente para mostrar lista de proyectos
  *
  * @author José Briceño <josejorgebriceno9@gmail.com> | <jonathanalvarado1407@gmail.com>
@@ -195,6 +211,13 @@ Vue.component('budget-analytical-major', BudgetAnalyticalMajor);
  * @author Francisco J. P. Ruiz <fjpenya@cenditel.gob.ve> | <javierrupe19@gmail.com>
  */
 Vue.component('budget-cancel-compromise', BudgetCancelCompromise);
+
+/**
+ * Componente para mostrar el formulario del reporte de consolidado
+ *
+ * @author Daniel Contreras <dcontreras@cenditel.gob.ve> | <exodiadaniel@gmail.com>
+ */
+Vue.component('budget-consolidated', BudgetConsolidated);
 
 /**
  * Opciones de configuración global del módulo de presupuesto
@@ -254,7 +277,7 @@ Vue.mixin({
             vm.financementSources = [];
             const financement_type_id = this.record.financement_type_id || '';
             if (financement_type_id) {
-            await axios.get(`${vm.app_url}/budget/get-financement-sources/${financement_type_id}`).then(response => {
+                await axios.get(`${vm.app_url}/budget/get-financement-sources/${financement_type_id}`).then(response => {
                     vm.financementSources = response.data;
                 }).catch(error => {
                     vm.logs('Finance/Resources/assets/js/_all.js', 90, error, 'getFinancementSources');

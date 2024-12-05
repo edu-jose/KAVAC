@@ -96,12 +96,13 @@ class PayrollParameterController extends Controller
 
         /* Define los mensajes de validación para las reglas del formulario */
         $this->messages = [
-            'parameter_type.required' => 'El campo tipo de parámetro es obligatorio.',
-            'value.required'          => 'El campo valor es obligatorio.',
-            'formula.required'        => 'El campo fórmula es obligatorio.',
-            'code.required'           => 'El campo código es obligatorio.',
-            'acronym.required'        => 'El campo acrónimo es obligatorio.',
-            'exception_type.required' => 'El campo categorías de hoja de tiempo es obligatorio.'
+            'parameter_type.required'   => 'El campo tipo de parámetro es obligatorio.',
+            'value.required'            => 'El campo valor es obligatorio.',
+            'formula.required'          => 'El campo fórmula es obligatorio.',
+            'code.required'             => 'El campo código es obligatorio.',
+            'acronym.required'          => 'El campo acrónimo es obligatorio.',
+            'max_value_per_period.gt'   => 'El valor máximo permitido en hoja de tiempo debe ser menor que ' . request('max_value_per_period'),
+            'exception_type.required'   => 'El campo categorías de hoja de tiempo es obligatorio.'
         ];
 
         /* Define los tipos de parámetros de nómina a emplear en el formulario */
@@ -366,6 +367,7 @@ class PayrollParameterController extends Controller
                     'exception_type' => $param->exception_type ?? '',
                     'active'         => $param->active ?? false,
                     'value_max'      => $param->value_max ?? '',
+                    'max_value_allowed_per_time_sheet' => $param->max_value_allowed_per_time_sheet ?? '',
                     'list_in_schema' => $param->list_in_schema ?? false,
                     'description'    => $param->description ?? '',
                     'parameter_type' => $param->parameter_type,
@@ -400,9 +402,10 @@ class PayrollParameterController extends Controller
             $validateRules = array_merge(
                 $validateRules,
                 [
-                    'code' => ['required'],
-                    'acronym' => ['required'],
-                    'exception_type' => ['required'],
+                    'code'                  => ['required'],
+                    'acronym'               => ['required'],
+                    'exception_type'        => ['required'],
+                    'max_value_per_period'  => ['gt:max_value_allowed_per_time_sheet']
                 ]
             );
         }
@@ -444,6 +447,7 @@ class PayrollParameterController extends Controller
                     'exception_type' => $param->exception_type ?? '',
                     'active'         => $param->active ?? false,
                     'value_max'      => $param->value_max ?? '',
+                    'max_value_allowed_per_time_sheet' => $request->max_value_allowed_per_time_sheet ?? '',
                     'list_in_schema' => $param->list_in_schema ?? false,
                     'description'    => $param->description,
                     'parameter_type' => $param->parameter_type,
@@ -461,6 +465,7 @@ class PayrollParameterController extends Controller
             'exception_type' => $request->exception_type ?? '',
             'active'         => $request->active ?? false,
             'value_max'      => $request->value_max ?? '',
+            'max_value_allowed_per_time_sheet' => $request->max_value_allowed_per_time_sheet ?? '',
             'list_in_schema' => $request->list_in_schema ?? false,
             'description'    => $request->description ?? '',
             'parameter_type' => $request->parameter_type,
@@ -499,6 +504,16 @@ class PayrollParameterController extends Controller
         } elseif ($request->parameter_type == 'processed_variable') {
             $validateRules = array_merge($validateRules, ['formula' => ['required']]);
         }
+
+        if ($request->parameter_type == 'time_parameter') {
+            $validateRules = array_merge(
+                $validateRules,
+                [
+                    'max_value_per_period'  => ['gt:max_value_allowed_per_time_sheet']
+                ]
+            );
+        }
+
         $this->validate($request, $validateRules, $this->messages);
 
         $errors = [];
@@ -523,8 +538,8 @@ class PayrollParameterController extends Controller
                     if (($request->acronym ?? null) === ($param->acronym ?? '')) {
                         $errors = array_merge($errors, [
                             "acronym"
-                                => ["El campo acrónimo contiene un valor duplicado."]
-                            ]);
+                            => ["El campo acrónimo contiene un valor duplicado."]
+                        ]);
                     }
                     if (($request->code ?? null) === ($param->code ?? '')) {
                         $errors = array_merge($errors, ["code" => ["El campo código contiene un valor duplicado."]]);
@@ -540,6 +555,7 @@ class PayrollParameterController extends Controller
                         'exception_type' => $param->exception_type ?? '',
                         'active'         => $param->active ?? false,
                         'value_max'      => $param->value_max ?? '',
+                        'max_value_allowed_per_time_sheet' => $param->max_value_allowed_per_time_sheet ?? '',
                         'list_in_schema' => $param->list_in_schema ?? false,
                         'description'    => $param->description ?? '',
                         'parameter_type' => $param->parameter_type,
@@ -556,6 +572,7 @@ class PayrollParameterController extends Controller
                         'exception_type' => $request->exception_type ?? '',
                         'active'         => $request->active ?? false,
                         'value_max'      => $request->value_max ?? '',
+                        'max_value_allowed_per_time_sheet' => $request->max_value_allowed_per_time_sheet ?? '',
                         'list_in_schema' => $request->list_in_schema ?? false,
                         'description'    => $request->description ?? '',
                         'parameter_type' => $request->parameter_type,
@@ -614,7 +631,7 @@ class PayrollParameterController extends Controller
             return response()->json([
                 'error'   => true,
                 'message'
-                    => 'El registro no se puede eliminar, debido a que esta siendo usado por otro(s) parámetro(s).'
+                => 'El registro no se puede eliminar, debido a que esta siendo usado por otro(s) parámetro(s).'
             ], 200);
         }
 
@@ -727,9 +744,21 @@ class PayrollParameterController extends Controller
                 if ($payrollConcept) {
                     $exploded = multiexplode(
                         [
-                            'if', '(', ')', '{', '}',
-                            '==', '<=', '>=', '<', '>', '!=',
-                            '+', '-', '*', '/'
+                            'if',
+                            '(',
+                            ')',
+                            '{',
+                            '}',
+                            '==',
+                            '<=',
+                            '>=',
+                            '<',
+                            '>',
+                            '!=',
+                            '+',
+                            '-',
+                            '*',
+                            '/'
                         ],
                         $payrollConcept->translate_formula
                     );
@@ -920,7 +949,8 @@ class PayrollParameterController extends Controller
         //Gestiona el formulario de Configuración de la Edad Laboral Permitida
         if ($request->p_key == 'work_age') {
             $work_age = Parameter::where([
-                'required_by' => 'payroll', 'p_key' => $request->p_key
+                'required_by' => 'payroll',
+                'p_key' => $request->p_key
             ])->first();
 
             if ($work_age) {
@@ -1056,7 +1086,7 @@ class PayrollParameterController extends Controller
             )
             ->where('p_key', 'like', 'global_parameter_%')
             ->where('p_value', 'like', '%time_parameter%')
-            ->when(empty($request->setting), fn ($query) => $query->where('p_value', 'like', '%"list_in_schema":true%'))
+            ->when(empty($request->setting), fn($query) => $query->where('p_value', 'like', '%"list_in_schema":true%'))
             ->toBase()
             ->get()
             ->map(function ($parameter) {
@@ -1084,26 +1114,26 @@ class PayrollParameterController extends Controller
             if ($parameter['active'] == true) {
                 if (!array_key_exists($parameter['exception'], $data)) {
                     $data[$parameter['exception']] =
-                    [
-                        'label' => $parameter['exception'],
+                        [
+                            'label' => $parameter['exception'],
 
-                        'group' => [
-                            0 => [
-                                'id' => $parameter['id'],
-                                'text' =>  $parameter['text'],
-                                'acronym' => $parameter['acronym'],
-                                'group' => $parameter['exception'],
+                            'group' => [
+                                0 => [
+                                    'id' => $parameter['id'],
+                                    'text' =>  $parameter['text'],
+                                    'acronym' => $parameter['acronym'],
+                                    'group' => $parameter['exception'],
+                                ]
                             ]
-                        ]
-                    ];
+                        ];
                 } else {
                     $data[$parameter['exception']]['group'][] =
-                    [
-                        'id' => $parameter['id'],
-                        'text' =>  $parameter['text'],
-                        'acronym' => $parameter['acronym'],
-                        'group' => $parameter['exception'],
-                    ];
+                        [
+                            'id' => $parameter['id'],
+                            'text' =>  $parameter['text'],
+                            'acronym' => $parameter['acronym'],
+                            'group' => $parameter['exception'],
+                        ];
                 }
             }
         }

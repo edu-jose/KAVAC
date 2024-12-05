@@ -67,7 +67,7 @@
                                 </div>
                             </div>
                             <div class="col-6 col-md-6">
-			                    <div class="form-group">
+			                    <div class="form-group is-required">
 				                 	<label>Tipo de Producto:</label>
 			                        <select2 :options="type_products"
 					                   	data-toggle="tooltip"

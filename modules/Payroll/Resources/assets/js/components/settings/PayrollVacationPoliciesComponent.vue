@@ -1597,7 +1597,7 @@ export default {
         async hasAssociated(id){
             const vm = this;
              await axios.get(`${window.app_url}/payroll/get-vacation-policy/verify_assignment/${id}`).then(response => {
-                        vm.record.hasAssociated = response.data.hasAssociated && vm.record.vacation_type == 'vacation_period'
+                        vm.record.hasAssociated = vm.record.active && response.data.hasAssociated && vm.record.vacation_type == 'vacation_period'
                     });
         },
 

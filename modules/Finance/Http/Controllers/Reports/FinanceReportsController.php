@@ -13,6 +13,7 @@ use App\Repositories\ReportRepository;
 use Modules\Finance\Models\FinancePayOrder;
 use Modules\Finance\Models\FinanceBankingMovement;
 use Modules\Finance\Models\FinancePaymentExecute;
+use Illuminate\Foundation\Validation\ValidatesRequests;
 
 /**
  * @class FinanceReportsController
@@ -27,6 +28,8 @@ use Modules\Finance\Models\FinancePaymentExecute;
  */
 class FinanceReportsController extends Controller
 {
+    use ValidatesRequests;
+
     /**
      * Reglas de validación
      *
@@ -114,7 +117,7 @@ class FinanceReportsController extends Controller
     public function __construct(Request $request)
     {
         $this->rules = [
-            'reportTypeId' => 'required',
+            'reportTypeId' => ['required'],
             'dateIni' => ['required', 'date', 'before_or_equal:dateEnd', new DateBeforeFiscalYear('Fecha de inicio')],
             'dateEnd' => ['required', 'date', 'after_or_equal:dateIni', new DateBeforeFiscalYear('Fecha final')],
         ];
@@ -215,7 +218,7 @@ class FinanceReportsController extends Controller
      */
     public function pdfPaymentExecutes(Request $request)
     {
-        $request->validate($this->rules, $this->messages);
+        $this->validate($request, $this->rules, $this->messages);
 
         $dateIni    = $request->dateIni;
         $dateEnd    = $request->dateEnd;
@@ -322,7 +325,7 @@ class FinanceReportsController extends Controller
      */
     public function pdfPayOrders(Request $request)
     {
-        $request->validate($this->rules, $this->messages);
+        $this->validate($request, $this->rules, $this->messages);
 
         $dateIni    = $request->dateIni;
         $dateEnd    = $request->dateEnd;
@@ -412,7 +415,7 @@ class FinanceReportsController extends Controller
      */
     public function pdfBankingMovements(Request $request)
     {
-        $request->validate($this->rules, $this->messages);
+        $this->validate($request, $this->rules, $this->messages);
 
         $dateIni    = $request->dateIni;
         $dateEnd    = $request->dateEnd;

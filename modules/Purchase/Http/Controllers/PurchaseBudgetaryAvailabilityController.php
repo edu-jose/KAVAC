@@ -11,8 +11,6 @@ use App\Rules\DateBeforeFiscalYear;
 use Nwidart\Modules\Facades\Module;
 use Modules\Purchase\Models\FiscalYear;
 use Modules\Purchase\Models\BudgetStage;
-use Modules\Purchase\Models\PurchaseStage;
-use Illuminate\Contracts\Support\Renderable;
 use Modules\Purchase\Models\BudgetCompromise;
 use Modules\Purchase\Models\PurchaseBaseBudget;
 use Modules\Purchase\Models\PurchaseCompromise;
@@ -65,14 +63,17 @@ class PurchaseBudgetaryAvailabilityController extends Controller
                     $query->with('purchaseRequirement')->get();
                 }])->get();
             },
+            'purchaseCommonBudgetaryAvailability',
         ])
-        ->where('send_notify', true)
-        ->orderBy('id', 'ASC')->get();
+        ->where('send_notify', true)->get();
 
         $formatedPurchaseRecords = PurchaseBudgetAvailabilityResource::collection($purchaseRecords);
 
         if (Module::has('Payroll') && Module::isEnabled('Payroll') && Module::has('Budget') && Module::isEnabled('Budget')) {
-            $payrollRecords = \Modules\Payroll\Models\Payroll::with(['payrollPaymentPeriod.payrollPaymentType.payrollConcepts'])
+            $payrollRecords = \Modules\Payroll\Models\Payroll::with([
+                'payrollPaymentPeriod.payrollPaymentType.payrollConcepts',
+                'purchaseCommonBudgetaryAvailability',
+            ])
                 ->whereHas('payrollPaymentPeriod', function ($query) {
                     $query->where('availability_status', 'send')
                         ->orWhere('availability_status', 'available')
@@ -82,11 +83,17 @@ class PurchaseBudgetaryAvailabilityController extends Controller
                 })
                 ->get();
             $formatedPayrollRecords = PurchaseBudgetAvailabilityPayrollResource::collection($payrollRecords);
-            $mergeRecords = array_merge($formatedPurchaseRecords->toArray($formatedPurchaseRecords), $formatedPayrollRecords->toArray($formatedPayrollRecords) ?? []);
+
+            $mergedRecords = collect($formatedPurchaseRecords)
+                ->merge(collect($formatedPayrollRecords));
+
+            $mergeRecords = $mergedRecords
+                ->sortBy('budgetary_availability_code', SORT_NATURAL)
+                ->values();
         }
 
         return view('purchase::budgetary_availability.index', [
-            'records' => $mergeRecords != null ? json_encode($mergeRecords) : json_encode($formatedPurchaseRecords),
+            'records' => $mergeRecords != null ? $mergeRecords->toJson() : $formatedPurchaseRecords->toJson(),
         ]);
     }
 
@@ -146,6 +153,9 @@ class PurchaseBudgetaryAvailabilityController extends Controller
         $model = PurchaseBudgetaryAvailability::class;
         if ($request->availability == 1) {
             $model::where('purchase_base_budgets_id', $request->id)->delete();
+            $purchaseBaseBudget = PurchaseBaseBudget::with('purchaseCommonBudgetaryAvailability')
+                ->where('id', $request->id)
+                ->firstOrFail();
             foreach ($request->accounts as $accounts) {
                 $model::create([
                     'item_code' => $accounts['code'],
@@ -158,6 +168,7 @@ class PurchaseBudgetaryAvailabilityController extends Controller
                     'amount' => $accounts["amount"],
                     'availability' => $request->availability,
                     'purchase_base_budgets_id' => $request->id,
+                    'purchase_common_budgetary_availability_id' => $purchaseBaseBudget?->purchaseCommonBudgetaryAvailability?->id
                 ]);
             }
         }
@@ -196,6 +207,7 @@ class PurchaseBudgetaryAvailabilityController extends Controller
     {
         $document_file = Document::where(['documentable_type' => PurchaseBudgetaryAvailability::class, 'documentable_id' => $id])->get();
         $purchase_quotation = PurchaseBaseBudget::with([
+            'purchaseCommonBudgetaryAvailability',
             'currency',
             'tax',
             'tax.histories',
@@ -217,35 +229,19 @@ class PurchaseBudgetaryAvailabilityController extends Controller
             },
         ])->orderBy('id', 'ASC')->find($id);
 
-
         if (!$purchase_quotation) {
             return view('errors.404');
         }
         $currency = $purchase_quotation->currency;
         $supplier = "noodles";
-        $record_items = [];
 
         /* determina si esta instalado el modulo Budget */
         $has_budget = (Module::has('Budget') && Module::isEnabled('Budget'));
         if ($has_budget) {
-            $budget_items = template_choices(
-                'Modules\Budget\Models\BudgetAccount',
-                ['code', '-', 'denomination'],
-                [],
-                true
-            );
-            $specific_actions = template_choices(
-                'Modules\Budget\Models\BudgetSpecificAction',
-                ['code', '-', 'name'],
-                [],
-                true
-            );
             return view('purchase::budgetary_availability.form', [
                 'has_budget' => $has_budget,
                 'record_items' => $purchase_quotation,
                 'currency' => $currency,
-                'budget_items' => json_encode($budget_items),
-                'specific_actions' => json_encode($specific_actions),
                 'document_file' => $document_file,
             ]);
         } else {
@@ -253,15 +249,7 @@ class PurchaseBudgetaryAvailabilityController extends Controller
                 'record_items' => $purchase_quotation,
                 'currency' => $currency,
                 'supplier' => $supplier,
-                'budget_items' => json_encode([[
-                    'id' => '',
-                    'text' => 'Seleccione...',
-                    ]]),
-                    'specific_actions' => json_encode([[
-                        'id' => '',
-                        'text' => 'Seleccione...',
-                        ]]),
-                    ]);
+                ]);
         }
     }
 
@@ -358,7 +346,7 @@ class PurchaseBudgetaryAvailabilityController extends Controller
             if ($request->module == 'Purchase') {
                 $PurchaseBaseBudget = PurchaseBaseBudget::query()->where('id', $request->id)->firstOrFail();
                 $BudgetaryAvailable = PurchaseBudgetaryAvailability::query()
-                ->where('purchase_base_budgets_id', $PurchaseBaseBudget->id)->get();
+                    ->where('purchase_base_budgets_id', $PurchaseBaseBudget->id)->get();
 
                 if ($PurchaseBaseBudget->availability == 'Disponible') {
                     DB::transaction(

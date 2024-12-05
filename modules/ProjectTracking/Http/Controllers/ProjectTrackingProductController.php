@@ -50,6 +50,11 @@ class ProjectTrackingProductController extends Controller
      */
     public function __construct()
     {
+        /** Establece permisos de acceso para cada método del controlador */
+        $this->middleware('permission:project.tracking.product.create', ['only' => ['store']]);
+        $this->middleware('permission:project.tracking.product.edit', ['only' => ['update']]);
+        $this->middleware('permission:project.tracking.product.delete', ['only' => 'destroy']);
+
         /* Define las reglas de validación para el formulario */
         $this->validateRules = [
             'name' => ['required', 'unique:Modules\ProjectTracking\Models\ProjectTrackingProduct,name', 'max:200'],
@@ -93,8 +98,17 @@ class ProjectTrackingProductController extends Controller
      */
     public function index(): JsonResponse
     {
-        /* Contiene los registros del personal, de proyecto, de subproyecto, de los tipos de producto y de las dependencias */
-        $ProductsList = ProjectTrackingProduct::with(['Project', 'SubProject', 'Responsable', 'TypeProduct', 'Dependency'])->get();
+        /*
+        Contiene los registros del personal, de proyecto, de subproyecto,
+         de los tipos de producto y de las dependencias
+         */
+        $ProductsList = ProjectTrackingProduct::with([
+            'Project',
+            'SubProject',
+            'Responsable',
+            'TypeProduct',
+            'Dependency'
+            ])->get();
         foreach ($ProductsList as $product) {
             $product['responsable_name'] = $product->Responsable->name;
             $product['project_name'] = $product->Project ? $product->Project->name : '';

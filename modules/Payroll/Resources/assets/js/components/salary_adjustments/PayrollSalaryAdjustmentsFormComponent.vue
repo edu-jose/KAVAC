@@ -56,7 +56,7 @@
                                 <!-- fecha de generación -->
                                 <div class="form-group is-required">
                                     <label>Fecha de generación:</label>
-                                    <input type="date" readonly
+                                    <input type="date"
                                            data-toggle="tooltip"
                                            title="Fecha de generación del ajuste salarial"
                                            class="form-control input-sm"
@@ -71,7 +71,7 @@
                                     <input type="date" data-toggle="tooltip"
                                            title="Fecha del aumento salarial"
                                            class="form-control input-sm no-restrict"
-                                           v-model="record.increase_of_date"
+                                           v-model="record.start_increase_date"
                                     >
                                 </div>
                                 <!-- ./fecha del aumento -->
@@ -84,7 +84,7 @@
                                            title="Fecha del aumento salarial"
                                            class="form-control input-sm no-restrict"
                                            v-model="record.end_increase_date"
-                                           :min="record.increase_of_date">
+                                           :min="record.start_increase_date">
                                 </div>
                                 <!-- ./fecha fin del aumento -->
                             </div>
@@ -320,7 +320,7 @@
                 record: {
                     id:                          '',
                     value:                       '',
-                    increase_of_date:            '',
+                    start_increase_date:            '',
                     end_increase_date:           '',
                     increase_of_type:            '',
                     payroll_salary_tabulator:    {},
@@ -376,7 +376,7 @@
                 vm.record = {
                     id:                          '',
                     value:                       '',
-                    increase_of_date:            '',
+                    start_increase_date:         '',
                     end_increase_date:           '',
                     increase_of_type:            '',
                     payroll_salary_tabulator_id: ''
@@ -386,7 +386,12 @@
             },
 
             exportSalaryTabulator() {
-                location.href = `${window.app_url}/payroll/salary-tabulators/export/${this.record.payroll_salary_tabulator_id}`;
+                const vm = this;
+                if (vm.payroll_salary_adjustment_id) {
+                    location.href = `${window.app_url}/payroll/salary-adjustments/export/${this.record.id}`;
+                } else {
+                    location.href = `${window.app_url}/payroll/salary-tabulators/export/${this.record.payroll_salary_tabulator_id}`;
+                }
             },
 
             importSalaryTabulator() {
@@ -498,17 +503,10 @@
                                     return;
                                 }
 
-                                if (vm.payroll_salary_tabulator.payroll_salary_adjustments) {
-
-                                    if (vm.payroll_salary_tabulator.payroll_salary_adjustments[0].payroll_history_salary_adjustments) {
-                                        history_data = JSON.parse(vm.payroll_salary_tabulator.payroll_salary_adjustments[0].payroll_history_salary_adjustments[0].salary_values);
-                                    }
-
-                                    if (history_data) {
-                                        $.each(vm.payroll_salary_tabulator.payroll_salary_tabulator_scales, function(index, field) {
-                                            field.value = history_data[index].value;
-                                        });
-                                    }
+                                if (vm.payroll_salary_adjustment_id) {
+                                    $.each(vm.payroll_salary_tabulator.payroll_salary_tabulator_scales, function(index, field) {
+                                        field.value = vm.record.scale_values[index].value;
+                                    });
                                 }
                             }
                         }).catch(error => {
@@ -533,7 +531,7 @@
              */
             isDisableNext() {
                 const vm = this;
-                if ((vm.record.increase_of_date != '') && (vm.record.increase_of_type != '') &&
+                if ((vm.record.start_increase_date != '') && (vm.record.increase_of_type != '') &&
                     (vm.record.payroll_salary_tabulator_id != '')) {
                     if (vm.record.increase_of_type == 'different') {
                         return false;
@@ -718,12 +716,12 @@
                         id: data.id,
                         created_at: vm.format_date(data.created_at, 'YYYY-MM-DD'),
                         value: data.value,
-                        increase_of_date: data.payroll_history_salary_adjustments ? data.payroll_history_salary_adjustments[0].increase_of_date : null,
-                        end_increase_date: data.payroll_history_salary_adjustments ? data.payroll_history_salary_adjustments[0].end_increase_date : null,
+                        start_increase_date: vm.format_date(data.start_increase_date, 'YYYY-MM-DD'),
+                        end_increase_date: vm.format_date(data.end_increase_date, 'YYYY-MM-DD'),
                         increase_of_type: data.increase_of_type,
                         payroll_salary_tabulator: data.payroll_salary_tabulator,
                         payroll_salary_tabulator_id: data.payroll_salary_tabulator_id,
-                        scale_values: data.payroll_history_salary_adjustments ? JSON.parse(data.payroll_history_salary_adjustments[0].salary_values) : [],
+                        scale_values: data.salary_values ? JSON.parse(data.salary_values) : [],
                     }
                 });
             },

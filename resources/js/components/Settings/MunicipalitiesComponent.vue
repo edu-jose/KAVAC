@@ -22,42 +22,39 @@
                         <form-errors :listErrors="errors"></form-errors>
                         <div class="row">
                             <div class="col-12 col-md-6">
-                                <div class="form-group">
+                                <div class="form-group is-required">
                                     <label>Pais:</label>
-                                    <select2 :options="countries" @input="getEstates"
-                                             v-model="record.country_id"></select2>
+                                    <select2
+                                        :options="countries" @input="getEstates"
+                                        v-model="record.country_id"
+                                    ></select2>
                                     <input type="hidden" v-model="record.id">
                                 </div>
                             </div>
                             <div class="col-12 col-md-6">
-                                <div class="form-group" v-if="editMunicipalities=='false'">
+                                <div class="form-group is-required">
                                     <label>Estados:</label>
                                     <select2 :options="estates" v-model="record.estate_id"></select2>
-                                </div>
-                                <div class="form-group" v-if="editMunicipalities == 'true'">
-                                    <label>Estados:</label>
-                                    <select id="estate" v-model="record.estate_id">
-                                        <option :value="ste.id" :selected="ste.id == record.estate_id"
-                                                v-for="(ste, index) in estates" :key="index">
-                                                {{ ste.text }}
-                                        </option>
-                                    </select>
                                 </div>
                             </div>
                             <div class="col-12 col-md-6">
                                 <div class="form-group is-required">
                                     <label>Código:</label>
-                                    <input type="text" placeholder="Código de Municipio" data-toggle="tooltip"
-                                           title="Indique el código del Municipio (requerido)"
-                                           class="form-control input-sm" v-model="record.code" v-is-digits>
+                                    <input
+                                        type="text" placeholder="Código de Municipio" data-toggle="tooltip"
+                                        title="Indique el código del Municipio (requerido)"
+                                        class="form-control input-sm" v-model="record.code" v-is-digits
+                                    >
                                 </div>
                             </div>
                             <div class="col-12 col-md-6">
                                 <div class="form-group is-required">
                                     <label>Nombre:</label>
-                                    <input type="text" placeholder="Nombre de Municipio" data-toggle="tooltip"
-                                           title="Indique el nombre del Municipio (requerido)"
-                                           class="form-control input-sm" v-model="record.name" v-is-text>
+                                    <input
+                                        type="text" placeholder="Nombre de Municipio" data-toggle="tooltip"
+                                        title="Indique el nombre del Municipio (requerido)"
+                                        class="form-control input-sm" v-model="record.name" v-is-text
+                                    >
                                 </div>
                             </div>
                         </div>
@@ -112,50 +109,14 @@
                     name: '',
                     code: ''
                 },
-                selectedEstateId: '',
                 errors: [],
                 records: [],
                 countries: [],
                 estates: [],
                 columns: ['estate.name', 'name', 'code', 'id'],
-                editMunicipalities: '',
-            }
-        },
-        watch: {
-            record: {
-                deep: true,
-                handler: function(newValue, oldValue) {
-                    const vm = this;
-                    if (vm.record.id) {
-                        vm.record.estate_id = vm.selectedEstateId;
-                    }
-                }
-            },
-            selectedEstateId(newValue, oldValue) {
-                const vm = this;
-                if (newValue && newValue!==oldValue) {
-                    setTimeout(() => {
-                        vm.record.estate_id = vm.selectedEstateId.toString();
-                        $("#estate").val(vm.selectedEstateId.toString());
-                    }, 1000);
-                }
             }
         },
         methods: {
-            /**
-             * Obtiene los Estados del Pais seleccionado
-             *
-             * @author Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
-             */
-            getEstate(country_id) {
-                const vm = this;
-                vm.estates = [];
-                if (country_id) {
-                    axios.get(`/get-estates/${vm.record.country_id}`).then(response => {
-                        vm.estates = response.data;
-                    });
-                }
-            },
             /**
              * Método que borra todos los datos del formulario
              *
@@ -170,8 +131,7 @@
                     name: '',
                     code: ''
                 };
-                vm.selectedEstateId = '';
-                vm.editMunicipalities = 'false';
+                vm.errors = [];
             },
             /**
              * Método que carga el formulario con los datos a modificar
@@ -183,16 +143,15 @@
              */
             initUpdate(id, event) {
                 const vm = this;
-                vm.editMunicipalities = 'true';
                 vm.errors = [];
                 let recordEdit = JSON.parse(JSON.stringify(vm.records.filter((rec) => {
                     return rec.id === id;
                 })[0])) || vm.reset();
                 vm.record = recordEdit;
-                vm.record.country_id = recordEdit.estate.country_id;
-                vm.getEstate(vm.record.country_id);
-                vm.selectedEstateId = recordEdit.estate.id;
-                vm.record.estate_id = vm.selectedEstateId;
+                vm.record.country_id = recordEdit.estate.country.id;
+                setTimeout(() => {
+                    vm.record.estate_id = recordEdit.estate.id;
+                }, 1000);
                 event.preventDefault();
             },
 
@@ -272,12 +231,8 @@
         },
         mounted() {
             const vm = this;
-            vm.editMunicipalities = 'false';
             $("#add_municipality").on('show.bs.modal', function() {
                 vm.getCountries();
-            });
-            $("#estate").on('change', function() {
-                vm.record.estate_id = $(this).val();
             });
         }
     };

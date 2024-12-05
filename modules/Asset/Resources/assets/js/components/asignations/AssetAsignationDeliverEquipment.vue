@@ -366,9 +366,17 @@ export default {
       const vm = this;
 
       if (!vm.selected.length > 0) {
-        bootbox.alert(
-          "Debe agregar al menos un elemento a la solicitud de entrega"
-        );
+        bootbox.alert({
+          title: "Advertencia",
+          message: "Debe agregar al menos un elemento a la solicitud de entrega",
+          closeButton: false,
+					buttons: {
+						ok: {
+							label: "Cerrar",
+							className: 'btn-light'
+						}
+					}
+        });
         return false;
       }
       let equipments_id = [];

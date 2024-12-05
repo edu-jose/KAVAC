@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use OwenIt\Auditing\Contracts\Auditable;
 use OwenIt\Auditing\Auditable as AuditableTrait;
 use App\Traits\ModelsTrait;
+use Nwidart\Modules\Facades\Module;
 
 /**
  * @class      Payroll
@@ -37,7 +38,10 @@ class Payroll extends Model implements Auditable
      *
      * @var array $fillable
      */
-    protected $fillable = ['code','status',  'name', 'payroll_parameters', 'payroll_payment_period_id', 'salary_tabulators', 'concept_types'];
+    protected $fillable = [
+        'code', 'name', 'payroll_parameters', 'payroll_payment_period_id',
+        'salary_tabulators', 'concept_types', 'created_at', 'document_status_id'
+    ];
 
     /**
      * Lista de atributos de relacion consultados automáticamente
@@ -56,6 +60,24 @@ class Payroll extends Model implements Auditable
         'concept_types' => 'array',
     ];
 
+    public function getTotalSalaryAttribute()
+    {
+        if (count($this->concept_types) > 0) {
+            $total = 0;
+            foreach ($this->concept_types as $conceptTypes) {
+                foreach ($conceptTypes as $conceptType) {
+                    if ($conceptType['sign'] === '+') {
+                        $total += (float)$conceptType['value'];
+                    } elseif ($conceptType['sign'] === '-') {
+                        $total -= (float)$conceptType['value'];
+                    }
+                }
+            }
+            return $total;
+        }
+        return 0;
+    }
+
     /**
      * Método que obtiene la información del período de pago asociado a la nómina
      *
@@ -69,6 +91,18 @@ class Payroll extends Model implements Auditable
     }
 
     /**
+     * Método que obtiene la información del status asociado a la nómina
+     *
+     * @author    Henry Paredes <hparedes@cenditel.gob.ve>
+     *
+     * @return    \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function documentStatus()
+    {
+        return $this->belongsTo(DocumentStatus::class);
+    }
+
+    /**
      * Método que obtiene la información de los trabajadores asociados a la nómina
      *
      * @author    Henry Paredes <hparedes@cenditel.gob.ve>
@@ -78,5 +112,16 @@ class Payroll extends Model implements Auditable
     public function payrollStaffPayrolls()
     {
         return $this->hasMany(PayrollStaffPayroll::class);
+    }
+
+    /**
+     * Establece la relación con los datos comunes de la disponibilidad presupuestaria
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\MorphOne
+     */
+    public function purchaseCommonBudgetaryAvailability()
+    {
+        return (Module::has('Purchase') && Module::isEnabled('Purchase'))
+            ? $this->morphOne(\Modules\Purchase\Models\PurchaseCommonBudgetaryAvailability::class, 'budgetable') : [];
     }
 }

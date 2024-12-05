@@ -170,6 +170,11 @@
                         Recibos de pago
                     </a>
                 </li>
+                <li title="Reporte de historial de cargos" data-toggle="tooltip" data-placement="right" class="{!! set_active_menu('payroll.reports.payment-receipts') !!}">
+                    <a href="{{ route('payroll.reports.historical-positions') }}">
+                    Reporte Histórico de cargos
+                    </a>
+                </li>
             </ul>
 
         </li>
