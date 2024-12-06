@@ -284,6 +284,28 @@ Vue.mixin({
                 });
             }
         },
+
+        /**
+         * Formatea un número con un número específico de decimales, separador decimal y separador de miles.
+         *
+         * @author Pedro Contreras <pmcontreras@cenditel.gob.ve>
+         *
+         * @param {number} number - El número que se va a formatear.
+         * @param {number} [decimals=2] - El número de decimales.
+         * @param {string} [decimalSeparator=','] - El carácter que se va a utilizar como separador decimal.
+         * @param {string} [thousandsSeparator='.'] - El carácter que se va a utilizar como separador de miles.
+         * @return {string} El número formateado como una cadena de texto.
+         */
+        formatNumber(number, decimals = 2, decimalSeparator = ',', thousandsSeparator = '.') {
+            const num = number.toFixed(decimals);
+            const parts = num.split('.');
+            const integerPart = parts[0];
+            const fractionalPart = parts[1];
+
+            const formattedIntegerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, thousandsSeparator);
+
+            return formattedIntegerPart + decimalSeparator + fractionalPart;
+        },
     },
     mounted() {
         // Agregar instrucciones para determinar el año de ejecución

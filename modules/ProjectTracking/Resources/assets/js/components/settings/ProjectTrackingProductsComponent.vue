@@ -1,38 +1,21 @@
 <template>
-    <div
-        class="col-12 col-sm-6 col-md-4 col-lg-3 col-xl-2 mt-2 mb-2 text-center"
-    >
-        <a
-            class="btn-simplex btn-simplex-md btn-simplex-primary"
-            href="javascript:void(0)"
-            title="Productos"
-            data-toggle="tooltip"
-            @click="
+    <div class="col-12 col-sm-6 col-md-4 col-lg-3 col-xl-2 mt-2 mb-2 text-center">
+        <a class="btn-simplex btn-simplex-md btn-simplex-primary" href="javascript:void(0)" title="Productos"
+            data-toggle="tooltip" @click="
                 addRecord(
                     'add_products-config',
                     'projecttracking/products-config',
                     $event
                 )
-            "
-        >
+                ">
             <i class="fa fa-tag ico-3x"></i>
             <span>Productos</span>
         </a>
-        <div
-            class="modal fade text-left"
-            tabindex="-1"
-            role="dialog"
-            id="add_products-config"
-        >
+        <div class="modal fade text-left" tabindex="-1" role="dialog" id="add_products-config">
             <div class="modal-dialog vue-crud" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <button
-                            type="button"
-                            class="close"
-                            data-dismiss="modal"
-                            aria-label="Close"
-                        >
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">×</span>
                         </button>
                         <h6>
@@ -41,29 +24,17 @@
                         </h6>
                     </div>
                     <div class="modal-body">
-                        <div
-                            class="alert alert-danger"
-                            v-if="errors.length > 0"
-                        >
+                        <div class="alert alert-danger" v-if="errors.length > 0">
                             <div class="container">
                                 <div class="alert-icon">
-                                    <i
-                                        class="now-ui-icons objects_support-17"
-                                    ></i>
+                                    <i class="now-ui-icons objects_support-17"></i>
                                 </div>
                                 <strong>Cuidado!</strong> Debe verificar los
                                 siguientes errores antes de continuar:
-                                <button
-                                    type="button"
-                                    class="close"
-                                    data-dismiss="alert"
-                                    aria-label="Close"
-                                    @click.prevent="errors = []"
-                                >
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close"
+                                    @click.prevent="errors = []">
                                     <span aria-hidden="true">
-                                        <i
-                                            class="now-ui-icons ui-1_simple-remove"
-                                        ></i>
+                                        <i class="now-ui-icons ui-1_simple-remove"></i>
                                     </span>
                                 </button>
                                 <ul>
@@ -77,189 +48,104 @@
                             <div class="col-md-6">
                                 <div class="form-group" name="category">
                                     <label>Proyecto Asociado:</label>
-                                    <select2
-                                        :options="projects_list"
-                                        id="project"
-                                        data-toggle="tooltip"
-                                        @input="showProductTypes"
-                                        title="Seleccione el Proyecto asociado (requerido)"
-                                        v-model="record.project_id"
-                                    >
+                                    <select2 :options="projects_list" id="project" data-toggle="tooltip"
+                                        @input="showProductTypes" title="Seleccione el Proyecto asociado (requerido)"
+                                        v-model="record.project_id">
                                     </select2>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group" name="category">
                                     <label>Subproyecto Asociado:</label>
-                                    <select2
-                                        :options="subprojects_list"
-                                        id="subproject"
-                                        data-toggle="tooltip"
-                                        @input="showProductTypes"
-                                        title="Seleccione el Subproyecto Asociado (requerido)"
-                                        v-model="record.subproject_id"
-                                    >
+                                    <select2 :options="subprojects_list" id="subproject" data-toggle="tooltip"
+                                        @input="showProductTypes" title="Seleccione el Subproyecto Asociado (requerido)"
+                                        v-model="record.subproject_id">
                                     </select2>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group is-required">
                                     <label>Nombre:</label>
-                                    <input
-                                        type="text"
-                                        id="name"
-                                        placeholder="Nombre"
-                                        data-toggle="tooltip"
-                                        title="Ingrese el nombre del Producto (requerido)"
-                                        class="form-control input-sm"
-                                        v-model="record.name"
-                                    />
+                                    <input type="text" id="name" placeholder="Nombre" data-toggle="tooltip"
+                                        title="Ingrese el nombre del Producto (requerido)" class="form-control input-sm"
+                                        v-model="record.name" />
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div>
-                                    <label for="description"
-                                        >Descripción:</label
-                                    >
-                                    <input
-                                        type="text"
-                                        id="description"
-                                        placeholder="Descripción"
-                                        class="form-control input-sm"
-                                        data-toggle="tooltip"
-                                        title="Ingrese la descripción del Producto"
-                                        v-model="record.description"
-                                    />
+                                    <label for="description">Descripción:</label>
+                                    <input type="text" id="description" placeholder="Descripción"
+                                        class="form-control input-sm" data-toggle="tooltip"
+                                        title="Ingrese la descripción del Producto" v-model="record.description" />
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <div
-                                    class="form-group is-required"
-                                    name="category"
-                                >
+                                <div class="form-group is-required" name="category">
                                     <label>Dependencia:</label>
-                                    <select2
-                                        :options="dependencies_list"
-                                        id="dependencyy"
-                                        data-toggle="tooltip"
+                                    <select2 :options="dependencies_list" id="dependencyy" data-toggle="tooltip"
                                         title="Seleccione la dependencia del Producto (requerido)"
-                                        v-model="record.dependency_id"
-                                    >
+                                        v-model="record.dependency_id">
                                     </select2>
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <div
-                                    class="form-group is-required"
-                                    name="category"
-                                >
+                                <div class="form-group is-required" name="category">
                                     <label>Responsable del Producto:</label>
-                                    <select2
-                                        :options="payroll_staffs"
-                                        id="responsablee"
-                                        data-toggle="tooltip"
+                                    <select2 :options="payroll_staffs" id="responsablee" data-toggle="tooltip"
                                         title="Seleccione la persona responsable del Producto (requerido)"
-                                        v-model="record.responsable_id"
-                                    >
+                                        v-model="record.responsable_id">
                                     </select2>
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <div
-                                    class="form-group is-required"
-                                    name="category"
-                                >
+                                <div class="form-group is-required" name="category">
                                     <label>Tipos de Producto:</label>
-                                    <v-multiselect
-                                        :options="type_products_list"
-                                        track_by="text"
-                                        :hide_selected="false"
-                                        id="product_typee"
-                                        data-toggle="tooltip"
-                                        title="Indique los tipos de productos"
-                                        v-model="record.product_types"
-                                    >
+                                    <v-multiselect :options="type_products_list" track_by="text" :hide_selected="false"
+                                        id="product_typee" data-toggle="tooltip" title="Indique los tipos de productos"
+                                        v-model="record.product_types">
                                     </v-multiselect>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group is-required">
-                                    <label for="start_date"
-                                        >Fecha de inicio:</label
-                                    >
-                                    <input
-                                        type="date"
-                                        id="start_date"
-                                        placeholder="Fecha inicial"
-                                        class="form-control input-sm"
-                                        data-toggle="tooltip"
-                                        title="Indique la fecha inicial"
-                                        v-model="record.start_date"
-                                    />
+                                    <label for="start_date">Fecha de inicio:</label>
+                                    <input type="date" id="start_date" placeholder="Fecha inicial"
+                                        class="form-control input-sm" data-toggle="tooltip"
+                                        title="Indique la fecha inicial" v-model="record.start_date" />
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group is-required">
-                                    <label for="end_date"
-                                        >Fecha de culminación:</label
-                                    >
-                                    <input
-                                        type="date"
-                                        id="end_date"
-                                        placeholder="Fecha final"
-                                        class="form-control input-sm no-restrict"
-                                        data-toggle="tooltip"
-                                        title="Indique la fecha de culminación"
-                                        v-model="record.end_date"
-                                    />
+                                    <label for="end_date">Fecha de culminación:</label>
+                                    <input type="date" id="end_date" placeholder="Fecha final"
+                                        class="form-control input-sm no-restrict" data-toggle="tooltip"
+                                        title="Indique la fecha de culminación" v-model="record.end_date" />
                                 </div>
                             </div>
                         </div>
                         <div class="modal-footer">
                             <div class="form-group">
-                                <button
-                                    type="button"
-                                    class="btn btn-default btn-sm btn-round btn-modal-close"
-                                    @click="clearFilters"
-                                    data-dismiss="modal"
-                                >
+                                <button type="button" class="btn btn-default btn-sm btn-round btn-modal-close"
+                                    @click="clearFilters" data-dismiss="modal">
                                     Cerrar
                                 </button>
-                                <button
-                                    type="button"
-                                    class="btn btn-warning btn-sm btn-round btn-modal btn-modal-clear"
-                                    @click="reset()"
-                                >
+                                <button type="button" class="btn btn-warning btn-sm btn-round btn-modal btn-modal-clear"
+                                    @click="reset()">
                                     Cancelar
                                 </button>
-                                <button
-                                    type="button"
-                                    @click="
-                                        createRecord(
-                                            'projecttracking/products-config'
-                                        )
-                                    "
-                                    class="btn btn-primary btn-sm btn-round btn-modal-save"
-                                >
+                                <button type="button" @click="
+                                    createRecord(
+                                        'projecttracking/products-config'
+                                    )
+                                    " class="btn btn-primary btn-sm btn-round btn-modal-save">
                                     Guardar
                                 </button>
                             </div>
                         </div>
                         <div class="modal-body modal-table text-center">
-                            <v-client-table
-                                :columns="columns"
-                                :data="records"
-                                :options="table_options"
-                            >
-                                <div
-                                    slot="description"
-                                    slot-scope="props"
-                                    class="text-justify"
-                                >
-                                    <div
-                                        class="mt-3"
-                                        v-html="props.row.description"
-                                    ></div>
+                            <v-client-table :columns="columns" :data="records" :options="table_options">
+                                <div slot="description" slot-scope="props" class="text-justify">
+                                    <div class="mt-3" v-html="props.row.description"></div>
                                 </div>
                                 <div slot="responsable_name" slot-scope="props">
                                     {{
@@ -271,44 +157,28 @@
                                 </div>
                                 <div slot="id" slot-scope="props">
                                     <div class="d-inline-flex">
-                                        <project-tracking-product-info
-                                            :modal_id="props.row.id"
-                                            :url="
-                                                'projecttracking/get-product-info/' +
-                                                props.row.id
-                                            "
-                                        >
+                                        <project-tracking-product-info :modal_id="props.row.id" :url="'projecttracking/get-product-info/' +
+                                            props.row.id
+                                            ">
                                         </project-tracking-product-info>
-                                        <button
-                                            @click="
-                                                initUpdate(
-                                                    props.row.id,
-                                                    'projecttracking/products-config'
-                                                )
-                                            "
-                                            class="btn btn-warning btn-xs btn-icon btn-action"
-                                            v-has-tooltip
-                                            title="Modificar registro"
-                                            aria-label="Modificar registro"
-                                            data-toggle="tooltip"
-                                            type="button"
-                                        >
+                                        <button @click="
+                                            initUpdate(
+                                                props.row.id,
+                                                'projecttracking/products-config'
+                                            )
+                                            " class="btn btn-warning btn-xs btn-icon btn-action" v-has-tooltip
+                                            title="Modificar registro" aria-label="Modificar registro"
+                                            data-toggle="tooltip" type="button">
                                             <i class="fa fa-edit"></i>
                                         </button>
-                                        <button
-                                            @click="
-                                                deleteRecord(
-                                                    props.row.id,
-                                                    'projecttracking/products-config'
-                                                )
-                                            "
-                                            class="btn btn-danger btn-xs btn-icon btn-action"
-                                            v-has-tooltip
-                                            title="Eliminar registro"
-                                            aria-label="Eliminar registro"
-                                            data-toggle="tooltip"
-                                            type="button"
-                                        >
+                                        <button @click="
+                                            deleteRecord(
+                                                props.row.id,
+                                                'projecttracking/products-config'
+                                            )
+                                            " class="btn btn-danger btn-xs btn-icon btn-action" v-has-tooltip
+                                            title="Eliminar registro" aria-label="Eliminar registro"
+                                            data-toggle="tooltip" type="button">
                                             <i class="fa fa-trash-o"></i>
                                         </button>
                                     </div>

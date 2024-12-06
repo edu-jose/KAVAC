@@ -2,7 +2,6 @@
 
 namespace Modules\Payroll\Http\Controllers;
 
-use App\Models\DocumentStatus;
 use Carbon\Carbon;
 use App\Models\User;
 use App\Models\Source;
@@ -10,36 +9,38 @@ use App\Models\Parameter;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
+use App\Models\DocumentStatus;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Log;
 use Modules\Payroll\Models\Payroll;
 use Maatwebsite\Excel\Facades\Excel;
 use Modules\Payroll\Models\Institution;
 use Modules\Payroll\Models\PayrollStaff;
+use Illuminate\Support\Facades\Validator;
 use Modules\Payroll\Models\PayrollConcept;
+use Modules\Payroll\Models\PayrollTimeSheet;
 use Modules\Payroll\Models\PayrollEmployment;
 use Modules\Payroll\Models\PayrollConceptType;
 use Modules\Payroll\Models\PayrollPaymentType;
 use Modules\Payroll\Models\PayrollStaffPayroll;
+use Modules\Payroll\Models\PayrollExceptionType;
 use Modules\Payroll\Models\PayrollPaymentPeriod;
+use Modules\Payroll\Models\PayrollSocioeconomic;
 use Modules\Payroll\Models\PayrollVacationPolicy;
+use Modules\Payroll\Models\PayrollSupervisedGroup;
 use Modules\Payroll\Models\PayrollVacationRequest;
 use Modules\Payroll\Repositories\ReportRepository;
 use Modules\Payroll\Exports\PayrollReportStaffsExport;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Modules\Payroll\Jobs\PayrollReportConceptExportJob;
-use Modules\Payroll\Jobs\PayrollSendRequestedReceiptsJob;
-use Modules\Payroll\Jobs\PayrollStaffPdfReportExportJob;
-use Modules\Payroll\Jobs\PayrollSendStaffPdfReportEmailJob;
-use Modules\Payroll\Models\PayrollExceptionType;
-use Modules\Payroll\Models\PayrollSupervisedGroup;
 use Modules\Payroll\Models\PayrollSupervisedGroupStaff;
-use Modules\Payroll\Models\PayrollTimeSheet;
-use Modules\Payroll\Models\PayrollSocioeconomic;
+use Modules\Payroll\Jobs\PayrollStaffPdfReportExportJob;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
-use Illuminate\Support\Facades\App;
+use Modules\Payroll\Jobs\PayrollSendRequestedReceiptsJob;
+use Modules\Payroll\Jobs\PayrollSendStaffPdfReportEmailJob;
 
 /**
  * @class      PayrollReportController
@@ -76,6 +77,10 @@ class PayrollReportController extends Controller
         $this->middleware('permission:payroll.reports.concepts', ['only' => 'concepts']);
         $this->middleware('permission:payroll.reports.relationship.concepts', ['only' => 'relationshipConcepts']);
         $this->middleware('permission:payroll.reports.payment.receipts', ['only' => 'paymentReceipt']);
+        $this->middleware('permission:payroll.workers.report.create', ['only' => ['filterWorkersByPayroll']]);
+        $this->middleware('permission:payroll.timesheets.report.create', ['only' => ['timeSheetsPdf']]);
+        $this->middleware('permission:payroll.family.burden.report.create', ['only' => ['create']]);
+        $this->middleware('permission:payroll.historical.positions.report.create', ['only' => ['create']]);
     }
 
     /**
@@ -132,6 +137,8 @@ class PayrollReportController extends Controller
      */
     public function create(Request $request)
     {
+        // Aumento de tiempo de expiracion de la peticion
+        ini_set('max_execution_time', 3600);
         $user = auth()->user();
         $profileUser = $user->profile;
         if (($profileUser) && isset($profileUser->institution_id)) {
@@ -192,7 +199,18 @@ class PayrollReportController extends Controller
                         $q->where('end_date', '<=', $request->end_date);
                     }
                 });
-            })->orderBy('created_at', 'desc')->get()->map(
+            })->orderBy('created_at', 'desc')->get();
+
+            if ($records->isEmpty()) {
+                $empty = ['records' => ''];
+                $validator = Validator::make(
+                    $empty,
+                    ['records' => 'required'],
+                    ['records.required' => 'No hay cargos disponibles para este periodo.']
+                )->validate();
+            }
+
+            $records = $records->map(
                 function ($payrollStaffPayroll) {
                     $basicData = (object)$payrollStaffPayroll->basic_payroll_staff_data;
                     $conceptTypesArr = $payrollStaffPayroll->concept_type;
@@ -226,7 +244,6 @@ class PayrollReportController extends Controller
                     ];
                 }
             );
-
             $pdf->setHeader("Reporte histórico de cargo");
         } elseif ($request->current == 'registers') {
             $payrollRegister = Payroll::find($request->input('id'));

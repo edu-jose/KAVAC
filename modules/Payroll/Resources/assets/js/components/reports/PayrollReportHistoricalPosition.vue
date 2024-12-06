@@ -59,7 +59,7 @@
         </div>
 
         <div class="card-footer text-right">
-            <button @click.prevent="createReport('historical-position')" class="btn btn-primary btn-sm"
+            <button @click.prevent="createReport('historical-position', $event)" class="btn btn-primary btn-sm"
                 data-toggle="tooltip" title="Generar Reporte" type="button">
                 <span>Generar reporte</span>
                 <i class="fa fa-file-pdf-o"></i>
@@ -118,7 +118,7 @@ export default {
                 labels
             }
         },
-        async createReport(current) {
+        async createReport(current, event) {
             const vm = this;
             vm.record.current = current;
 
@@ -136,12 +136,14 @@ export default {
                 return;
             }
 
+            event.preventDefault();
             await axios.post(
                 `${window.app_url}/payroll/reports/historical-position/create`,
                 vm.record
             ).then(response => {
                 if (typeof (response.data.redirect) !== "undefined") {
-                    window.open(response.data.redirect, '_blank');
+                    const reportWindow = window.open(response.data.redirect, '_blank');
+                    reportWindow.focus();
                 }
                 else {
                     vm.reset();
@@ -157,6 +159,12 @@ export default {
                             'screen-error',
                             error.response.data.message
                         );
+                    }
+
+                    for (var index in error.response.data.errors) {
+                        if (error.response.data.errors[index]) {
+                            vm.errors.push(error.response.data.errors[index][0]);
+                        }
                     }
                     console.log("error");
                 }

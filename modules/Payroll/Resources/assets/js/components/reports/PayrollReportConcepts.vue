@@ -63,7 +63,7 @@
                 <span>Generar archivo .xlsx</span>
                 <i class="fa fa-file-pdf-o"></i>
             </button>
-            <button @click.prevent="createReport('concepts')"
+            <button @click.prevent="createReport('concepts', $event)"
                 class="btn btn-primary btn-sm" data-toggle="tooltip" title="Generar Reporte"
                 type="button">
                 <span>Generar reporte</span>
@@ -104,7 +104,7 @@
                 };
             },
 
-            createReport(current) {
+            createReport(current, event) {
                 const vm = this;
 
                 vm.loading = true;
@@ -113,11 +113,13 @@
                     fields[index] = this.record[index];
                 }
                 fields['current'] = 'concepts';
+                event.preventDefault();
                 axios.post(`${window.app_url}/payroll/reports/${current}/create`, fields).then(response => {
                     if (response.data.result == false)
                         location.href = response.data.redirect;
                     else if (typeof(response.data.redirect) !== "undefined") {
-                        window.open(response.data.redirect, '_blank');
+                        let reportWindow = window.open(response.data.redirect, '_blank');
+                        reportWindow.focus();
                     }
                     else {
                         vm.reset();

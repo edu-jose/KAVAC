@@ -100,7 +100,7 @@
         </div>
 
         <div class="card-footer text-right">
-            <button @click.prevent="createReport('relationship-concepts')"
+            <button @click.prevent="createReport('relationship-concepts', $event)"
                 class="btn btn-primary btn-sm" data-toggle="tooltip" title="Generar Reporte"
                 type="button">
                 <span>Generar reporte</span>
@@ -149,7 +149,7 @@
                 };
             },
 
-            createReport(current) {
+            createReport(current, event) {
                 const vm = this;
 
                 vm.loading = true;
@@ -158,11 +158,13 @@
                     fields[index] = this.record[index];
                 }
                 fields['current'] = 'relationship-concepts';
+                event.preventDefault();
                 axios.post(`${window.app_url}/payroll/reports/${current}/create`, fields).then(response => {
                     if (response.data.result == false)
                         location.href = response.data.redirect;
                     else if (typeof(response.data.redirect) !== "undefined") {
-                        window.open(response.data.redirect, '_blank');
+                        const reportWindow = window.open(response.data.redirect, '_blank');
+                        reportWindow.focus();
                     }
                     else {
                         vm.reset();

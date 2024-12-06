@@ -98,6 +98,9 @@ Route::group([
 
     /* Ruta para obtener el listado de las actividades */
     Route::get('get-activities', 'ProjectTrackingActivitysController@getActivities')->name('projecttracking.activities.get');
+    /** Ruta para gestionar Tipo de Actividades */
+    Route::resource('activity-type', 'ProjectTrackingActivityTypeController', ['except' => ['show']]);
+
 
     /* Ruta para obtener el listado de las actividades segun un id de tipo de producto*/
     Route::get(
@@ -191,8 +194,17 @@ Route::group([
     Route::get('/task/vue-info/{id}', 'ProjectTrackingTaskController@vueInfo')->name('projecttracking.task.vue-info');
 
     /* Ruta para ejecutar la función de eliminar las tareas */
-    Route::delete('/tasks/delete/{id}', 'ProjectTrackingTaskController@destroy')->name('projecttracking.task.delete');
+    Route::delete('/tasks/delete/{project_tracking_task}', 'ProjectTrackingTaskController@destroy')->name('projecttracking.task.delete');
 
-    /* Ruta para gestionar los estados de entrega */
+    /** Ruta para obtener las tareas */
+    Route::get('get-tasks', 'ProjectTrackingTaskController@getTasks')->name('projecttracking.tasks.get');
+
+    /** Ruta para ejecutar la función de cambiar el estatus de las tareas */
+    Route::post('/tasks/change-activity-status', 'ProjectTrackingTaskController@changeActivityStatus')->name('projecttracking.task.change-activity-status');
+
+    /**Ruta para gestionar los estados de entrega */
     Route::resource('delivery-status', 'ProjectTrackingDeliveryStatusController');
+
+    /* Ruta para gestionar las jornadas laborales */
+    Route::resource('work-days', 'ProjectTrackingWorkDayController');
 });

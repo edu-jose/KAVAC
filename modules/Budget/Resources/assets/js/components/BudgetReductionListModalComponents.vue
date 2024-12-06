@@ -149,7 +149,19 @@
                                     }}
                                 </td>
                                 <td class="text-center">{{ account.budget_account.denomination }}</td>
-                                <td class="text-center">{{ account.amount }}</td>
+                                <td class="text-center">{{ formatNumber(parseFloat(account.amount)) }}</td>
+                            </tr>
+                            <tr>
+                                <td colspan="3" class="text-right">
+                                    <strong>
+                                        TOTAL {{ record?.currency?.symbol + '.' }}
+                                    </strong>
+                                </td>
+                                <td class="text-center">
+                                    <strong>
+                                        {{ totalAmount }}
+                                    </strong>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -181,7 +193,8 @@
                     specificable_id: '',
                     document: '',
                     documentFile: '',
-                    institution: {}
+                    institution: {},
+                    budget_modification_accounts: [],
                 },
                 errors: [],
             }
@@ -200,5 +213,16 @@
                 return `${window.app_url}/${this.record.document_file.url}`;
             }
         },
+
+        computed: {
+            totalAmount() {
+                if (!this.record.budget_modification_accounts.length) {
+                    return 0;
+                }
+
+                const total = this.record.budget_modification_accounts.reduce((acc, account) => acc + parseFloat(account.amount), 0);
+                return this.formatNumber(total);
+            },
+        }
     }
 </script>

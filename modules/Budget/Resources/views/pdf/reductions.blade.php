@@ -73,5 +73,23 @@
                 </td>
             </tr>
         @endforeach
+        <tr>
+            <td colspan="3" style="border: solid 1px #000; font-weight: bold; background-color: #D3D3D3;" align="right">
+                <strong>
+                    TOTAL {{ $currency['symbol'] }}
+                </strong>
+            </td>
+            <td class="text-right" style="border: solid 1px #808080;">
+                <strong>
+                    @php
+                        $total = 0;
+                        foreach ($records->budgetModificationAccounts as $budgetAccount) {
+                            $total += $budgetAccount->amount;
+                        }
+                    @endphp
+                    {{ number_format($total, 2, ',', '.') }}
+                </strong>
+            </td>
+        </tr>
     </tbody>
 </table>

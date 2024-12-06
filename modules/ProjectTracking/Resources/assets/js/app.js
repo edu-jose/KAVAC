@@ -104,6 +104,24 @@ Vue.component("project-tracking-priorities", () =>
     )
 );
 
+ /**
+* Componente para registrar nombre, descripción y color del tipo de actividades
+*
+* @author Mauricio Araujo <araujoperezme20@gmail.com>
+*/
+Vue.component('project-tracking-activity-type', () =>
+    import(
+      /* webpackChunkName: "projecttracking-activity-type" */
+      './components/settings/ProjectTrackingActivityTypeComponent.vue'
+    )
+   );
+  
+  Vue.component('project-tracking-subprojects'), () =>
+   import(
+     /* webpackChunkName: "projecttracking-subprojects" */
+     './components/settings/ProjectTrackingSubProjectComponent.vue'
+)
+  
 /**
  * Componente para listar, crear, actualizar y borrar datos de los estatus de actividades
  *
@@ -229,6 +247,18 @@ Vue.component("project-tracking-delivery-status", () =>
     import(
         /* webpackChunkName: "project-tracking-delivery-status" */
         "./components/settings/ProjectTrackingDeliveryStatusComponent.vue"
+    )
+);
+
+/**
+ * Componente para gestionar las jornadas laborales
+ * 
+ * @author Natanael Rojo <ndrojo@cenditel.gob.ve> | <rojonatanael99@gmail.com>
+ */
+Vue.component("project-tracking-working-hours", () =>
+    import(
+        /* webpackChunkName: "project-tracking-working-hours" */
+        "./components/settings/ProjectTrackingWorkingHoursComponent.vue"
     )
 );
 

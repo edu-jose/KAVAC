@@ -166,7 +166,7 @@
                                 style="max-width: 60rem; color: #636e7b; font-size: 13px">
                                 <div class="modal-content">
                                     <div class="modal-header">
-                                        <button type="button" class="close closeModal" aria-label="Close">
+                                        <button type="button" class="close closeModal" aria-label="Cerrar">
                                             <span aria-hidden="true">×</span>
                                         </button>
                                         <h6 style="font-size: 1em">
@@ -415,7 +415,6 @@ export default {
                     let formatted_start_date = this.dataInfo.start_date ? formatDate(this.dataInfo.start_date) : '';
                     let formatted_end_date = this.dataInfo.end_date ? formatDate(this.dataInfo.end_date) : '';
                     let typeProducts = [];
-                    console.log(response.data.selected_product_types);
 
                     for (const productType of response.data.selected_product_types) {
                         typeProducts.push(productType.text);

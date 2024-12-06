@@ -98,5 +98,35 @@
                 </td>
             </tr>
         @endforeach
+        <tr>
+            <td colspan="3" style="border: solid 1px #000; font-weight: bold; background-color: #D3D3D3;" align="right">
+                <strong>
+                    TOTAL {{ $currency['symbol'] }}
+                </strong>
+            </td>
+            <td class="text-right" style="border: solid 1px #808080;">
+                <strong>
+                    @php
+                        $totalFrom = 0;
+                        $totalTo = 0;
+                        foreach ($modification_accounts as $budgetAccount) {
+                            $totalFrom += $budgetAccount['from_amount'];
+                            $totalTo += $budgetAccount['to_amount'];
+                        }
+                    @endphp
+                    {{ number_format($totalFrom, 2, ',', '.') }}
+                </strong>
+            </td>
+            <td colspan="3" style="border: solid 1px #000; font-weight: bold; background-color: #D3D3D3;" align="right">
+                <strong>
+                    TOTAL {{ $currency['symbol'] }}
+                </strong>
+            </td>
+            <td class="text-right" style="border: solid 1px #808080;">
+                <strong>
+                    {{ number_format($totalTo, 2, ',', '.') }}
+                </strong>
+            </td>
+        </tr>
     </tbody>
 </table>

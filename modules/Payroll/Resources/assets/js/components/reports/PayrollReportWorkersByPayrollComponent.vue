@@ -60,11 +60,11 @@
                     </div>
                 </div>
             </div>
-            <div class="row justify-content-center" v-for="(chartByType, index) in payroll_payment_types"
+            <div class="row justify-content-center" v-for="(chartByType, index) in record.payroll_payment_types"
                 v-show="showCharts" :key="chartByType.id">
                 <div class="col-md-6 mt-4">
-                    <payroll-graph-charts type="bar" :title="`Trabajadores en ${chartByType.text.split(' - ')[1]}`"
-                        :ref="`chart_${index}`" :canvaId="`canva-id-${chartByType.id}`" />
+                    <payroll-graph-charts type="bar" :title="chartTitle(chartByType)" :ref="`chart_${index}`"
+                        :canvaId="`canva-id-${chartByType.id}`" />
                 </div>
             </div>
         </div>
@@ -94,6 +94,13 @@ export default {
             showCharts: true,
             records: null,
             payroll_payment_types: [],
+        }
+    },
+    computed: {
+        chartTitle : function() {
+            return function(chartByType) {
+                return `Trabajadores en ${chartByType?.text.split(' - ')[1]}`;
+            }
         }
     },
     methods: {
@@ -180,6 +187,13 @@ export default {
                 vm.record.start_date = vm.record.end_date
             }
         }
+    },
+    watch: {
+        'record.payroll_payment_types': function (newVal) {
+            if(newVal.length == 1 && newVal[0].id == 'todos') {
+                this.record.payroll_payment_types = this.payroll_payment_types.filter(el => el.id != 'todos');
+            }
+        }  
     },
     async mounted() {
         const vm = this;

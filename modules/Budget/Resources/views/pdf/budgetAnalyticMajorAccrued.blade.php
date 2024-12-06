@@ -23,6 +23,9 @@
             </td>
         </tr>
         <tr>
+            <td width="25%" style="font-weight: bold;">Desde: {{ $initialDate }} Hasta: {{ $finalDate }}</td>
+        </tr>
+        <tr>
             <td width="25%" style="font-weight: bold;">Generado por:</td>
             @php
                 $analist_name = isset($profile) ? $profile->first_name . ' ' . $profile->last_name : '';

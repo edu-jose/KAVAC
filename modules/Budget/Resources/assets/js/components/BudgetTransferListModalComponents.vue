@@ -157,7 +157,7 @@
                                     {{ account.from_description }}
                                 </td>
                                 <td class="text-center border-right">
-                                    {{ account.from_amount }}
+                                    {{ formatNumber(parseFloat(account.from_amount)) }}
                                 </td>
                                 <td class="text-center">
                                     {{ account.to_spac_description }}
@@ -169,7 +169,29 @@
                                     {{ account.to_description }}
                                 </td>
                                 <td class="text-center">
-                                    {{ account.to_amount }}
+                                    {{ formatNumber(parseFloat(account.to_amount)) }}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="3" class="text-right">
+                                    <strong>
+                                        TOTAL {{ record?.currency?.symbol + '.' }}
+                                    </strong>
+                                </td>
+                                <td class="text-center border-right">
+                                    <strong>
+                                        {{ totalFromAmount }}
+                                    </strong>
+                                </td>
+                                <td colspan="3" class="text-right">
+                                    <strong>
+                                        TOTAL {{ record?.currency?.symbol + '.' }}
+                                    </strong>
+                                </td>
+                                <td class="text-center">
+                                    <strong>
+                                        {{ totalToAmount }}
+                                    </strong>
                                 </td>
                             </tr>
                         </tbody>
@@ -199,7 +221,8 @@
                     specificable_id: '',
                     document: '',
                     documentFile: '',
-                    institution: {}
+                    institution: {},
+                    budget_modification_accounts: [],
                 },
                 errors: [],
             }
@@ -218,5 +241,24 @@
                 return `${window.app_url}/${this.record.document_file.url}`;
             }
         },
+
+        computed: {
+            totalFromAmount() {
+                if (!this.record.budget_modification_accounts.length) {
+                    return 0;
+                }
+
+                const total = this.$parent.modification_accounts.reduce((acc, account) => acc + parseFloat(account.from_amount), 0);
+                return this.formatNumber(total);
+            },
+            totalToAmount() {
+                if (!this.record.budget_modification_accounts.length) {
+                    return 0;
+                }
+
+                const total = this.$parent.modification_accounts.reduce((acc, account) => acc + parseFloat(account.to_amount), 0);
+                return this.formatNumber(total);
+            },
+        }
     }
 </script>

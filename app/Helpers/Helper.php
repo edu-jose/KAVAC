@@ -387,12 +387,15 @@ if (!function_exists('get_json_resource')) {
      */
     function get_json_resource($file, $module = null)
     {
-        if (!is_null($module)) {
+        if (!is_null($module) && file_exists(rtrim(Module::getModulePath($module), "/") . "/Resources/" . $file)) {
             return json_decode(
-                file_get_contents(Module::getModulePath($module) . "/Resources/" . $file, true)
+                file_get_contents(rtrim(Module::getModulePath($module), "/") . "/Resources/" . $file, true)
             );
         }
 
+        if (!file_exists(app()->resourcePath($file))) {
+            return [];
+        }
         return json_decode(
             file_get_contents(app()->resourcePath($file), true)
         );

@@ -1708,8 +1708,8 @@ class BudgetReportsController extends Controller
                 'currencySymbol' => $currency['symbol'],
                 'fiscal_year' => $fiscal_year['year'],
                 'report_date' => \Carbon\Carbon::today()->format('d-m-Y'),
-                'initialDate' => '',
-                'finalDate' => '',
+                'initialDate' => array_key_exists('initialDate', $data) ? Carbon::parse($data['initialDate'])->format('d-m-Y') : '',
+                'finalDate' => array_key_exists('finalDate', $data) ? Carbon::parse($data['finalDate'])->format('d-m-Y') : '',
                 'report_type_id' => $data['report_type_id'],
                 'profile' => $profile,
             ]), now()->format('d-m-Y') . '_Reporte_Mayor_Analitico.csv');

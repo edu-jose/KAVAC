@@ -2,10 +2,11 @@
 
 namespace Modules\ProjectTracking\Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use Illuminate\Database\Eloquent\Model;
 use App\Roles\Models\Role;
+use Illuminate\Database\Seeder;
 use App\Roles\Models\Permission;
+use Illuminate\Database\Eloquent\Model;
+use Modules\ProjectTracking\Models\ProjectTrackingActivityType;
 
 /**
  * @class ProjectTrackingRoleAndPermissionsTableSeeder
@@ -351,6 +352,33 @@ class ProjectTrackingRoleAndPermissionsTableSeeder extends Seeder
                 'slug_alt' => 'status.entrega.eliminar',
             ],
             /**
+             * Work Day Permissions
+             */
+            [
+                'name' => 'Crear jornada de trabajo',
+                'slug' => 'project.tracking.work.day.create',
+                'description' => 'Acceso para crear jornadas de trabajo',
+                'model' => 'Modules\ProjectTracking\Models\ProjectTrackingWorkDay ',
+                'model_prefix' => 'Seguimiento',
+                'slug_alt' => 'jornada.trabajo.crear',
+            ],
+            [
+                'name' => 'Editar jornada de trabajo',
+                'slug' => 'project.tracking.work.day.edit',
+                'description' => 'Acceso para editar jornadas de trabajo',
+                'model' => 'Modules\ProjectTracking\Models\ProjectTrackingWorkDay ',
+                'model_prefix' => 'Seguimiento',
+                'slug_alt' => 'jornada.trabajo.editar',
+            ],
+            [
+                'name' => 'Eliminar jornada de trabajo',
+                'slug' => 'project.tracking.work.day.delete',
+                'description' => 'Acceso para eliminar jornadas de trabajo',
+                'model' => 'Modules\ProjectTracking\Models\ProjectTrackingWorkDay ',
+                'model_prefix' => 'Seguimiento',
+                'slug_alt' => 'jornada.trabajo.eliminar',
+            ],
+            /**
              * Tasks Permissions
              */
             [
@@ -420,8 +448,35 @@ class ProjectTrackingRoleAndPermissionsTableSeeder extends Seeder
                 'model_prefix' => 'Seguimiento',
                 'slug_alt' => 'plan.actividad.eliminar',
             ],
+            /**
+             * Activity Type Permissions
+             */
+            [
+                'name' => 'Crear tipo de actividad',
+                'slug' => 'project.tracking.activity.type.create',
+                'description' => 'Acceso para crear tipo de actividad',
+                'model' => 'Modules\ProjectTracking\Models\ProjectTrackingActivityType',
+                'model_prefix' => 'Seguimiento',
+                'slug_alt' => 'tipo-de-actividad.crear',
+                'short_description' => 'Crear tipo de actividad',
+            ],
+            [
+                'name' => 'Editar tipo de actividad',
+                'slug' => 'project.tracking.activity.type.update',
+                'description' => 'Acceso para editar tipo de actividad',
+                'model' => 'Modules\ProjectTracking\Models\ProjectTrackingActivityType', 'model_prefix' => 'Seguimiento',
+                'slug_alt' => 'tipo-de-actividad.editar',
+                'short_description' => 'Editar tipo de actividad',
+            ],
+            [
+                'name' => 'Eliminar tipo de actividad',
+                'slug' => 'project.tracking.activity.type.delete',
+                'description' => 'Acceso para eliminar tipo de actividad',
+                'model' => 'Modules\ProjectTracking\Models\ProjectTrackingActivityType', 'model_prefix' => 'Seguimiento',
+                'slug_alt' => 'tipo-de-actividad.eliminar',
+                'short_description' => 'Eliminar tipo de actividad',
+            ],
         ];
-
         $projectTrackingRole->detachAllPermissions();
 
         foreach ($permissions as $permission) {

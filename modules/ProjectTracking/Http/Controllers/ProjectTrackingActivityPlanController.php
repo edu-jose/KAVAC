@@ -729,7 +729,7 @@ class ProjectTrackingActivityPlanController extends Controller
                 ]
             );
         }
-        return response()->json($subProjects, 200);
+        return response()->json($subProjects, JsonResponse::HTTP_OK);
     }
 
     /**

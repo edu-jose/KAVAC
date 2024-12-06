@@ -165,9 +165,32 @@
                         <project-tracking-activity-status></project-tracking-activity-status>
                         {{-- Configuración de Estatus de Entrega --}}
                         <project-tracking-delivery-status></project-tracking-delivery-status>
+                        {{--Configuración de tipo de actividades --}}
+				    	<project-tracking-activity-type></project-tracking-activity-type>
+
 
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <div class="card" id="cardProjectTrackingWorkingHours">
+                <div class="card-header">
+                <h6 class="card-title">
+                    {{ __('Jornada Laboral') }}
+                </h6>
+                </div>
+                <div class="card-body">
+                <div class="row">
+                                            {{-- Working Hours Settings --}}
+                                            <project-tracking-working-hours
+                                            back_url="{{ url()->previous() }}">
+                                            </project-tracking-working-hours>
+                </div>
+                </div>
+
             </div>
         </div>
     </div>

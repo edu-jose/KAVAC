@@ -23,59 +23,61 @@
                         <div class="row">
                             <div class="col-2">
                                 <div class="form-group">
-                                    <label>R.I.F.:</label>
+                                    <label for="rif">R.I.F.:</label>
                                     <input
                                         type="text" placeholder="Número de RIF" data-toggle="tooltip"
-                                        title="Indique el número de RIF"
+                                        title="Indique el número de RIF" id="rif"
                                         class="form-control input-sm" v-model="record.rif"
                                     >
                                 </div>
                             </div>
                             <div class="col-4">
                                 <div class="form-group is-required">
-                                    <label>Nombre:</label>
-                                    <input type="text" placeholder="Nombre de la sede" data-toggle="tooltip"
-                                           title="Indique el nombre de la sede (requerido)"
-                                           class="form-control input-sm" v-model="record.name">
+                                    <label for="name">Nombre:</label>
+                                    <input
+                                        type="text" placeholder="Nombre de la sede" data-toggle="tooltip"
+                                        title="Indique el nombre de la sede (requerido)" id="name"
+                                        class="form-control input-sm" v-model="record.name"
+                                    >
                                     <input type="hidden" v-model="record.id">
                                 </div>
                             </div>
                             <div class="col-12 col-md-3">
                                 <div class="form-group">
-                                    <label>País:</label>
-                                    <select2 :options="countries" @input="getEstates" v-model="record.country_id"/>
+                                    <label for="country">País:</label>
+                                    <select2 :options="countries" @input="getEstates" v-model="record.country_id" id="country"/>
                                 </div>
                             </div>
                             <div class="col-12 col-md-3">
                                 <div class="form-group">
-                                    <label>Estado:</label>
-                                    <select2 :options="estates" v-model="record.estate_id" @input="getEstateRelations"/>
+                                    <label for="estate">Estado:</label>
+                                    <select2 :options="estates" v-model="record.estate_id" @input="getEstateRelations" id="estate"/>
                                 </div>
                             </div>
                             <div class="col-12 col-md-3">
                                 <div class="form-group">
-                                    <label>Municipio:</label>
-                                    <select2 :options="municipalities" v-model="record.municipality_id"/>
+                                    <label for="municipality">Municipio:</label>
+                                    <select2 :options="municipalities" v-model="record.municipality_id" id="municipality"/>
                                 </div>
                             </div>
                             <div class="col-12 col-md-3">
                                 <div class="form-group">
-                                    <label>Ciudad:</label>
-                                    <select2 :options="cities" v-model="record.city_id"/>
+                                    <label for="city">Ciudad:</label>
+                                    <select2 :options="cities" v-model="record.city_id" id="city"/>
                                 </div>
                             </div>
                             <div class="col-12 col-md-3">
                                 <div class="form-group">
-                                    <label>Region:</label>
-                                    <select2 :options="regions" v-model="record.region_id"/>
+                                    <label for="region">Region:</label>
+                                    <select2 :options="regions" v-model="record.region_id" id="region"/>
                                 </div>
                             </div>
                             <div class="col-12">
                                 <div class="form-group">
-                                    <label>Dirección fiscal:</label>
+                                    <label for="address">Dirección fiscal:</label>
                                     <ckeditor
                                         :editor="ckeditor.editor" data-toggle="tooltip"
-                                        title="Indique la dirección fiscal"
+                                        title="Indique la dirección fiscal" id="address"
                                         :config="ckeditor.editorConfig" class="form-control"
                                         tag-name="textarea" rows="3" v-model="record.address"
                                     ></ckeditor>
@@ -126,8 +128,6 @@
 </template>
 
 <script>
-import { get } from 'lodash';
-
     export default {
         data() {
             return {
@@ -192,17 +192,16 @@ import { get } from 'lodash';
                     return rec.id === id;
                 })[0])) || vm.reset();
                 vm.record = recordEdit;
-                console.log(vm.record);
-                vm.record.country_id = recordEdit.municipality.estate.country.id;
+                vm.record.country_id = recordEdit.municipality?.estate?.country?.id;
                 vm.getEstates(vm.record.country_id);
                 setTimeout(() => {
-                    vm.record.estate_id = recordEdit.municipality.estate_id;
+                    vm.record.estate_id = recordEdit.municipality?.estate_id;
                 }, 1000);
                 setTimeout(() => {
-                    vm.record.municipality_id = recordEdit.municipality.id;
+                    vm.record.municipality_id = recordEdit.municipality?.id;
                 }, 2000);
                 setTimeout(() => {
-                    vm.record.city_id = recordEdit.city.id;
+                    vm.record.city_id = recordEdit.city?.id;
                 }, 3000);
                 setTimeout(() => {
                     vm.record.region_id = recordEdit.region?.id || '';
