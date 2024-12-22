@@ -98,7 +98,7 @@
                 @endif
             @endif
             <li class="nav-item">
-                <a class="nav-link btn btn-sm btn-info fullscreen" href="javascript:void(0)" onclick="fullScreen()"
+                <a class="nav-link btn btn-sm btn-info fullscreen" href="javascript:void(0)"
                     title="{{ __('Pantalla completa') }}" data-toggle="tooltip">
                     <i class="mdi mdi-fullscreen" style="font-size: 1.287em"></i>
                 </a>
@@ -111,12 +111,16 @@
                 <div class="dropdown-menu dropdown-menu-right" aria-labelledby="list_options_user">
                     <a class="dropdown-header">{{ __('USUARIO') }}</a>
                     @if (Auth::user()->hasVerifiedEmail())
-                        <a class="dropdown-item" href="{{ route('my.settings') }}" data-toggle="tooltip"
-                            data-placement="left" title="{{ __('Establecer configuración personalizada') }}">
+                        <a
+                            class="dropdown-item" href="{{ route('my.settings') }}" data-toggle="tooltip"
+                            data-placement="left" title="{{ __('Establecer configuración personalizada') }}"
+                        >
                             <i class="ion-gear-a"></i>{{ __('Configurar Cuenta') }}</a>
-                        <a class="dropdown-item" href="{{ url('users') . '/' . Auth::user()->id }}"
+                        <a
+                            class="dropdown-item" href="{{ url('users') . '/' . Auth::user()->id }}"
                             title="{{ __('Actualizar datos de perfil del usuario') }}" data-toggle="tooltip"
-                            data-placement="left">
+                            data-placement="left"
+                        >
                             <i class="ion-person"></i>{{ __('Mi Perfil') }}</a>
                         <lock-screen-option></lock-screen-option>
                         <a id="doc-user" class="dropdown-item" href="{{ url('docs/user') }}" target="_blank"
@@ -125,8 +129,10 @@
                             <i class="ion-help-circled"></i>{{ __('Ayuda') }}</a>
                         <div class="divider"></div>
                     @endif
-                    <a class="dropdown-item" href="{{ route('logout') }}" title="{{ __('Salir de la aplicación') }}"
-                        data-toggle="tooltip" data-placement="left" onclick="event.preventDefault();logout();">
+                    <a
+                        class="dropdown-item dropdown-item-logout" href="{{ route('logout') }}" title="{{ __('Salir de la aplicación') }}"
+                        data-toggle="tooltip" data-placement="left"
+                    >
                         <i class="ion-log-out"></i> {{ __('Salir') }}
                     </a>
                     <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">

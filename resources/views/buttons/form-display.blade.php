@@ -7,8 +7,8 @@
     @endif
     @if (!isset($hide_previous) || !$hide_previous)
         {!! Form::button('<i class="fa fa-ban"></i>', [
-            'class' => 'btn btn-warning btn-icon btn-round', 'data-toggle' => 'tooltip', 'type' => 'button',
-            'title' => __('Cancelar y regresar'), 'onclick' => 'window.location.href="' . url()->previous() . '"',
+            'class' => 'btn btn-warning btn-icon btn-round btn-back', 'data-toggle' => 'tooltip', 'type' => 'button',
+            'title' => __('Cancelar y regresar'),
             'id' => 'btn_cancel'
         ]) !!}
     @endif
@@ -22,7 +22,7 @@
 
 @section('extra-js')
     @parent
-    <script>
+    <script nonce="{{ session()->get('nonce') }}">
         $(document).ready(function() {
             $(window).scroll(function () {
                 if ($(this).scrollTop() > 50) {

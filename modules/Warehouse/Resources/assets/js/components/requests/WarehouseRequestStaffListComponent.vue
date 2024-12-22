@@ -67,7 +67,7 @@ export default {
             'payroll_staff': 'Solicitante',
             'motive':        'Motivo',
             'state':         'Estado de la solicitud',
-            'request_date':    'Fecha de la solicitud',
+            'request_date':  'Fecha de la solicitud',
             'id':            'Acción'
         };
         this.table_options.sortable = ['code', 'payroll_staff', 'motive', 'state', 'created_at'];

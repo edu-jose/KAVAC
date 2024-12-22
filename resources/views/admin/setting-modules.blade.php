@@ -37,7 +37,7 @@
 
 @section('extra-js')
 	@parent
-	<script>
+	<script nonce="{{ session()->get('nonce') }}">
 		$(document).ready(function() {
 			$(".btn-enable").on("click", function() {
 				axios.post('{{ route('module.enable') }}', {

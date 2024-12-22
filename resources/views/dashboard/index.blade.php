@@ -41,9 +41,33 @@
 @stop
 
 @section('extra-js')
-    <script>
+    <script nonce="{{ session()->get('nonce') }}">
         $(document).ready(function() {
             $('.datatable').DataTable();
+            $('.btn-unlock-user').on('click', function (e) {
+                e.preventDefault();
+                unlockUser($(this).data('id'));
+            });
+            $('.btn-send-message').on('click', function (e) {
+                e.preventDefault();
+                setUserModalMessage($(this).data('id'));
+            });
+            $('.btn-users-settings').on('click', function (e) {
+                e.preventDefault();
+                setUser($(this).data('id'));
+            });
+            $('.btn-send-notification').on('click', function (e) {
+                e.preventDefault();
+                setUserModalNotify($(this).data('id'));
+            });
+            $('.btn-user-info').on('click', function (e) {
+                e.preventDefault();
+                view_user_info($(this).data('id'));
+            });
+            $('.btn-user-filter').on('click', function (e) {
+                e.preventDefault();
+                location="{{ url('auth/assign/roles-permissions') }}/" + $(this).data('id');
+            })
         });
 
         var unlockUser = function (userId) {

@@ -25,7 +25,7 @@
 
 @section('extra-js')
 	@parent
-	<script>
+	<script nonce="{{ session()->get('nonce') }}">
 		$(document).ready(function() {
 			$('#active').closest('.bootstrap-switch-wrapper').attr({
 	            'title': '{{ __('Organización activa?') }}',

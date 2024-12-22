@@ -538,7 +538,7 @@
 @section('extra-js')
     @parent
     {!! Html::script('js/ckeditor.js', [], Request::secure()) !!}
-    <script>
+    <script nonce="{{ session()->get('nonce') }}">
         let idclicker = 0;
         $(document).ready(function() {
             //app.ckeditor.editorData = "{!! isset($model) ? $model->description : old('description') !!}";
@@ -592,7 +592,7 @@
             }
         }
     </script>
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="{{ session()->get('nonce') }}">
         let selectElement = document.querySelector('select[name="accounting_account_id"]') ?? '';
         let selectedValue = selectElement.value;
         let options = selectElement.options ?? '';

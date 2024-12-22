@@ -42,8 +42,7 @@
                             {!! Form::select('institution_id', (isset($institutions))?$institutions:[], isset($model) && $model->profile ? $model->profile->institution_id : old('institution_id'), [
                                     'class' => 'form-control select2',
                                     'id' => 'institution_id',
-                                    'disabled' => (isset($model) && $model->profile!==null && $model->profile->institution_id!==null) ? true : false,
-                                    'oninput' => 'updateStaffSelect($(this), $("#staff"))'
+                                    'disabled' => (isset($model) && $model->profile!==null && $model->profile->institution_id!==null) ? true : false
                                 ]
                             ) !!}
                         </div>
@@ -55,7 +54,7 @@
                             {{-- Update --}}
                             @if(isset($model) && $model->profile && $model->profile->employee_id)
                                 {!! Form::select('staff', ['' => 'Seleccione...'] + $allPersons->toArray(), $model->profile->employee_id, [
-                                    'class' => 'form-control select2', 'onchange' => 'hasStaff()',
+                                    'class' => 'form-control select2',
                                     'id' => 'staff',
                                     'disabled' => false,
                                     'data-old' => old('staff')
@@ -63,7 +62,7 @@
                             {{-- Create --}}
                             @else
                                 {!! Form::select('staff', ['' => 'Seleccione...'] + $allPersons->toArray(), null, [
-                                    'class' => 'form-control select2', 'onchange' => 'hasStaff()',
+                                    'class' => 'form-control select2',
                                     'id' => 'staff',
                                     'disabled' => (isset($model) && $model->profile !== null) ? false : true,
                                     'data-old' => old('staff')
@@ -115,7 +114,15 @@
 
 @section('extra-js')
     @parent
-    <script>
+    <script nonce="{{ session()->get('nonce') }}">
+        $(document).ready(function() {
+            $('#institution_id').on('input', function() {
+                updateStaffSelect($(this), $("#staff"));
+            });
+            $('#staff').on('change', function() {
+                hasStaff();
+            });
+        })
         /**
          * Muestra u oculta el campo de nombre si no se ha seleccionado un empleado
          *

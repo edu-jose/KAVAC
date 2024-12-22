@@ -169,7 +169,7 @@
 
 @section('extra-js')
     @parent
-    <script>
+    <script nonce="{{ session()->get('nonce') }}">
         $(document).ready(function() {
             @if ($formulation->assigned && !$formulation->confirmed)
                 /**

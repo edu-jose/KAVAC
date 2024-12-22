@@ -4,8 +4,12 @@
             <div class="card-header">
                 <h6 class="card-title">Ajustes en tablas salariales</h6>
                 <div class="card-btns">
-                    <a :disabled="(record.increase_of_type != 'different') || (panel != 'Show')" onclick="$('input[name=importFile]').click()"
-                    data-toggle="tooltip" type="button" title=""  class="btn btn-sm btn-primary btn-custom" data-original-title="Importar registros para el tabulador salarial">
+                    <a
+                        :disabled="(record.increase_of_type != 'different') || (panel != 'Show')"
+                        data-toggle="tooltip" type="button" title=""
+                        class="btn btn-sm btn-primary btn-custom btn-import-file"
+                        data-original-title="Importar registros para el tabulador salarial"
+                    >
                         <i class="fa fa-upload"></i>
                     </a>
                     <input
@@ -357,6 +361,10 @@
             const vm = this;
             vm.record.created_at = vm.format_date(new Date(), 'YYYY-MM-DD');
             vm.record.scale_values = [];
+
+            $('.btn-import-file').on('click', function () {
+                $('input[name=importFile]').click();
+            });
         },
         updated() {
             let vm = this;

@@ -162,7 +162,7 @@
 
 @section('extra-js')
     @parent
-    <script>
+    <script nonce="{{ session()->get('nonce') }}">
         function exportData(type) {
             location.href = `${window.app_url}/asset/registers/export/all?type=${type}`;
         };

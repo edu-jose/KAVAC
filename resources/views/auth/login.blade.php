@@ -13,7 +13,7 @@
                     <i class="now-ui-icons users_circle-08"></i>
                 </span>
                 {!! Form::text('username', old('username'), [
-                    'class' => 'form-control', 'placeholder' => __('Usuario'),
+                    'class' => 'form-control username-input', 'placeholder' => __('Usuario'),
                     'title' => __('Indique el nombre del usuario'),
                     'data-toggle' => 'tooltip', 'data-placement' => 'right'
                 ]) !!}
@@ -46,9 +46,11 @@
             <div class="login-captcha-grid">
                 <div class="captcha-addon text-right">{!! Captcha::img() !!}</div>
                 <div class="text-left text-light mb-0">
-                    <i class="now-ui-icons arrows-1_refresh-69 cursor-pointer captcha-reload vertical-middle my-0 pt-1"
-                       onclick="refresh_captcha()" data-toggle="tooltip" data-placement="right"
-                       title="{{ __('Presione este botón para generar una nueva imagen de captcha') }}"></i>
+                    <i
+                        class="now-ui-icons arrows-1_refresh-69 cursor-pointer captcha-reload vertical-middle my-0 pt-1"
+                        data-toggle="tooltip" data-placement="right"
+                        title="{{ __('Presione este botón para generar una nueva imagen de captcha') }}"
+                    ></i>
                 </div>
             </div>
         </div>
@@ -73,14 +75,14 @@
             <label class="mb-2">
                 <div class="row">
                     <div class="col-6 text-right">
-                        <label class="font-small">{{ __('Recuérdame') }}</label>
+                        <label for="remember" class="font-small">{{ __('Recuérdame') }}</label>
                     </div>
                     <div class="col-6 text-left">
                         <div class="custom-control custom-switch">
                             <input type="checkbox" class="custom-control-input" name="remember" id="remember" data-toggle="tolltip"
                                    title="{{  __('Seleccione si desea que el sistema recuerde sus datos') }}" value="true"
                                    {{ (old('remember'))?'checked':'' }}>
-                            <label class="custom-control-label" for="remember"></label>
+                            <label class="custom-control-label" for="remember">&nbsp;</label>
                         </div>
                     </div>
                 </div>
@@ -101,7 +103,11 @@
 @endsection
 
 @section('extra-js')
-    <script>
+    <script nonce="{{ session()->get('nonce') }}">
+        $(document).ready(function() {
+            $('.username-input').on('keypress', validateUsernameInput);
+            $('.captcha-reload').on('click', refresh_captcha);
+        })
         /**
          * Función que permite cargar una nueva imagen de captcha
          */
@@ -118,6 +124,15 @@
                 var err = textStatus + ", " + error;
                 bootbox.alert( err );
             });
+        }
+
+        function validateUsernameInput(event) {
+            var regex = /^[a-zA-Z0-9\.\-_]+$/;
+            var key = String.fromCharCode(!event.charCode ? event.which : event.charCode);
+            if (!regex.test(key)) {
+                event.preventDefault();
+                return false;
+            }
         }
     </script>
 @endsection

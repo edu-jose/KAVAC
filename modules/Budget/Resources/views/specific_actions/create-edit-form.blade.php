@@ -215,7 +215,7 @@
 
 @section('extra-js')
     @parent
-    <script>
+    <script nonce="{{ session()->get('nonce') }}">
         $(document).ready(function() {
             app.ckeditor.editorData = "{!! (isset($model)) ? $model->description : old('description')  !!}";
             $('.sel_project_centralized_action').on('change', function(e) {

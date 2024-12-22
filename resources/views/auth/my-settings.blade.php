@@ -143,7 +143,7 @@
 
 @section('extra-js')
     @parent
-    <script>
+    <script nonce="{{ session()->get('nonce') }}">
         $(document).ready(function() {
             @foreach ($switchEl as $switchId => $switchDescription)
                 $('#{{ $switchId }}').closest('.bootstrap-switch-wrapper').attr({

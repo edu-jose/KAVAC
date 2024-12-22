@@ -55,18 +55,18 @@ if (!function_exists('display_submenu')) {
      * @return string  Retorna una cadena vacia para contraer las opciones del submenú,
      *                 de lo contrario retorna el css para mostrar el bloque de opciones
      */
-    function display_submenu($submenu)
+    function display_submenu($submenu, $type = 'style')
     {
         if (is_array($submenu)) {
             foreach ($submenu as $sb) {
                 if ($sb !== '' && strpos(Route::current()->getName(), $sb) !== false) {
-                    return 'display:block';
+                    return $type === 'class' ? 'display-submenu' : 'display:block';
                 }
             }
         }
         return (
             !is_array($submenu) && $submenu !== '' && strpos(Route::current()->getName(), $submenu) !== false
-        ) ? 'display:block;' : '';
+        ) ? ($type === 'class' ? 'display-submenu' : 'display:block;') : '';
     }
 }
 

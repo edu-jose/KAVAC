@@ -269,7 +269,7 @@
 
 @section('extra-js')
     @parent
-    <script>
+    <script nonce="{{ session()->get('nonce') }}">
         $(document).ready(function() {
             app.ckeditor.editorData = "{!! (isset($model))?$model->description:old('description')  !!}";
             $("#reset-select").on('click', function() {

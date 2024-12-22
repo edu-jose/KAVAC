@@ -58,7 +58,7 @@
 @stop
 @section('extra-js')
 	@parent
-	<script>
+	<script nonce="{{ session()->get('nonce') }}">
 		$(document).ready(function() {
 			$('#multi_warehouse').closest('.custom-switch').attr({
 	            'title': 'Gestionar multiples almacenes',

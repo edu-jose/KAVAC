@@ -211,7 +211,7 @@
 @stop
 
 @section('extra-js')
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="{{ session()->get('nonce') }}">
         var search_mes = document.getElementById('search_date');
         var search_periodo = document.getElementById('search_mes');
 

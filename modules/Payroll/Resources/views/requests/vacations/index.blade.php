@@ -70,7 +70,7 @@ Vacaciones
 </div>
 @stop
 @section('extra-js')
-<script type="text/javascript">
+<script type="text/javascript" nonce="{{ session()->get('nonce') }}">
     function exportData() {
         axios.get(`${window.app_url}/payroll/vacations-request/export`).then(response => {
             var text = 'Su solicitud esta en proceso, esto puede tardar unos minutos. Se le notificara al terminar la operación';

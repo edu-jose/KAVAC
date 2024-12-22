@@ -202,7 +202,7 @@
 
 @section('extra-js')
     @parent
-    <script>
+    <script nonce="{{ session()->get('nonce') }}">
         $(document).ready(function() {
             app.ckeditor.editorData = "{!! (isset($model))?$model->ca_description:old('ca_description')  !!}";
             let date = new Date().toISOString();
@@ -211,7 +211,7 @@
                 $('#custom_date').val(newDate).change();
             }
 
-			$("#reset-select").on('click', function() { 
+			$("#reset-select").on('click', function() {
 				$('#institution_id').val('').change();
 	    		$('#department_id').val('').change();
 	    		$('#payroll_staff_id').val('').change();

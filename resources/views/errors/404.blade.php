@@ -7,6 +7,6 @@
         <p>
             {{ __('La página que está buscando podría haberse eliminado, haber cambiado su nombre o no estar disponible.') }}
         </p>
-        <button type="button" class="btn btn-sm bt-primary" onclick="window.history.back();">{{ __('Regresar') }}</button>
+        <button type="button" class="btn btn-sm bt-primary btn-back">{{ __('Regresar') }}</button>
     </div>
 @stop

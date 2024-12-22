@@ -430,7 +430,7 @@
     </div>
 @stop
 
-<script>
+<script nonce="{{ session()->get('nonce') }}">
     // Función que enviar el documento del formuario para la firma electrónica.
     function signFilePdf() {
         console.log('signFile');

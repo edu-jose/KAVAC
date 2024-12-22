@@ -48,7 +48,7 @@
                                     <th>{{ __('Archivo') }}</th>
                                     <th>{{ __('Tamaño') }}</th>
                                     <th>{{ __('Fecha') }}</th>
-                                    <th width="10%"></th>
+                                    <th class="col-md-2"></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -61,23 +61,22 @@
                                         </td>
                                         <td class="text-center">
                                             {!! Form::button('<i class="fa fa-cloud-download"></i>', [
-                                                'class' => 'btn btn-default btn-xs btn-icon btn-round',
+                                                'class' => 'btn btn-default btn-xs btn-icon btn-round btn-download-backup',
                                                 'data-toggle' => 'tooltip', 'type' => 'button',
-                                                'title' => __('Descargar respaldo'),
-                                                'onclick' => 'location.href="' .
-                                                url('backup/download/' .$backup['file_name'] ) .'"'
+                                                'data-file-name' => $backup['file_name'],
+                                                'title' => __('Descargar respaldo')
                                             ]) !!}
                                             {!! Form::button('<i class="fa fa-cloud-upload"></i>', [
-                                                'class' => 'btn btn-info btn-xs btn-icon btn-round',
+                                                'class' => 'btn btn-info btn-xs btn-icon btn-round btn-upload-backup',
                                                 'data-toggle' => 'tooltip', 'type' => 'button',
-                                                'title' => __('Restaurar respaldo'),
-                                                'onclick' => 'restore_backup("'.$backup['file_name'].'")'
+                                                'data-file-name' => $backup['file_name'],
+                                                'title' => __('Restaurar respaldo')
                                             ]) !!}
                                             {!! Form::button('<i class="fa fa-trash-o"></i>', [
-                                                'class' => 'btn btn-danger btn-xs btn-icon btn-round',
+                                                'class' => 'btn btn-danger btn-xs btn-icon btn-round btn-trash-backup',
                                                 'data-toggle' => 'tooltip', 'type' => 'button',
-                                                'title' => __('Eliminar respaldo'),
-                                                'onclick' => 'delete_backup("'.$backup['file_name'].'")'
+                                                'data-file-name' => $backup['file_name'],
+                                                'title' => __('Eliminar respaldo')
                                             ]) !!}
                                         </td>
                                     </tr>
@@ -92,7 +91,19 @@
 
     @section('extra-js')
         @parent
-        <script>
+        <script nonce="{{ session()->get('nonce') }}">
+            $(document).ready(function() {
+                $('.btn-download-backup').on('click', function() {
+                    location.href="{{ url('backup/download') }}/" + $(this).data('file-name');
+                });
+                $('.btn-upload-backup').on('click', function() {
+                    restore_backup($(this).data('file-name'));
+                });
+                $('.btn-trash-backup').on('click', function() {
+                    delete_backup($(this).data('file-name'));
+                });
+            });
+
             /**
             * Elimina el archivo de respaldo seleccionado
             *

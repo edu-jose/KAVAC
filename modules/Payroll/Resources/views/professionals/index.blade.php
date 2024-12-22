@@ -63,7 +63,7 @@
     </div>
 @stop
 @section('extra-js')
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="{{ session()->get('nonce') }}">
         var records;
         function exportData() {
             location.href = `${window.app_url}/payroll/registers/export/professional/all`;

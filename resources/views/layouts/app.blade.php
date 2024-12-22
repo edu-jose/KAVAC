@@ -33,7 +33,7 @@
         {!! Html::style('vendor/jquery.gritter/css/jquery.gritter.css', ['media' => 'screen'], Request::secure()) !!}
 
         @yield('modules-css')
-        <script>
+        <script nonce="{{ session()->get('nonce') }}">
             window.Laravel = {!! json_encode([
                 'csrfToken' => csrf_token(),
             ]) !!}
@@ -139,7 +139,7 @@
         <script src="{{ asset('vendor/jquery.gritter/js/jquery.gritter.min.js', Request::secure()) }}" defer></script>
         {{-- Mensaje de espera al cargar procesos del sistema --}}
         @include('layouts.messages')
-        <script>
+        <script nonce="{{ session()->get('nonce') }}">
             /** @type {Object} Gestiona los eventos del touchstart */
             $.event.special.touchstart = {
                 setup: function( _, ns, handle ) {
@@ -154,7 +154,7 @@
             };
         </script>
         @auth
-            <script>
+            <script nonce="{{ session()->get('nonce') }}">
                 $(document).ready(function() {
                     if (window.screen_locked) {
                         app.lockScreen();
@@ -204,6 +204,30 @@
 
                     /** oculta el mensaje de carga al renderizar por completo el DOM de la página */
                     $('.preloader').fadeOut(1000);
+
+                    $('.dropdown-item-logout').on('click', function(e) {
+                        e.preventDefault();
+                        logout();
+                    });
+                    $('.fullscreen').on('click', function(e) {
+                        e.preventDefault();
+                        fullScreen();
+                    });
+                    $('#unlock_session').on('click', function(e) {
+                        e.preventDefault();
+                        unlockScreen();
+                    });
+                    $('.btn-back').on('click', function() {
+                        window.history.back();
+                    });
+                    $('.btn-unlock-user').on('click', function(e) {
+                        e.preventDefault();
+                        unlockUser($(this).data('id'));
+                    })
+                    $('.btn-undelete-record').on('click', function(e) {
+                        e.preventDefault();
+                        undelete_record($(this).data('route'));
+                    });
                 });
 
                 /** Establece el tema por defecto, para elementos select2, a bootstrap 4 */
@@ -723,7 +747,7 @@
         @yield('extra-js')
 
         {{-- Sección que permite renderizar los componentes de VueJS --}}
-        <script defer>
+        <script nonce="{{ session()->get('nonce') }}">
             /** @type {object} Constante que crea el elemento Vue */
             var app = new Vue({
                 el: '#app',

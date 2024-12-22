@@ -65,17 +65,18 @@
                                         ? $model_institution->logo->url
                                         : null;
                             @endphp
-                            <img src="{{ asset($img_logo ?? 'images/no-image2.png') }}" alt="{{ __('Logotipo') }}"
-                                class="img-fluid institution-logo" style="cursor:pointer"
+                            <img
+                                src="{{ asset($img_logo ?? 'images/no-image2.png') }}" alt="{{ __('Logotipo') }}"
+                                class="img-fluid institution-logo" style="cursor:pointer" id="institution-logo"
                                 title="{{ __('Click para cargar o modificar la imagen') }}" data-toggle="tooltip"
-                                onclick="$('input[name=logo_image]').click()">
-                            <input id="logo_image" type="file" name="logo_image" style="display:none"
-                                onchange="uploadSingleImage('formImgLogo', 'logo_image', 'logo_id', 'institution-logo')">
+                            >
+                            <input
+                                id="logo_image" type="file" name="logo_image" style="display:none"
+                            >
                             <div class="row row-delete-img">
                                 <div class="col-12">
                                     <div class="institution-logo text-center">
-                                        <a class="img-delete" href="javascript:void(0)" id='delLogoImage'
-                                            onclick="deleteImage($(this), $('#logo_id').val(), '2')">
+                                        <a class="img-delete" href="javascript:void(0)" id='delLogoImage'>
                                             {{ __('Eliminar') }}
                                         </a>
                                     </div>
@@ -103,17 +104,21 @@
                                         ? $model_institution->banner->url
                                         : null;
                             @endphp
-                            <img src="{{ asset($img_banner ?? 'images/no-image3.png') }}"
+                            <img
+                                src="{{ asset($img_banner ?? 'images/no-image3.png') }}"
                                 alt="{{ __('Banner / Cintillo') }}" class="img-fluid institution-banner"
                                 style="cursor:pointer" title="{{ __('Click para cargar o modificar la imagen') }}"
-                                data-toggle="tooltip" onclick="$('input[name=banner_image]').click()">
-                            <input type="file" id="banner_image" name="banner_image" style="display:none"
-                                onchange="uploadSingleImage('formImgBanner', 'banner_image', 'banner_id', 'institution-banner')">
+                                data-toggle="tooltip"
+                            >
+                            <input
+                                type="file" id="banner_image" name="banner_image" style="display:none"
+                            >
                             <div class="row row-delete-img">
                                 <div class="col-12">
                                     <div class="text-center">
-                                        <a class="img-delete" href="javascript:void(0)" id='delBannerImage'
-                                            onclick="deleteImage($(this), $('#banner_id').val(), '3')">
+                                        <a
+                                            class="img-delete" href="javascript:void(0)" id='delBannerImage'
+                                        >
                                             {{ __('Eliminar') }}
                                         </a>
                                     </div>
@@ -212,8 +217,7 @@
                                     isset($model_institution) ? $model_institution->city->estate->country->id : null,
                                     [
                                         'class' => 'form-control select2 input-sm',
-                                        'id' => 'country_id',
-                                        'onchange' => 'updateSelect($(this), $("#estate_id"), "Estate")',
+                                        'id' => 'country_id'
                                     ],
                                 ) !!}
                             </div>
@@ -229,9 +233,7 @@
                                     isset($model_institution) ? $model_institution->city->estate->id : old('estate_id'),
                                     [
                                         'class' => 'form-control select2',
-                                        'id' => 'estate_id',
-                                        'onchange' =>
-                                            'updateSelect($(this), $("#municipality_id"), "Municipality"),updateSelect($(this), $("#city_id"), "City")',
+                                        'id' => 'estate_id'
                                     ],
                                 ) !!}
                             </div>
@@ -534,9 +536,11 @@
                                     </span>
                                 </td>
                                 <td class="text-center">
-                                    <a class="btn btn-info btn-xs btn-icon btn-action" data-toggle="tooltip"
+                                    <a
+                                        class="btn btn-info btn-xs btn-icon btn-action btn-show-institution"
+                                        data-toggle="tooltip" data-id="{{ $institution->id }}"
                                         href="javascript:void(0)" title="Ver registro" v-has-tooltip
-                                        onclick="showInstitution('{{ $institution->id }}')">
+                                    >
                                         <i class="fa fa-eye"></i>
                                     </a>
                                     <a class="btn btn-warning btn-xs btn-icon btn-action" data-toggle="tooltip"
@@ -1103,8 +1107,36 @@
 @section('extra-js')
     @parent
     {!! Html::script('js/ckeditor.js', [], Request::secure()) !!}
-    <script>
+    <script nonce="{{ session()->get('nonce') }}">
         $(document).ready(function() {
+            $('.btn-show-institution').on('click', function() {
+                showInstitution($(this).data('id'));
+            });
+            $('#delBannerImage').on('click', function() {
+                deleteImage($(this), $('#banner_id').val(), '3');
+            })
+            $('.institution-banner').on('click', function() {
+                $('input[name=banner_image]').click();
+            })
+            $('#delLogoImage').on('click', function() {
+                deleteImage($(this), $('#logo_id').val(), '2');
+            })
+            $('#institution-logo').on('click', function() {
+                $('input[name=logo_image]').click();
+            });
+            $('#logo_image').on('change', function() {
+                uploadSingleImage('formImgLogo', 'logo_image', 'logo_id', 'institution-logo');
+            });
+            $('#banner_image').on('change', function() {
+                uploadSingleImage('formImgBanner', 'banner_image', 'banner_id', 'institution-banner');
+            });
+            $('#country_id').on('change', function() {
+                updateSelect($(this), $("#estate_id"), "Estate");
+            });
+            $('#estate_id').on('change', function() {
+                updateSelect($(this), $("#municipality_id"), "Municipality");
+                updateSelect($(this), $("#city_id"), "City");
+            });
             if (typeof CkEditor !== 'undefined') {
                 $.each([
                     'legal_address', 'legal_base', 'legal_form', 'main_activity',
@@ -1294,7 +1326,7 @@
             $("#municipality_id").click();
         @endif
     </script>
-    <script>
+    <script nonce="{{ session()->get('nonce') }}">
         /**
          * Abre una modal con los datos de la institución seleccionada
          *

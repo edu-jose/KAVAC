@@ -61,8 +61,8 @@
 	</div>
 @stop
 @section('extra-js')
-	<script type="text/javascript">
-		var records; 
+	<script type="text/javascript" nonce="{{ session()->get('nonce') }}">
+		var records;
 		function exportData() {
 			location.href = `${window.app_url}/payroll/registers/export/socioeconomics/all`;
 		}

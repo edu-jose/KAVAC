@@ -58,7 +58,7 @@
     </div>
 @stop
 @section('extra-js')
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="{{ session()->get('nonce') }}">
         var records;
 
         function exportData() {

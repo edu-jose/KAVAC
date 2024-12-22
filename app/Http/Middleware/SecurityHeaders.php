@@ -57,9 +57,26 @@ class SecurityHeaders
                 'X-XSS-Protection',
                 env('X_XSS_PROTECTION', '1; mode=block')
             );
+
             $response->headers->set(
                 'Content-Security-Policy',
-                env('CONTENT_SECURITY_POLICY', "default-src 'self'; script-src 'self' 'nonce-{$nonce}'; style-src 'self' *.cloudflare.com fonts.googleapis.com 'unsafe-inline'; img-src 'self' * data:; font-src 'self' fonts.gstatic.com data: ; connect-src 'self'; media-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'self';")
+                str_replace(
+                    'NONCEVAL',
+                    $nonce,
+                    env(
+                        'CONTENT_SECURITY_POLICY',
+                        "default-src 'self'; " .
+                        "script-src 'self' 'nonce-NONCEVAL' " . env('APP_URL') . " 'unsafe-eval'; " .
+                        "style-src 'self' 'unsafe-inline' " . env('APP_URL') . " ; " .
+                        "img-src 'self' * data:; " .
+                        "font-src 'self' " . env('APP_URL') . " data: ; " .
+                        "connect-src 'self' wss://" . env('WEBSOCKETS_HOST') . ":" . env('WEBSOCKETS_PORT') . "; " .
+                        "media-src 'self'; " .
+                        "frame-src 'self'; " .
+                        "object-src 'none'; " .
+                        "base-uri 'self';"
+                    )
+                )
             );
             $response->headers->set(
                 'Access-Control-Allow-Origin',
@@ -71,7 +88,10 @@ class SecurityHeaders
             );
             $response->headers->set(
                 'Access-Control-Allow-Headers',
-                env('ACCESS_CONTROL_ALLOW_HEADERS', 'Origin, Content-Type, Accept, Authorization, X-Requested-With,X-CSRF-Token')
+                env(
+                    'ACCESS_CONTROL_ALLOW_HEADERS',
+                    'Origin, Content-Type, Accept, Authorization, X-Requested-With,X-CSRF-Token'
+                )
             );
             $response->headers->set(
                 'X-Frame-Options',

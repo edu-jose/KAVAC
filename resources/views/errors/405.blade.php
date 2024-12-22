@@ -7,6 +7,6 @@
         <p>
             {{ __('El método que estas usando para acceder no esta permitido.') }}
         </p>
-        <button type="button" class="btn btn-sm bt-primary" onclick="window.history.back();">{{ __('Regresar') }}</button>
+        <button type="button" class="btn btn-sm bt-primary btn-back">{{ __('Regresar') }}</button>
     </div>
 @stop

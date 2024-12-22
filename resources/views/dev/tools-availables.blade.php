@@ -64,7 +64,7 @@
 						<div class="form-group">
 							<label for="" class="control-label">{{ __('Mantenimiento') }}</label>
 							<div class="col-12">
-								<div class="custom-control custom-switch" data-toggle="tooltip" 
+								<div class="custom-control custom-switch" data-toggle="tooltip"
 									 title="{{ __('Establecer la aplicación en modo de mantenimiento') }}">
 									{!! Form::checkbox('maintenance', true, false, [
     									'id' => 'maintenance', 'class' => 'custom-control-input'
@@ -78,7 +78,7 @@
 						<div class="form-group">
 							<label for="" class="control-label">{{ __('Demostración') }}</label>
 							<div class="col-12">
-								<div class="custom-control custom-switch" data-toggle="tooltip" 
+								<div class="custom-control custom-switch" data-toggle="tooltip"
 									 title="{{ __('Establecer la aplicación en modo de demostración') }}">
 									 {!! Form::checkbox('demo', true, false, [
     									'id' => 'demo', 'class' => 'custom-control-input'
@@ -92,7 +92,7 @@
 						<div class="form-group">
 							<label for="" class="control-label">{{ __('Debug') }}</label>
 							<div class="col-12">
-								<div class="custom-control custom-switch" data-toggle="tooltip" 
+								<div class="custom-control custom-switch" data-toggle="tooltip"
 									 title="{{ __('Establecer la aplicación en modo de desarrollo') }}">
 									 {!! Form::checkbox('debug', true, false, [
     									'id' => 'debug', 'class' => 'custom-control-input'
@@ -121,7 +121,7 @@
 
 @section('extra-js')
 	@parent
-	<script>
+	<script nonce="{{ session()->get('nonce') }}">
 		$(document).ready(function() {
 			$('input[name=demo]').closest('.bootstrap-switch-wrapper').attr({
 	            'title': '{{ __('Establecer la aplicación en modo demostración') }}',
