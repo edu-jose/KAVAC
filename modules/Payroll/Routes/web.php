@@ -87,6 +87,21 @@ Route::group([
     /* Ruta que muestra la vista del archivo txt de nómina */
     Route::get('file', 'PayrollTextFileController@index')->name('payroll.text-file.index');
 
+    /* Ruta que muestra la vista del archivo txt de fideicomiso */
+    Route::get('trust-file', 'PayrollTrustTextFileController@create')->name('payroll.trust-text-file.create');
+    /* Ruta para generar el archivo txt de fideicomiso */
+    Route::get('trust-file-generate', 'PayrollTrustTextFileController@store')->name('payroll.trust-text-file.store');
+    /* Ruta para validar los datos del formulario del archivo txt de fideicomiso */
+    Route::post('validate-trust-txt-data', 'PayrollTrustTextFileController@validateTxtData');
+    Route::post(
+        'get-trust-payment-periods',
+        'PayrollTrustTextFileController@getPaymentPeriodsByStatus'
+    );
+    Route::get(
+        'get-trust-payment-types',
+        'PayrollTrustTextFileController@getPaymentTypes'
+    );
+
     Route::get('get-budget-accounting-report/{id}', 'PayrollTextFileController@getBudgetAccountingReport');
 
     /* Ruta para manejar manipular la informacion de la planilla ARC */
@@ -659,6 +674,9 @@ Route::group([
     /* Ruta que optiene los parámetros que son de tipo de parámetros de tiempo registrados */
     Route::get('get-time-parameters', 'PayrollParameterController@getTimeParameters');
 
+    /* Ruta que actualiza el código de fideicomitente */
+    Route::post('update-trust-code', 'PayrollParameterController@updateTrustCode')->name('payroll.parameters.update-trust-code');
+
 
     /* Rutas para gestionar los escalafones de nómina */
     Route::resource('salary-scales', 'PayrollSalaryScaleController', ['except' => ['show', 'create', 'edit']]);
@@ -700,6 +718,8 @@ Route::group([
 
     /* Ruta que obtiene un arreglo con los registros asociados a las prestaciones sociales registrados */
     Route::get('get-benefit-associated-records', 'PayrollParameterController@getBenefitAssociatedRecords');
+
+    Route::get('get-parameter-records', 'PayrollParameterController@getAllRecords');
 
     /* Rutas para gestionar los ajustes en las tablas salariales */
     Route::resource(
@@ -921,6 +941,10 @@ Route::group([
         'PayrollSupervisedGroupController@getPayrollSupervisedGroups'
     );
 
+    Route::post('supervised-group/export', 'PayrollSupervisedGroupController@export');
+    Route::post('supervised-group/import', 'PayrollSupervisedGroupController@import');
+
+
     /* Ruta para obtener la lista de los trabajadores de forma agrupada */
     Route::get(
         'get-grouped-staff/{ids?}',
@@ -943,6 +967,11 @@ Route::group([
     Route::get(
         'guard-schemes/show/{id}',
         'PayrollGuardSchemeController@show'
+    );
+
+    Route::get(
+        'guard-schemes/pdf/{id}',
+        'PayrollGuardSchemeController@pdfExport'
     );
 
     Route::resource(
@@ -991,6 +1020,44 @@ Route::group([
         'time-sheet-parameters',
         'PayrollTimeSheetParameterController',
         ['as' => 'payroll', 'except' => ['show', 'create', 'edit']]
+    );
+
+    /* Rutas para gestionar códigos de procesos */
+    Route::resource('process-code', 'PayrollProcessCodeController', [
+        'as' => 'payroll',
+        'except' => ['create', 'edit', 'show'],
+        'parameters' => ['process-code' => 'payroll-process-code']
+    ]);
+
+    /* Ruta que obtiene los códigos de procesos */
+    Route::get(
+        'get-payroll-process-code',
+        'PayrollProcessCodeController@getPayrollProcessCode'
+    );
+
+    /* Rutas para gestionar cargas horarias */
+    Route::resource('workload', 'PayrollWorkloadController', [
+        'as' => 'payroll',
+        'except' => ['create', 'edit', 'show'],
+        'parameters' => ['workload' => 'payroll-workload']
+    ]);
+
+    /* Ruta que obtiene las cargas horarias */
+    Route::get(
+        'get-payroll-workload',
+        'PayrollWorkloadController@getPayrollWorkload'
+    );
+
+    /* Ruta que obtiene las cargas horarias de acuerdo al cargo seleccionado*/
+    Route::post(
+        'get-workload',
+        'PayrollWorkloadController@getPayrollWorkloadByPosition'
+    );
+
+    /* Ruta que obtiene los cargos que no han sido registrados en una carga horaria */
+    Route::get(
+        'get-workload-positions',
+        'PayrollWorkloadController@getPayrollPositionsById'
     );
 
     Route::get(

@@ -273,6 +273,13 @@ class PayrollParameterController extends Controller
                         'type'     => 'list',
                         'model'    => 'Modules\Payroll\Models\PayrollContractType',
                         'required' => ['payroll_contract_type_id']
+                    ],
+                    [
+                        'id'       => 'WORKLOAD',
+                        'name'     => 'Carga horaria',
+                        'type'     => 'list',
+                        'model'    => 'Modules\Payroll\Models\PayrollWorkload',
+                        'required' => ['payrollPositionWorkload']
                     ]
                 ]
             ]
@@ -934,6 +941,32 @@ class PayrollParameterController extends Controller
         return $list;
     }
 
+    public function getAllRecords()
+    {
+        $data = array_merge(
+            $this->associatedVacation,
+            $this->associatedBenefit,
+            $this->associatedRecords
+        );
+
+        return response()->json(array_reduce($data, function ($list, $record) {
+            if (empty($record['children'])) {
+                array_push($list, [
+                    'code'   => $record['id'],
+                    'name' => $record['name']
+                ]);
+            } else {
+                foreach ($record['children'] as $children) {
+                    array_push($list, [
+                        'code'   => $children['id'],
+                        'name' => $children['name']
+                    ]);
+                }
+            }
+            return $list;
+        }, []), 200);
+    }
+
     /**
      * Actualiza parámetro general del sistema
      *
@@ -1022,6 +1055,45 @@ class PayrollParameterController extends Controller
     }
 
     /**
+     * Actualiza el código de fideicomitente
+     *
+     * @method    updateTrustCode
+     *
+     * @param     Request    $request    Datos de la petición
+     *
+     * @return    \Illuminate\Http\RedirectResponse     Redirecciona al usuario a la URL previa
+     */
+    public function updateTrustCode(Request $request)
+    {
+        $this->validate(
+            $request,
+            [
+                'trust_code' => ['required', 'string', 'max:7']
+            ],
+            [
+                'trust_code.max' => 'El código de fideicomitente debe ser de máximo 7 caracteres.'
+            ],
+            [
+                'trust_code' => 'código fideicomitente'
+            ]
+        );
+
+        Parameter::updateOrCreate(
+            [
+                'p_key' => 'trust_code',
+                'required_by' => 'payroll',
+                'active' => true
+            ],
+            [
+                'p_value' => $request->trust_code
+            ]
+        );
+
+        $request->session()->flash('message', ['type' => 'store']);
+        return redirect()->back();
+    }
+
+    /**
      * Obtiene la lista de parametros activo asociado al modelo payroll
      *
      * @author    Pedro Buitrago <pbuitrago@cenditel.gob.ve> | <pbuitrago@gmail.com>
@@ -1078,12 +1150,10 @@ class PayrollParameterController extends Controller
     public function getTimeParameters(Request $request)
     {
         $parameters = Parameter::query()
-            ->where(
-                [
-                    'active' => true,
-                    'required_by' => 'payroll',
-                ]
-            )
+            ->where([
+                'active' => true,
+                'required_by' => 'payroll',
+            ])
             ->where('p_key', 'like', 'global_parameter_%')
             ->where('p_value', 'like', '%time_parameter%')
             ->when(empty($request->setting), fn($query) => $query->where('p_value', 'like', '%"list_in_schema":true%'))
@@ -1091,7 +1161,6 @@ class PayrollParameterController extends Controller
             ->get()
             ->map(function ($parameter) {
                 $pValue = json_decode($parameter->p_value);
-                $exceptionType = PayrollExceptionType::find($pValue->exception_type);
 
                 return [
                     'id' => $parameter->id,
@@ -1099,10 +1168,29 @@ class PayrollParameterController extends Controller
                     'max' => (int) $pValue->value_max,
                     'list' => $pValue->list_in_schema ?? '',
                     'acronym' => $pValue->acronym,
-                    'exception' => $exceptionType->name,
+                    'name' =>  $pValue->name,
+                    'exception_type_id' => $pValue->exception_type,
                     'active' => $pValue->active
                 ];
             });
+
+        $exceptionTypeIds = $parameters->pluck('exception_type_id')->unique();
+        $exceptionTypes = PayrollExceptionType::whereIn('id', $exceptionTypeIds)->get()->keyBy('id');
+
+        $parameters = $parameters->map(function ($parameter) use ($exceptionTypes) {
+            $exceptionType = $exceptionTypes->get($parameter['exception_type_id']);
+
+            return [
+                'id' => $parameter['id'],
+                'text' => $parameter['text'],
+                'max' => $parameter['max'],
+                'list' => $parameter['list'],
+                'acronym' => $parameter['acronym'],
+                'name' => $parameter['name'],
+                'exception' => $exceptionType ? $exceptionType->name : null,
+                'active' => $parameter['active']
+            ];
+        })->sortBy('name', SORT_REGULAR, false)->values();
 
         if ('false' === ($request->group ?? 'true')) {
             return response()->json($parameters);

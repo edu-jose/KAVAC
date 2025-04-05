@@ -231,6 +231,13 @@ class PayrollAssociatedParametersRepository
                         'type'     => 'list',
                         'model'    => 'Modules\Payroll\Models\PayrollContractType',
                         'required' => ['payroll_contract_type_id']
+                    ],
+                    [
+                        'id'       => 'WORKLOAD',
+                        'name'     => 'Carga horaria',
+                        'type'     => 'list',
+                        'model'    => 'Modules\Payroll\Models\PayrollWorkload',
+                        'required' => ['payrollPositionWorkload']
                     ]
                 ]
             ]
@@ -285,6 +292,22 @@ class PayrollAssociatedParametersRepository
                     'where' => ['active', true]
                 ],
                 'where'    => null
+            ],
+            [
+                'id'          => 'all_staff_vacation_return',
+                'name'        => 'Todos los trabajadores que retornan de vacaciones',
+                'model'       => 'Modules\Payroll\Models\PayrollStaff',
+                'type'        => '',
+                'whereHas'    => null,
+                'where'       => null
+            ],
+            [
+                'id'          => 'all_staff_not_in_vacation',
+                'name'        => 'Todos los trabajadores excepto los que están de vacaciones',
+                'model'       => 'Modules\Payroll\Models\PayrollStaff',
+                'type'        => '',
+                'whereHas'    => null,
+                'where'       => null
             ],
             [
                 'id'    => 'all_except_disabled_staff',

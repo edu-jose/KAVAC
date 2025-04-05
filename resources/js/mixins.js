@@ -365,10 +365,13 @@ Vue.mixin({
          *
          * @return     {[type]}  Objeto con información de la diferencia obtenida entre las dos fechas
          */
-        diff_datetimes: function (dateThen) {
-            var now = moment().format("YYYY-MM-DD HH:mm:ss");
-            var ms = moment(dateThen, "YYYY-MM-DD HH:mm:ss").diff(moment(now, "YYYY-MM-DD HH:mm:ss"));
-            var d = moment.duration(ms);
+        diff_datetimes: function (dateThen, fromDateTime = false, format = 'YYYY-MM-DD HH:mm:ss') {
+            let now = moment().format(format);
+            if (fromDateTime) {
+                now = moment(fromDateTime, format);
+            }
+            const ms = moment(dateThen, format).diff(fromDateTime ? now : moment(now, format));
+            const d = moment.duration(ms);
             return {
                 years: d._data.years,
                 months: d._data.months,
@@ -399,6 +402,26 @@ Vue.mixin({
                 mm = `0${mm}`;
             }
             return `${yyyy}-${mm}-${dd}`;
+        },
+        /**
+         * Obtiene el dia de la semana
+         *
+         * @author     Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
+         *
+         * @param   {string}  date  Fecha de la cual se desea obtener el dia
+         * @param   {string}  locale Idioma de la fecha
+         *
+         * @return  {string}        Devuelve el dia de la semana
+         */
+        getWeekDay(date, locale = 'es') {
+            const dateString = new Date(date);
+            let weekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+            if (locale === 'es') {
+                weekDays = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+            }
+            const dayName = weekDays[dateString.getDay()];
+
+            return dayName;
         },
         /**
          * Método que muestra un número formateado
@@ -1240,9 +1263,9 @@ Vue.mixin({
                     }
                 }
 
-                if (vm.lockscreen.time > 0 ) {
+                if (vm.lockscreen.time > 0) {
                     // Bloquea la pantalla del sistema al no haber actividad por parte del usuario
-                    vm.lockscreen.timer_timeout = setTimeout(function() {
+                    vm.lockscreen.timer_timeout = setTimeout(function () {
                         if (window.screen_locked) {
                             return;
                         }
@@ -1532,6 +1555,9 @@ Vue.mixin({
             const birthdate = moment(fromDate);
             const age = moment().diff(birthdate, 'years');
             return age;
+        },
+        selectText(event) {
+            event.target.select();
         }
     },
     async created() {
@@ -1550,17 +1576,17 @@ Vue.mixin({
         $('.VueTables__limit-field').tooltip();
 
         let inputElements = document.querySelectorAll('input');
-        inputElements.forEach(function(element) {
+        inputElements.forEach(function (element) {
             if (element.type === 'date' && !element.classList.contains('no-restrict') && !element.classList.contains('fiscal-year-restrict')) {
                 let today = new Date();
                 let dd = today.getDate();
                 let mm = today.getMonth() + 1;
                 let yyyy = today.getFullYear();
-                if(dd<10) {
-                    dd='0'+dd;
+                if (dd < 10) {
+                    dd = '0' + dd;
                 }
-                if(mm<10) {
-                    mm='0'+mm;
+                if (mm < 10) {
+                    mm = '0' + mm;
                 }
                 let now = `${yyyy}-${mm}-${dd}`;
                 element.setAttribute('max', now);

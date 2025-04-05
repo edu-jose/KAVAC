@@ -404,10 +404,11 @@ class ReportRepository implements ReportInterface
      * @param      boolean        $isHTML      Establece si el cuerpo del reporte es una plantilla de blade a renderizar
      * @param      array          $htmlParams  Conjunto de parámetros requeridos por la plantilla de blade
      * @param      string         $storeAction Acción para la generación del documento
+     * @param      array          $images      Conjunto de imagenes a incluir en el reporte
      *
      * @return     void
      */
-    public function setBody($body, $isHTML = true, $htmlParams = [], $storeAction = 'I')
+    public function setBody($body, $isHTML = true, $htmlParams = [], $storeAction = 'I', $images = [])
     {
         // Contenido del reporte
         $htmlContent = $body;
@@ -437,6 +438,25 @@ class ReportRepository implements ReportInterface
         }
         /* Escribre el contenido del reporte */
         $this->pdf->writeHTML($htmlContent, true, false, true, false, '');
+
+        if (count($images) > 0) {
+            foreach ($images as $image) {
+                $this->pdf->Image(
+                    $image['fileName'],
+                    $image['x'] ?? '',
+                    $image['y'] ?? '',
+                    $image['width'] ?? 200,
+                    $image['height'] ?? 100,
+                    $image['type'] ?? 'PNG',
+                    $image['link'] ?? '',
+                    $image['align'] ?? 'C',
+                    $image['resize'] ?? false,
+                    $image['dpi'] ?? 1200,
+                    $image['palign'] ?? 'C'
+                );
+            }
+        }
+
         /** Establece el apuntador del reporte a la última página generada */
         $this->pdf->lastPage();
         /*

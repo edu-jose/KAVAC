@@ -2,13 +2,14 @@
 
 namespace Modules\ProjectTracking\Http\Controllers;
 
-use Illuminate\Contracts\Support\Renderable;
+use App\Models\CodeSetting;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use App\Models\CodeSetting;
+use Illuminate\Contracts\Support\Renderable;
 use App\Rules\CodeSetting as CodeSettingRule;
 use Modules\ProjectTracking\Models\ProjectTrackingProduct;
 use Modules\ProjectTracking\Models\ProjectTrackingProject;
+use Modules\ProjectTracking\Models\ProjectTrackingActivity;
 use Modules\ProjectTracking\Models\ProjectTrackingSubProject;
 
 /**
@@ -53,12 +54,16 @@ class ProjectTrackingSettingsController extends Controller
         $spCode = $codeSettings->where('table', 'project_tracking_sub_projects')->first();
         $pdCode = $codeSettings->where('table', 'project_tracking_products')->first();
         $paCode = $codeSettings->where('table', 'project_tracking_activity_plans')->first();
+        $pactCode = $codeSettings->where('table', 'project_tracking_activities')->first();
+
+
 
         return view('projecttracking::settings', compact(
             'pjCode',
             'spCode',
             'pdCode',
             'paCode',
+            'pactCode',
         ));
     }
 
@@ -89,13 +94,13 @@ class ProjectTrackingSettingsController extends Controller
             'sub_projects_code' => [new CodeSettingRule()],
             'products_code' => [new CodeSettingRule()],
             'activity_plans_code' => [new CodeSettingRule()],
+            'activities_code' => [new CodeSettingRule()],
         ]);
 
         /* Arreglo con información de los campos de códigos configurados */
         $codes = $request->input();
         /* Define el estatus verdadero para indicar que no se ha registrado información */
         $saved = false;
-
         foreach ($codes as $key => $value) {
             /* Define el modelo al cual hace referencia el código */
             $model = '';
@@ -120,6 +125,11 @@ class ProjectTrackingSettingsController extends Controller
                     $table = 'activity_plans';
                     $field = 'code';
                     $model = \Modules\ProjectTracking\Models\ProjectTrackingActivityPlan::class;
+                } elseif ($table === "activities") {
+                    /* Define el modelo para los registros de actividades */
+                    $table = 'activities';
+                    $field = 'code';
+                    $model = ProjectTrackingActivity::class;
                 }
 
                 $codeSetting = CodeSetting::where([

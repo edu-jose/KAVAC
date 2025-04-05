@@ -108,10 +108,9 @@
                 <div
                     class="modal fade"
                     tabindex="-1"
-                    role="dialog"
                     id="add_source"
                 >
-                    <div class="modal-dialog vue-crud" role="document">
+                    <div class="modal-dialog vue-crud">
                         <div class="modal-content">
                             <div class="modal-header">
                                 <button
@@ -213,10 +212,6 @@
                                 >
                                     Cerrar
                                 </button>
-                                <!--<button type="button" @click="addDocument"
-                                                                                class="btn btn-primary btn-sm btn-round btn-modal-save">
-                                                                        Agregar
-                                                                </button>-->
                             </div>
                         </div>
                     </div>
@@ -557,10 +552,9 @@
                 <div
                     class="modal fade"
                     tabindex="-1"
-                    role="dialog"
                     id="add_account"
                 >
-                    <div class="modal-dialog vue-crud" role="document">
+                    <div class="modal-dialog vue-crud">
                         <div class="modal-content">
                             <div class="modal-header">
                                 <button
@@ -599,8 +593,9 @@
                                     </div>
                                     <div class="col-12">
                                         <div class="form-group is-required">
-                                            <label>Acción Específica:</label>
+                                            <label for="bidget_specific_actions">Acción Específica:</label>
                                             <select2
+                                                id="bidget_specific_actions"
                                                 :options="specific_actions"
                                                 @input="
                                                     getAccounts();
@@ -612,7 +607,7 @@
                                     </div>
                                     <div class="col-12">
                                         <div class="form-group is-required">
-                                            <label>Cuenta:</label>
+                                            <label for="accounts">Cuenta:</label>
                                             <select2
                                                 id="accounts"
                                                 :options="accounts"
@@ -623,8 +618,9 @@
                                     </div>
                                     <div class="col-12">
                                         <div class="form-group is-required">
-                                            <label>Concepto:</label>
+                                            <label for="budget_account_concept">Concepto:</label>
                                             <input
+                                                id="budget_account_concept"
                                                 type="text"
                                                 class="form-control input-sm"
                                                 data-toggle="tooltip"
@@ -637,14 +633,15 @@
                                 <div class="row">
                                     <div class="col-md-3 mt-4">
                                         <div class="form-group is-required">
-                                            <label>Monto:</label>
+                                            <label for="budget_account_amount">Monto:</label>
                                             <input
+                                                id="budget_account_amount"
                                                 type="text"
                                                 v-input-mask
                                                 data-inputmask="
                                                     'alias': 'numeric',
                                                     'allowMinus': 'false'"
-                                                onfocus="$(this).select()"
+                                                @focus="selectText"
                                                 class="form-control input-sm"
                                                 data-toggle="tooltip"
                                                 title="Indique el monto a asignar para la cuenta seleccionada"
@@ -654,8 +651,9 @@
                                     </div>
                                     <div class="col-md-3 mt-4">
                                         <div class="form-group">
-                                            <label>Impuesto:</label>
+                                            <label for="budget_account_tax_id">Impuesto:</label>
                                             <select2
+                                                id="budget_account_tax_id"
                                                 :options="taxes"
                                                 v-model="account_tax_id"
                                                 @input="getTaxAccounts()"

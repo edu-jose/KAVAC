@@ -207,7 +207,9 @@ class PayrollSalaryTabulatorsSheet implements
                                 $payrollSalaryTabulatorScale->value * $payrollSalaryAdjustment->value / 100;
                         } else {
                             $fields[$verticalScale->name] =
-                                $salary_values ? $salary_values[$count]->value : $payrollSalaryTabulatorScale->value;
+                                $salary_values && isset($salary_values[$count])
+                                ? $salary_values[$count]->value
+                                : $payrollSalaryTabulatorScale->value;
                         }
                     } else {
                         $fields[$verticalScale->name] = $payrollSalaryTabulatorScale->value;

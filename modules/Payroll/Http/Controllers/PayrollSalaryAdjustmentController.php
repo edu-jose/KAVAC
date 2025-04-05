@@ -3,10 +3,12 @@
 namespace Modules\Payroll\Http\Controllers;
 
 use Carbon\Carbon;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Contracts\Support\Renderable;
 use Modules\Payroll\Imports\SalaryAdjustmentImport;
 use Modules\Payroll\Models\PayrollSalaryAdjustment;
@@ -283,12 +285,26 @@ class PayrollSalaryAdjustmentController extends Controller
         );
 
         $data['filePath'] = $request->file('file')->store('/tmp');
+        $user =  User::where('id', auth()->user()->id)->first();
 
-        $import = new SalaryAdjustmentImport();
+        /** Crea el nombre del archivo de errores para la importación */
+        $errorsFilePath = 'import_' . uniqid() . '_.errors' . '.xlsx';
+
+        /* Crea el archivo de errores en el disco temporal */
+        Storage::disk('temporary')->put($errorsFilePath, '');
+
+        $import = new SalaryAdjustmentImport(
+            $errorsFilePath,
+            $user
+        );
         $import->import($data['filePath']);
+        Storage::disk('temporary')->delete($data['filePath']);
+
         if ($import->failures()->isNotEmpty()) {
+            /* Elimina el archivo de Excel temporal */
             return response()->json(['errors' => $import->failures()], 422);
         }
+        return response()->json(['message' => 'success'], 200);
     }
 
     /**

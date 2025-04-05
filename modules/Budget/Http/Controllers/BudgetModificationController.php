@@ -11,6 +11,7 @@ use App\Models\CodeSetting;
 use App\Models\Document;
 use App\Models\DocumentStatus;
 use App\Models\FiscalYear;
+use Intervention\Image\Format;
 use Modules\Budget\Models\BudgetModification;
 use Modules\Budget\Models\BudgetModificationAccount;
 use Modules\Budget\Models\BudgetSubSpecificFormulation;
@@ -117,8 +118,10 @@ class BudgetModificationController extends Controller
 
         /* Arreglo con los mensajes para las reglas de validación */
         $messages = [
+            'approved_at.required' => 'La fecha de aprobación es obligatoria.',
             'budget_account_id.required' => 'Las cuentas presupuestarias son obligatorias.',
             'document.max' => 'El campo Documento sólo debe tener 20 carácteres o menos',
+            'budget_account_id.min' => 'Las cuentas presupuestarias son obligatorias.',
         ];
 
         $attributes = [
@@ -159,6 +162,8 @@ class BudgetModificationController extends Controller
 
         /* Obtiene el registro del documento con estatus aprobado */
         $documentStatus = DocumentStatus::getStatus('AP');
+        /* Obtiene el registro del documento con estatus pendiente de aprobación */
+        $documentStatusPR = DocumentStatus::getStatus('PR');
 
         $currentFiscalYear = FiscalYear::select('year')
             ->where(['active' => true, 'closed' => false])->orderBy('year', 'desc')->first();
@@ -174,7 +179,7 @@ class BudgetModificationController extends Controller
             $codeSetting->field
         );
 
-        DB::transaction(function () use ($request, $code, $documentStatus) {
+        DB::transaction(function () use ($request, $code, $documentStatus, $documentStatusPR) {
             $type = ($request->type === "AC") ? 'C' : (($request->type === "RE") ? 'R' : 'T');
 
             /* Objeto que contiene los datos de la modificación presupuestaria creada */
@@ -186,7 +191,7 @@ class BudgetModificationController extends Controller
                 'document' => $request->document,
                 'institution_id' => $request->institution_id,
                 'currency_id' => $request->currency_id,
-                'document_status_id' => $documentStatus->id
+                'document_status_id' => $documentStatusPR->id
             ]);
 
             foreach ($request->budget_account_id as $account) {
@@ -197,23 +202,6 @@ class BudgetModificationController extends Controller
                     ->orderBy('year', 'desc')->first();
 
                 if ($formulation) {
-                    $budgetAccountOpen = BudgetAccountOpen::where('budget_sub_specific_formulation_id', $formulation->id)
-                        ->where('budget_account_id', $account['from_account_id'])
-                        ->first();
-                    if ($budgetAccountOpen) {
-                        $modificationType = ($type === "C") ? 'I' : 'D';
-
-                        if ($modificationType == 'D') {
-                            $budgetAccountOpen->total_year_amount_m = $budgetAccountOpen->total_year_amount_m - $account['from_amount'];
-                            $budgetAccountOpen->save();
-                        }
-
-                        if ($modificationType == 'I') {
-                            $budgetAccountOpen->total_year_amount_m = $budgetAccountOpen->total_year_amount_m + $account['from_amount'];
-                            $budgetAccountOpen->save();
-                        }
-                    }
-
                     BudgetModificationAccount::create([
                         'amount' => $account['from_amount'],
                         'operation' => ($type === "C") ? 'I' : 'D',
@@ -229,16 +217,6 @@ class BudgetModificationController extends Controller
                     $formulation_transfer = BudgetSubSpecificFormulation::currentFormulation(
                         $account['to_specific_action_id']
                     );
-                    $budgetAccountOpen = BudgetAccountOpen::where('budget_sub_specific_formulation_id', $formulation_transfer->id)
-                        ->where('budget_account_id', $account['to_account_id'])
-                        ->first();
-                    if ($budgetAccountOpen) {
-                        $modificationType = ($type === "C") ? 'I' : 'D';
-                        if ($modificationType == 'D') {
-                            $budgetAccountOpen->total_year_amount_m = $budgetAccountOpen->total_year_amount_m + $account['to_amount'];
-                            $budgetAccountOpen->save();
-                        }
-                    }
 
                     if ($formulation_transfer) {
                         BudgetModificationAccount::create([
@@ -315,7 +293,7 @@ class BudgetModificationController extends Controller
         /* Arreglo con los mensajes para las reglas de validación */
         $messages = [
             'budget_account_id.required' => 'Las cuentas presupuestarias son obligatorias.',
-            'document.max' => 'El campo Documento sólo debe tener 20 carácteres o menos',
+            'document.max' => 'El campo Documento sólo debe tener 20 caracteres o menos',
         ];
 
         $attributes = [
@@ -328,8 +306,9 @@ class BudgetModificationController extends Controller
         $this->validate($request, $rules, $messages, $attributes);
 
         $documentStatus = DocumentStatus::getStatus('AP');
+        $documentStatusPR = DocumentStatus::getStatus('PR');
 
-        DB::transaction(function () use ($request, $documentStatus) {
+        DB::transaction(function () use ($request, $documentStatus, $documentStatusPR) {
             $budgetModification = BudgetModification::find($request->id);
             $type = ($request->type === "AC") ? 'C' : (($request->type === "RE") ? 'R' : 'T');
 
@@ -340,7 +319,7 @@ class BudgetModificationController extends Controller
             $budgetModification->document = $request->document;
             $budgetModification->institution_id = $request->institution_id;
             $budgetModification->currency_id = $request->currency_id;
-            $budgetModification->document_status_id = $documentStatus->id;
+            $budgetModification->document_status_id = $documentStatusPR->id;
             $budgetModification->save();
 
             $deleted = BudgetModificationAccount::where('budget_modification_id', $budgetModification->id)->delete();
@@ -353,167 +332,6 @@ class BudgetModificationController extends Controller
                     ->orderBy('year', 'desc')->first();
 
                 if ($formulation) {
-                    $budgetAccountOpen = BudgetAccountOpen::where('budget_sub_specific_formulation_id', $formulation->id)
-                        ->where('budget_account_id', $account['from_account_id'])
-                        ->first();
-
-                    if (isset($account['from_account_original'])) {
-                        $budgetAccountOriginal = BudgetAccountOpen::where('budget_sub_specific_formulation_id', $formulation->id)
-                            ->where('budget_account_id', $account['from_account_original'])
-                            ->first();
-                    }
-
-                    if ($budgetAccountOpen) {
-                        $modificationType = ($type === "C") ? 'I' : 'D';
-
-                        if ($modificationType == 'D') {
-                            if ($request->type === "TR") {
-                                if ($account['from_operation'] == 'I') {
-                                    $budgetAccountOpen->update([
-                                        'total_year_amount_m' => $budgetAccountOpen->total_year_amount_m,
-                                    ]);
-                                } elseif ($account['from_operation'] == 'C') {
-                                    $budgetAccountOpen->update([
-                                        'total_year_amount_m' => $budgetAccountOpen->total_year_amount_m - ($account['from_amount'] < 0 ? $account['from_amount'] * -1 : $account['from_amount']),
-                                    ]);
-
-                                    if (isset($budgetAccountOriginal) && $budgetAccountOriginal != null && $account['from_equal'] == 'N') {
-                                        $budgetAccountOriginal->update([
-                                            'total_year_amount_m' => $budgetAccountOriginal->total_year_amount_m + ($account['from_amount_original'] < 0 ? $account['from_amount_original'] * -1 : $account['from_amount_original']),
-                                        ]);
-                                    }
-                                } elseif ($account['from_operation'] == 'S') {
-                                    if ($account['from_equal'] == 'S') {
-                                        $budgetAccountOpen->update([
-                                            'total_year_amount_m' => $budgetAccountOpen->total_year_amount_m + ($account['from_amount_edit'] < 0 ? $account['from_amount_edit'] * -1 : $account['from_amount_edit']),
-                                        ]);
-                                    } else {
-                                        $budgetAccountOpen->update([
-                                            'total_year_amount_m' => $budgetAccountOpen->total_year_amount_m - ($account['from_amount_edit'] < 0 ? $account['from_amount_edit'] * -1 : $account['from_amount_edit']),
-                                        ]);
-
-                                        if (isset($budgetAccountOriginal) && $budgetAccountOriginal != null) {
-                                            $budgetAccountOriginal->update([
-                                                'total_year_amount_m' => $budgetAccountOriginal->total_year_amount_m + ($account['from_amount_original'] < 0 ? $account['from_amount_original'] * -1 : $account['from_amount_original']),
-                                            ]);
-                                        }
-                                    }
-                                } elseif ($account['from_operation'] == 'R') {
-                                    if ($account['from_equal'] == 'S') {
-                                        $budgetAccountOpen->update([
-                                            'total_year_amount_m' => $budgetAccountOpen->total_year_amount_m - ($account['from_amount_edit'] < 0 ? $account['from_amount_edit'] * -1 : $account['from_amount_edit']),
-                                        ]);
-                                    } else {
-                                        $budgetAccountOpen->update([
-                                            'total_year_amount_m' => $budgetAccountOpen->total_year_amount_m - ($account['from_amount'] < 0 ? $account['from_amount'] * -1 : $account['from_amount']),
-                                        ]);
-
-                                        if (isset($budgetAccountOriginal) && $budgetAccountOriginal != null) {
-                                            $budgetAccountOriginal->update([
-                                                'total_year_amount_m' => $budgetAccountOriginal->total_year_amount_m + ($account['from_amount_original'] < 0 ? $account['from_amount_original'] * -1 : $account['from_amount_original']),
-                                            ]);
-                                        }
-                                    }
-                                } else {
-                                    $budgetAccountOpen->total_year_amount_m = $budgetAccountOpen->total_year_amount_m - $account['from_amount'];
-                                    $budgetAccountOpen->save();
-                                }
-                            } else {
-                                if ($account['operation'] == 'I') {
-                                    $budgetAccountOpen->update([
-                                        'total_year_amount_m' => $budgetAccountOpen->total_year_amount_m,
-                                    ]);
-                                } elseif ($account['operation'] == 'C') {
-                                    $budgetAccountOpen->update([
-                                        'total_year_amount_m' => $budgetAccountOpen->total_year_amount_m - ($account['from_amount_edit'] < 0 ? $account['from_amount_edit'] * -1 : $account['from_amount_edit']),
-                                    ]);
-
-                                    if (isset($budgetAccountOriginal) && $budgetAccountOriginal != null && $account['equal'] == 'N') {
-                                        $budgetAccountOriginal->update([
-                                            'total_year_amount_m' => $budgetAccountOriginal->total_year_amount_m + ($account['from_amount_original'] < 0 ? $account['from_amount_original'] * -1 : $account['from_amount_original']),
-                                        ]);
-                                    }
-                                } elseif ($account['operation'] == 'S') {
-                                    if ($account['equal'] == 'S') {
-                                        $budgetAccountOpen->update([
-                                            'total_year_amount_m' => $budgetAccountOpen->total_year_amount_m + ($account['from_amount_edit'] < 0 ? $account['from_amount_edit'] * -1 : $account['from_amount_edit']),
-                                        ]);
-                                    } else {
-                                        $budgetAccountOpen->update([
-                                            'total_year_amount_m' => $budgetAccountOpen->total_year_amount_m - ($account['from_amount_edit'] < 0 ? $account['from_amount_edit'] * -1 : $account['from_amount_edit']),
-                                        ]);
-
-                                        if (isset($budgetAccountOriginal) && $budgetAccountOriginal != null) {
-                                            $budgetAccountOriginal->update([
-                                                'total_year_amount_m' => $budgetAccountOriginal->total_year_amount_m + ($account['from_amount_original'] < 0 ? $account['from_amount_original'] * -1 : $account['from_amount_original']),
-                                            ]);
-                                        }
-                                    }
-                                } elseif ($account['operation'] == 'R') {
-                                    $budgetAccountOpen->update([
-                                        'total_year_amount_m' => $budgetAccountOpen->total_year_amount_m - ($account['from_amount_edit'] < 0 ? $account['from_amount_edit'] * -1 : $account['from_amount_edit']),
-                                    ]);
-
-                                    if (isset($budgetAccountOriginal) && $budgetAccountOriginal != null && $account['equal'] == 'N') {
-                                        $budgetAccountOriginal->update([
-                                            'total_year_amount_m' => $budgetAccountOriginal->total_year_amount_m + ($account['from_amount_original'] < 0 ? $account['from_amount_original'] * -1 : $account['from_amount_original']),
-                                        ]);
-                                    }
-                                } else {
-                                    $budgetAccountOpen->total_year_amount_m = $budgetAccountOpen->total_year_amount_m - $account['from_amount'];
-                                    $budgetAccountOpen->save();
-                                }
-                            }
-                        }
-
-                        if ($modificationType == 'I') {
-                            if ($account['operation'] == 'I') {
-                                $budgetAccountOpen->update([
-                                    'total_year_amount_m' => $budgetAccountOpen->total_year_amount_m,
-                                ]);
-                            } elseif ($account['operation'] == 'C') {
-                                $budgetAccountOpen->update([
-                                    'total_year_amount_m' => $budgetAccountOpen->total_year_amount_m + ($account['from_amount_edit'] < 0 ? $account['from_amount_edit'] * -1 : $account['from_amount_edit']),
-                                ]);
-
-                                if (isset($budgetAccountOriginal) && $budgetAccountOriginal != null && $account['equal'] == 'N') {
-                                    $budgetAccountOriginal->update([
-                                        'total_year_amount_m' => $budgetAccountOriginal->total_year_amount_m - ($account['from_amount_original'] < 0 ? $account['from_amount_original'] * -1 : $account['from_amount_original']),
-                                    ]);
-                                }
-                            } elseif ($account['operation'] == 'S') {
-                                $budgetAccountOpen->update([
-                                    'total_year_amount_m' => $budgetAccountOpen->total_year_amount_m + ($account['from_amount_edit'] < 0 ? $account['from_amount_edit'] * -1 : $account['from_amount_edit']),
-                                ]);
-
-                                if (isset($budgetAccountOriginal) && $budgetAccountOriginal != null && $account['equal'] == 'N') {
-                                    $budgetAccountOriginal->update([
-                                        'total_year_amount_m' => $budgetAccountOriginal->total_year_amount_m - ($account['from_amount_original'] < 0 ? $account['from_amount_original'] * -1 : $account['from_amount_original']),
-                                    ]);
-                                }
-                            } elseif ($account['operation'] == 'R') {
-                                if ($account['equal'] == 'S') {
-                                    $budgetAccountOpen->update([
-                                        'total_year_amount_m' => $budgetAccountOpen->total_year_amount_m - ($account['from_amount_edit'] < 0 ? $account['from_amount_edit'] * -1 : $account['from_amount_edit']),
-                                    ]);
-                                } else {
-                                    $budgetAccountOpen->update([
-                                        'total_year_amount_m' => $budgetAccountOpen->total_year_amount_m + ($account['from_amount_edit'] < 0 ? $account['from_amount_edit'] * -1 : $account['from_amount_edit']),
-                                    ]);
-
-                                    if (isset($budgetAccountOriginal) && $budgetAccountOriginal != null) {
-                                        $budgetAccountOriginal->update([
-                                            'total_year_amount_m' => $budgetAccountOriginal->total_year_amount_m - ($account['from_amount_original'] < 0 ? $account['from_amount_original'] * -1 : $account['from_amount_original']),
-                                        ]);
-                                    }
-                                }
-                            } else {
-                                $budgetAccountOpen->total_year_amount_m = $budgetAccountOpen->total_year_amount_m + $account['from_amount'];
-                                $budgetAccountOpen->save();
-                            }
-                        }
-                    }
-
                     BudgetModificationAccount::create([
                         'amount' => $account['from_amount'],
                         'operation' => ($type === "C") ? 'I' : 'D',
@@ -529,73 +347,6 @@ class BudgetModificationController extends Controller
                     $formulation_transfer = BudgetSubSpecificFormulation::currentFormulation(
                         $account['to_specific_action_id']
                     );
-                    $budgetAccountOpen = BudgetAccountOpen::where('budget_sub_specific_formulation_id', $formulation_transfer->id)
-                        ->where('budget_account_id', $account['to_account_id'])
-                        ->first();
-
-                    $budgetAccountOriginal = BudgetAccountOpen::where('budget_sub_specific_formulation_id', $formulation->id)
-                        ->where('budget_account_id', $account['to_account_original'])
-                        ->first();
-
-                    if ($budgetAccountOpen) {
-                        $modificationType = ($type === "C") ? 'I' : 'D';
-                        if ($modificationType == 'D') {
-                            if ($account['to_operation'] == 'I') {
-                                $budgetAccountOpen->update([
-                                    'total_year_amount_m' => $budgetAccountOpen->total_year_amount_m,
-                                ]);
-                            } elseif ($account['to_operation'] == 'C') {
-                                $budgetAccountOpen->update([
-                                    'total_year_amount_m' => $budgetAccountOpen->total_year_amount_m + ($account['to_amount'] < 0 ? $account['to_amount'] * -1 : $account['to_amount']),
-                                ]);
-
-                                if (isset($budgetAccountOriginal) && $budgetAccountOriginal != null && $account['to_equal'] == 'N') {
-                                    $budgetAccountOriginal->update([
-                                        'total_year_amount_m' => $budgetAccountOriginal->total_year_amount_m - ($account['to_amount_original'] < 0 ? $account['to_amount_original'] * -1 : $account['to_amount_original']),
-                                    ]);
-                                }
-                            } elseif ($account['to_operation'] == 'S') {
-                                if ($account['to_equal'] == 'S') {
-                                    $budgetAccountOpen->update([
-                                        'total_year_amount_m' => $budgetAccountOpen->total_year_amount_m - ($account['to_amount_edit'] < 0 ?
-                                            $account['to_amount_edit'] * -1 : $account['to_amount_edit']),
-                                    ]);
-                                } else {
-                                    $budgetAccountOpen->update([
-                                        'total_year_amount_m' => $budgetAccountOpen->total_year_amount_m + ($account['to_amount'] < 0 ?
-                                            $account['to_amount'] * -1 : $account['to_amount']),
-                                    ]);
-
-                                    if (isset($budgetAccountOriginal) && $budgetAccountOriginal != null) {
-                                        $budgetAccountOriginal->update([
-                                            'total_year_amount_m' => $budgetAccountOriginal->total_year_amount_m - ($account['to_amount_original'] < 0 ? $account['to_amount_original'] * -1 : $account['to_amount_original']),
-                                        ]);
-                                    }
-                                }
-                            } elseif ($account['to_operation'] == 'R') {
-                                if ($account['to_equal'] == 'S') {
-                                    $budgetAccountOpen->update([
-                                        'total_year_amount_m' => $budgetAccountOpen->total_year_amount_m + ($account['to_amount_edit'] < 0 ?
-                                            $account['to_amount_edit'] * -1 : $account['to_amount_edit']),
-                                    ]);
-                                } else {
-                                    $budgetAccountOpen->update([
-                                        'total_year_amount_m' => $budgetAccountOpen->total_year_amount_m + ($account['to_amount'] < 0 ?
-                                            $account['to_amount'] * -1 : $account['to_amount']),
-                                    ]);
-
-                                    if (isset($budgetAccountOriginal) && $budgetAccountOriginal != null) {
-                                        $budgetAccountOriginal->update([
-                                            'total_year_amount_m' => $budgetAccountOriginal->total_year_amount_m - ($account['to_amount_original'] < 0 ? $account['to_amount_original'] * -1 : $account['to_amount_original']),
-                                        ]);
-                                    }
-                                }
-                            } else {
-                                $budgetAccountOpen->total_year_amount_m = $budgetAccountOpen->total_year_amount_m + $account['from_amount'];
-                                $budgetAccountOpen->save();
-                            }
-                        }
-                    }
 
                     if ($formulation_transfer) {
                         BudgetModificationAccount::create([
@@ -643,55 +394,28 @@ class BudgetModificationController extends Controller
      */
     public function destroy($id)
     {
-        /* Objeto con información de la modificación presupuestaria a eliminar */
-        $budgetModification = BudgetModification::find($id);
+        try {
+            /* Objeto con información de la modificación presupuestaria a eliminar */
+            $budgetModification = BudgetModification::findOrFail($id);
 
-        if ($budgetModification) {
-            $BudgetModificationAccounts = BudgetModificationAccount::where('budget_modification_id', $budgetModification->id)->get();
-            $documentStatus = DocumentStatus::getStatus('AP');
-
-            foreach ($BudgetModificationAccounts as $account) {
-                /* Obtiene la formulación correspondiente a la acción específica seleccionada */
-                $formulation = BudgetSubSpecificFormulation::where('id', $account['budget_sub_specific_formulation_id'])
-                    ->where('document_status_id', $documentStatus->id)
-                    ->where('confirmed', true)
-                    ->orderBy('year', 'desc')->first();
-
-                if ($formulation) {
-                    $budgetAccountOpen = BudgetAccountOpen::with('budgetAccount')->where('budget_sub_specific_formulation_id', $formulation->id)
-                        ->where('budget_account_id', $account['budget_account_id'])
-                        ->first();
-                    if ($budgetAccountOpen) {
-                        $modificationType = ($account['operation'] === "I") ? 'I' : 'D';
-
-                        if ($modificationType == 'D') {
-                            if ($budgetAccountOpen->budgetAccount->specific != 00) {
-                                $budgetAccountOpen->total_year_amount_m = $budgetAccountOpen->total_year_amount_m + $account['amount'];
-                                $budgetAccountOpen->save();
-                            }
-                        }
-
-                        if ($modificationType == 'I') {
-                            if ($budgetAccountOpen->budgetAccount->specific != 00) {
-                                $budgetAccountOpen->total_year_amount_m = $budgetAccountOpen->total_year_amount_m - $account['amount'];
-                                $budgetAccountOpen->save();
-                            }
-                        }
-                    }
-                }
-            }
-
+            DB::beginTransaction();
             $budgetModification->delete();
             BudgetModificationAccount::where('budget_modification_id', $budgetModification->id)->delete();
-        }
 
-        return response()->json(['record' => $budgetModification, 'message' => 'Success'], 200);
+            DB::commit();
+
+            return response()->json(['record' => $budgetModification, 'message' => 'Success'], 200);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return response()->json(['message' => __($th->getMessage())], 500);
+        }
     }
 
     /**
      * Actualiza el estatus del registro.
      *
      * @author Ing. Argenis Osorio <aosorio@cenditel.gob.ve>
+     * @author Francisco J. P. Ruiz <fjpenya@cenditel.gob.ve>
      *
      * @param  \Illuminate\Http\Request $request
      * @param  integer $id Identificador de la modificación presupuestaria
@@ -700,25 +424,95 @@ class BudgetModificationController extends Controller
      */
     public function changeStatus(Request $request, $id)
     {
-        $query = BudgetModification::find($id);
+        /* Arreglo con las reglas de validación para el registro */
+        $rules = [
+            'approved_date' => ['required', 'date', 'after_or_equal:approved_at']
+        ];
 
-        if ($query) {
-            // Actualiza el estatus del registro con el valor status en la solicitud.
-            $query->status = $request->status;
-            // Actualiza la fecha de aprobación del registro con el valor approved_date en la solicitud.
-            $query->approved_date = $request->approved_date;
-            $query->save();
+        /* Arreglo con los mensajes para las reglas de validación */
+        $messages = [
+            'approved_date.required' => 'La :attribute es obligatoria.',
+            'approved_date.date' => 'La :attribute debe ser una fecha.',
+            'approved_date.after_or_equal' => 'La :attribute debe ser igual o posterior a la fecha de creación.',
+        ];
+
+        $attributes = [
+            'approved_date' => 'Fecha de Aprobación',
+        ];
+
+        /* Valida la información del formulario */
+        $request->validate($rules, $messages, $attributes);
+
+        try {
+            try {
+                /* Objeto con información de la modificación presupuestaria a actualizar */
+                $budgetModification = BudgetModification::query()->findOrFail($id);
+            } catch (\Throwable $tr) {
+                return response()->json([
+                    'result' => false,
+                    'message' => 'Registro no encontrado'
+                ], 404);
+            }
+
+            /* Obtiene el registro del documento con estatus aprobado */
+            $documentStatus = DocumentStatus::getStatus('AP');
+
+            /* Objeto que contiene los datos de la modificación presupuestaria creada */
+            $budgetModification->updateOrFail([
+                'document_status_id' => $documentStatus->id,
+                'approved_date' => $request->approved_date,
+                'status' => $request->status
+            ]);
+
+            DB::transaction(function () use ($request, $budgetModification, $documentStatus) {
+                $type = $budgetModification->type;
+
+                /* Obtiene los registros de la tabla budget_modification_accounts */
+                /**
+                 *  'amount' => $account['from_amount' o 'to_amount'],
+                 *  'operation' => 'I' or 'D',
+                 *  'budget_sub_specific_formulation_id' => ID de la formulación,
+                 *  'budget_account_id' => $account['from_account_id' OR 'to_account_id'],
+                 *  'budget_modification_id' => ID de la modificación presupuestaria
+                */
+                $budgetModificationAccounts = BudgetModificationAccount::where([
+                    'budget_modification_id' => $budgetModification->id
+                ])->get();
+
+
+                foreach ($budgetModificationAccounts as $account) {
+                    /* Obtiene la formulación correspondiente a la acción específica seleccionada */
+                    $formulation = BudgetSubSpecificFormulation::find($account['budget_sub_specific_formulation_id']);
+
+                    if ($formulation) {
+                        $budgetAccountOpen = BudgetAccountOpen::where('budget_sub_specific_formulation_id', $formulation->id)
+                            ->where('budget_account_id', $account['budget_account_id'])
+                            ->first();
+                        if ($budgetAccountOpen) {
+                            $modificationType = $account['operation'];
+
+                            if ($modificationType == 'D') {
+                                $budgetAccountOpen->total_year_amount_m = $budgetAccountOpen->total_year_amount_m - $account['amount'];
+                                $budgetAccountOpen->save();
+                            } elseif ($modificationType == 'I') {
+                                $budgetAccountOpen->total_year_amount_m = $budgetAccountOpen->total_year_amount_m + $account['amount'];
+                                $budgetAccountOpen->save();
+                            }
+                        }
+                    }
+                }
+            });
 
             return response()->json([
                 'result' => true,
-                'message' => 'Registro aprobado',
+                'message' => 'Registro aprobado correctamente',
             ], 200);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'result' => false,
+                'message' => 'Error al aprobar registro'
+            ], 500);
         }
-
-        return response()->json([
-            'result' => false,
-            'message' => 'Registro no encontrado'
-        ], 404);
     }
 
     /**

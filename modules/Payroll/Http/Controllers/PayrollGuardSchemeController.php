@@ -16,6 +16,8 @@ use Modules\Payroll\Actions\GetPayrollConfirmedGuardPeriodsAction;
 use Modules\Payroll\Http\Resources\GuardSchemaResource;
 use Modules\Payroll\Models\PayrollGuardScheme;
 use Modules\Payroll\Models\PayrollGuardSchemePeriod;
+use Modules\Payroll\Models\PayrollStaff;
+use Modules\Payroll\Repositories\ReportRepository;
 
 /**
  * @class PayrollGuardSchemeController
@@ -237,6 +239,102 @@ final class PayrollGuardSchemeController extends Controller
         );
     }
 
+    public function pdfExport(int $id)
+    {
+        $payrollGuardScheme = PayrollGuardScheme::query()
+            ->findOrFail($id);
+
+        Carbon::setLocale('es');
+        $start_date = Carbon::parse($payrollGuardScheme->from_date);
+        $end_date = Carbon::parse($payrollGuardScheme->to_date);
+
+        $months = [];
+        $daysPerMonth = [];
+        $totalDays = [];
+
+        while ($start_date->lessThanOrEqualTo($end_date)) {
+            $month_name = ucfirst($start_date->translatedFormat('F'));
+
+            if (!in_array($month_name, $months)) {
+                $months[] = $month_name;
+                $daysPerMonth[$month_name] = [];
+            }
+
+            $daysPerMonth[$month_name][] = $start_date->translatedFormat('j');
+
+            $totalDays[] = [
+                'month' => $month_name,
+                'day' => str_replace('.', '', $start_date->translatedFormat('j')),
+                'day_code' => str_replace('.', '', $start_date->translatedFormat('D')),
+            ];
+
+            $start_date->addDay();
+        }
+        foreach ($payrollGuardScheme->data_source as $key => $items) {
+            foreach ($items as $item) {
+                if ($item['count'] > 0) {
+                    preg_match('/(\d+)-/', $key, $matches);
+
+                    if (isset($matches[1])) {
+                        $staffIds[] = (int)$matches[1];
+                    }
+                }
+            }
+        }
+
+        $staffs = PayrollStaff::query()
+            ->whereIn('id', $staffIds)
+            ->orderBy('first_name')
+            ->get()
+            ->map(function ($staff) {
+                return [
+                    'id' => $staff->id,
+                    'id_number' => $staff->id_number,
+                    'name' => $staff->fullName,
+                    'worksheet_code' => $staff->payrollEmployment?->worksheet_code ?? '',
+                ];
+            })->values();
+
+        $pdf = new ReportRepository();
+        $filename = 'payroll-report-' . Carbon::now()->format('Y-m-d') . '.pdf';
+
+        $pdf->setConfig([
+            'institution' => $payrollGuardScheme->institution,
+            'orientation' => 'L',
+            'format' => 'A2 LANDSCAPE',
+            'reportDate' => '',
+            'urlVerify'   => url(''),
+            'filename' => $filename
+        ]);
+        $group = $payrollGuardScheme->payrollSupervisedGroup;
+        $supervisor = !empty($group->supervisor)
+            ? (($group->supervisor->payrollEmployment?->worksheet_code ?? $group->supervisor->id_number ?? $group->supervisor->passport) .
+                ' - ' . $group->supervisor->first_name . ' ' . $group->supervisor->last_name)
+            : '';
+        $approver = !empty($group->approver)
+            ? (($group->approver->payrollEmployment?->worksheet_code ?? $group->approver->id_number ?? $group->approver->passport) .
+            ' - ' . $group->approver->first_name . ' ' . $group->approver->last_name)
+            : '';
+        $pdf->setHeader('Turnos de Guardias');
+        $pdf->setFooter();
+        $pdf->setBody('payroll::pdf.payroll-guard-scheme', true, [
+            'pdf' => $pdf,
+            'dataSource' => $payrollGuardScheme->data_source,
+            'code' => $group->code,
+            'supervisor' => $supervisor,
+            'approver' => $approver,
+            'staffs' => $staffs,
+            'months' => $months,
+            'daysPerMonth' => $daysPerMonth,
+            'totalDays' => $totalDays,
+            'from_date' => $payrollGuardScheme->from_date,
+            'to_date' => $payrollGuardScheme->to_date,
+        ]);
+
+        $url = route('payroll.reports.show', [$filename]);
+        return response()->json(['result' => true, 'redirect' => $url], 200);
+    }
+
     /**
      * Elimina un registro de tipo de excepción
      *
@@ -275,12 +373,32 @@ final class PayrollGuardSchemeController extends Controller
      */
     public function vueList()
     {
-        return response()->json(
-            [
-                'records' => GuardSchemaResource::collection(PayrollGuardScheme::all())
-            ],
-            200
-        );
+        $user = auth()->user();
+        $profileUser = $user->profile;
+
+        if ($user->hasRole('admin, payroll')) {
+            return response()->json(
+                [
+                    'records' => GuardSchemaResource::collection(PayrollGuardScheme::all())
+                ],
+                200
+            );
+        } else {
+            $guardSchemes = PayrollGuardScheme::query()
+                ->whereHas('payrollSupervisedGroup', function ($query) use ($profileUser) {
+                    $query
+                        ->where('supervisor_id', $profileUser->employee_id)
+                        ->orWhere('approver_id', $profileUser->employee_id);
+                })
+                ->get();
+
+            return response()->json(
+                [
+                    'records' => GuardSchemaResource::collection($guardSchemes)
+                ],
+                200
+            );
+        }
     }
 
     /**

@@ -263,14 +263,16 @@ class CreateBudgetAnalyticalMajorJob implements ShouldQueue
     {
         $project_accounts_open = array();
         $compromised = 0;
+        $documentStatus = DocumentStatus::getStatus('AP');
 
         foreach ($project->specificActions as $specificAction) {
             $finalAccounts = [];
 
+            $subSpecificFormulation = $specificAction
+                ->subSpecificFormulations
+                ->where('year', Carbon::parse($initialDate)->format('Y'))
+                ->first();
             $accounts = BudgetAccount::query()
-                ->with(['accountOpens' => function ($query) use ($specificAction) {
-                    $query->where('budget_sub_specific_formulation_id', $specificAction->subSpecificFormulations[0]->id);
-                }, 'accountParent'])
                 ->whereHas('accountOpens', function ($query) use ($initialDate, $finalDate) {
                     $query
                         ->with('subSpecificFormulation')
@@ -280,18 +282,23 @@ class CreateBudgetAnalyticalMajorJob implements ShouldQueue
                                 ->where('date', '<=', $finalDate);
                         });
                 })
+                ->with(['accountOpens' => function ($query) use ($subSpecificFormulation) {
+                    $query->where('budget_sub_specific_formulation_id', $subSpecificFormulation->id);
+                }, 'accountParent'])
                 ->get();
 
             $modificationAccounts = BudgetAccount::query()
-                ->with(['modificationAccounts' => function ($query) use ($specificAction) {
-                    $query->where('budget_sub_specific_formulation_id', $specificAction->subSpecificFormulations[0]->id);
+                ->whereHas('modificationAccounts.budgetModification', function ($query) use ($initialDate, $finalDate, $documentStatus) {
+                    $query
+                        ->where('document_status_id', $documentStatus->id)
+                        ->where('status', 'AP')
+                        ->whereDate('approved_date', '>=', $initialDate)
+                        ->whereDate('approved_date', '<=', $finalDate);
+                })
+                ->with(['modificationAccounts' => function ($query) use ($subSpecificFormulation) {
+                    $query->where('budget_sub_specific_formulation_id', $subSpecificFormulation->id);
                 }, 'accountParent', 'modificationAccounts.budgetSubSpecificFormulation.accountOpens',
                 'modificationAccounts.budgetModification'])
-                ->whereHas('modificationAccounts.budgetModification', function ($query) use ($initialDate, $finalDate) {
-                    $query
-                        ->where('approved_at', '>=', $initialDate)
-                        ->where('approved_at', '<=', $finalDate);
-                })
                 ->get();
 
             $formFormId = [];
@@ -723,7 +730,7 @@ class CreateBudgetAnalyticalMajorJob implements ShouldQueue
                 $project_accounts_open,
                 [
                     $finalAccounts,
-                    $specificAction->subSpecificFormulations[0],
+                    $subSpecificFormulation,
                     "project_code" => $project->code,
                     "specific_action_code" => $specificAction->code,
                     "specific_action_name" => $specificAction->name,

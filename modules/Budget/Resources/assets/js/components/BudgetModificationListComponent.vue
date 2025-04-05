@@ -48,15 +48,9 @@
                 }}
             </div>
             <div slot="status" slot-scope="props" class="text-center">
-                <span v-if="
-                    props.row.status === 'PE'
-                    || props.row.status === null
-                " class="text-warning">
-                    Pendiente
-                </span>
-                <span v-else class="text-success">
-                    Aprobado
-                </span>
+                    <span :style="`color: ${props.row.document_status.color}`">
+                        {{ props.row.document_status.name }}
+                    </span>
             </div>
             <div slot="id" slot-scope="props" class="text-center">
                 <div class="d-inline-flex">

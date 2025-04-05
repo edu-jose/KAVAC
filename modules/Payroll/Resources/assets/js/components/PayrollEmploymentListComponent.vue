@@ -1,22 +1,22 @@
 <template>
     <div>
-        <v-server-table :columns="columns" :options="table_options"
-            url="/payroll/employments/show/vue-list" ref="tableResults">
+        <v-server-table :columns="columns" :options="table_options" url="/payroll/employments/show/vue-list"
+            ref="tableResults">
             <div slot="institution_email" slot-scope="props" class="text-center">
                 {{
-            props.row.institution_email
-                ? props.row.institution_email
-                : ""
-        }}
+                    props.row.institution_email
+                        ? props.row.institution_email
+                        : ""
+                }}
             </div>
             <div slot="id" slot-scope="props" class="text-center">
                 <button @click.prevent="
-        setDetails(
-            'EmploymentInfo',
-            props.row.id,
-            'PayrollEmploymentInfo'
-        )
-            " class="btn btn-info btn-xs btn-icon btn-action btn-tooltip" title="Ver registro"
+                    setDetails(
+                        'EmploymentInfo',
+                        props.row.id,
+                        'PayrollEmploymentInfo'
+                    )
+                    " class="btn btn-info btn-xs btn-icon btn-action btn-tooltip" title="Ver registro"
                     data-toggle="tooltip" data-placement="bottom" type="button">
                     <i class="fa fa-eye"></i>
                 </button>
@@ -272,45 +272,75 @@ export default {
          */
         diff_dates(dateThen, record) {
             const vm = this;
+            const startDate = moment(dateThen, "YYYY-MM-DD");
+            let currentDate = moment();
+            let endDate;
             let now = moment().format("YYYY-MM-DD");
             let ms = 0;
+
             if (vm.fiscal_year) {
                 vm.fiscal_date = vm.fiscal_year + "-12-31";
             }
 
-            if (vm.fiscal_date && !record.end_date) {
-                ms = moment(dateThen, "YYYY-MM-DD").diff(moment(vm.fiscal_date, "YYYY-MM-DD"));
-            } else if (vm.fiscal_date && record.end_date) {
-                ms = moment(dateThen, "YYYY-MM-DD").diff(moment(record.end_date, "YYYY-MM-DD"));
+            // if (vm.fiscal_date && !record.end_date) {
+            //     ms = moment(dateThen, "YYYY-MM-DD").diff(moment(vm.fiscal_date, "YYYY-MM-DD"));
+            // } else if (vm.fiscal_date && record.end_date) {
+            //     ms = moment(dateThen, "YYYY-MM-DD").diff(moment(record.end_date, "YYYY-MM-DD"));
+            // } else {
+            //     ms = moment(dateThen, "YYYY-MM-DD").diff(moment(now, "YYYY-MM-DD"));
+            // }
+            if (vm.fiscal_date && !vm.record.end_date) {
+                const fiscalYear = moment(vm.fiscal_date, "YYYY-MM-DD").year();
+                endDate = moment(`${fiscalYear}-${startDate.format("MM-DD")}`, "YYYY-MM-DD");
+            } else if (vm.fiscal_date && vm.record.end_date) {
+                endDate = moment(vm.record.end_date, "YYYY-MM-DD");
             } else {
-                ms = moment(dateThen, "YYYY-MM-DD").diff(moment(now, "YYYY-MM-DD"));
-            }
-            let d = moment.duration(ms);
-            let data_years = 0;
-            let data_months = 0;
-            let data_days = 0;
-
-            if (d._data.years < 0) {
-                data_years = d._data.years * -1;
-            }
-            if (d._data.months < 0) {
-                data_months = d._data.months * -1;
-            }
-            if (d._data.days < 0) {
-                data_days = d._data.days * -1;
+                endDate = currentDate.clone();
             }
 
-            let time = {
-                years: `Años: ${data_years}`,
-                months: `Meses: ${data_months}`,
-                days: `Días: ${data_days}`,
+            const years = currentDate.diff(startDate, "years");
+            startDate.add(years, "years");
+
+            const months = currentDate.diff(startDate, "months");
+            startDate.add(months, "months");
+
+            const days = currentDate.diff(startDate, "days");
+            // let d = moment.duration(ms);
+            // let data_years = 0;
+            // let data_months = 0;
+            // let data_days = 0;
+
+            const time = {
+                years: `Años: ${years}`,
+                months: `Meses: ${months}`,
+                days: `Días: ${days}`,
             };
 
-            if (data_days > 0) {
-                record.institution_years = time.years + ' ' + time.months + ' ' + time.days;
-            } else {
-                record.institution_years = 0;
-            };
+            record.institution_years = (days > 0 || months > 0 || years > 0)
+                ? `${time.years} ${time.months} ${time.days}`
+                : "0";
+
+            // if (d._data.years < 0) {
+            //     data_years = d._data.years * -1;
+            // }
+            // if (d._data.months < 0) {
+            //     data_months = d._data.months * -1;
+            // }
+            // if (d._data.days < 0) {
+            //     data_days = d._data.days * -1;
+            // }
+
+            // let time = {
+            //     years: `Años: ${data_years}`,
+            //     months: `Meses: ${data_months}`,
+            //     days: `Días: ${data_days}`,
+            // };
+
+            // if (data_days > 0) {
+            //     record.institution_years = time.years + ' ' + time.months + ' ' + time.days;
+            // } else {
+            //     record.institution_years = 0;
+            // };
         },
 
         /**
@@ -440,7 +470,7 @@ export default {
          * @param  {integer} id    ID del Elemento seleccionado para su eliminación
          * @param  {string}  url   Ruta que ejecuta la acción para eliminar un registro
          */
-         deleteRecord(id, url) {
+        deleteRecord(id, url) {
             const vm = this;
             /** @type {string} URL que atiende la petición de eliminación del registro */
             var url = vm.setUrl((url) ? url : vm.route_delete);

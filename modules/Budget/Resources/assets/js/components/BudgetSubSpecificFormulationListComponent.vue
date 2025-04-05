@@ -35,7 +35,12 @@
         </div>
         <hr>
         <!-- Final de filtros de la tabla -->
-        <v-client-table :columns="columns" :data="records" :options="table_options">
+        <v-server-table
+            :columns="columns"
+            :url="'budget/subspecific-formulations/vue-list'"
+            :options="table_options"
+            ref="tableResults"
+            >
             <div slot="date" slot-scope="props" class="text-center">
                 {{ props.row.date ? format_date(props.row.date, 'DD/MM/YYYY') : "Sin fecha asignada" }}
             </div>
@@ -92,11 +97,16 @@
                     formatToCurrency(props.row.total_formulated, props.row.currency.symbol)
                 }}
             </div>
+            <div slot="default_currency_amount" slot-scope="props" class="text-right">
+                {{
+                    formatToCurrency(parseFloat(props.row.default_currency_amount), currencyDefaultSymbol)
+                }}
+            </div>
             <div slot="assigned" slot-scope="props">
                 <span class="text-danger text-bold" v-if="!props.row.assigned">NO</span>
                 <span class="text-success text-bold" v-else>SI</span>
             </div>
-        </v-client-table>
+        </v-server-table>
     </section>
 </template>
 
@@ -106,7 +116,6 @@ export default {
     data() {
         return {
             records: [],
-            tmpRecords: [],
             assigned: {
                 _method: "PUT",
                 assigned: "1",
@@ -135,18 +144,52 @@ export default {
                 { id: false, text: "No" }
             ],
             lastYear: '',
+            currencyDefaultSymbol: '',
         };
     },
     created() {
+        const vm = this;
+        
         this.table_options.headings = {
             date: "Fecha de generación",
             code: "Código",
             year: "Año",
             specific_action: "Acción Específica",
             total_formulated: "Total Formulado",
+            default_currency_amount: "Conversión",
             assigned: "Asignado",
             id: "Acción",
         };
+
+        axios.get('get-currencies').then(response => {
+            if (response.data.length > 0) {
+                vm.currencyDefaultSymbol = response.data.find(currency => currency.default === true).text.split(" - ")[0];
+                
+                vm.columns = [
+                    "date",
+                    "code",
+                    "year",
+                    "specific_action",
+                    "total_formulated",
+                    "default_currency_amount",
+                    "assigned",
+                    "id",
+                ];
+
+                this.table_options.columnsClasses = {
+                    date: "col-md-1",
+                    code: "col-md-1",
+                    year: "col-md-1",
+                    name: "col-md-3",
+                    specific_action: "col-md-4",
+                    total_formulated: "col-md-1",
+                    total_formulated: "col-md-1",
+                    assigned: "col-md-1 text-center",
+                    id: "col-md-1",
+                };
+            }
+        });
+
         this.table_options.sortable = [
             "date",
             "code",
@@ -189,7 +232,7 @@ export default {
                 code: '',
                 assigned: '',
             };
-            vm.records = vm.tmpRecords;
+            vm.$refs.tableResults.refresh();
         },
 
         /**
@@ -202,20 +245,20 @@ export default {
          */
         filterTable() {
             const vm = this;
-            var varAssigned;
-            if (vm.filterBy.assigned == "true") {
-                varAssigned = true;
+
+            let params = {
+                query: vm.filterBy,
+                limit: 10,
+                ascending: 1,
+                page: 1,
+                byColumn: 0
             }
-            else if (vm.filterBy.assigned == "false") {
-                varAssigned = false;
-            }
-            vm.records = vm.tmpRecords.filter((rec) => {
-                return (vm.filterBy.date) ? (rec.date === vm.filterBy.date) : true;
-            }).filter((rec) => {
-                return (vm.filterBy.code) ? (rec.code === vm.filterBy.code) : true;
-            }).filter((rec) => {
-                return (vm.filterBy.assigned) ? (rec.assigned === varAssigned) : true;
-            })
+
+            axios.get(`${window.app_url}/budget/subspecific-formulations/vue-list`, {params: params})
+                .then(response => {
+                        vm.$refs.tableResults.data = response.data.data;
+                        vm.$refs.tableResults.count = response.data.count;
+                    });
         },
 
         /**
@@ -318,14 +361,6 @@ export default {
                 vm.initRecords(vm.route_list, "");
             }, 2000);
         },
-    },
-    mounted() {
-        // this.initRecords(this.route_list, "");
-        axios.get('budget/subspecific-formulations/vue-list').then(response => {
-            this.records = response.data.records;
-            // Variable usada para el reseteo de los filtros de la tabla.
-            this.tmpRecords = response.data.records;
-        });
     },
 };
 </script>

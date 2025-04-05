@@ -1219,7 +1219,6 @@ class PayrollController extends Controller
         ini_set('max_execution_time', 300); /** 5min */
         try {
             $payroll = Payroll::where('id', $id)->first();
-            //$export = new PayrollExport(Payroll::class);
             $export = new PayrollExport();
             $export->setPayrollId($payroll->id);
             return Excel::download($export, 'payroll_register' . $payroll->created_at . '.xlsx');
@@ -1227,7 +1226,8 @@ class PayrollController extends Controller
             Log::error($th->getMessage());
             request()->session()->flash('message', [
                 'type' => 'other', 'title' => 'Alerta', 'icon' => 'screen-error', 'class' => 'growl-danger',
-                'text' => 'No se puede generar el archivo porque se ha presentando un error en la generación de la nómina.',
+                'text' => 'No se puede generar el archivo porque se ha presentando ' .
+                          'un error en la generación de la nómina.',
             ]);
             return redirect()->route('payroll.registers.index');
         }

@@ -419,7 +419,7 @@ Route::group(
                 '/get-accounts',
                 'Reports\BudgetReportsController@getAccounts'
             );
-            Route::get(
+            Route::post(
                 '/consolidated-export',
                 'Reports\BudgetReportsController@budgetConsolidatedExport'
             );

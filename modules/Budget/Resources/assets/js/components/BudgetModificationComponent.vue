@@ -44,10 +44,11 @@
                 </div>
                 <div class="col-4" v-if="type_modification === 'AC'">
                     <div class="form-group is-required">
-                        <label class="control-label">Moneda</label>
-                        <select2 tabindex="3" :options="currencies" id="currencyy" data-toggle="tooltip"
-                            title="Seleccione el tipo de moneda (requerido)" v-model="record.currency_id">
-                        </select2>
+                        <label for="currency" class="control-label">Moneda</label>
+                        <select2
+                            :options="currencies" id="currency" data-toggle="tooltip"
+                            title="Seleccione el tipo de moneda (requerido)" v-model="record.currency_id"
+                        ></select2>
                     </div>
                 </div>
                 <div class="col-md-4" id="document">
@@ -100,7 +101,7 @@
                 <h6 class="text-center card-title">Cuentas presupuestarias</h6>
                 <div class="row">
                     <div class="col-12 pad-top-20" v-if="!(type_modification === 'TR')">
-                        <table border="1px" cellpadding="0px" cellspacing="0px" style="width:100%">
+                        <table class="cellpadding-0 cellspacing-0" border="1px">
                             <thead>
                                 <tr>
                                     <th>Acción Específica</th>
@@ -168,15 +169,15 @@
                                     </th>
                                 </tr>
                                 <tr>
-                                    <th>Acción Específica</th>
-                                    <th>Cuenta</th>
-                                    <th>Descripción</th>
-                                    <th class="border-right">Monto</th>
-                                    <th>Acción Específica</th>
-                                    <th>Cuenta</th>
-                                    <th>Descripción</th>
-                                    <th>Monto</th>
-                                    <th></th>
+                                    <td><strong>Acción Específica</strong></td>
+                                    <td><strong>Cuenta</strong></td>
+                                    <td><strong>Descripción</strong></td>
+                                    <td class="border-right"><strong>Monto</strong></td>
+                                    <td><strong>Acción Específica</strong></td>
+                                    <td><strong>Cuenta</strong></td>
+                                    <td><strong>Descripción</strong></td>
+                                    <td><strong>Monto</strong></td>
+                                    <td></td>
                                 </tr>
                             </thead>
                             <tbody>
@@ -212,8 +213,8 @@
                         </table>
                     </div>
                 </div>
-                <div class="modal fade" tabindex="-1" role="dialog" id="add_account">
-                    <div class="modal-dialog vue-crud" role="document">
+                <div class="modal fade" tabindex="-1" id="add_account">
+                    <div class="modal-dialog vue-crud">
                         <div class="modal-content">
                             <div class="modal-header">
                                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -241,16 +242,21 @@
                                     <div class="row">
                                         <div class="col-6">
                                             <div class="form-group is-required">
-                                                <label>Acción Específica:</label>
-                                                <select2 :options="specific_actions" @input="getAccounts()"
-                                                    v-model="from_specific_action_id" />
+                                                <label for="budget_from_specific_action_id">Acción Específica:</label>
+                                                <select2
+                                                    id="budget_from_specific_action_id"
+                                                    :options="specific_actions" @input="getAccounts()"
+                                                    v-model="from_specific_action_id"
+                                                />
                                             </div>
                                         </div>
                                         <div class="col-6">
                                             <div class="form-group is-required">
-                                                <label>Cuenta:</label>
-                                                <select2 id="accounts" :options="accounts" @input="isDisableTR()"
-                                                    v-model="from_account_id" />
+                                                <label for="accounts">Cuenta:</label>
+                                                <select2
+                                                    id="accounts" :options="accounts" @input="isDisableTR()"
+                                                    v-model="from_account_id"
+                                                />
                                             </div>
                                         </div>
                                     </div>
@@ -259,15 +265,22 @@
                                     <div class="row">
                                         <div class="col-6">
                                             <div class="form-group is-required">
-                                                <label>Acción Específica:</label>
-                                                <select2 :options="specific_actions"
-                                                    v-model="from_specific_action_id" />
+                                                <label for="budget_from_specific_action_id">Acción Específica:</label>
+                                                <select2
+                                                    id="budget_from_specific_action_id"
+                                                    :options="specific_actions"
+                                                    v-model="from_specific_action_id"
+                                                />
                                             </div>
                                         </div>
                                         <div class="col-6">
                                             <div class="form-group is-required">
-                                                <label>Cuenta:</label>
-                                                <select2 :options="accountsAC" v-model="from_account_id" />
+                                                <label for="budget_from_account_id">Cuenta:</label>
+                                                <select2
+                                                    id="budget_from_account_id"
+                                                    :options="accountsAC"
+                                                    v-model="from_account_id"
+                                                />
                                             </div>
                                         </div>
                                     </div>
@@ -275,11 +288,13 @@
                                 <div class="row">
                                     <div class="col-md-3">
                                         <div class="form-group is-required">
-                                            <label>Monto:</label>
-                                            <input type="text" v-input-mask data-inputmask="
-                                                    'alias': 'numeric',
-                                                    'allowMinus': 'false'
-                                                " onfocus="$(this).select()" class="form-control input-sm"
+                                            <label for="budget_from_amount">Monto:</label>
+                                            <input
+                                                id="budget_from_amount"
+                                                type="text"
+                                                v-input-mask data-inputmask="'alias': 'numeric','allowMinus': 'false'"
+                                                @focus="selectText"
+                                                class="form-control input-sm"
                                                 data-toggle="tooltip" v-model="from_amount"
                                                 title="Indique el monto a asignar para la cuenta seleccionada">
                                         </div>
@@ -297,30 +312,36 @@
                                     <div class="row">
                                         <div class="col-6">
                                             <div class="form-group is-required">
-                                                <label>Acción Específica:</label>
-                                                <select2 :options="specific_actions" v-model="to_specific_action_id"
-                                                    @input="isDisableTR()" />
+                                                <label for="budget_to_specific_action_id">Acción Específica:</label>
+                                                <select2
+                                                    id="budget_to_specific_action_id"
+                                                    :options="specific_actions" v-model="to_specific_action_id"
+                                                    @input="isDisableTR()"
+                                                />
                                             </div>
                                         </div>
                                         <div class="col-6">
                                             <div class="form-group is-required">
-                                                <label>Cuenta:</label>
-                                                <select2 id="accountsAC" :options="accountsAC"
-                                                    v-model="to_account_id" />
+                                                <label for="accountsAC">Cuenta:</label>
+                                                <select2
+                                                    id="accountsAC" :options="accountsAC"
+                                                    v-model="to_account_id"
+                                                />
                                             </div>
                                         </div>
                                     </div>
                                     <div class="row">
                                         <div class="col-md-3">
                                             <div class="form-group is-required">
-                                                <label>Monto:</label>
-                                                <input type="text" v-input-mask data-inputmask="
-                                                        'alias': 'numeric',
-                                                        'allowMinus': 'false'
-                                                    " onfocus="$(this).select()" class="form-control input-sm"
-                                                    data-toggle="tooltip" readonly title="
-                                                        Indique el monto a asignar para la cuenta seleccionada
-                                                    " v-model="to_amount">
+                                                <label for="budget_to_amount">Monto:</label>
+                                                <input
+                                                    type="text" id="budget_to_amount"
+                                                    v-input-mask data-inputmask="'alias': 'numeric','allowMinus': 'false'"
+                                                    @focus="selectText" class="form-control input-sm"
+                                                    data-toggle="tooltip" readonly
+                                                    title="Indique el monto a asignar para la cuenta seleccionada"
+                                                    v-model="to_amount"
+                                                />
                                             </div>
                                         </div>
                                     </div>

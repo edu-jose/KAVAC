@@ -27,38 +27,38 @@
                         @include('buttons.new', ['route' => route('payroll.salary-adjustments.create')])
                         @permission('payroll.salary.adjustments.import')
                             {!! Form::button('<i class="fa fa-upload"></i>', [
+                                'id'          => 'btnImport',
                                 'class'       => 'btn btn-sm btn-primary btn-custom',
                                 'data-toggle' => 'tooltip',
                                 'type'        => 'button',
-                                'title'       => __('Importar registros'),
-                                'onclick'     => "$('input[name=importFile]').click()"
+                                'title'       => __('Importar registros')
                             ]) !!}
                             <input
                                 id="importFile" name="importFile"
                                 type="file"
                                 style="display:none"
-                                onchange="importData()"
                             >
-						@endpermission
+                        @endpermission
                         @permission('payroll.salary.adjustments.export')
                             {!! Form::button('<i class="fa fa-download"></i>', [
+                                'id'          => 'btnExport',
                                 'class'       => 'btn btn-sm btn-primary btn-custom',
                                 'data-toggle' => 'tooltip',
                                 'type'        => 'button',
-                                'title'       => "Presione para descargar el documento con la información de los registros.",
-                                'onclick'     => "exportData()"
+                                'title'       => "Presione para descargar el documento con la información de los registros."
                             ]) !!}
-						@endpermission
+                        @endpermission
                         @include('buttons.minimize')
                     </div>
                 </div>
                 <div class="card-body">
                     <div class="col-12">
-                        <payroll-salary-adjustments-list route_list="{{ url('payroll/salary-adjustments/vue-list') }}"
-                                              route_delete="{{ url('payroll/salary-adjustments') }}"
-                                              route_edit="{{ url('payroll/salary-adjustments/{id}/edit') }}"
-                                              route_show="{{ url('payroll/salary-adjustments/{id}') }}">
-                        </payroll-salary-adjustments-list>
+                        <payroll-salary-adjustments-list
+                            route_list="{{ url('payroll/salary-adjustments/vue-list') }}"
+                            route_delete="{{ url('payroll/salary-adjustments') }}"
+                            route_edit="{{ url('payroll/salary-adjustments/{id}/edit') }}"
+                            route_show="{{ url('payroll/salary-adjustments/{id}') }}"
+                        ></payroll-salary-adjustments-list>
                     </div>
                 </div>
             </div>
@@ -67,6 +67,17 @@
 @stop
 @section('extra-js')
     <script type="text/javascript" nonce="{{ session()->get('nonce') }}">
+        $(document).ready(function() {
+            const btnImport = document.querySelector('#btnImport');
+            const importFile = document.querySelector('#importFile');
+            const btnExport = document.querySelector('#btnExport');
+            btnImport.addEventListener('click', function() {
+                $('input[name=importFile]').click();
+            });
+            importFile.addEventListener('change', importData);
+            btnExport.addEventListener('click', exportData);
+        });
+
         var records;
 
         function exportData() {
@@ -84,6 +95,9 @@
                 }
             }).then(response => {
                 console.log(response.data);
+                setTimeout(function(){
+                    location.reload();
+                }, 1800);
                 var texterror = 'Registro almacenado con exito';
                 if (typeof response.data.errors !== 'undefined' && response.data.errors.length > 0) {
                     texterror = "Registros almacenados con exito, se encontraron " + response.data.errors.length + "errores, por favor revise la consola del navegador y/o correo enviado con los errores correspondientes";

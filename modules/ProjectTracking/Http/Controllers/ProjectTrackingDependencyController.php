@@ -11,6 +11,7 @@ use Illuminate\Contracts\Support\Renderable;
 use Illuminate\Routing\Controller;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Modules\ProjectTracking\Models\ProjectTrackingDependency;
+use App\Models\Department;
 
 /**
  * @class ProjectTrackingDependencyController
@@ -71,24 +72,26 @@ class ProjectTrackingDependencyController extends Controller
      * Muestra todos los registros de dependencias
      *
      * @author William Páez <wpaez@cenditel.gob.ve>
+     * @modified by Miguel Narvaez <mnarvaez@cenditel.gob.ve>
      *
      * @return \Illuminate\Http\JsonResponse    Json con los datos de dependencias
      */
     public function index()
     {
-        return response()->json(['records' => ProjectTrackingDependency::all()], 200);
+        return response()->json(['records' => Department::all()], 200);
     }
 
     /**
      * Retorna un json con todas las dependencias para ser usado en un componente <select2>
      *
      * @author Oscar González <xxmaestroyixx@gmail.com>
+     * @modified by Miguel Narvaez <mnarvaez@cenditel.gob.ve>
      *
      * @return \Illuminate\Http\JsonResponse
      */
     public function getDependencies()
     {
-        $dependenciesList = ProjectTrackingDependency::all();
+        $dependenciesList = Department::all();
         $dependencies = [];
         array_push(
             $dependencies,
@@ -213,13 +216,14 @@ class ProjectTrackingDependencyController extends Controller
      * Obtiene las dependencias registradas
      *
      * @author William Páez <wpaez@cenditel.gob.ve>
+     * @modified by Miguel Narvaez <mnarvaez@cenditel.gob.ve>
      *
      * @return \Illuminate\Http\JsonResponse    Json con los datos de cargos
      */
     public function getProjectTrackingDependencies()
     {
         return response()->json(
-            template_choices('Modules\ProjectTracking\Models\ProjectTrackingDependency', 'name', '', true)
+            template_choices('App\Models\Department', 'name', '', true)
         );
     }
 }

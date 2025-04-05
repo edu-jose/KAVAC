@@ -37,6 +37,7 @@ class PaymentTypeResource extends JsonResource
             'receipt'               => $this->resource->receipt,
             'individual'            => $this->resource->individual,
             'skip_moments'          => $this->resource->skip_moments,
+            'is_trust'              => $this->resource->is_trust,
             'start_date'            => $this->resource->start_date,
             'finance_bank_account_id' => $this->resource->finance_bank_account_id,
             'finance_payment_method_id' => $this->resource->finance_payment_method_id,

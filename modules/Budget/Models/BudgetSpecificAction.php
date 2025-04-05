@@ -107,6 +107,6 @@ class BudgetSpecificAction extends Model implements Auditable
      */
     public function getDate()
     {
-        return $this->from_date;
+        return $this->to_date;
     }
 }

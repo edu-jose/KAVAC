@@ -15,40 +15,13 @@
                 </div>
             </div>
             <div class="card-body">
-                @if (
-                    $errors->has('onapre_code') ||
-                        $errors->has('rif') ||
-                        $errors->has('name') ||
-                        $errors->has('acronym') ||
-                        $errors->has('business_name') ||
-                        $errors->has('country_id') ||
-                        $errors->has('estate_id') ||
-                        $errors->has('municipality_id') ||
-                        $errors->has('city_id') ||
-                        $errors->has('parish_id') ||
-                        $errors->has('postal_code') ||
-                        $errors->has('start_operations_date') ||
-                        $errors->has('organism_adscript_id') ||
-                        $errors->has('institution_sector_id') ||
-                        $errors->has('institution_type_id') ||
-                        $errors->has('legal_address') ||
-                        $errors->has('active') ||
-                        $errors->has('default') ||
-                        $errors->has('retention_agent') ||
-                        $errors->has('web') ||
-                        $errors->has('social_networks') ||
-                        $errors->has('legal_base') ||
-                        $errors->has('legal_form') ||
-                        $errors->has('main_activity') ||
-                        $errors->has('mission') ||
-                        $errors->has('vision') ||
-                        $errors->has('composition_assets'))
+                @if ( count($errors->all()) > 0 )
                     @include('layouts.form-errors')
                 @endif
                 <div id="helpInstitutionImgs" class="row">
                     <div class="col-md-4">
                         <div class="form-group">
-                            <label for="">{{ __('Logotipo *') }}</label>
+                            <label for="">{{ __('Logotipo ') }} <label for="" class="text-danger"><h4>*</h4></label></label>
                             {!! Form::open([
                                 'id' => 'formImgLogo',
                                 'method' => 'POST',
@@ -314,6 +287,27 @@
                                 ]) !!}
                             </div>
                         </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                {!! Form::label('web', __('Sitio Web'), []) !!}
+                                {!! Form::text('web', isset($model_institution) ? $model_institution->web : old('web'), [
+                                    'class' => 'form-control input-sm',
+                                    'id' => 'web',
+                                    'data-toggle' => 'tooltip',
+                                    'title' => __('Indique la URL del sitio web'),
+                                ]) !!}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="email">{{ __('Correo electrónico de contacto') }}</label>
+                                <input
+                                    type="email" name="email" id="email" class="form-control input-sm"
+                                    value="{{ isset($model_institution) ? $model_institution->email : old('email') }}"
+                                    data-toggle="tooltip" title="{{ __('Indique el correo electrónico de contacto') }}"
+                                >
+                            </div>
+                        </div>
                     </div>
                     <div class="row">
                         <div class="col-md-8">
@@ -386,7 +380,7 @@
                                                     'class' => 'custom-control-input',
                                                 ],
                                             ) !!}
-                                            <label class="custom-control-label" for="retention_agent"></label>
+                                            <label class="custom-control-label" for="retention_agent">&nbsp;</label>
                                         </div>
                                     </div>
                                 </div>
@@ -394,16 +388,12 @@
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                {!! Form::label('web', __('Sitio Web'), []) !!}
-                                {!! Form::text('web', isset($model_institution) ? $model_institution->web : old('web'), [
-                                    'class' => 'form-control input-sm',
-                                    'id' => 'web',
-                                    'data-toggle' => 'tooltip',
-                                    'title' => __('Indique la URL del sitio web'),
-                                ]) !!}
-                            </div>
+                        <div class="col-12 mt-2">
+                            <phones
+                                @if (isset($model_institution) && $model_institution->phones)
+                                    initial_data="{{ json_encode($model_institution->phones) }}"
+                                @endif
+                            ></phones>
                         </div>
                     </div>
                 </div>
@@ -560,10 +550,14 @@
     </div>
 </div>
 <!-- Modal -->
-<div id="detailsInstitutionModal" class="modal fade" tabindex="-1" role="dialog"
-    aria-labelledby="detailsInstitutionModal" aria-hidden="true">
-    <div class="modal-dialog  modal-dialog-scrollable modal-xl text-left" role="document"
-        style="max-width: 60rem; color: #636e7b; font-size: 13px">
+<div
+    id="detailsInstitutionModal" class="modal fade" tabindex="-1"
+    aria-labelledby="detailsInstitutionModal" aria-hidden="true"
+>
+    <div
+        class="modal-dialog  modal-dialog-scrollable modal-xl text-left"
+        style="max-width: 60rem; color: #636e7b; font-size: 13px"
+    >
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -581,12 +575,17 @@
                         <div class="row justify-content-center">
                             <div class="col-8 col-lg-3">
                                 <p class="text-center mb-1 font-weight-bold">{{ __('Logotipo') }}</p>
-                                <img id="modal-logo" class="w-100"
-                                    src="{{ asset('/images/no-image2.png', Request::secure()) }}">
+                                <img
+                                    id="modal-logo" class="w-100"
+                                    src="{{ asset('/images/no-image2.png', Request::secure()) }}"
+                                    alt=""
+                                >
                             </div>
                             <div class="col-8 col-lg-7">
                                 <p class="text-center mb-1 font-weight-bold">{{ __('Banner o Cintillo') }}</p>
-                                <img id="modal-banner" class="w-100" src="{{ asset('/images/no-image3.png') }}">
+                                <img
+                                    id="modal-banner" class="w-100" src="{{ asset('/images/no-image3.png') }}" alt=""
+                                >
                             </div>
                         </div>
                         {{-- Detalles --}}
@@ -602,7 +601,7 @@
                                         <strong>{{ __('Código ONAPRE') }}:</strong>
                                         <div class="row">
                                             <span class="col-md-12">
-                                                <a id="modal-onapre_code"></a>
+                                                <span id="modal-onapre_code"></span>
                                             </span>
                                         </div>
                                     </div>
@@ -613,7 +612,7 @@
                                     <strong>{{ __('R.I.F.') }}:</strong>
                                     <div class="row">
                                         <span class="col-md-12">
-                                            <a id="modal-rif"></a>
+                                            <span id="modal-rif"></span>
                                         </span>
                                     </div>
                                 </div>
@@ -623,7 +622,7 @@
                                     <strong>{{ __('Nombre') }}:</strong>
                                     <div class="row">
                                         <span class="col-md-12">
-                                            <a id="modal-name"></a>
+                                            <span id="modal-name"></span>
                                         </span>
                                     </div>
                                 </div>
@@ -633,7 +632,7 @@
                                     <strong>{{ __('Acrónimo (Nombre corto)') }}</strong>
                                     <div class="row">
                                         <span class="col-md-12">
-                                            <a id="modal-acronym"></a>
+                                            <span id="modal-acronym"></span>
                                         </span>
                                     </div>
                                 </div>
@@ -643,7 +642,7 @@
                                     <strong>{{ __('Razón Social') }}:</strong>
                                     <div class="row">
                                         <span class="col-md-12">
-                                            <a id="modal-business_name"></a>
+                                            <span id="modal-business_name"></span>
                                         </span>
                                     </div>
                                 </div>
@@ -653,7 +652,7 @@
                                     <strong>{{ __('País') }}:</strong>
                                     <div class="row">
                                         <span class="col-md-12">
-                                            <a id="modal-country_id"></a>
+                                            <span id="modal-country_id"></span>
                                         </span>
                                     </div>
                                 </div>
@@ -663,7 +662,7 @@
                                     <strong>{{ __('Estado') }}:</strong>
                                     <div class="row">
                                         <span class="col-md-12">
-                                            <a id="modal-estate_id"></a>
+                                            <span id="modal-estate_id"></span>
                                         </span>
                                     </div>
                                 </div>
@@ -674,7 +673,7 @@
                                     <strong>{{ __('Ciudad') }}:</strong>
                                     <div class="row">
                                         <span class="col-md-12">
-                                            <a id="modal-city_id"></a>
+                                            <span id="modal-city_id"></span>
                                         </span>
                                     </div>
                                 </div>
@@ -684,7 +683,7 @@
                                     <strong>{{ __('Municipio') }}:</strong>
                                     <div class="row">
                                         <span class="col-md-12">
-                                            <a id="modal-municipality_id"></a>
+                                            <span id="modal-municipality_id"></span>
                                         </span>
                                     </div>
                                 </div>
@@ -694,7 +693,7 @@
                                     <strong>{{ __('Código Postal') }}:</strong>
                                     <div class="row">
                                         <span class="col-md-12">
-                                            <a id="modal-postal_code"></a>
+                                            <span id="modal-postal_code"></span>
                                         </span>
                                     </div>
                                 </div>
@@ -704,7 +703,7 @@
                                     <strong>{{ __('Fecha de inicio de operaciones') }}:</strong>
                                     <div class="row">
                                         <span class="col-md-12">
-                                            <a id="modal-start_operations_date"></a>
+                                            <span id="modal-start_operations_date"></span>
                                         </span>
                                     </div>
                                 </div>
@@ -714,7 +713,7 @@
                                     <strong>{{ __('Sectores Económicos') }}:</strong>
                                     <div class="row">
                                         <span class="col-md-12">
-                                            <a id="modal-institution_sector_id"></a>
+                                            <span id="modal-institution_sector_id"></span>
                                         </span>
                                     </div>
                                 </div>
@@ -724,7 +723,7 @@
                                     <strong>{{ __('Tipo de Organización') }}:</strong>
                                     <div class="row">
                                         <span class="col-md-12">
-                                            <a id="modal-institution_type_id"></a>
+                                            <span id="modal-institution_type_id"></span>
                                         </span>
                                     </div>
                                 </div>
@@ -734,7 +733,7 @@
                                     <strong>{{ __('Dirección Fiscal') }}:</strong>
                                     <div class="row">
                                         <span class="col-md-12">
-                                            <a id="modal-legal_address"></a>
+                                            <span id="modal-legal_address"></span>
                                         </span>
                                     </div>
                                 </div>
@@ -744,7 +743,7 @@
                                     <strong>{{ __('Activa') }}:</strong>
                                     <div class="row">
                                         <span class="col-md-12">
-                                            <a id="modal-active"></a>
+                                            <span id="modal-active"></span>
                                         </span>
                                     </div>
                                 </div>
@@ -754,7 +753,7 @@
                                     <strong>{{ __('Organización por defecto') }}:</strong>
                                     <div class="row">
                                         <span class="col-md-12">
-                                            <a id="modal-default"></a>
+                                            <span id="modal-default"></span>
                                         </span>
                                     </div>
                                 </div>
@@ -764,7 +763,7 @@
                                     <strong>{{ __('Agente de Retención') }}:</strong>
                                     <div class="row">
                                         <span class="col-md-12">
-                                            <a id="modal-retention_agent"></a>
+                                            <span id="modal-retention_agent"></span>
                                         </span>
                                     </div>
                                 </div>
@@ -774,12 +773,33 @@
                                     <strong>{{ __('Sitio web') }}:</strong>
                                     <div class="row">
                                         <span class="col-md-12">
-                                            <a id="modal-web"></a>
+                                            <span id="modal-web"></span>
                                         </span>
                                     </div>
                                 </div>
                             </div>
-
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <strong>{{ __('Correo electrónico') }}:</strong>
+                                    <div class="row">
+                                        <span class="col-md-12">
+                                            <span id="modal-email"></span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <strong>{{ __('Teléfonos') }}:</strong>
+                                    <div class="row">
+                                        <span class="col-md-12">
+                                            <span id="modal-phones"></span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
                             <div class="col-md-4 " style="padding-top: 1rem;padding-bottom: 1rem;">
                                 <u>
                                     <h6 class="">{{ __('DATOS COMPLEMENTARIOS') }}:</h6>
@@ -792,7 +812,7 @@
                                     <strong>{{ __('Base Legal') }}:</strong>
                                     <div class="row">
                                         <span class="col-md-12">
-                                            <a id="modal-legal_base"></a>
+                                            <span id="modal-legal_base"></span>
                                         </span>
                                     </div>
                                 </div>
@@ -802,7 +822,7 @@
                                     <strong>{{ __('Forma Jurídica') }}:</strong>
                                     <div class="row">
                                         <span class="col-md-12">
-                                            <a id="modal-legal_form"></a>
+                                            <span id="modal-legal_form"></span>
                                         </span>
                                     </div>
                                 </div>
@@ -812,7 +832,7 @@
                                     <strong>{{ __('Actividad Principal') }}:</strong>
                                     <div class="row">
                                         <span class="col-md-12">
-                                            <a id="modal-main_activity"></a>
+                                            <span id="modal-main_activity"></span>
                                         </span>
                                     </div>
                                 </div>
@@ -822,7 +842,7 @@
                                     <strong>{{ __('Misión') }}:</strong>
                                     <div class="row">
                                         <span class="col-md-12">
-                                            <a id="modal-mission"></a>
+                                            <span id="modal-mission"></span>
                                         </span>
                                     </div>
                                 </div>
@@ -832,7 +852,7 @@
                                     <strong>{{ __('Visión') }}:</strong>
                                     <div class="row">
                                         <span class="col-md-12">
-                                            <a id="modal-vision"></a>
+                                            <span id="modal-vision"></span>
                                         </span>
                                     </div>
                                 </div>
@@ -842,7 +862,7 @@
                                     <strong>{{ __('Composición de Patrimonio') }}:</strong>
                                     <div class="row">
                                         <span class="col-md-12">
-                                            <a id="modal-composition_assets"></a>
+                                            <span id="modal-composition_assets"></span>
                                         </span>
                                     </div>
                                 </div>
@@ -851,8 +871,10 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-default btn-sm btn-round btn-modal-close"
-                        data-dismiss="modal">
+                    <button
+                        type="button" class="btn btn-default btn-sm btn-round btn-modal-close"
+                        data-dismiss="modal"
+                    >
                         {{ __('Cerrar') }}
                     </button>
                 </div>
@@ -863,8 +885,10 @@
 
 <!-- Modal -->
 <!-- Modal 2 -->
-<div id="detailsInstitutionModal1" class="modal fade" tabindex="-1" aria-labelledby="detailsInstitutionModalLabel"
-    aria-hidden="true">
+<div
+    id="detailsInstitutionModal1" class="modal fade" tabindex="-1" aria-labelledby="detailsInstitutionModalLabel"
+    aria-hidden="true"
+>
     <div class="modal-dialog modal-dialog-scrollable modal-xl">
         <div class="modal-content">
             <div class="modal-header">
@@ -878,12 +902,14 @@
                 <div class="row justify-content-center">
                     <div class="col-8 col-lg-3">
                         <p class="text-center mb-1 font-weight-bold">Logotipo</p>
-                        <img id="modal-logo" class="w-100"
-                            src="{{ asset('/images/no-image2.png', Request::secure()) }}">
+                        <img
+                            id="modal-logo" class="w-100" alt=""
+                            src="{{ asset('/images/no-image2.png', Request::secure()) }}"
+                        >
                     </div>
                     <div class="col-8 col-lg-7">
                         <p class="text-center mb-1 font-weight-bold">Banner o Cintillo</p>
-                        <img id="modal-banner" class="w-100" src="{{ asset('/images/no-image3.png') }}">
+                        <img id="modal-banner" class="w-100" src="{{ asset('/images/no-image3.png') }}" alt="">
                     </div>
                 </div>
                 {{-- Detalles --}}
@@ -893,24 +919,28 @@
                         <div class="col-4">
                             <span class="font-weight-bold">Código ONAPRE</span>
                             <br>
-                            <input type="text" data-toggle="tooltip" class="form-control input-sm"
-                                disabled="true" id="modal-onapre_code">
-
-
+                            <input
+                                type="text" data-toggle="tooltip" class="form-control input-sm"
+                                disabled="true" id="modal-onapre_code"
+                            >
                         </div>
                     @endif
                     <div class="col-4">
                         <span class="font-weight-bold">R.I.F.</span>
                         <br>
-                        <input type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
-                            id="modal-rif">
+                        <input
+                            type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
+                            id="modal-rif"
+                        >
 
                     </div>
                     <div class="col-{{ config('institution.use_onapre') ? '4' : '8' }}">
                         <span class="font-weight-bold">Nombre</span>
                         <br>
-                        <input type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
-                            id="modal-name">
+                        <input
+                            type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
+                            id="modal-name"
+                        >
 
                     </div>
                 </div>
@@ -919,22 +949,27 @@
                     <div class="col-4">
                         <span class="font-weight-bold">Acrónimo (Nombre corto)</span>
                         <br>
-                        <input type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
-                            id="modal-acronym">
+                        <input
+                            type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
+                            id="modal-acronym"
+                        >
 
                     </div>
                     <div class="col-4">
                         <span class="font-weight-bold">Razón Social</span>
                         <br>
-                        <input type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
-                            id="modal-business_name">
+                        <input
+                            type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
+                            id="modal-business_name"
+                        >
                     </div>
                     <div class="col-4">
                         <span class="font-weight-bold">País</span>
                         <br>
-                        <input type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
-                            id="modal-country_id">
-
+                        <input
+                            type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
+                            id="modal-country_id"
+                        >
                     </div>
                 </div>
                 <hr>
@@ -942,23 +977,26 @@
                     <div class="col-4">
                         <span class="font-weight-bold">Estado</span>
                         <br>
-                        <input type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
-                            id="modal-estate_id">
-
+                        <input
+                            type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
+                            id="modal-estate_id"
+                        >
                     </div>
                     <div class="col-4">
                         <span class="font-weight-bold">Municipio</span>
                         <br>
-                        <input type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
-                            id="modal-municipality_id">
-
+                        <input
+                            type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
+                            id="modal-municipality_id"
+                        >
                     </div>
                     <div class="col-4">
                         <span class="font-weight-bold">Ciudad</span>
                         <br>
-                        <input type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
-                            id="modal-city_id">
-
+                        <input
+                            type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
+                            id="modal-city_id"
+                        >
                     </div>
                 </div>
                 <hr>
@@ -966,35 +1004,37 @@
                     <div class="col-4">
                         <span class="font-weight-bold">Código Postal</span>
                         <br>
-                        <input type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
-                            id="modal-postal_code">
-
+                        <input
+                            type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
+                            id="modal-postal_code"
+                        >
                     </div>
                     <div class="col-4">
                         <span class="font-weight-bold">Fecha de inicio de operaciones</span>
                         <br>
-                        <input type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
-                            id="modal-start_operations_date">
-
+                        <input
+                            type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
+                            id="modal-start_operations_date"
+                        >
                     </div>
                     <div class="col-4">
                         <span class="font-weight-bold">Sectores Económicos</span>
                         <br>
-                        <input type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
-                            id="modal-institution_sector_id">
-
+                        <input
+                            type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
+                            id="modal-institution_sector_id"
+                        >
                     </div>
                 </div>
                 <hr>
                 <div class="row ">
-
-
                     <div class="col-4">
                         <span class="font-weight-bold">Tipo de Organización</span>
                         <br>
-                        <input type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
-                            id="modal-institution_type_id">
-
+                        <input
+                            type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
+                            id="modal-institution_type_id"
+                        >
                     </div>
                 </div>
                 <hr>
@@ -1002,10 +1042,7 @@
                     <div class="col-12">
                         <span class="font-weight-bold">Dirección Fiscal</span>
                         <br>
-
-                        <textarea id="modal-legal_address" rows="4" cols="40" disabled>
-                                          </textarea>
-
+                        <textarea id="modal-legal_address" rows="4" cols="40" disabled></textarea>
                     </div>
                 </div>
                 <hr>
@@ -1013,23 +1050,26 @@
                     <div class="col-4">
                         <span class="font-weight-bold">Activa</span>
                         <br>
-                        <input type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
-                            id="modal-active">
-
+                        <input
+                            type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
+                            id="modal-active"
+                        >
                     </div>
                     <div class="col-4">
                         <span class="font-weight-bold">Organización por defecto</span>
                         <br>
-                        <input type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
-                            id="modal-default">
-
+                        <input
+                            type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
+                            id="modal-default"
+                        >
                     </div>
                     <div class="col-4">
                         <span class="font-weight-bold">Agente de Retención</span>
                         <br>
-                        <input type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
-                            id="modal-retention_agent">
-
+                        <input
+                            type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
+                            id="modal-retention_agent"
+                        >
                     </div>
                 </div>
                 <hr>
@@ -1037,14 +1077,13 @@
                     <div class="col-4">
                         <span class="font-weight-bold">Sitio web</span>
                         <br>
-                        <input type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
-                            id="modal-web">
-
+                        <input
+                            type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
+                            id="modal-web"
+                        >
                     </div>
-                    <div class="col-4">
-                    </div>
-                    <div class="col-4">
-                    </div>
+                    <div class="col-4"></div>
+                    <div class="col-4"></div>
                 </div>
                 <hr>
                 <h6 class="">DATOS COMPLEMENTARIOS:</h6>
@@ -1052,18 +1091,12 @@
                     <div class="col-6">
                         <span class="font-weight-bold">Base Legal</span>
                         <br>
-                        <textarea id="modal-legal_base" rows="4" cols="40" disabled>
-                                          </textarea>
-
-
+                        <textarea id="modal-legal_base" rows="4" cols="40" disabled></textarea>
                     </div>
                     <div class="col-6">
                         <span class="font-weight-bold">Forma Jurídica</span>
                         <br>
-                        <textarea id="modal-legal_form" rows="4" cols="40" disabled>
-                                          </textarea>
-
-
+                        <textarea id="modal-legal_form" rows="4" cols="40" disabled></textarea>
                     </div>
                 </div>
                 <hr>
@@ -1071,10 +1104,7 @@
                     <div class="col-6">
                         <span class="font-weight-bold">Actividad Principal</span>
                         <br>
-                        <textarea id="modal-main_activity" rows="4" cols="40" disabled>
-                                          </textarea>
-
-
+                        <textarea id="modal-main_activity" rows="4" cols="40" disabled></textarea>
                     </div>
                     <div class="col-6">
                         <span class="font-weight-bold">Misión</span>
@@ -1109,8 +1139,22 @@
     {!! Html::script('js/ckeditor.js', [], Request::secure()) !!}
     <script nonce="{{ session()->get('nonce') }}">
         $(document).ready(function() {
+            $('#country_id').on('change', function() {
+                updateSelect($(this), $("#estate_id"), "Estate");
+            });
+            $('#estate_id').on('change', function() {
+                updateSelect($(this), $("#municipality_id"), "Municipality");
+                updateSelect($(this), $("#city_id"), "City");
+            });
             $('.btn-show-institution').on('click', function() {
                 showInstitution($(this).data('id'));
+            });
+            $('.datatable').on('draw.dt', function () {
+                $('.btn-show-institution').on('click', function() {
+                    if (!$('.modal').hasClass('show')) {
+                        showInstitution($(this).data('id'));
+                    }
+                });
             });
             $('#delBannerImage').on('click', function() {
                 deleteImage($(this), $('#banner_id').val(), '3');
@@ -1129,13 +1173,6 @@
             });
             $('#banner_image').on('change', function() {
                 uploadSingleImage('formImgBanner', 'banner_image', 'banner_id', 'institution-banner');
-            });
-            $('#country_id').on('change', function() {
-                updateSelect($(this), $("#estate_id"), "Estate");
-            });
-            $('#estate_id').on('change', function() {
-                updateSelect($(this), $("#municipality_id"), "Municipality");
-                updateSelect($(this), $("#city_id"), "City");
             });
             if (typeof CkEditor !== 'undefined') {
                 $.each([
@@ -1197,10 +1234,6 @@
          * @param  {integer} id Identificador de la Organización a cargar
          */
         var loadInstitution = function(id) {
-
-
-            $('#country_id').attr("onChange", "return('cambio');");
-            $('#estate_id').attr("onChange", "return('cambio');");
             axios.get(`get-institution/details/${id}`).then(response => {
                 if (response.data.result) {
                     var institution = response.data.institution;
@@ -1311,10 +1344,6 @@
                 console.log(error);
                 logs('setting-institution', 594, error, 'loadInstitution');
             });
-            $('#country_id').attr('onChange', 'updateSelect($(this),$("#estate_id"),"Estate")');
-            $('#estate_id').attr('onChange',
-                'updateSelect($(this), $("#municipality_id"), "Municipality"),updateSelect($(this), $("#city_id"), "City")'
-                );
         }
         @if (old('country_id') !== '')
             $("#country_id").click();
@@ -1335,8 +1364,12 @@
          * @param  {integer} id Identificador de la Organización a cargar
          */
         var showInstitution = function(id) {
+            if (isModalOpen) {
+                return;
+            }
             axios.get(`get-institution/details/${id}`).then(response => {
                 if (response.data.result) {
+                    isModalOpen = true;
                     var institution = response.data.institution;
                     var activeInst = (institution.active) ? 'SI' : 'NO';
                     var defaultInst = (institution.default) ? 'SI' : 'NO';
@@ -1375,6 +1408,22 @@
                     if (institution.web) {
                         $("#modal-web").html(institution.web);
                     }
+                    if (institution.email) {
+                        $("#modal-email").html(institution.email);
+                    }
+                    if (institution.phones) {
+                        let phoneTypes = {
+                            'T': 'Teléfono',
+                            'M': 'Movil',
+                            'F': 'Fax',
+                        };
+                        let phones = '<ul>';
+                        institution.phones.forEach(phone => {
+                            phones += `<li>${phoneTypes[phone.type]}: (${phone.area_code})-${phone.number}${phone.extension ? ' Extensión: ' + phone.extension : ''}</li>`;
+                        });
+                        phones += '</ul>';
+                        $("#modal-phones").html(phones);
+                    }
                     $('#modal-active').html(activeInst);
                     $('#modal-default').html(defaultInst);
                     $('#modal-retention_agent').html(retAgentInst);
@@ -1405,6 +1454,9 @@
 
                     // Abre la modal
                     $('#detailsInstitutionModal').modal('show');
+                    $('#detailsInstitutionModal').on('hidden.bs.modal', function () {
+                        isModalOpen = false; // Cambia el estado a cerrado cuando el modal se oculta
+                    });
                 }
             }).catch(error => {
                 logs('setting-institution', 594, error, 'loadInstitution');

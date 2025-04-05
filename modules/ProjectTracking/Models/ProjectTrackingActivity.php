@@ -42,7 +42,8 @@ class ProjectTrackingActivity extends Model implements Auditable
         'name_activity',
         'description',
         'project_tracking_type_products_id',
-        'project_tracking_project_types_id'
+        'project_tracking_project_types_id',
+        'code'
     ];
 
     /**

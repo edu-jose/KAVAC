@@ -26,15 +26,23 @@
                     </h6>
                     <div class="card-btns">
                         @include('buttons.previous', ['route' => route('budget.subspecific-formulations.index')])
-                        @include('buttons.print', ['route' => route('print.formulated', ['id' => $formulation->id])])
-                        <a href="{{ route('export', ['id' => $formulation->id]) }}" class="btn btn-sm btn-primary btn-custom" data-toggle="tooltip"
-                        title="{{ __('Exportar registro') }}" target="_blank">
-                            <i class="fa fa-file-excel-o"></i>
-                        </a>
-
+                        
+                        <budget-print-with-modal
+                        report_url={{ route('print.formulated', ['id' => $formulation->id]) }}
+                        id={{ $formulation->id }}
+                        />
+                    </div>
+                    <div class="card-btns">
+                        <budget-export-with-modal
+                        report_url={{ route('export', ['id' => $formulation->id]) }}
+                        id={{ $formulation->id }}
+                        />
+                    </div>
+                    <div class="card-btns">
                         @if ($enable)
-                            {{-- @include('buttons.sign', ['route' => route('print.formulatedsign', ['id' => $formulation->id])]) --}}
+                        {{-- @include('buttons.sign', ['route' => route('print.formulatedsign', ['id' => $formulation->id])]) --}}
                         @endif
+
                         @include('buttons.minimize')
                     </div>
                 </div>

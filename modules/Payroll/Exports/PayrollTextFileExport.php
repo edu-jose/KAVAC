@@ -131,6 +131,13 @@ class PayrollTextFileExport implements FromArray, ShouldAutoSize, WithCustomCsvS
     protected $nameDecimalFunction;
 
     /**
+     * Indica si es un txt de fideicomiso
+     *
+     * @var Parameter $trust_code
+     */
+    protected $trust_code;
+
+    /**
      * Método constructor de la clase
      *
      * @return void
@@ -145,7 +152,7 @@ class PayrollTextFileExport implements FromArray, ShouldAutoSize, WithCustomCsvS
      *
      * @param integer|array $payrollId Identificador único del tabuldor salarial
      */
-    public function setPayrollId($payrollId, $bank_account, $file_number, $date)
+    public function setPayrollId($payrollId, $bank_account, $file_number, $date, $trust_code = null)
     {
         $payrolls = Payroll::query()->whereIn('id', $payrollId)->get();
 
@@ -161,6 +168,7 @@ class PayrollTextFileExport implements FromArray, ShouldAutoSize, WithCustomCsvS
         $this->bank_account = $bank_account;
         $this->file_number = $file_number;
         $this->date = $date;
+        $this->trust_code = $trust_code != null ? $trust_code : false;
 
         $i = 1;
         $data = [];
@@ -247,6 +255,11 @@ class PayrollTextFileExport implements FromArray, ShouldAutoSize, WithCustomCsvS
                 $payroll["payroll_staff"]["payroll_nationality"]["country"]["name"],
                 $payroll["payroll_staff"]["payroll_financial"][0]["finance_account_type"]["code"] ?? ''
             ];
+
+            if ($this->trust_code != false) {
+                $data[] = $payroll["payroll_staff"]["first_name"];
+                $data[] = $payroll["payroll_staff"]["last_name"];
+            }
 
             $total = 0;
             $flagSign = '';
@@ -357,10 +370,18 @@ class PayrollTextFileExport implements FromArray, ShouldAutoSize, WithCustomCsvS
         }
 
         foreach ($this->records as $id => $dataArray) {
-            $this->buildString($dataArray);
+            if ($this->trust_code != false) {
+                $this->buildTrustString($dataArray);
+            } else {
+                $this->buildString($dataArray);
+            }
         }
 
-        $headings = getHeading($this->payroll_total, $this->bank_account, $this->date, $this->file_number);
+        if ($this->trust_code != false) {
+            $headings = getTrustHeading($this->payroll_total, $this->trust_code, $this->date, $this->file_number, count($this->records));
+        } else {
+            $headings = getHeading($this->payroll_total, $this->bank_account, $this->date, $this->file_number);
+        }
 
         array_unshift($this->result, [$headings]);
 
@@ -376,7 +397,6 @@ class PayrollTextFileExport implements FromArray, ShouldAutoSize, WithCustomCsvS
      */
     public function buildString($data)
     {
-
         $record = substr($data[8], -1);
 
         $space_index = array_search(' ', $data);
@@ -399,6 +419,50 @@ class PayrollTextFileExport implements FromArray, ShouldAutoSize, WithCustomCsvS
 
         $record = $record . $data[6] . $employ_amount . ($data[8] == '01' ? '1770' : '0770')
             . $full_name . $employ_dni . '003291';
+
+        array_push($this->result, [$record]);
+
+        $this->payroll_total += $data[$space_index - 1];
+    }
+
+    /**
+     * Construye la cadena de texto a incluir en el archivo a exportar
+     *
+     * @param array $data Arreglo de datos a exportar
+     *
+     * @return void
+     */
+    public function buildTrustString($data)
+    {
+        $record = substr($data[8], -1);
+
+        $space_index = array_search(' ', $data);
+
+        $amount = strval($data[$space_index - 1] * 100);
+
+        $amout_lenght = strlen($amount);
+
+        $employ_amount = str_repeat('0', 15 - $amout_lenght) . $amount;
+
+        $type_dni = str_contains($data[7], 'Venezuela') || str_contains($data[7], 'venezuela')
+            ? 'V'
+            : 'E';
+
+        $employ_dni = $data[2];
+
+        $employ_dni = $type_dni . str_repeat('0', 9 - strlen($employ_dni)) . $employ_dni;
+
+        $first_name = cleanString(str_contains($data[9], ' ') ? substr($data[9], 0, strpos($data[9], ' ')) : $data[9]);
+        $last_name = cleanString(str_contains($data[10], ' ') ? substr($data[10], 0, strpos($data[10], ' ')) : $data[10]);
+
+        $first_name_len = strlen($first_name);
+        $last_name_len = strlen($last_name);
+
+        $first_name = $first_name . str_repeat(' ', (20 - $first_name_len));
+        $last_name = $last_name . str_repeat(' ', (20 - $last_name_len));
+
+        $record = '02' . $employ_dni . $first_name . str_repeat(' ', 20)
+            . $last_name . str_repeat(' ', 20) . $this->file_number . $employ_amount;
 
         array_push($this->result, [$record]);
 
@@ -449,6 +513,32 @@ function getHeading($total, $bank_account, $date, $file_number)
     $new_date = substr(str_replace('-', '/', $new_date), 0, -4) . substr($new_date, -2);
 
     $heading = 'H' . $institution_name . $bank_number . $file_number . $new_date . $total . '03291';
+
+    return $heading;
+}
+
+/**
+ * Retorna el encabezado de la hoja
+ *
+ * @param float $total Monto total a pagar
+ * @param string $trust_code Codigo de fideicomitente
+ * @param string $date Fecha
+ * @param string $file_number Codigo de proceso
+ * @param integer $quantity Cantidad de registros
+ *
+ * @return string
+ */
+function getTrustHeading($total, $trust_code, $date, $file_number, $quantity)
+{
+    $total = strval($total * 100);
+    $total = str_repeat('0', 15 - strlen($total)) . $total;
+    $new_date = date('d-m-Y', strtotime($date));
+    $new_date = substr(str_replace('-', '', $new_date), 0);
+    $quantity = str_repeat('0', 7 - strlen($quantity)) . $quantity;
+    $trust_code = str_repeat('0', 7 - strlen($trust_code)) . $trust_code;
+    $file_number = str_repeat('0', 3 - strlen($file_number)) . $file_number;
+
+    $heading = '01' . $trust_code . $new_date . $quantity . $total . 'OTRO' . str_repeat(' ', 49) . $file_number;
 
     return $heading;
 }

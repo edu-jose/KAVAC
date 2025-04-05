@@ -140,13 +140,13 @@
         {{-- Mensaje de espera al cargar procesos del sistema --}}
         @include('layouts.messages')
         <script nonce="{{ session()->get('nonce') }}">
-            /** @type {Object} Gestiona los eventos del touchstart */
+            /** Gestiona los eventos del touchstart */
             $.event.special.touchstart = {
                 setup: function( _, ns, handle ) {
                     this.addEventListener("touchstart", handle, {passive: !ns.includes("noPreventDefault")});
                 }
             };
-            /** @type {Object} Gestiona los eventos del touchmove */
+            /** Gestiona los eventos del touchmove */
             $.event.special.touchmove = {
                 setup: function( _, ns, handle ) {
                     this.addEventListener('touchmove', handle, { passive: !ns.includes('noPreventDefault')});
@@ -155,7 +155,14 @@
         </script>
         @auth
             <script nonce="{{ session()->get('nonce') }}">
+                let isModalOpen = false;
                 $(document).ready(function() {
+                    const redirectBackElement = document.querySelector('.redirect-back');
+                    if (redirectBackElement) {
+                        redirectBackElement.addEventListener('click', function() {
+                            history.back();
+                        });
+                    }
                     if (window.screen_locked) {
                         app.lockScreen();
                     }
@@ -228,6 +235,9 @@
                         e.preventDefault();
                         undelete_record($(this).data('route'));
                     });
+                    $('#btnLogout').on('click', function() {
+                        $('#logout-form').submit();
+                    });
                 });
 
                 /** Establece el tema por defecto, para elementos select2, a bootstrap 4 */
@@ -243,6 +253,10 @@
                  * @return Un mensaje al usuario solicitando confirmación de la eliminación del registro
                  */
                 function delete_record(url) {
+                    if (isModalOpen) {
+                        return;
+                    }
+                    isModalOpen = true;
                     bootbox.confirm('{{ __('Esta seguro de querer eliminar este registro?') }}', function (result) {
                         if (result) {
                             /** Ajax config csrf token */
@@ -281,6 +295,9 @@
                                 }
                             });
                         }
+                    });
+                    $('.modal').on('hidden.bs.modal', function () {
+                        isModalOpen = false; // Cambia el estado a cerrado cuando el modal se oculta
                     });
                 }
 
@@ -350,6 +367,7 @@
                     target_element.empty();
 
                     if (parent_id) {
+                        $('.preloader').show();
                         axios.get(
                             `/get-select-data-custom/${parent_name}/${parent_id}/${target_model}${module_name}`
                         ).then(response => {
@@ -362,8 +380,10 @@
 
                                 });
                             }
+                            $('.preloader').fadeOut();
                         }).catch(error => {
                             logs('app', 244, error, 'updateSelect');
+                            $('.preloader').fadeOut();
                         })
                     }
                     else {
@@ -387,6 +407,8 @@
                     var relation = (typeof(relation) !== "undefined") ? '/' + relation : '';
                     var parent_id = parent_element.val();
                     var parent_name = parent_element.attr('id');
+
+                    $('.preloader').show();
 
                     target_element.empty().append('<option value="">{{ __('Seleccione...') }}</option>');
                     if (typeof(disables) !== "undefined"){
@@ -419,8 +441,10 @@
                                     }
                                 });
                             }
+                            $('.preloader').fadeOut();
                         }).catch(error => {
                             logs('app', 244, error, 'updateSelect');
+                            $('.preloader').fadeOut();
                         })
                     } else {
                         target_element.attr('disabled', true);
@@ -431,6 +455,7 @@
                             });
                         }
                     }
+                    $('.preloader').fadeOut();
                 }
 
                 /**
@@ -453,6 +478,7 @@
                     var relation = (typeof(relation) !== "undefined") ? '/' + relation : '';
                     var parent_id = parent_element.val();
                     var parent_name = parent_element.attr('id');
+                    $('.preloader').show();
 
                     target_element.empty().append('<option value="">{{ __('Seleccione...') }}</option>');
                     if (typeof(disables) !== "undefined"){
@@ -493,8 +519,10 @@
                                     }
                                 });
                             }
+                            $('.preloader').fadeOut();
                         }).catch(error => {
                             logs('app', 244, error, 'updateSelect');
+                            $('.preloader').fadeOut();
                         })
                     } else {
                         target_element.attr('disabled', true);
@@ -504,6 +532,7 @@
                                 disable.empty().append('<option value="">{{ __('Seleccione...') }}</option>');
                             });
                         }
+                        $('.preloader').fadeOut();
                     }
                 }
 
@@ -555,6 +584,10 @@
                      * @param  {integer} id Identificador del usuario del cual se desea obtener información
                      */
                     var view_user_info = function(id) {
+                        if (isModalOpen) {
+                            return;
+                        }
+                        isModalOpen = true;
                         axios.get('/user-info/' + id).then(response => {
                             let user = response.data.user;
                             let roles = [], permissions = [];
@@ -574,13 +607,16 @@
                             bootbox.alert({
                                 title: "{{ __('Detalles del usuario') }}",
                                 message: userDetail.showInfo(),
-                                closeButton: false,
+                                size: 'large',
                                 buttons: {
                                     ok: {
                                         label: "Cerrar",
                                         className: 'btn-light'
                                     }
                                 }
+                            });
+                            $('.modal').on('hidden.bs.modal', function () {
+                                isModalOpen = false; // Cambia el estado a cerrado cuando el modal se oculta
                             });
                         }).catch(error => {
                             logs('app', 315, error, 'view_user_info');
@@ -676,7 +712,7 @@
                     let username = $('.modal-lockscreen').find('#username');
                     let password = $('.modal-lockscreen').find('#password');
                     if (username.val() && password.val()) {
-                        /** @type {Object} Datos con el */
+                        /** Datos con el */
                         let response = await axios.post('{{ route('unlockscreen') }}', {
                             username: username.val(),
                             password: password.val()
@@ -694,7 +730,7 @@
                             document.querySelectorAll('input[name="_token"]').forEach(function(csrf_field) {
                                 csrf_field.setAttribute('value', new_csrf);
                             });
-                            /** @type {Object} Actualiza el token csrf global */
+                            /** Actualiza el token csrf global */
                             window.Laravel = {
                                 "csrfToken": new_csrf
                             };
@@ -748,7 +784,7 @@
 
         {{-- Sección que permite renderizar los componentes de VueJS --}}
         <script nonce="{{ session()->get('nonce') }}">
-            /** @type {object} Constante que crea el elemento Vue */
+            /** Constante que crea el elemento Vue */
             var app = new Vue({
                 el: '#app',
             });

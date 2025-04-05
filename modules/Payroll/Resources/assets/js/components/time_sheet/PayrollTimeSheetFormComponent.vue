@@ -859,6 +859,7 @@ export default {
         async loadDataCompletedPeriods() {
             const vm = this;
             if (
+                vm.record.id == '' &&
                 vm.record.from_date &&
                 vm.record.to_date &&
                 vm.record.payroll_supervised_group_id &&
@@ -891,7 +892,7 @@ export default {
                         )
                         .then((response) => {
                             if (
-                                typeof response.data.result !== "undefined"
+                                response.data.result !== null
                             ) {
                                 bootbox.confirm({
                                     title: "¿Cargar registros de periodos confirmados?",

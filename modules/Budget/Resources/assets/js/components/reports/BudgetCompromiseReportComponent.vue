@@ -14,6 +14,15 @@
                             Todos
                         </label>
                     </div>
+                    <div
+                        class="col-12 "style="padding-top: 1rem;"
+                    >
+                        <label class="control-label">Tipo de moneda</label>
+                        <select2
+                            :options="currencies"
+                            v-model="currency_id"
+                        ></select2>
+                    </div>
                 </div>
                 <div class="col-6 mt-4">
                     <div class="custom-control custom-switch">
@@ -165,6 +174,7 @@ export default {
             formulations: [],
             all_specific_actions: false,
             localErrors: this.errors,
+            currency_id: "",
             params: {
                 all: false,
                 all_statuses: "",
@@ -176,6 +186,7 @@ export default {
                 formulation_id: "",
                 status_id: "",
             },
+            currencies: [],
             budgetProjectsArray: JSON.parse(this.budgetProjects),
             budgetStatusArray: [
                 { id: '', text: "Todos" },
@@ -194,6 +205,7 @@ export default {
     async created() {
         await this.getFormulations();
         this.all_specific_actions = false;
+        this.getCurrencies();
     },
     watch: {
         "params.project_id": async function (newValue, _) {
@@ -337,6 +349,7 @@ export default {
                     `&project_id=${this.params.project_id}` +
                     `&centralized_action_id=${this.params.centralized_action_id}` +
                     `&is_status=${this.isStatus}` +
+                    `&currency=${this.currency_id}` +
                     `&status_id[]=${compromiseStatusIds}`
                 );
             } else if (type === "xlsx") {
@@ -351,6 +364,7 @@ export default {
                     `&project_id=${this.params.project_id}` +
                     `&centralized_action_id=${this.params.centralized_action_id}` +
                     `&is_status=${this.isStatus}` +
+                    `&currency=${this.currency_id}` +
                     `&status_id[]=${compromiseStatusIds}`
                 );
             }

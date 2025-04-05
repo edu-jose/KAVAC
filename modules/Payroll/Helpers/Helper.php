@@ -1,8 +1,6 @@
 <?php
 
-use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Modules\Payroll\Models\PayrollStaff;
 use Modules\Payroll\Models\PayrollRelationship;
 use Modules\Payroll\Models\PayrollSalaryTabulator;
@@ -183,8 +181,8 @@ if (!function_exists('verify_assignment')) {
                                 //relacion con familyburden
                                 $q->whereHas($relationshipR['field'], function ($qq) use ($relationshipR, $relationshipSon, $options, $now, $period_end) {
                                     $maxNow = ($period_end)
-                                    ? new DateTime($period_end)
-                                    : new DateTime();
+                                        ? new DateTime($period_end)
+                                        : new DateTime();
                                     $min = date('Y-m-d', mktime(0, 0, 0, 1, 1, $now->modify('-' . ($options->maximum ?? 0) . 'year')->format('Y')));
                                     $max = $maxNow->modify('-' . ($options->minimum ?? 0) . 'year');
                                     $max_Date = $max->format('Y-m-d');
@@ -192,7 +190,7 @@ if (!function_exists('verify_assignment')) {
                                 });
                             }
                         })
-                        ->whereHas('payrollEmployment', fn ($q) => $q->where('active', true))
+                        ->whereHas('payrollEmployment', fn($q) => $q->where('active', true))
                         ->get();
                 } elseif ($rule['id'] === 'all_staff_with_sons_studying') {
                     $options = [];
@@ -226,7 +224,7 @@ if (!function_exists('verify_assignment')) {
                                 });
                             }
                         })
-                        ->whereHas('payrollEmployment', fn ($q) => $q->where('active', true))
+                        ->whereHas('payrollEmployment', fn($q) => $q->where('active', true))
                         ->get();
                 } elseif ($rule['id'] === 'staff_according_position') {
                     $options = [];
@@ -240,8 +238,43 @@ if (!function_exists('verify_assignment')) {
                         ->whereHas('payrollEmployment.payrollPositions', function ($query) use ($options) {
                             $query->whereIn('payroll_positions.id', $options);
                         })
-                        ->whereHas('payrollEmployment', fn ($q) => $q->where('active', true))
+                        ->whereHas('payrollEmployment', fn($q) => $q->where('active', true))
                         ->get();
+                } elseif ($rule['id'] === 'all_staff_not_in_vacation') {
+                    $result = PayrollStaff::query()
+                        ->where('id', $id)
+                        ->whereHas('payrollEmployment', function ($query) {
+                            $query->where('active', true);
+                        })
+                        ->where(function ($query) use ($period_start, $period_end) {
+                            $query->whereDoesntHave('payrollVacationRequests')
+                                ->orWhereHas('payrollVacationRequests', function ($query) use ($period_start, $period_end) {
+                                    $query
+                                        ->where('status', 'approved')
+                                        ->whereBetween('end_date', [$period_start, $period_end])
+                                        ->orWhere('status', '!=', 'approved')
+                                        ->orWhere(function ($query) use ($period_start, $period_end) {
+                                            $query
+                                                ->where('end_date', '<', $period_start)
+                                                ->orwhere('end_date', '>', $period_end);
+                                        });
+                                });
+                        })
+                        ->count();
+
+                    return $result > 0;
+                } elseif ($rule['id'] === 'all_staff_vacation_return') {
+                    $count = PayrollStaff::query()
+                        ->whereHas('payrollEmployment', fn($q) => $q->where('active', true))
+                        ->whereHas('payrollVacationRequests', function ($query) use ($period_start, $period_end) {
+                            $query
+                                ->where('status', 'approved')
+                                ->where('end_date', '>=', $period_start)
+                                ->where('end_date', '<=', $period_end);
+                        })
+                        ->find($id)
+                        ?->count();
+                    return $count > 0;
                 } elseif ($rule['id'] === 'all') {
                     return true;
                 } elseif (str_contains($rule['id'], 'all')) {
@@ -273,8 +306,8 @@ if (!function_exists('verify_assignment')) {
                                                     ->whereRaw("(DATE_PART('year',  '" . $now . "'::date) - DATE_PART('year', " . $raw['field'] . "::date))  < " . $options->maximum);
                                             } elseif (isset($relationshipR['whereYear'])) {
                                                 $maxNow = ($period_end)
-                                                ? new DateTime($period_end)
-                                                : new DateTime();
+                                                    ? new DateTime($period_end)
+                                                    : new DateTime();
                                                 $min = date('Y-m-d', mktime(0, 0, 0, 1, 1, $now->modify('-' . ($options->maximum ?? 0) . 'year')->format('Y')));
                                                 $max = $maxNow->modify('-' . ($options->minimum ?? 0) . 'year');
                                                 $qq->whereBetween($relationshipR['whereYear'], [$min, $max]);
@@ -321,11 +354,11 @@ if (!function_exists('verify_assignment')) {
                                         }
                                     }
                                 })
-                                ->whereHas('payrollEmployment', fn ($q) => $q->where('active', true))
+                                ->whereHas('payrollEmployment', fn($q) => $q->where('active', true))
                                 ->get();
                         } elseif (isset($rule['where'])) {
                             $records = $rule['model']::query()
-                                ->whereHas('payrollEmployment', fn ($q) => $q->where('active', true))
+                                ->whereHas('payrollEmployment', fn($q) => $q->where('active', true))
                                 ->where('id', $id)
                                 ->where($rule['where'][0], $rule['where'][1])
                                 ->get();
@@ -349,8 +382,8 @@ if (!function_exists('verify_assignment')) {
                                 },
                             ]
                         )
-                        ->whereHas('payrollEmployment', fn ($q) => $q->where('active', true))
-                        ->first();
+                            ->whereHas('payrollEmployment', fn($q) => $q->where('active', true))
+                            ->first();
                         if (isset($records)) {
                             $fieldCount = strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', $relationship['withCount']));
                             if ($records->{$relationship['field']}->{$fieldCount . "_count"} > 1) {
@@ -380,13 +413,13 @@ if (!function_exists('verify_assignment')) {
                                         }
                                     }
                                 )
-                                ->whereHas('payrollEmployment', fn ($q) => $q->where('active', true))
+                                ->whereHas('payrollEmployment', fn($q) => $q->where('active', true))
                                 ->get();
                         } elseif (isset($rule['whereIn'])) {
                             $records = PayrollStaff::query()
                                 ->where('id', $id)
                                 ->whereIn($rule['whereIn'][0], $options)
-                                ->whereHas('payrollEmployment', fn ($q) => $q->where('active', true))
+                                ->whereHas('payrollEmployment', fn($q) => $q->where('active', true))
                                 ->get();
                         } elseif (isset($rule['whereNotIn'])) {
                             $records = PayrollStaff::query()
@@ -464,7 +497,6 @@ if (!function_exists('loadBasicPayrollStaffData')) {
             'institution_years' => $institutionYears,
         ];
     }
-
 }
 if (!function_exists('getPayrollSalaryTabulators')) {
     /**
@@ -489,11 +521,11 @@ if (!function_exists('getPayrollSalaryTabulators')) {
         $salaryTabulatorIds = array_unique($salaryTabulatorIds);
         $payrollSalaryTabulators = PayrollSalaryTabulatorResource::collection(
             PayrollSalaryTabulator::query()
-            ->whereIn('id', $salaryTabulatorIds)
-            ->with(
-                'payrollSalaryTabulatorScales.payrollHorizontalScale',
-                'payrollSalaryTabulatorScales.payrollVerticalScale',
-            )->get()
+                ->whereIn('id', $salaryTabulatorIds)
+                ->with(
+                    'payrollSalaryTabulatorScales.payrollHorizontalScale',
+                    'payrollSalaryTabulatorScales.payrollVerticalScale',
+                )->get()
         );
         return $payrollSalaryTabulators;
     }

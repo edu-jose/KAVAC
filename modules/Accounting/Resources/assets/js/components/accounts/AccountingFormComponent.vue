@@ -4,10 +4,11 @@
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label class="control-label"
-                            >Cuenta de nivel superior</label
-                        >
+                        <label for="sel_acc_record" class="control-label">
+                            Cuenta de nivel superior
+                        </label>
                         <select2
+                            id="sel_acc_record"
                             :options="accRecords"
                             v-model="record_select"
                         ></select2>
@@ -15,7 +16,7 @@
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label class="control-label">Código</label>
+                        <label for="code" class="control-label">Código</label>
                         <div class="row inline-inputs">
                             <div class="col-6">
                                 <input
@@ -34,12 +35,11 @@
                                 />
                             </div>
                         </div>
-                        <!-- :onkeyup="record.code=justAllow(record.code)" -->
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label class="control-label">Denominación</label>
+                        <label for="denomination" class="control-label">Denominación</label>
                         <input
                             type="text"
                             class="form-control input-sm"
@@ -55,7 +55,7 @@
                 </div>
                 <div class="col-md-6">
                     <div class="form-group is-required">
-                        <label class="control-label">Tipo de actividad</label>
+                        <label for="sel_type_activity" class="control-label">Tipo de actividad</label>
                         <select2
                             id="sel_type_activity"
                             :options="typeActivities"
@@ -80,10 +80,7 @@
                                     v-model="record.active"
                                     :value="true"
                                 />
-                                <label
-                                    class="custom-control-label"
-                                    for="accountingActive"
-                                ></label>
+                                <label class="custom-control-label" for="accountingActive">&nbsp;</label>
                             </div>
                         </div>
                     </div>
@@ -104,10 +101,7 @@
                                     v-model="record.ingres"
                                     :value="true"
                                 />
-                                <label
-                                    class="custom-control-label"
-                                    for="accountingResource"
-                                ></label>
+                                <label class="custom-control-label" for="accountingResource">&nbsp;</label>
                             </div>
                         </div>
                     </div>
@@ -128,10 +122,7 @@
                                     v-model="record.egress"
                                     :value="true"
                                 />
-                                <label
-                                    class="custom-control-label"
-                                    for="accountingEgress"
-                                ></label>
+                                <label class="custom-control-label" for="accountingEgress">&nbsp;</label>
                             </div>
                         </div>
                     </div>
@@ -152,10 +143,7 @@
                                     v-model="record.original"
                                     :value="true"
                                 />
-                                <label
-                                    class="custom-control-label"
-                                    for="accountingOriginal"
-                                ></label>
+                                <label class="custom-control-label" for="accountingOriginal">&nbsp;</label>
                             </div>
                         </div>
                     </div>

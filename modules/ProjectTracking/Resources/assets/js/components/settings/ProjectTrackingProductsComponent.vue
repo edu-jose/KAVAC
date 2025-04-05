@@ -82,12 +82,12 @@
                             <div class="col-md-6">
                                 <div class="form-group is-required" name="category">
                                     <label>Dependencia:</label>
-                                    <select2 :options="dependencies_list" id="dependencyy" data-toggle="tooltip"
-                                        title="Seleccione la dependencia del Producto (requerido)"
+                                    <select2 :options="dependencies_list" id="dependency" data-toggle="tooltip"
+                                        title="Seleccione la dependencia del Proyecto (requerido)"
                                         v-model="record.dependency_id">
                                     </select2>
                                 </div>
-                            </div>
+                            </div>    
                             <div class="col-md-6">
                                 <div class="form-group is-required" name="category">
                                     <label>Responsable del Producto:</label>

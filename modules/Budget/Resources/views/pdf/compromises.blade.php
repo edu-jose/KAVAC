@@ -84,20 +84,38 @@
                 @foreach ($record->budgetCompromiseDetails as $budgetCompromiseDetail)
                 @php
                     $totalByCompromise += $budgetCompromiseDetail->amount;
-                    $total += $budgetCompromiseDetail->amount;
+      
+                    $total +=\Modules\Budget\Facades\CurrencyConverter::convert(
+                            $budgetCompromiseDetail->amount,
+                            $budgetCompromiseDetail->created_at,
+                            $budgetCompromiseDetail['budgetSubSpecificFormulation']['currency'],
+                            $currency
+                            );
                 @endphp
                 @endforeach
                 @else                @foreach ($record->budgetCompromiseDetails as $budgetCompromiseDetail)
                 @php
                     $totalByCompromise += $budgetCompromiseDetail->total;
-                    $total += $budgetCompromiseDetail->total;
+
+                    $total += \Modules\Budget\Facades\CurrencyConverter::convert(
+                            $budgetCompromiseDetail->total,
+                            $budgetCompromiseDetail->created_at,
+                            $budgetCompromiseDetail['budgetSubSpecificFormulation']['currency'],
+                            $currency
+                            );
                 @endphp
                 @endforeach
                 @endif
-                {{
-                number_format($totalByCompromise, $budgetCompromiseDetail['budgetSubSpecificFormulation']['currency']['decimal_places'],
-                ",", ".")
-                }}
+                {{ number_format(
+                        \Modules\Budget\Facades\CurrencyConverter::convert(
+                            $totalByCompromise,
+                            $budgetCompromiseDetail->created_at,
+                            $budgetCompromiseDetail['budgetSubSpecificFormulation']['currency'],
+                            $currency
+                        ),
+                        $budgetCompromiseDetail['budgetSubSpecificFormulation']['currency']['decimal_places'], ",", "."
+                    ) }}
+
             </td>
         </tr>
         @endforeach
@@ -108,7 +126,7 @@
             <td style="border-bottom-style: hidden;"></td>
             <td style="border-bottom-style: hidden;"></td>
             <td colspan="1" style="border: solid 1px #808080;">Total</td>
-            <td style="border: solid 1px #808080;">{{ number_format($total , 2, ',', '.')}}</td>
+            <td style="border: solid 1px #808080;">{{ number_format($total , 2, ',', '.')}} </td>
         </tr>
     </tbody>
 </table>

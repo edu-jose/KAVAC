@@ -27,31 +27,32 @@
                         @include('buttons.new', ['route' => route('payroll.ari-register.create')])
                         @permission('payroll.ariregister.import')
                             {!! Form::button('<i class="fa fa-upload"></i>', [
+                                'id' => 'btnImport',
                                 'class' => 'btn btn-sm btn-primary btn-custom',
                                 'data-toggle' => 'tooltip',
                                 'type' => 'button',
-                                'title' => __('Importar registros'),
-                                'onclick' => "$('input[name=importFile]').click()",
+                                'title' => __('Importar registros')
                             ]) !!}
-                            <input id="importFile" name="importFile" type="file" style="display:none" onchange="importData()">
+                            <input id="importFile" name="importFile" type="file" style="display:none">
                         @endpermission
                         @permission('payroll.ariregister.export')
                             {!! Form::button('<i class="fa fa-download"></i>', [
+                                'id' => 'btnExport',
                                 'class' => 'btn btn-sm btn-primary btn-custom',
                                 'data-toggle' => 'tooltip',
                                 'type' => 'button',
-                                'title' => 'Presione para descargar el documento con la información de los registros.',
-                                'onclick' => 'exportData()',
+                                'title' => 'Presione para descargar el documento con la información de los registros.'
                             ]) !!}
                         @endpermission
                         @include('buttons.minimize')
                     </div>
                 </div>
                 <div class="card-body">
-                    <payroll-ari-register-list route_list="{{ url('payroll/get-ari-registers') }}"
+                    <payroll-ari-register-list
+                        route_list="{{ url('payroll/get-ari-registers') }}"
                         route_edit="{{ url('payroll/edit-ari-register') }}"
-                        route_delete="{{ url('payroll/delete-ari-register') }}">
-                    </payroll-ari-register-list>
+                        route_delete="{{ url('payroll/delete-ari-register') }}"
+                    ></payroll-ari-register-list>
                 </div>
             </div>
         </div>
@@ -59,6 +60,17 @@
 @stop
 @section('extra-js')
     <script type="text/javascript" nonce="{{ session()->get('nonce') }}">
+        $(document).ready(function() {
+            const btnImport = document.querySelector('#btnImport');
+            const importFile = document.querySelector('#importFile');
+            const btnExport = document.querySelector('#btnExport');
+            btnImport.addEventListener('click', function() {
+                $('input[name=importFile]').click();
+            });
+            importFile.addEventListener('change', importData);
+            btnExport.addEventListener('click', exportData);
+        });
+
         var records;
 
         function exportData() {

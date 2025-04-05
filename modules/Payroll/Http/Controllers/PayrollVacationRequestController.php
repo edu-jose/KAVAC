@@ -252,15 +252,6 @@ class PayrollVacationRequestController extends Controller
         $currentFiscalYear = FiscalYear::select('year')
             ->where(['active' => true, 'closed' => false])->orderBy('year', 'desc')->first();
 
-        /* Validar que el año de la fecha de solicitud sea menor que el año fiscal */
-        $year_created = Carbon::parse($request->created_at);
-
-        if ($year_created->year > $currentFiscalYear->year) {
-            $request->session()->flash('message', ['type' => 'error']);
-            $errors[0] = ["El año de la fecha de solicitud ingresada debe ser menor al año fiscal."];
-            return response()->json(['result' => true, 'errors' => $errors], 422);
-        }
-
         // Validar que haya un formato de código para la solicitud de vacaciones
         $codeSetting = CodeSetting::where('table', 'payroll_vacation_requests')->first();
         if (is_null($codeSetting)) {
@@ -376,18 +367,6 @@ class PayrollVacationRequestController extends Controller
         ]);
 
         $this->validate($request, $this->validateRules, $this->messages, $this->attributes);
-
-        $currentFiscalYear = FiscalYear::select('year')
-            ->where(['active' => true, 'closed' => false])->orderBy('year', 'desc')->first();
-
-        /* Validar que el año de la fecha de solicitud sea menor que el año fiscal */
-        $year_created = Carbon::parse($request->created_at);
-
-        if ($year_created->year > $currentFiscalYear->year) {
-            $request->session()->flash('message', ['type' => 'error']);
-            $errors[0] = ["El año de la fecha de solicitud ingresada debe ser menor al año fiscal."];
-            return response()->json(['result' => true, 'errors' => $errors], 422);
-        }
 
         // Verificar si se edito el campo de periodos vacacionales
         if (isset($request->old_vacation_period_year)) {
@@ -580,7 +559,8 @@ class PayrollVacationRequestController extends Controller
     public function getVacationRequests($staff_id)
     {
         $payrollVacationRequest = PayrollVacationRequest::where('payroll_staff_id', $staff_id)
-            ->whereIn('status', ['pending', 'approved', 'suspended'])->get();
+            ->whereIn('status', ['pending', 'approved', 'suspended'])
+            ->get();
         return response()->json(['records' => $payrollVacationRequest], 200);
     }
 
@@ -629,6 +609,15 @@ class PayrollVacationRequestController extends Controller
     public function approved(Request $request, $id, $check_permission = false)
     {
         if (!$check_permission) {
+            // Validar si la fecha de reincorporacion existe
+            $rules = [
+                'reincorporation_date' => ['required']
+            ];
+            $msg = [
+                'reincorporation_date.required' => ['La fecha de reincorporación es obligatoria']
+            ];
+
+            $this->validate($request, $rules, $msg);
             $payrollVacationRequest = PayrollVacationRequest::find($id);
 
             //Obtener registros anteriores de solicitud con el trabajador para validar períodos anuales anteriores

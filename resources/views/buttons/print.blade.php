@@ -1,13 +1,17 @@
 @if (isset($route))
-    <a href="{{ $route }}" class="btn btn-sm btn-primary btn-custom" data-toggle="tooltip"
-       title="{{ __('Imprimir registro') }}" target="_blank">
+    <a
+        href="{{ $route }}" class="btn btn-sm btn-primary btn-custom btn-print-general"
+        data-toggle="tooltip" title="{{ __('Imprimir registro') }}" target="_blank"
+        @if (isset($disabled) && $disabled) disabled @endif
+    >
         <i class="fa fa-print"></i>
     </a>
 @else
     {!! Form::button('<i class="fa fa-print"></i>', [
         'class' => 'btn btn-sm btn-primary btn-custom btn-print-general',
         'data-toggle' => 'tooltip', 'type' => 'button',
-        'title' => __('Imprimir registro')
+        'title' => __('Imprimir registro'),
+        'disabled' => $disabled ?? false
     ]) !!}
 @endif
 

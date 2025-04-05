@@ -61,7 +61,7 @@
                 </span>
                 {!! Form::text('captcha', old('captcha'), [
                     'class' => 'form-control', 'placeholder' => __('Captcha'),
-                    'id' => 'captcha', 'onfocus' => '$(this).val("")', 'data-toggle' => 'tooltip',
+                    'id' => 'captcha', 'data-toggle' => 'tooltip',
                     'title' => __('Introduzca los carácteres de la imagen'), 'data-placement' => 'right'
                 ]) !!}
             </div>
@@ -105,9 +105,14 @@
 @section('extra-js')
     <script nonce="{{ session()->get('nonce') }}">
         $(document).ready(function() {
-            $('.username-input').on('keypress', validateUsernameInput);
-            $('.captcha-reload').on('click', refresh_captcha);
-        })
+            const captchaReloadElement = document.querySelector('.captcha-reload');
+            const usernameInputElement = document.querySelector('.username-input');
+            const captchaInputElement = document.querySelector('#captcha');
+            captchaReloadElement.addEventListener('click', refresh_captcha);
+            usernameInputElement.addEventListener('keypress', validateUsernameInput);
+            captchaInputElement.addEventListener('focus', function() {captchaInputElement.value = ''});
+        });
+
         /**
          * Función que permite cargar una nueva imagen de captcha
          */

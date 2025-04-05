@@ -35,7 +35,7 @@
         {!! Form::token() !!}
         <div id="helpSupplier" class="card-body pt-1">
             @include('layouts.form-errors')
-            <ul class="nav nav-tabs custom-tabs px-0 pt-0" role="tablist">
+            <ul class="nav nav-tabs custom-tabs px-0 pt-0">
                 <li id="helpBasicData" class="nav-item">
                     <a href="#default_data" class="nav-link active" data-toggle="tab" title="Datos básicos del proveedor">
                         {{ __('Datos Básicos') }}
@@ -70,7 +70,7 @@
                                                 'id' => 'personTypeN',
                                                 'class' => 'custom-control-input reseteable',
                                             ]) !!}
-                                            <label class="custom-control-label" for="personTypeN"></label>
+                                            <label class="custom-control-label" for="personTypeN">&nbsp;</label>
                                         </div>
                                     </div>
                                     <div class="col-12 col-sm-6 col-md-3 radio-inline text-center">
@@ -80,7 +80,7 @@
                                                 'id' => 'personTypeJ',
                                                 'class' => 'custom-control-input reseteable',
                                             ]) !!}
-                                            <label class="custom-control-label" for="personTypeJ"></label>
+                                            <label class="custom-control-label" for="personTypeJ">&nbsp;</label>
                                         </div>
                                     </div>
                                     <div class="col-12 col-sm-6 col-md-3 radio-inline text-center">
@@ -90,7 +90,7 @@
                                                 'id' => 'personTypeG',
                                                 'class' => 'custom-control-input reseteable',
                                             ]) !!}
-                                            <label class="custom-control-label" for="personTypeG"></label>
+                                            <label class="custom-control-label" for="personTypeG">&nbsp;</label>
                                         </div>
                                     </div>
                                     <div class="col-12 col-sm-6 col-md-3 radio-inline text-center">
@@ -100,7 +100,7 @@
                                                 'id' => 'personTypeE',
                                                 'class' => 'custom-control-input reseteable',
                                             ]) !!}
-                                            <label class="custom-control-label" for="personTypeE"></label>
+                                            <label class="custom-control-label" for="personTypeE">&nbsp;</label>
                                         </div>
                                     </div>
                                 </div>
@@ -119,7 +119,7 @@
                                                 'id' => 'companyTypePU',
                                                 'class' => 'custom-control-input',
                                             ]) !!}
-                                            <label class="custom-control-label" for="companyTypePU"></label>
+                                            <label class="custom-control-label" for="companyTypePU">&nbsp;</label>
                                         </div>
                                     </div>
                                     <div class="col-12 col-sm-6 col-md-3 radio-inline text-center">
@@ -129,7 +129,7 @@
                                                 'id' => 'companyTypePR',
                                                 'class' => 'custom-control-input',
                                             ]) !!}
-                                            <label class="custom-control-label" for="companyTypePR"></label>
+                                            <label class="custom-control-label" for="companyTypePR">&nbsp;</label>
                                         </div>
                                     </div>
                                 </div>
@@ -148,7 +148,7 @@
                                                 'id' => 'activo',
                                                 'class' => 'custom-control-input',
                                             ]) !!}
-                                            <label class="custom-control-label" for="activo"></label>
+                                            <label class="custom-control-label" for="activo">&nbsp;</label>
                                         </div>
                                     </div>
                                 </div>
@@ -276,8 +276,7 @@
                                     isset($model_institution) ? $model_institution->city->estate->country->id : null,
                                     [
                                         'id' => 'country_id',
-                                        'class' => 'form-control select2 input-sm',
-                                        'onchange' => 'updateSelect($(this), $("#estate_id"), "Estate")',
+                                        'class' => 'form-control select2 input-sm'
                                     ],
                                 ) !!}
                             </div>
@@ -291,9 +290,7 @@
                                     isset($model_institution) ? $model_institution->city->estate->id : old('estate_id'),
                                     [
                                         'id' => 'estate_id',
-                                        'class' => 'form-control select2',
-                                        'onchange' =>
-                                            'updateSelect($(this), $("#municipality_id"), "Municipality"),updateSelect($(this), $("#city_id"), "City")',
+                                        'class' => 'form-control select2'
                                     ],
                                 ) !!}
                             </div>
@@ -399,7 +396,7 @@
                                                 'id' => 'rnc_status_inh',
                                                 'class' => 'custom-control-input',
                                             ]) !!}
-                                            <label class="custom-control-label" for="rnc_status_inh"></label>
+                                            <label class="custom-control-label" for="rnc_status_inh">&nbsp;</label>
                                         </div>
                                     </div>
                                     <div class="col-12 col-md-6 radio-inline text-center">
@@ -409,7 +406,7 @@
                                                 'id' => 'rnc_status_ish',
                                                 'class' => 'custom-control-input',
                                             ]) !!}
-                                            <label class="custom-control-label" for="rnc_status_ish"></label>
+                                            <label class="custom-control-label" for="rnc_status_ish">&nbsp;</label>
                                         </div>
                                     </div>
                                 </div>
@@ -440,10 +437,11 @@
                                             <div class="feature-list-content p-0">
                                                 <div class="feature-list-content-wrapper">
                                                     <div class="feature-list-content-right feature-list-content-actions">
-                                                        <button class="btn btn-simple btn-success btn-events"
+                                                        <button
+                                                            class="btn btn-simple btn-success btn-events btnUploadDocument"
                                                             title="Presione para cargar el documento"
-                                                            data-toggle="tooltip" type="button"
-                                                            onclick="clickUploadDoc({{ $reqDoc->id }})">
+                                                            data-toggle="tooltip" type="button" data-id="{{ $reqDoc->id }}"
+                                                        >
                                                             <i class="fa fa-cloud-upload fa-2x"></i>
                                                         </button>
                                                         @if (isset($model) && isset($model->documents) && isset($docs_to_download['req_doc_' . $reqDoc->id]))
@@ -455,11 +453,15 @@
                                                                 <i class="fa fa-cloud-download fa-2x"></i>
                                                             </a>
                                                         @endif
-                                                        <input id="{{ 'doc' . $reqDoc->id }}" class="d-none"
-                                                            type="file" name="docs[]" onchange="uploadFile(event)"
-                                                            accept=".doc, .pdf, .odt, .docx" />
-                                                        <input id="{{ 'reqDoc' . $reqDoc->id }}" class="d-none"
-                                                            type="number" name="reqDocs[]" />
+                                                        <input
+                                                            id="{{ 'doc' . $reqDoc->id }}" class="d-none docUpload"
+                                                            type="file" name="docs[]"
+                                                            accept=".doc, .pdf, .odt, .docx"
+                                                        />
+                                                        <input
+                                                            id="{{ 'reqDoc' . $reqDoc->id }}" class="d-none"
+                                                            type="number" name="reqDocs[]"
+                                                        />
                                                     </div>
                                                     <div class="feature-list-content-left">
                                                         @if (isset($docs_to_download['req_doc_' . $reqDoc->id]))
@@ -515,11 +517,10 @@
             @endif
             @if (!isset($hide_previous) || !$hide_previous)
                 {!! Form::button('<i class="fa fa-ban"></i>', [
-                    'class' => 'btn btn-warning btn-icon btn-round',
+                    'class' => 'btn btn-warning btn-icon btn-round redirect-back',
                     'type' => 'button',
                     'data-toggle' => 'tooltip',
-                    'title' => __('Cancelar y regresar'),
-                    'onclick' => 'window.location.href="' . url()->previous() . '"',
+                    'title' => __('Cancelar y regresar')
                 ]) !!}
             @endif
             @if (!isset($hide_save) || !$hide_save)
@@ -541,7 +542,21 @@
     <script nonce="{{ session()->get('nonce') }}">
         let idclicker = 0;
         $(document).ready(function() {
-            //app.ckeditor.editorData = "{!! isset($model) ? $model->description : old('description') !!}";
+            const btnUploadDocument = document.querySelector('.btnUploadDocument');
+            const countryId = document.querySelector('#country_id');
+            const estateId = document.querySelector('#estate_id');
+            const docUpload = document.querySelector('.docUpload');
+            btnUploadDocument.addEventListener('click', function() {
+                const id = this.dataset.id;
+                clickUploadDoc(id);
+            });
+            countryId.addEventListener('change', function() {
+                updateSelect($(this), $("#estate_id"), "Estate");
+            });
+            estateId.addEventListener('change', function() {
+                updateSelect($(this), $("#municipality_id"), "Municipality"),updateSelect($(this), $("#city_id"), "City");
+            });
+            docUpload.addEventListener('change', uploadFile);
             $(".nav-link").tooltip();
             $("#reset-select").on('click', function() {
                 $('#asset_supplier_type_id').val('').change();

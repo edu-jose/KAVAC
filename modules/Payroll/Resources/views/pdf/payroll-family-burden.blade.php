@@ -1,7 +1,8 @@
 @foreach ($field as $record)
     @if(count($record->payrollChildrens) > 0)
         @php
-            $startDate = \Carbon\Carbon::parse($record->payrollStaff->payrollEmployment->start_date)->format('d/m/Y');
+            $date_staff = $record->payrollStaff?->payrollEmployment?->start_date ?? '';
+            $startDate =  $date_staff ? \Carbon\Carbon::parse($date_staff)->format('d/m/Y') : '';
         @endphp
         <p>
             Nombres y apellidos del trabajador: {{ $record->payrollStaff->full_name }} <br>

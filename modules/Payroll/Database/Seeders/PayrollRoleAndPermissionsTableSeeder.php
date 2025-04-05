@@ -2038,7 +2038,70 @@ class PayrollRoleAndPermissionsTableSeeder extends Seeder
                 'model' => '',
                 'model_prefix' => 'Talento Humano',
                 'slug_alt' => 'recibos.enviar',
-            ]
+            ],
+            /* Permisos de la códigos de procesos */
+            [
+                'name' => 'Crear Códigos de Procesos',
+                'slug' => 'payroll.process.code.create',
+                'description' => 'Acceso para crear Códigos de Procesos',
+                'model' => 'Modules\Payroll\Models\PayrollProcessCode',
+                'model_prefix' => 'Talento Humano',
+                'slug_alt' => 'codigos.de.procesos.crear',
+            ],
+            [
+                'name' => 'Editar Códigos de Procesos',
+                'slug' => 'payroll.process.code.edit',
+                'description' => 'Acceso para editar Códigos de Procesos',
+                'model' => 'Modules\Payroll\Models\PayrollProcessCode',
+                'model_prefix' => 'Talento Humano',
+                'slug_alt' => 'codigos.de.procesos.editar',
+            ],
+            [
+                'name' => 'Eliminar Códigos de Procesos',
+                'slug' => 'payroll.process.code.delete',
+                'description' => 'Acceso para eliminar Códigos de Procesos',
+                'model' => 'Modules\Payroll\Models\PayrollProcessCode',
+                'model_prefix' => 'Talento Humano',
+                'slug_alt' => 'codigos.de.procesos.eliminar',
+            ],
+            /* Permisos de txt de fideicomiso */
+            [
+                'name' => 'Generar txt fideicomiso',
+                'slug' => 'payroll.txt.trust.create',
+                'description' => 'Acceso para generar txt fideicomiso',
+                'model' => 'Modules\Payroll\Models\PayrollTextFile',
+                'model_prefix' => 'Talento Humano',
+                'slug_alt' => 'txt.fideicomiso.eliminar',
+            ],
+            /* Permisos de carga horaria */
+            [
+                'name' => 'Listar carga horaria',
+                'slug' => 'payroll.workload.index',
+                'description' => 'Acceso para listar las cargas horarias',
+                'model' => 'Modules\Payroll\Models\PayrollWorkload', 'model_prefix' => 'Talento Humano',
+                'slug_alt' => 'carga.horaria.listar',
+            ],
+            [
+                'name' => 'Crear carga horaria',
+                'slug' => 'payroll.workload.create',
+                'description' => 'Acceso para crear carga horaria',
+                'model' => 'Modules\Payroll\Models\PayrollWorkload', 'model_prefix' => 'Talento Humano',
+                'slug_alt' => 'carga.horaria.crear',
+            ],
+            [
+                'name' => 'Editar carga horaria',
+                'slug' => 'payroll.workload.edit',
+                'description' => 'Acceso para editar carga horaria',
+                'model' => 'Modules\Payroll\Models\PayrollWorkload', 'model_prefix' => 'Talento Humano',
+                'slug_alt' => 'carga.horaria.editar',
+            ],
+            [
+                'name' => 'Eliminar carga horaria',
+                'slug' => 'payroll.workload.delete',
+                'description' => 'Acceso para eliminar carga horaria',
+                'model' => 'Modules\Payroll\Models\PayrollWorkload', 'model_prefix' => 'Talento Humano',
+                'slug_alt' => 'carga.horaria.eliminar',
+            ],
         ];
 
         $additionalPermissions = [

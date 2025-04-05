@@ -31,7 +31,7 @@ class CreateProjectTrackingSubTasksTable extends Migration
                 ->comment('Identificador de la actividad');
             $table->string('name', 200)->comment('Nombre de la actividad');
             $table->text('description')->nullable()->comment('Descripción de la actividad');
-            
+
             $table->timestamps();
             $table->softDeletes()->comment('Fecha y hora en la que el registro fue eliminado');
         });

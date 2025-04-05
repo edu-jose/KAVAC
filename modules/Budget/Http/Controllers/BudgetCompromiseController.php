@@ -773,6 +773,7 @@ class BudgetCompromiseController extends Controller
     public function vueList(Request $request)
     {
         $documentStatus = DocumentStatus::where('action', 'AN')->first(); //Estatus del documento Anulado
+
         $records = BudgetCompromise::query()
             ->with(
                 [

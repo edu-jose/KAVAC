@@ -164,7 +164,7 @@
                                 'allowMinus': 'false',
                                 'digits': 2"
                             :id="'request_product_' + props.row.id"
-                            onfocus="this.select()"
+                            @focus="selectText"
                             @input="
                                 selectElement(props.row.id);
                                 validateInput(props.row.real, props.row.code, props.row.id)

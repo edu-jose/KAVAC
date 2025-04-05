@@ -11,7 +11,14 @@
         $(document).ready(function() {
             $('.btn-delete').on('click', function() {
                 delete_record('{{ $route }}');
-            })
+            });
+            $('.datatable').on('draw.dt', function () {
+                $('.btn-delete').on('click', function() {
+                    if (!$('.modal').hasClass('show')) {
+                        delete_record('{{ $route }}');
+                    }
+                });
+            } );
         });
     </script>
 @endsection

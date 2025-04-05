@@ -1,6 +1,12 @@
 <table style="font-size: 8rem;" cellpadding="4" width="30%">
     <tbody>
         <tr>
+            <td style="font-weight: bold;">Estatus:</td>
+            <td width="175%" style="color: {{ $records->documentStatus['color'] }};">
+                {{  $records->documentStatus['name'] }}
+            </td>
+        </tr>
+        <tr>
             <td style="font-weight: bold;">Fecha de creación:</td>
             <td width="175%">
                 {{ date_format(new DateTime($records['approved_at']), 'd-m-Y') }}

@@ -152,7 +152,7 @@
 								'allowMinus': 'false',
 								'digits': 2"
 						@input="selectElement(props.row.id); validateInput(props.row.real, props.row.code, props.row.id)"
-						:id="'request_product_' + props.row.id" onfocus="this.select()"
+						:id="'request_product_' + props.row.id" @focus="selectText"
 						v-model="input_values[props.row.id]">
 					</div>
 				</div>

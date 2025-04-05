@@ -3,11 +3,10 @@
         class="modal fade"
         id="modalUserSettings"
         tabindex="-1"
-        role="dialog"
         aria-labelledby="modalUserSettingsTitle"
         aria-hidden="true"
     >
-        <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5
@@ -181,8 +180,9 @@
         mounted() {
             const vm = this;
 
-            $("#modalUserSettings").on("show.bs.modal", function () {
-                vm.getUserInfo(window.userId || '');
+            $("#modalUserSettings").on("show.bs.modal", function (e) {
+                const relatedElement = $(e.relatedTarget)?.data('id');
+                vm.getUserInfo(window.userId || relatedElement || '');
             });
             $('#modalUserSettings').on('hidden.bs.modal', function (e) {
                 vm.record = {

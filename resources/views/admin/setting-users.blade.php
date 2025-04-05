@@ -107,7 +107,14 @@
         $(document).ready(function() {
             $('.btn-view-user-info').on('click', function() {
                 view_user_info($(this).data('id'));
-            })
+            });
+            $('.datatable').on('draw.dt', function () {
+                $('.btn-view-user-info').on('click', function() {
+                    if (!$('.modal').hasClass('show')) {
+                        view_user_info($(this).data('id'));
+                    }
+                });
+            } );
         });
     </script>
 @endsection

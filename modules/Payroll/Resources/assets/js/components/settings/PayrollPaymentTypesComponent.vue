@@ -121,6 +121,21 @@
                                 </div>
                             </div>
                             <!-- ./Tipo de nomina ordinaria -->
+                            <!-- fideicomiso -->
+                            <div class="col-md-4">
+                                <div class=" form-group">
+                                    <label>¿Corresponde a fideicomiso?</label>
+                                    <div class="col-12">
+                                        <div class="custom-control custom-switch" data-toggle="tooltip"
+                                            title="¿Corresponde a fideicomiso?">
+                                            <input type="checkbox" class="custom-control-input" id="isTrust"
+                                                v-model="record.is_trust" :value="true">
+                                            <label class="custom-control-label" for="isTrust"></label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- ./fideicomiso -->
                             <!-- periodicidad de pago -->
                             <div class="col-md-4">
                                 <div class="form-group is-required" v-if="userPermission == false">
@@ -315,6 +330,7 @@ export default {
                 individual: false,
                 ordinary_payment: false,
                 skip_moments: false,
+                is_trust: false,
                 payment_periodicity: '',
                 periods_number: '',
                 start_date: '',
@@ -626,6 +642,7 @@ export default {
                 order: false,
                 receipt: false,
                 individual: false,
+                is_trust: false,
                 payment_periodicity: '',
                 periods_number: '',
                 finance_bank_account_id: '',

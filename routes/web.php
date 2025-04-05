@@ -63,6 +63,17 @@ Route::get('/refresh-captcha', [LoginController::class, 'refreshCaptcha']);
 
 /*
  | -----------------------------------------------------------------------
+ | Ruta para recargar el token csrf
+ | -----------------------------------------------------------------------
+ |
+ | Gestiona el proceso para generar un nuevo token csrf a petición del usuario
+ */
+Route::get('/refresh-csrf-token', function () {
+    return csrf_token();
+})->name('refresh.csrf.token');
+
+/*
+ | -----------------------------------------------------------------------
  | Ruta para generar logs del sistema
  | -----------------------------------------------------------------------
  |

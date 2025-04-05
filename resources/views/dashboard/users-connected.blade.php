@@ -26,18 +26,18 @@
                                 "
                             >
                             </i>
-                        <span>{{ __('Conectados') }}</span>
+                            <span>{{ __('Conectados') }}</span>
                         </div>
                         </div>
                         <div class="row mg-bottom-20" id="helpDisconneted">
                         <div class="col-md-4 panel-legend">
-                        <i
-                            class="fa fa-user text-danger"
-                            data-toggle="tooltip"
-                            title="
-                                {{ __('Los usuarios con este estatus no están conectados a la aplicación') }}"
-                        ></i>
-                        <span>{{ __('Desconectados') }}</span>
+                            <i
+                                class="fa fa-user text-danger"
+                                data-toggle="tooltip"
+                                title="
+                                    {{ __('Los usuarios con este estatus no están conectados a la aplicación') }}"
+                            ></i>
+                            <span>{{ __('Desconectados') }}</span>
                         </div>
                     </div>
                 </div>

@@ -86,11 +86,23 @@ export default {
                 fields['current'] = 'family-burden';
                 event.preventDefault();
                 axios.post(`${window.app_url}/payroll/reports/${current}/create`, fields).then(response => {
-                    if (response.data.result == false)
+                    if (response.data.result == false && response.data.all_data == false)
                         location.href = response.data.redirect;
+                    else if (response.data.result == false && response.data.all_data == true) {
+                        location.href = response.data.redirect;
+                        vm.showMessage(
+                            'custom', 'Exito!', 'success', 'screen-success',
+                            'Ha finalizado la generación del reporte de carga familiar. Por favor revisa en las lista de notificaciones'
+                        );
+                    }
                     else if (typeof(response.data.redirect) !== "undefined") {
-                        const reportWindow = window.open(response.data.redirect, '_blank');
-                        reportWindow.focus();
+                        const a = document.createElement('a');
+                        a.style.display = 'none';
+                        a.href = response.data.redirect;
+                        a.download = "payroll-report"; // the filename you want
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
                     } else if (response.data.result == 'empty') {
                         vm.showMessage(
                             'custom', 'Alerta!', 'danger', 'screen-error',

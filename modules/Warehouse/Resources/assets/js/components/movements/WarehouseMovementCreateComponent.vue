@@ -154,7 +154,7 @@
                 </div>
                 <div slot="id" slot-scope="props">
                     <div>
-                        <input type="number" class="form-control table-form input-sm" data-toggle="tooltip" min=0 :max="props.row.exist" :id="'movement_product_'+props.row.id" onfocus="this.select()" @input="selectElement(props.row.id)">
+                        <input type="number" class="form-control table-form input-sm" data-toggle="tooltip" min=0 :max="props.row.exist" :id="'movement_product_'+props.row.id" @focus="selectText" @input="selectElement(props.row.id)">
                     </div>
                 </div>
                 <div slot="destiny" slot-scope="props">
@@ -180,7 +180,7 @@
                                     'alias': 'numeric',
                                     'allowMinus': 'false',
                                     'digits': 0"
-                                onfocus="this.select()">
+                                @focus="selectText">
                         </div>
                     </div>
                      <br>
@@ -193,13 +193,13 @@
                                     'alias': 'numeric',
                                     'allowMinus': 'false',
                                     'digits': 0"
-                                onfocus="this.select()">
+                                @focus="selectText">
                         </div>
                     </div>
                 </div>
                 <div slot="id" slot-scope="props">
                     <div>
-                        <input type="number" class="form-control table-form input-sm" data-toggle="tooltip" min=0 :max="props.row.exist" :id="'movement_product_'+props.row.id" onfocus="this.select()" @input="selectElement(props.row.id);
+                        <input type="number" class="form-control table-form input-sm" data-toggle="tooltip" min=0 :max="props.row.exist" :id="'movement_product_'+props.row.id" @focus="selectText" @input="selectElement(props.row.id);
                             validateInput(props.row.real, props.row.code, props.row.id)">
                     </div>
                 </div>

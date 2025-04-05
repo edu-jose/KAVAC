@@ -173,7 +173,7 @@
                                                 <input type="text" :id="'salary_scale_h_' + field_h.id" style="width: auto"
                                                        class="form-control input-sm" data-toggle="tooltip"
                                                        :disabled="record.increase_of_type != 'different'"
-                                                       onfocus="this.select()"
+                                                       @focus="selectText"
                                                        :value="getScaleValue(null, field_h.id)">
                                             </div>
                                         </td>
@@ -196,7 +196,7 @@
                                                        :id="'salary_scale_' + field_v.id + '_' + field_h.id"
                                                        class="form-control input-sm" data-toggle="tooltip"
                                                        :disabled="record.increase_of_type != 'different'"
-                                                       onfocus="this.select()"
+                                                       @focus="selectText"
                                                        :value="getScaleValue(field_v.id, field_h.id)">
                                             </div>
                                         </td>
@@ -228,7 +228,7 @@
                                                 <input type="text" :id="'salary_scale_v_' + field.id"
                                                        class="form-control input-sm" data-toggle="tooltip"
                                                        :disabled="record.increase_of_type != 'different'"
-                                                       onfocus="this.select()"
+                                                       @focus="selectText"
                                                        :value="getScaleValue(field.id, null)">
                                             </div>
                                         </td>
@@ -266,7 +266,7 @@
                                                        :id="'salary_scale_' + field_v.id + '_' + field_h.id"
                                                        class="form-control input-sm" data-toggle="tooltip"
                                                        :disabled="record.increase_of_type != 'different'"
-                                                       onfocus="this.select()"
+                                                       @focus="selectText"
                                                        :value="getScaleValue(field_v.id, field_h.id)">
                                             </div>
                                         </td>

@@ -129,7 +129,7 @@ class BudgetCompromise extends Model implements Auditable
      * financePayOrders belongs to FinancePayOrder.
      *
      * @author Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     * @return \Illuminate\Database\Eloquent\Relations\MorphMany|array
      */
     public function financePayOrders()
     {

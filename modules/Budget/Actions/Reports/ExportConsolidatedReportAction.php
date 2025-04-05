@@ -8,6 +8,7 @@ use App\Exports\MultiSheetExport;
 use App\Models\Institution;
 use Maatwebsite\Excel\Facades\Excel;
 use Modules\Budget\Exports\BudgetConsolidatedSheetExport;
+use Illuminate\Support\Facades\Storage;
 
 final class ExportConsolidatedReportAction
 {
@@ -56,6 +57,7 @@ final class ExportConsolidatedReportAction
             ]],
         ];
         $sheets = [];
+
         foreach ($data as $key => $value) {
             $sheets[$key] =  new BudgetConsolidatedSheetExport(
                 [
@@ -73,6 +75,14 @@ final class ExportConsolidatedReportAction
         }
         $this->worksheet->setSheets($sheets);
 
-        return Excel::download($this->worksheet, $file . '.xlsx');
+        $fileName = $file . '.xlsx';
+
+        // Se almacena el archivo de forma temporal
+        Excel::store($this->worksheet, $fileName, 'temporary', \Maatwebsite\Excel\Excel::XLSX);
+
+        // Se obtiene la ruta completa del archivo temporal
+        $tempPath = Storage::disk('temporary')->path($fileName);
+
+        return $tempPath;
     }
 }

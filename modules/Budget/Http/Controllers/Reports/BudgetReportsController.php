@@ -26,6 +26,7 @@ use Modules\Budget\Models\BudgetCompromiseDetail;
 use Modules\Budget\Models\BudgetCentralizedAction;
 use Modules\Budget\Models\BudgetModificationAccount;
 use Modules\Budget\Jobs\CreateBudgetAnalyticalMajorJob;
+use Modules\Budget\Jobs\CreateAndSendBudgetConsolidatedReportJob;
 use Modules\Budget\Models\BudgetCompromise;
 use Modules\Budget\Models\BudgetSubSpecificFormulation;
 use Modules\Budget\Exports\BudgetCompromiseExport;
@@ -163,17 +164,19 @@ class BudgetReportsController extends Controller
         ini_set('max_execution_time', 600);
         $project_accounts_open = array();
         $compromised = 0;
+        $documentStatus = DocumentStatus::getStatus('AP');
 
         foreach ($project->specificActions as $specificAction) {
             $finalAccounts = [];
+            $subSpecificFormulation = $specificAction
+                ->subSpecificFormulations
+                ->where('year', Carbon::parse($initialDate)->format('Y'))
+                ->first();
 
             $accounts = BudgetAccount::query()
                 ->when(count($budgetItemsIds) > 0, function ($query) use ($budgetItemsIds) {
                     $query->whereIn('id', $budgetItemsIds);
                 })
-                ->with(['accountOpens' => function ($query) use ($specificAction) {
-                    $query->where('budget_sub_specific_formulation_id', $specificAction->subSpecificFormulations[0]->id);
-                }, 'accountParent'])
                 ->whereHas('accountOpens', function ($query) use ($initialDate, $finalDate) {
                     $query
                         ->with('subSpecificFormulation')
@@ -183,21 +186,26 @@ class BudgetReportsController extends Controller
                                 ->where('date', '<=', $finalDate);
                         });
                 })
+                ->with(['accountOpens' => function ($query) use ($subSpecificFormulation) {
+                    $query->where('budget_sub_specific_formulation_id', $subSpecificFormulation->id);
+                }, 'accountParent'])
                 ->get();
 
             $modificationAccounts = BudgetAccount::query()
                 ->when(count($budgetItemsIds) > 0, function ($query) use ($budgetItemsIds) {
                     $query->whereIn('id', $budgetItemsIds);
                 })
-                ->with(['modificationAccounts' => function ($query) use ($specificAction) {
-                    $query->where('budget_sub_specific_formulation_id', $specificAction->subSpecificFormulations[0]->id);
+                ->whereHas('modificationAccounts.budgetModification', function ($query) use ($initialDate, $finalDate, $documentStatus) {
+                    $query
+                        ->where('document_status_id', $documentStatus->id)
+                        ->where('status', 'AP')
+                        ->whereDate('approved_date', '>=', $initialDate)
+                        ->whereDate('approved_date', '<=', $finalDate);
+                })
+                ->with(['modificationAccounts' => function ($query) use ($subSpecificFormulation) {
+                    $query->where('budget_sub_specific_formulation_id', $subSpecificFormulation->id);
                 }, 'accountParent', 'modificationAccounts.budgetSubSpecificFormulation.accountOpens',
                 'modificationAccounts.budgetModification'])
-                ->whereHas('modificationAccounts.budgetModification', function ($query) use ($initialDate, $finalDate) {
-                    $query
-                        ->where('approved_at', '>=', $initialDate)
-                        ->where('approved_at', '<=', $finalDate);
-                })
                 ->get();
 
             $formFormId = [];
@@ -453,110 +461,118 @@ class BudgetReportsController extends Controller
                     );
 
                     if ($finalAccount->generic == 00) {
-                        $finalAccounts[$finalAccountParent->code]['increment_total'] += $finalAccount['increment_total'] ??
-                            $finalAccount['increment'];
-                        $finalAccounts[$finalAccountParent->code]['decrement_total'] += $finalAccount['decrement_total'] ??
-                            $finalAccount['decrement'];
-                        $finalAccounts[$finalAccountParent->code]['compromised_total'] += $finalAccount['compromised_total'] ??
-                            $finalAccount['compromised'];
-                        $finalAccounts[$finalAccountParent->code]['compromised_caused'] += $finalAccount['compromised_caused'] ??
-                            $finalAccount['caused'];
-                        $finalAccounts[$finalAccountParent->code]['compromised_paid'] += $finalAccount['compromised_paid'] ??
-                            $finalAccount['paid'];
-                        $finalAccounts[$finalAccountParent->code]['date'] = $finalAccount['date'] ??
-                            $finalAccount['accountOpens'][0]['created_at'] ??
-                            $finalAccount['modificationAccounts'][0]['budgetSubSpecificFormulation']['created_at'];
+                        if (isset($finalAccounts[$finalAccountParent->code])) {
+                            $finalAccounts[$finalAccountParent->code]['increment_total'] += $finalAccount['increment_total'] ??
+                                $finalAccount['increment'];
+                            $finalAccounts[$finalAccountParent->code]['decrement_total'] += $finalAccount['decrement_total'] ??
+                                $finalAccount['decrement'];
+                            $finalAccounts[$finalAccountParent->code]['compromised_total'] += $finalAccount['compromised_total'] ??
+                                $finalAccount['compromised'];
+                            $finalAccounts[$finalAccountParent->code]['compromised_caused'] += $finalAccount['compromised_caused'] ??
+                                $finalAccount['caused'];
+                            $finalAccounts[$finalAccountParent->code]['compromised_paid'] += $finalAccount['compromised_paid'] ??
+                                $finalAccount['paid'];
+                            $finalAccounts[$finalAccountParent->code]['date'] = $finalAccount['date'] ??
+                                $finalAccount['accountOpens'][0]['created_at'] ??
+                                $finalAccount['modificationAccounts'][0]['budgetSubSpecificFormulation']['created_at'];
 
-                        if (isset($finalAccount['modifications']) && count($finalAccount['modifications']) > 0) {
-                            foreach ($finalAccount['modifications'] as $mod) {
-                                $finalAccounts[$finalAccountParent->code]['increment_total'] += $mod['increment_total'] ??
-                                    $mod['increment'];
-                                $finalAccounts[$finalAccountParent->code]['decrement_total'] += $mod['decrement_total'] ??
-                                    $mod['decrement'];
-                                $finalAccounts[$finalAccountParent->code]['compromised_total'] += $mod['compromised_total'] ??
-                                    $mod['compromised'];
-                                $finalAccounts[$finalAccountParent->code]['compromised_caused'] += $mod['compromised_caused'] ??
-                                    $mod['caused'];
-                                $finalAccounts[$finalAccountParent->code]['compromised_paid'] += $mod['compromised_paid'] ??
-                                    $mod['paid'];
-                                $finalAccounts[$finalAccountParent->code]['date'] = $mod['date'];
+                            if (isset($finalAccount['modifications']) && count($finalAccount['modifications']) > 0) {
+                                foreach ($finalAccount['modifications'] as $mod) {
+                                    $finalAccounts[$finalAccountParent->code]['increment_total'] += $mod['increment_total'] ??
+                                        $mod['increment'];
+                                    $finalAccounts[$finalAccountParent->code]['decrement_total'] += $mod['decrement_total'] ??
+                                        $mod['decrement'];
+                                    $finalAccounts[$finalAccountParent->code]['compromised_total'] += $mod['compromised_total'] ??
+                                        $mod['compromised'];
+                                    $finalAccounts[$finalAccountParent->code]['compromised_caused'] += $mod['compromised_caused'] ??
+                                        $mod['caused'];
+                                    $finalAccounts[$finalAccountParent->code]['compromised_paid'] += $mod['compromised_paid'] ??
+                                        $mod['paid'];
+                                    $finalAccounts[$finalAccountParent->code]['date'] = $mod['date'];
+                                }
                             }
                         }
                     } elseif ($finalAccount->specific == 00) {
-                        $finalAccounts[$finalAccountParent->code]['increment_total'] += $finalAccount['increment_total'] ??
-                            $finalAccount['increment'];
-                        $finalAccounts[$finalAccountParent->code]['decrement_total'] += $finalAccount['decrement_total'] ??
-                            $finalAccount['decrement'];
-                        $finalAccounts[$finalAccountParent->code]['compromised_total'] += $finalAccount['compromised_total'] ??
-                            $finalAccount['compromised'];
-                        $finalAccounts[$finalAccountParent->code]['compromised_caused'] += $finalAccount['compromised_caused'] ??
-                            $finalAccount['caused'];
-                        $finalAccounts[$finalAccountParent->code]['compromised_paid'] += $finalAccount['compromised_paid'] ??
-                            $finalAccount['paid'];
-                        $finalAccounts[$finalAccountParent->code]['date'] = $finalAccount['date'] ??
-                            $finalAccount['accountOpens'][0]['created_at'] ??
-                            $finalAccount['modificationAccounts'][0]['budgetSubSpecificFormulation']['created_at'];
+                        if (isset($finalAccounts[$finalAccountParent->code])) {
+                            $finalAccounts[$finalAccountParent->code]['increment_total'] += $finalAccount['increment_total'] ??
+                                $finalAccount['increment'];
+                            $finalAccounts[$finalAccountParent->code]['decrement_total'] += $finalAccount['decrement_total'] ??
+                                $finalAccount['decrement'];
+                            $finalAccounts[$finalAccountParent->code]['compromised_total'] += $finalAccount['compromised_total'] ??
+                                $finalAccount['compromised'];
+                            $finalAccounts[$finalAccountParent->code]['compromised_caused'] += $finalAccount['compromised_caused'] ??
+                                $finalAccount['caused'];
+                            $finalAccounts[$finalAccountParent->code]['compromised_paid'] += $finalAccount['compromised_paid'] ??
+                                $finalAccount['paid'];
+                            $finalAccounts[$finalAccountParent->code]['date'] = $finalAccount['date'] ??
+                                $finalAccount['accountOpens'][0]['created_at'] ??
+                                $finalAccount['modificationAccounts'][0]['budgetSubSpecificFormulation']['created_at'];
 
-                        if (isset($finalAccount['modifications']) && count($finalAccount['modifications']) > 0) {
-                            foreach ($finalAccount['modifications'] as $mod) {
-                                $finalAccounts[$finalAccountParent->code]['increment_total'] += $mod['increment_total'] ??
-                                    $mod['increment'];
-                                $finalAccounts[$finalAccountParent->code]['decrement_total'] += $mod['decrement_total'] ??
-                                    $mod['decrement'];
-                                $finalAccounts[$finalAccountParent->code]['compromised_total'] += $mod['compromised_total'] ??
-                                    $mod['compromised'];
-                                $finalAccounts[$finalAccountParent->code]['compromised_caused'] += $mod['compromised_caused'] ??
-                                    $mod['caused'];
-                                $finalAccounts[$finalAccountParent->code]['compromised_paid'] += $mod['compromised_paid'] ??
-                                    $mod['paid'];
-                                $finalAccounts[$finalAccountParent->code]['date'] = $mod['date'];
+                            if (isset($finalAccount['modifications']) && count($finalAccount['modifications']) > 0) {
+                                foreach ($finalAccount['modifications'] as $mod) {
+                                    $finalAccounts[$finalAccountParent->code]['increment_total'] += $mod['increment_total'] ??
+                                        $mod['increment'];
+                                    $finalAccounts[$finalAccountParent->code]['decrement_total'] += $mod['decrement_total'] ??
+                                        $mod['decrement'];
+                                    $finalAccounts[$finalAccountParent->code]['compromised_total'] += $mod['compromised_total'] ??
+                                        $mod['compromised'];
+                                    $finalAccounts[$finalAccountParent->code]['compromised_caused'] += $mod['compromised_caused'] ??
+                                        $mod['caused'];
+                                    $finalAccounts[$finalAccountParent->code]['compromised_paid'] += $mod['compromised_paid'] ??
+                                        $mod['paid'];
+                                    $finalAccounts[$finalAccountParent->code]['date'] = $mod['date'];
+                                }
                             }
                         }
                     } elseif ($finalAccount->subspecific == 00) {
-                        $finalAccounts[$finalAccountParent->code]['increment_total'] += $finalAccount['increment_total'] ??
-                            $finalAccount['increment'];
-                        $finalAccounts[$finalAccountParent->code]['decrement_total'] += $finalAccount['decrement_total'] ??
-                            $finalAccount['decrement'];
-                        $finalAccounts[$finalAccountParent->code]['compromised_total'] += $finalAccount['compromised_total'] ??
-                            $finalAccount['compromised'];
-                        $finalAccounts[$finalAccountParent->code]['compromised_caused'] += $finalAccount['compromised_caused'] ??
-                            $finalAccount['caused'];
-                        $finalAccounts[$finalAccountParent->code]['compromised_paid'] += $finalAccount['compromised_paid'] ??
-                            $finalAccount['paid'];
-                        $finalAccounts[$finalAccountParent->code]['date'] = $finalAccount['date'];
+                        if (isset($finalAccounts[$finalAccountParent->code])) {
+                            $finalAccounts[$finalAccountParent->code]['increment_total'] += $finalAccount['increment_total'] ??
+                                $finalAccount['increment'];
+                            $finalAccounts[$finalAccountParent->code]['decrement_total'] += $finalAccount['decrement_total'] ??
+                                $finalAccount['decrement'];
+                            $finalAccounts[$finalAccountParent->code]['compromised_total'] += $finalAccount['compromised_total'] ??
+                                $finalAccount['compromised'];
+                            $finalAccounts[$finalAccountParent->code]['compromised_caused'] += $finalAccount['compromised_caused'] ??
+                                $finalAccount['caused'];
+                            $finalAccounts[$finalAccountParent->code]['compromised_paid'] += $finalAccount['compromised_paid'] ??
+                                $finalAccount['paid'];
+                            $finalAccounts[$finalAccountParent->code]['date'] = $finalAccount['date'];
 
-                        if (isset($finalAccount['modifications']) && count($finalAccount['modifications']) > 0) {
-                            foreach ($finalAccount['modifications'] as $mod) {
-                                $finalAccounts[$finalAccountParent->code]['increment_total'] += $mod['increment_total'] ??
-                                    $mod['increment'];
-                                $finalAccounts[$finalAccountParent->code]['decrement_total'] += $mod['decrement_total'] ??
-                                    $mod['decrement'];
-                                $finalAccounts[$finalAccountParent->code]['compromised_total'] += $mod['compromised_total'] ??
-                                    $mod['compromised'];
-                                $finalAccounts[$finalAccountParent->code]['compromised_caused'] += $mod['compromised_caused'] ??
-                                    $mod['caused'];
-                                $finalAccounts[$finalAccountParent->code]['compromised_paid'] += $mod['compromised_paid'] ??
-                                    $mod['paid'];
-                                $finalAccounts[$finalAccountParent->code]['date'] = $mod['date'];
+                            if (isset($finalAccount['modifications']) && count($finalAccount['modifications']) > 0) {
+                                foreach ($finalAccount['modifications'] as $mod) {
+                                    $finalAccounts[$finalAccountParent->code]['increment_total'] += $mod['increment_total'] ??
+                                        $mod['increment'];
+                                    $finalAccounts[$finalAccountParent->code]['decrement_total'] += $mod['decrement_total'] ??
+                                        $mod['decrement'];
+                                    $finalAccounts[$finalAccountParent->code]['compromised_total'] += $mod['compromised_total'] ??
+                                        $mod['compromised'];
+                                    $finalAccounts[$finalAccountParent->code]['compromised_caused'] += $mod['compromised_caused'] ??
+                                        $mod['caused'];
+                                    $finalAccounts[$finalAccountParent->code]['compromised_paid'] += $mod['compromised_paid'] ??
+                                        $mod['paid'];
+                                    $finalAccounts[$finalAccountParent->code]['date'] = $mod['date'];
+                                }
                             }
                         }
                     } elseif ($finalAccount->subspecific != 00) {
-                        $finalAccounts[$finalAccountParent->code]['increment_total'] += $finalAccount['increment'];
-                        $finalAccounts[$finalAccountParent->code]['decrement_total'] += $finalAccount['decrement'];
-                        $finalAccounts[$finalAccountParent->code]['compromised_total'] += $finalAccount['compromised'];
-                        $finalAccounts[$finalAccountParent->code]['compromised_caused'] += $finalAccount['caused'];
-                        $finalAccounts[$finalAccountParent->code]['compromised_paid'] += $finalAccount['paid'];
-                        $finalAccounts[$finalAccountParent->code]['date'] = $finalAccount['date'] ??
-                            $finalAccount['modificationAccounts'][0]['budgetSubSpecificFormulation']['created_at'];
+                        if (isset($finalAccounts[$finalAccountParent->code])) {
+                            $finalAccounts[$finalAccountParent->code]['increment_total'] += $finalAccount['increment'];
+                            $finalAccounts[$finalAccountParent->code]['decrement_total'] += $finalAccount['decrement'];
+                            $finalAccounts[$finalAccountParent->code]['compromised_total'] += $finalAccount['compromised'];
+                            $finalAccounts[$finalAccountParent->code]['compromised_caused'] += $finalAccount['caused'];
+                            $finalAccounts[$finalAccountParent->code]['compromised_paid'] += $finalAccount['paid'];
+                            $finalAccounts[$finalAccountParent->code]['date'] = $finalAccount['date'] ??
+                                $finalAccount['modificationAccounts'][0]['budgetSubSpecificFormulation']['created_at'];
 
-                        if (isset($finalAccount['modifications']) && count($finalAccount['modifications']) > 0) {
-                            foreach ($finalAccount['modifications'] as $mod) {
-                                $finalAccounts[$finalAccountParent->code]['increment_total'] += $mod['increment'];
-                                $finalAccounts[$finalAccountParent->code]['decrement_total'] += $mod['decrement'];
-                                $finalAccounts[$finalAccountParent->code]['compromised_total'] += $mod['compromised'];
-                                $finalAccounts[$finalAccountParent->code]['compromised_caused'] += $mod['caused'];
-                                $finalAccounts[$finalAccountParent->code]['compromised_paid'] += $mod['paid'];
-                                $finalAccounts[$finalAccountParent->code]['date'] = $mod['date'];
+                            if (isset($finalAccount['modifications']) && count($finalAccount['modifications']) > 0) {
+                                foreach ($finalAccount['modifications'] as $mod) {
+                                    $finalAccounts[$finalAccountParent->code]['increment_total'] += $mod['increment'];
+                                    $finalAccounts[$finalAccountParent->code]['decrement_total'] += $mod['decrement'];
+                                    $finalAccounts[$finalAccountParent->code]['compromised_total'] += $mod['compromised'];
+                                    $finalAccounts[$finalAccountParent->code]['compromised_caused'] += $mod['caused'];
+                                    $finalAccounts[$finalAccountParent->code]['compromised_paid'] += $mod['paid'];
+                                    $finalAccounts[$finalAccountParent->code]['date'] = $mod['date'];
+                                }
                             }
                         }
                     }
@@ -585,7 +601,7 @@ class BudgetReportsController extends Controller
                 if (!isset($finalAccount['date'])) {
                     $finalAccount['date'] = $finalAccount['accountOpens'][0]['created_at'] ??
                         $finalAccount['modificationAccounts'][0]['budgetSubSpecificFormulation']['created_at'] ??
-                        $finalAccount['modificationAccounts'][0]['created_at'];
+                        $finalAccount['modificationAccounts'][0]['created_at'] ?? null;
                 }
 
                 $finalAccount['current'] = $finalAccount['self_amount'] + $finalAccount['increment_total'] -
@@ -629,7 +645,7 @@ class BudgetReportsController extends Controller
                 $project_accounts_open,
                 [
                     $finalAccounts,
-                    $specificAction->subSpecificFormulations[0],
+                    $subSpecificFormulation,
                     "project_code" => $project->code,
                     "specific_action_code" => $specificAction->code,
                     "specific_action_name" => $specificAction->name,
@@ -739,7 +755,16 @@ class BudgetReportsController extends Controller
      */
     public function getAccountModifications(int $account_budget_sub_specific_formulation_id)
     {
-        $modifications = BudgetModificationAccount::with('budgetModification')->where('budget_sub_specific_formulation_id', $account_budget_sub_specific_formulation_id)->get();
+        $documentStatus = DocumentStatus::getStatus('AP');
+        $modifications = BudgetModificationAccount::query()
+            ->whereHas('budgetModification', function ($query) use ($documentStatus) {
+                $query
+                    ->where('document_status_id', $documentStatus->id)
+                    ->where('status', 'AP');
+            })
+            ->with('budgetModification')
+            ->where('budget_sub_specific_formulation_id', $account_budget_sub_specific_formulation_id)
+            ->get();
         return !$modifications->isEmpty() ? $modifications : null;
     }
 
@@ -1347,6 +1372,7 @@ class BudgetReportsController extends Controller
 
         $start_date = $request->query('start_date');
         $end_date = $request->query('end_date');
+        $currency = $request->query('currency');
         $statusIds = count($request->query('status_id', []) ?? []) < 1 ?
         [] : explode(',', $request->query('status_id')[0]);
 
@@ -1362,8 +1388,9 @@ class BudgetReportsController extends Controller
                 return !in_array($record->status, $statusIds);
             });
         }
+        $currency = Currency::where('id', $currency)->first();
         return Excel::download(
-            new BudgetCompromiseExport($records),
+            new BudgetCompromiseExport($records, $currency),
             'reporte_compromisos.xlsx'
         );
     }
@@ -1400,6 +1427,7 @@ class BudgetReportsController extends Controller
         );
 
         $start_date = $request->query('start_date');
+        $currency = $request->query('currency');
         $end_date = $request->query('end_date');
         $statusIds = count($request->query('status_id', []) ?? []) < 1 ?
         [] : explode(',', $request->query('status_id')[0]);
@@ -1416,7 +1444,6 @@ class BudgetReportsController extends Controller
                 return !in_array($record->status, $statusIds);
             });
         }
-
         try {
             $pdf = new ReportRepository();
 
@@ -1424,7 +1451,7 @@ class BudgetReportsController extends Controller
             ->where('default', true)
             ->first();
             $fiscal_year = FiscalYear::where('active', true)->first();
-            $currency = Currency::where('default', true)->first();
+            $currency = Currency::where('id', $currency)->first();
             $profile = auth()->user();
             $date = 'Informacion de compromisos desde ' . \Carbon\Carbon::rawCreateFromFormat('Y-m-d', $start_date)->format('d-m-Y') . ' hasta ' . \Carbon\Carbon::rawCreateFromFormat('Y-m-d', $end_date)->format('d-m-Y');
 
@@ -1449,6 +1476,7 @@ class BudgetReportsController extends Controller
                 'currencySymbol' => $currency['symbol'],
                 'fiscal_year' => $fiscal_year['year'],
                 'profile' => $profile,
+                'currency' => $currency ,
                 ]
             );
         } catch (\Exception $e) {
@@ -1479,10 +1507,12 @@ class BudgetReportsController extends Controller
                 ['required', 'array', 'not_in:0|null, ""'],
             'start_date' => ['required', 'before_or_equal:end_date'],
             'end_date' => ['required', 'after_or_equal:start_date'],
+            'currency_id' => ['required', 'exists:currencies,id'],
         ], [], [
             'formulation_id' => 'El campo Acción Especifica',
             'start_date' => 'El campo Desde',
             'end_date' => 'El campo Hasta',
+            'currency_id' => 'Moneda',
         ]);
 
         try {
@@ -1494,15 +1524,19 @@ class BudgetReportsController extends Controller
 
             if ($request->all_specific_actions == 'true') {
                 if ($request->is_project) {
-                    $formulation = BudgetSubSpecificFormulation::query()->whereHas('specificAction', function ($query) use ($isProject) {
-                        $query->whereHasMorph('specificable', [BudgetProject::class], function ($query) use ($isProject) {
-                            return $query->where('specificable_type', $isProject)->where('specificable_id', 1);
+                    $formulation = BudgetSubSpecificFormulation::query()->whereHas('specificAction', function ($query) use ($isProject, $request) {
+                        $query->whereHasMorph('specificable', [BudgetProject::class], function ($query) use ($isProject, $request) {
+                            return $query
+                                ->where('specificable_type', $isProject)
+                                ->where('specificable_id', $request->project_id);
                         });
                     })->get();
                 } else {
-                    $formulation = BudgetSubSpecificFormulation::query()->whereHas('specificAction', function ($query) use ($isCentralizedAction) {
-                        $query->whereHasMorph('specificable', [BudgetCentralizedAction::class], function ($query) use ($isCentralizedAction) {
-                            return $query->where('specificable_type', $isCentralizedAction)->where('specificable_id', 1);
+                    $formulation = BudgetSubSpecificFormulation::query()->whereHas('specificAction', function ($query) use ($isCentralizedAction, $request) {
+                        $query->whereHasMorph('specificable', [BudgetCentralizedAction::class], function ($query) use ($isCentralizedAction, $request) {
+                            return $query
+                                ->where('specificable_type', $isCentralizedAction)
+                                ->where('specificable_id', $request->centralized_action_id);
                         });
                     })->get();
                 }
@@ -1516,7 +1550,8 @@ class BudgetReportsController extends Controller
 
             $fiscal_year = FiscalYear::where('active', true)->first();
 
-            $currency = Currency::where('default', true)->first();
+            // Establece la moneda en la que se va a mostrar el reporte
+            $currency = Currency::find($request->input('currency_id'));
 
             $profile = Profile::where('user_id', auth()->user()->id)->first();
 
@@ -1537,7 +1572,7 @@ class BudgetReportsController extends Controller
                     'currencySymbol' => $currency['symbol'],
                     'fiscal_year' => $fiscal_year['year'],
                     'profile' => $profile,
-
+                    'currency' => $currency,
                 ]), now()->format('d-m-Y') . '_Reporte_de_Presupuesto_formulado.xlsx');
             } else {
                 $pdf->setConfig([
@@ -1562,6 +1597,7 @@ class BudgetReportsController extends Controller
                     'currencySymbol' => $currency['symbol'],
                     'fiscal_year' => $fiscal_year['year'],
                     'profile' => $profile,
+                    'currency' => $currency,
                 ]);
             }
         } catch (\Exception $e) {
@@ -2287,6 +2323,8 @@ class BudgetReportsController extends Controller
         }
 
         if (!empty($specificActionIds)) {
+            $documentStatus = DocumentStatus::getStatus('AP');
+
             foreach ($specificActionIds as $key => $specificAction) {
                 // Se buscan las formulaciones para cada accion específica
                 $formulation = BudgetSubSpecificFormulation::query()
@@ -2310,6 +2348,11 @@ class BudgetReportsController extends Controller
                             }
 
                             $modificationAccounts = BudgetModificationAccount::query()
+                                ->whereHas('budgetModification', function ($query) use ($documentStatus) {
+                                    $query
+                                        ->where('document_status_id', $documentStatus->id)
+                                        ->where('status', 'AP');
+                                })
                                 ->where('budget_sub_specific_formulation_id', $formulation->id)
                                 ->whereNotIn('budget_account_id', $budgetAccountIds)
                                 ->get();
@@ -2326,6 +2369,11 @@ class BudgetReportsController extends Controller
                         }
 
                         $modificationAccounts = BudgetModificationAccount::query()
+                            ->whereHas('budgetModification', function ($query) use ($documentStatus) {
+                                $query
+                                    ->where('document_status_id', $documentStatus->id)
+                                    ->where('status', 'AP');
+                            })
                             ->where('budget_sub_specific_formulation_id', $formulation->id)
                             ->whereIn('budget_account_id', $accountIds)
                             ->whereNotIn('budget_account_id', $budgetAccountIds)
@@ -2545,8 +2593,10 @@ class BudgetReportsController extends Controller
                             ];
 
                             $modifications = BudgetModification::query()
-                                ->whereDate('approved_at', '>=', $dateFrom)
-                                ->whereDate('approved_at', '<=', $dateTo)
+                                ->where('document_status_id', $documentStatus->id)
+                                ->where('status', 'AP')
+                                ->whereDate('approved_date', '>=', $dateFrom)
+                                ->whereDate('approved_date', '<=', $dateTo)
                                 ->whereHas('budgetModificationAccounts', function ($query) use ($account, $formulation) {
                                     $query
                                         ->where('budget_account_id', $account->budget_account_id)
@@ -2859,6 +2909,13 @@ class BudgetReportsController extends Controller
         return $data;
     }
 
+    /**
+     * Genera el reporte de conciliado y lo envía al usuario.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \Modules\Budget\Actions\Reports\ExportConsolidatedReportAction  $export
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function budgetConsolidatedExport(Request $request, ExportConsolidatedReportAction $export)
     {
         try {
@@ -2866,15 +2923,18 @@ class BudgetReportsController extends Controller
             $monthTo = Str::ucfirst(Carbon::parse($request->to)->translatedFormat('F'));
             $date = Carbon::createFromFormat('Y-m-d', $request->to)->format('d/m/Y');
 
-            return $export->invoke(
-                $this->budgetLoadConsolidated($request),
+            CreateAndSendBudgetConsolidatedReportJob::dispatch(
+                auth()->user()->id,
+                $request->all(),
                 $monthFrom,
                 $monthTo,
-                $date,
                 now()->format('d-m-Y') . '_Reporte_Consolidado'
             );
+
+            return response()->json(['result' => true], 200);
         } catch (\Exception $e) {
             Log::error($e);
+
             return redirect(
                 route('budget.report.consolidated', [
                     'message' => 'error'

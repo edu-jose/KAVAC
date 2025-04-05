@@ -100,10 +100,10 @@
                                                     <div class="form-group">
                                                         <label>¿Activa?</label>
                                                         <div class="col-12">
-                                                            <div class="custom-control custom-switch" data-toggle="tooltip" 
+                                                            <div class="custom-control custom-switch" data-toggle="tooltip"
                                                                  title="Indique si el tabulador está activo">
-                                                                <input type="checkbox" class="custom-control-input" 
-                                                                       id="salaryTabulatorActive" v-model="record.active" 
+                                                                <input type="checkbox" class="custom-control-input"
+                                                                       id="salaryTabulatorActive" v-model="record.active"
                                                                        :value="true">
                                                                 <label class="custom-control-label" for="salaryTabulatorActive"></label>
                                                             </div>
@@ -116,12 +116,12 @@
                                                     <div class="form-group">
                                                         <label>Porcentaje:</label>
                                                         <div class="col-12">
-                                                            <div class="custom-control custom-switch" data-toggle="tooltip" 
+                                                            <div class="custom-control custom-switch" data-toggle="tooltip"
                                                                  title="Indique si el valor se calculará en porcentaje">
-                                                                <input type="checkbox" class="custom-control-input" 
-                                                                       id="salaryTabulatorPercentaje" v-model="record.percentage" 
+                                                                <input type="checkbox" class="custom-control-input"
+                                                                       id="salaryTabulatorPercentaje" v-model="record.percentage"
                                                                        :value="true">
-                                                                <label class="custom-control-label" 
+                                                                <label class="custom-control-label"
                                                                        for="salaryTabulatorPercentaje"></label>
                                                             </div>
                                                         </div>
@@ -243,7 +243,7 @@
                                             <tbody>
                                                 <tr class="text-center">
                                                     <th>Nombre:</th>
-                                                    <th 
+                                                    <th
                                                         v-for="(field_h, index) in payroll_salary_scale_h.payroll_scales" :key="index">
                                                         <div v-if="payroll_salary_scale_h.type == 'list'" style="min-width: 130px;">
                                                             {{field_h.name + " - " + payroll_options_h[field_h.value.replace(/['"]+/g, '')]}}
@@ -254,19 +254,19 @@
                                                         <div v-else style="min-width: 130px;">
                                                             {{field_h.name + " - " + field_h.value.replace(/['"]+/g, '')}}
                                                         </div>
-                                                        
+
                                                     </th>
                                                 </tr>
                                                 <tr class="text-center"
                                                     v-if="record.payroll_salary_tabulator_type == 'horizontal'">
                                                     <th>Incidencia:</th>
                                                     <td class="td-with-border"
-                                                        v-for="(field_h, index) in payroll_salary_scale_h.payroll_scales" 
+                                                        v-for="(field_h, index) in payroll_salary_scale_h.payroll_scales"
                                                         :key="index">
                                                         <div>
                                                             <input type="text" :id="'salary_scale_h_' + field_h.id"
                                                                    class="form-control input-sm" data-toggle="tooltip"
-                                                                   onfocus="this.select()" v-input-mask
+                                                                   @focus="selectText" v-input-mask
                                                                    data-inputmask="
                                                                        'alias': 'numeric',
                                                                        'allowMinus': 'false',
@@ -278,7 +278,7 @@
                                                 <tr class="text-center"
                                                     v-if="record.payroll_vertical_salary_scale_id > 0
                                                        && record.payroll_salary_tabulator_type == 'mixed'"
-                                                    v-for="(field_v, index_v) in payroll_salary_scale_v.payroll_scales" 
+                                                    v-for="(field_v, index_v) in payroll_salary_scale_v.payroll_scales"
                                                     :key="index_v">
                                                     <th v-if="payroll_salary_scale_v.type == 'list'">
                                                         {{field_v.name + " - " + payroll_options_v[field_v.value.replace(/['"]+/g, '')]}}
@@ -295,7 +295,7 @@
                                                             <input type="text"
                                                                    :id="'salary_scale_' + field_v.id + '_' + field_h.id"
                                                                    class="form-control input-sm" data-toggle="tooltip"
-                                                                   onfocus="this.select()" v-input-mask
+                                                                   @focus="selectText" v-input-mask
                                                                    data-inputmask="
                                                                        'alias': 'numeric',
                                                                        'allowMinus': 'false',
@@ -319,7 +319,7 @@
                                                     <th>Incidencia</th>
                                                 </tr>
                                                 <tr class="text-center"
-                                                    v-for="(field, index) in payroll_salary_scale_v.payroll_scales" 
+                                                    v-for="(field, index) in payroll_salary_scale_v.payroll_scales"
                                                     :key="index">
                                                     <th v-if="payroll_salary_scale_v.type == 'list'">
                                                         {{field.name + " - " + payroll_options_v[field.value.replace(/['"]+/g, '')]}}
@@ -334,7 +334,7 @@
                                                         <div>
                                                             <input type="text" :id="'salary_scale_v_' + field.id"
                                                                    class="form-control input-sm" data-toggle="tooltip"
-                                                                   onfocus="this.select()" v-input-mask
+                                                                   @focus="selectText" v-input-mask
                                                                    data-inputmask="
                                                                        'alias': 'numeric',
                                                                        'allowMinus': 'false',
@@ -370,15 +370,15 @@
 			        </div>
 			        <div class="modal-footer">
                         <div class="form-group">
-                            <button type="button" class="btn btn-default btn-sm btn-round btn-modal-close" 
+                            <button type="button" class="btn btn-default btn-sm btn-round btn-modal-close"
 									@click="clearFilters" data-dismiss="modal">
 								Cerrar
 							</button>
-							<button type="button" class="btn btn-warning btn-sm btn-round btn-modal btn-modal-clear" 
+							<button type="button" class="btn btn-warning btn-sm btn-round btn-modal btn-modal-clear"
 									@click="reset()">
 								Cancelar
 							</button>
-							<button type="button" @click="createRecord('payroll/salary-tabulators')" 
+							<button type="button" @click="createRecord('payroll/salary-tabulators')"
 									class="btn btn-primary btn-sm btn-round btn-modal-save">
 								Guardar
 							</button>
@@ -883,7 +883,7 @@
                             if (error.response.status == 403) {
                                 vm.showMessage(
                                     'custom', 'Acceso Denegado', 'danger', 'screen-error', error.response.data.message
-                                ); 
+                                );
                             }
 
                             for (var index in error.response.data.errors) {

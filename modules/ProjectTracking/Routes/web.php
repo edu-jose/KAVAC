@@ -98,9 +98,12 @@ Route::group([
 
     /* Ruta para obtener el listado de las actividades */
     Route::get('get-activities', 'ProjectTrackingActivitysController@getActivities')->name('projecttracking.activities.get');
-    /** Ruta para gestionar Tipo de Actividades */
-    Route::resource('activity-type', 'ProjectTrackingActivityTypeController', ['except' => ['show']]);
-
+    /** Ruta para gestionar Tipo de Tareas*/
+    Route::resource('task-types', 'ProjectTrackingTaskTypesController', ['except' => ['show']]);
+    /** Ruta para gestionar etiquetas */
+    Route::resource('tags', 'ProjectTrackingTagsController', ['except' => ['show']]);
+    /** Ruta para gestionar tipos de dependencias */
+    Route::resource('dependencies-type', 'ProjectTrackingDependenciesTypeController', ['except' => ['show']]);
 
     /* Ruta para obtener el listado de las actividades segun un id de tipo de producto*/
     Route::get(

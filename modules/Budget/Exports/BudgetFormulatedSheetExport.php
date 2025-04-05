@@ -48,13 +48,14 @@ class BudgetFormulatedSheetExport implements WithDrawings, FromView, WithStyles
     public function view(): View
     {
         return view('budget::xlsx.formulations', [
-        'pdf' => $this->data['pdf'],
-        'formulations' => $this->data['formulations'],
-        'totalFormulations' => $this->data['totalFormulations'],
-        'institution' => $this->data['institution'],
-        'currencySymbol' => $this->data['currencySymbol'],
-        'fiscal_year' => $this->data['fiscal_year'],
-        'profile' => $this->data['profile'],
+            'pdf' => $this->data['pdf'],
+            'formulations' => $this->data['formulations'],
+            'totalFormulations' => $this->data['totalFormulations'],
+            'institution' => $this->data['institution'],
+            'currencySymbol' => $this->data['currencySymbol'],
+            'fiscal_year' => $this->data['fiscal_year'],
+            'profile' => $this->data['profile'],
+            'currency' => $this->data['currency'],
         ]);
     }
     public function styles(Worksheet $sheet)

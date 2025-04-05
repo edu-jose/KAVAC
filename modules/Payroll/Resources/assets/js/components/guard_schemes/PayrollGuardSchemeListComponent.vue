@@ -1,22 +1,7 @@
 <template>
     <div>
         <v-client-table ref="tableResults" :columns="columns" :data="records" :options="table_options">
-            <div slot="institution" slot-scope="props" class="text-center">
-                <span>{{ props.row.institution }}</span>
-            </div>
-            <div slot="date" slot-scope="props" class="text-center">
-                <span>{{ format_date(props.row.from_date) + ' - ' + format_date(props.row.to_date)}}</span>
-            </div>
-            <div slot="code" slot-scope="props" class="text-center">
-                <span>{{ props.row.payroll_supervised_group.code }}</span>
-            </div>
-            <div slot="supervisor" slot-scope="props">
-                <span>{{ props.row.payroll_supervised_group.supervisor.name }}</span>
-            </div>
-            <div slot="approver" slot-scope="props">
-                <span>{{ props.row.payroll_supervised_group.approver.name }}</span>
-            </div>
-            <div slot="status" slot-scope="props" class="text-center">
+            <div slot="document_status.name" slot-scope="props" class="text-center">
                 <span v-if="props.row.document_status.action == 'EL'" class="text-warning">
                     {{ props.row.document_status.name }}
                 </span>
@@ -35,6 +20,14 @@
                         data-placement="bottom"
                         type="button">
                     <i class="fa fa-eye"></i>
+                </button>
+                <button @click.prevent="createReport(props.row.id, $event)"
+                        class="btn btn-primary btn-xs btn-icon btn-action btn-tooltip"
+                        title="Presione para generar el documento con la información del registro."
+                        data-toggle="tooltip"
+                        data-placement="bottom"
+                        type="button">
+                    <i class="fa fa-file-o"></i>
                 </button>
                 <button v-if="index_permission"
                         @click.prevent="setDetails('GuardSchemePeriodsInfo', props.row.id ,'PayrollGuardSchemePeriodsInfo')"
@@ -95,22 +88,49 @@ export default {
     data() {
         return {
             records: [],
-            columns: ['institution', 'date', 'code', 'supervisor', 'approver', 'status', 'id'],
+            columns: [
+                'institution',
+                'date',
+                'payroll_supervised_group.code',
+                'payroll_supervised_group.supervisor.name',
+                'payroll_supervised_group.approver.name',
+                'document_status.name',
+                'id'
+            ],
         };
     },
     created() {
         const vm = this;
         vm.table_options.headings = {
+            'payroll_supervised_group.supervisor.name': 'Supervisor',
+            'payroll_supervised_group.approver.name': 'Aprobador',
+            'payroll_supervised_group.code': 'Código',
+            'document_status.name': 'Estatus',
             'institution': 'Organización',
-            'date':        'Período',
-            'code':        'Código',
-            'supervisor':  'Supervisor',
-            'approver':    'Aprobador',
-            'status':      'Estatus',
-            'id':          'Acción'
+            'date': 'Período',
+            'id': 'Acción'
         };
-        vm.table_options.sortable       = ['institution', 'date', 'code', 'supervisor', 'approver', 'status'];
-        vm.table_options.filterable     = ['institution', 'date', 'code', 'supervisor', 'approver', 'status'];
+        vm.table_options.sortable       = [
+            'payroll_supervised_group.supervisor.name',
+            'payroll_supervised_group.approver.name',
+            'payroll_supervised_group.code',
+            'document_status.name',
+            'institution',
+            'date',
+        ];
+        vm.table_options.filterable     = [
+            'payroll_supervised_group.supervisor.name',
+            'payroll_supervised_group.approver.name',
+            'payroll_supervised_group.code',
+            'document_status.name',
+            'institution',
+            'date',
+        ];
+        vm.table_options.columnsClasses = {
+            'institution': 'text-center',
+            'payroll_supervised_group.code': 'text-center',
+            'date': 'text-center',
+        };
 
     },
     mounted() {
@@ -318,6 +338,39 @@ export default {
                         }
                     }
 	    		});
+        },
+        createReport(id, event) {
+            const vm = this;
+            vm.loading = true;
+
+            event.preventDefault();
+            axios.get(`${window.app_url}/payroll/guard-schemes/pdf/${id}`).then(response => {
+                if (response.data.result == false)
+                    location.href = response.data.redirect;
+                else if (typeof(response.data.redirect) !== "undefined") {
+                    const reportWindow = window.open(response.data.redirect, '_blank');
+                    reportWindow.focus();
+                }
+                else {
+                    vm.reset();
+                }
+                vm.loading = false;
+            }).catch(error => {
+                vm.errors = [];
+                if (typeof (error.response) != "undefined") {
+                    if (error.response.status == 403) {
+                        vm.showMessage(
+                            'custom', 'Acceso Denegado', 'danger', 'screen-error', error.response.data.message
+                        );
+                    }
+                    for (var index in error.response.data.errors) {
+                        if (error.response.data.errors[index]) {
+                            vm.errors.push(error.response.data.errors[index][0]);
+                        }
+                    }
+                }
+                vm.loading = false;
+            });
         }
     },
 };

@@ -26,9 +26,9 @@ class DeleteFieldNameToProjectTrackingActivities extends Migration
             Schema::table('project_tracking_activities', function (Blueprint $table) {
                 if (Schema::hasColumn('project_tracking_activities', 'name')) {
                     $table->dropColumn('name');
-                };
+                }
             });
-        };
+        }
     }
 
     /**
@@ -42,11 +42,8 @@ class DeleteFieldNameToProjectTrackingActivities extends Migration
             Schema::table('project_tracking_activities', function (Blueprint $table) {
                 if (!Schema::hasColumn('project_tracking_activities', 'name')) {
                     $table->string('name')->comment('name del proceso')->nullable();
-                };
+                }
             });
-        };
-
-        Schema::table('', function (Blueprint $table) {
-        });
+        }
     }
 }

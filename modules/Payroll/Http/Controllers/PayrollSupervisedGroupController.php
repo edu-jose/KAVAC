@@ -15,6 +15,10 @@ use Modules\Payroll\Models\PayrollStaff;
 use Modules\Payroll\Models\PayrollSupervisedGroup;
 use Modules\Payroll\Models\PayrollSupervisedGroupStaff;
 use Modules\Payroll\Models\PayrollTimeSheet;
+use Maatwebsite\Excel\Facades\Excel;
+use Modules\Payroll\Exports\PayrollSupervisedGroupExport;
+use Modules\Payroll\Imports\PayrollSupervisedGroupImport;
+use Modules\Payroll\Transformers\PayrollSupervisedGroupResource;
 use Modules\Payroll\Models\PayrollTimeSheetPending;
 
 /**
@@ -84,9 +88,11 @@ class PayrollSupervisedGroupController extends Controller
      */
     public function index()
     {
-        return response()->json(['records' => PayrollSupervisedGroup::query()
-            ->with('supervisor', 'approver', 'payrollSupervisedGroupStaff.payrollStaff')
-            ->get()], 200);
+        $payrollSupervisedGroups = PayrollSupervisedGroup::query()
+                 ->with('supervisor', 'approver', 'payrollSupervisedGroupStaff.payrollStaff')
+                ->get();
+               $var = PayrollSupervisedGroupResource::collection($payrollSupervisedGroups);
+         return response()->json(['records' => $var ], 200);
     }
 
     /**
@@ -108,6 +114,37 @@ class PayrollSupervisedGroupController extends Controller
      */
     public function store(Request $request)
     {
+        $this->validateRules['supervised'] = [
+            'required',
+            'array',
+            function ($attribute, $value, $fail) {
+                $values = array_map(function ($item) {
+                    return $item['id'] ?? null;
+                }, $value);
+
+                $values = array_filter($values);
+
+                if (count($values) !== count(array_unique($values))) {
+                    $fail('Los valores en el campo :attribute deben ser únicos.');
+                }
+            },
+            function ($attribute, $value, $fail) {
+                $ids = array_map(function ($item) {
+                    return $item['id'] ?? null;
+                }, $value);
+
+                $ids = array_filter($ids);
+
+                $existingIds = PayrollSupervisedGroupStaff::whereIn('payroll_staff_id', $ids)->get();
+                $existingNames = $existingIds?->map(function ($item) {
+                    return $item->payrollStaff->fullName;
+                })->toArray();
+
+                if (!$existingIds->isEmpty()) {
+                    $fail('Los siguientes trabajadores ya pertenecen a un grupo de supervisados : ' . implode(', ', $existingNames));
+                }
+            },
+        ];
         $this->validate($request, $this->validateRules, $this->messages);
 
         $payrollSupervisedGroup = DB::transaction(function () use ($request) {
@@ -166,6 +203,37 @@ class PayrollSupervisedGroupController extends Controller
         $this->validateRules['code'] = [
             'required',
             'unique:payroll_supervised_groups,code,' . $payrollSupervisedGroup->id
+        ];
+        $this->validateRules['supervised'] = [
+            'required',
+            'array',
+            function ($attribute, $value, $fail) {
+                $values = array_map(function ($item) {
+                    return $item['id'] ?? null;
+                }, $value);
+
+                $values = array_filter($values);
+
+                if (count($values) !== count(array_unique($values))) {
+                    $fail('Los valores en el campo :attribute deben ser únicos.');
+                }
+            },
+            function ($attribute, $value, $fail) use ($payrollSupervisedGroup) {
+                $ids = array_map(function ($item) {
+                    return $item['id'] ?? null;
+                }, $value);
+
+                $ids = array_filter($ids);
+
+                $existingIds = PayrollSupervisedGroupStaff::whereIn('payroll_staff_id', $ids)->where('payroll_supervised_group_id', '<>', $payrollSupervisedGroup?->id)->get();
+                $existingNames = $existingIds?->map(function ($item) {
+                    return $item->payrollStaff->fullName;
+                })->toArray();
+
+                if (!$existingIds->isEmpty()) {
+                    $fail('Los siguientes trabajadores ya pertenecen a un grupo de supervisados : ' . implode(', ', $existingNames));
+                }
+            },
         ];
         $this->validate($request, $this->validateRules, $this->messages);
 
@@ -508,5 +576,29 @@ class PayrollSupervisedGroupController extends Controller
             ),
             200
         );
+    }
+
+        /**
+     * Exporta el grupo de supervisados
+     *
+     * @param     Request    $request         Datos de la petición
+     *
+     * @return    BinaryFileResponse
+     */
+    public function export(Request $request)
+    {
+        return Excel::download(new PayrollSupervisedGroupExport($request->all()), 'payroll-supervised-group.xlsx');
+    }
+
+    /**
+     * Importa el grupo de supervisados
+     *
+     * @return    \Illuminate\Http\JsonResponse
+     */
+    public function import()
+    {
+        $rows = Excel::toCollection(new PayrollSupervisedGroupImport(), request()->file('file'));
+        $rows = $rows[0];
+        return response()->json($rows);
     }
 }

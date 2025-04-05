@@ -66,7 +66,6 @@ class BudgetProjectController extends Controller
             'name' => ['required'],
             'description' => ['required'],
             'from_date' => ['required'],
-            'to_date' => ['required'],
         ];
 
         /* Define los mensajes de error para el formulario */
@@ -80,7 +79,6 @@ class BudgetProjectController extends Controller
             'name.required' => 'El campo nombre es obligatorio. ',
             'description.required' => 'El campo descripción es obligatorio. ',
             'from_date.required' => 'El campo fecha de inicio es obligatorio. ',
-            'to_date.required' => 'El campo fecha de finalización es obligatorio. ',
         ];
     }
 

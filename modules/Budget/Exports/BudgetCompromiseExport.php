@@ -34,6 +34,7 @@ class BudgetCompromiseExport implements
     use Exportable;
 
     private $data;
+    private $currency;
     private $total;
 
     /**
@@ -41,19 +42,32 @@ class BudgetCompromiseExport implements
      *
      * @return void
      */
-    public function __construct($data)
+    public function __construct($data, $currency)
     {
         $this->data = $data;
+        $this->currency = $currency;
         $this->total = 0;
 
         foreach ($data as $record) {
             if ($record->sourceable_type === 'Modules\Purchase\Models\PurchaseDirectHire') {
                 foreach ($record->budgetCompromiseDetails as $budgetCompromiseDetail) {
-                    $this->total += $budgetCompromiseDetail->amount;
+                    $this->total += \Modules\Budget\Facades\CurrencyConverter::convert(
+                        $budgetCompromiseDetail->amount,
+                        $budgetCompromiseDetail->created_at,
+                        $budgetCompromiseDetail['budgetSubSpecificFormulation']['currency'],
+                        $currency
+                    );
+                    //$this->total += $budgetCompromiseDetail->amount;
                 }
             } else {
                 foreach ($record->budgetCompromiseDetails as $budgetCompromiseDetail) {
-                    $this->total += $budgetCompromiseDetail->total;
+                    $this->total += \Modules\Budget\Facades\CurrencyConverter::convert(
+                        $budgetCompromiseDetail->total,
+                        $budgetCompromiseDetail->created_at,
+                        $budgetCompromiseDetail['budgetSubSpecificFormulation']['currency'],
+                        $currency
+                    );
+                    // $this->total += $budgetCompromiseDetail->total;
                 }
             }
         }
@@ -156,10 +170,13 @@ class BudgetCompromiseExport implements
             ),
             $commitStatus,
             number_format(
-                $totalByCompromise,
+                \Modules\Budget\Facades\CurrencyConverter::convert(
+                    $totalByCompromise,
+                    $budgetCompromiseDetail->created_at,
+                    $budgetCompromiseDetail['budgetSubSpecificFormulation']['currency'],
+                    $this->currency
+                ),
                 $row['budgetCompromiseDetails'][0]['budgetSubSpecificFormulation']['currency']['decimal_places'],
-                ",",
-                "."
             ),
         ];
     }

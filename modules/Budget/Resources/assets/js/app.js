@@ -26,6 +26,9 @@ import BudgetCompromiseReport from './components/reports/BudgetCompromiseReportC
 import BudgetAnalyticalMajor from './components/BudgetAnalyticalMajorComponent.vue';
 import BudgetCancelCompromise from './components/BudgetCancelCompromiseComponent.vue'
 import BudgetConsolidated from './components/reports/BudgetConsolidatedComponent.vue';
+import BudgetButtonPrintWithModal from './components/buttons/BudgetButtonPrintWithModalComponent.vue';
+import BudgetButtonExportWithModal from './components/buttons/BudgetButtonExportWithModalComponent.vue';
+
 /**
  * Componente para mostrar listado del clasificador de cuentas presupuestarias
  *
@@ -218,6 +221,20 @@ Vue.component('budget-cancel-compromise', BudgetCancelCompromise);
  * @author Daniel Contreras <dcontreras@cenditel.gob.ve> | <exodiadaniel@gmail.com>
  */
 Vue.component('budget-consolidated', BudgetConsolidated);
+
+/**
+ * Componente para mostrar modal e imprimir reportes de formulación
+ *
+ * @author Juan Rosas <jrosas@cenditel.gob.ve> | <juan.rosasr01@gmail.com>
+ */
+Vue.component('budget-print-with-modal', BudgetButtonPrintWithModal);
+
+/**
+ * Componente para mostrar modal e exportar reportes de formulación
+ *
+ * @author Juan Rosas <jrosas@cenditel.gob.ve> | <juan.rosasr01@gmail.com>
+ */
+Vue.component('budget-export-with-modal', BudgetButtonExportWithModal);
 
 /**
  * Opciones de configuración global del módulo de presupuesto

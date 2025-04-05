@@ -46,7 +46,7 @@ class PayrollConcept extends Model implements Auditable
         'payroll_concept_type_id', 'is_strict',
         'accounting_account_id', 'budget_account_id', 'budget_project_id',
         'budget_centralized_action_id', 'budget_specific_action_id', 'assign_to',
-        'currency_id', 'pay_order', 'arc'
+        'currency_id', 'pay_order', 'arc', 'formula_history', 'formula_show_history'
     ];
 
     /**
@@ -54,7 +54,17 @@ class PayrollConcept extends Model implements Auditable
      *
      * @var array $appends
      */
-    protected $appends = ['translate_formula'];
+    protected $appends = ['translate_formula', 'parameter_options'];
+
+    /**
+     * Lista de atributos con el tipo de dato a retornar
+     *
+     * @var array
+     */
+    protected $casts = [
+        'formula_show_history' => 'array',
+        'formula_history' => 'array',
+    ];
 
     /**
      * Método que obtiene la información de la institución asociada al concepto
@@ -267,6 +277,67 @@ class PayrollConcept extends Model implements Auditable
             }
         }
         return $formula;
+    }
+
+    public function getParameterOptionsAttribute()
+    {
+        $parameters = new PayrollAssociatedParametersRepository();
+        $options = [];
+        $typesParameters = ['associatedBenefit', 'associatedVacation', 'associatedWorkerFile', 'parameter', 'concept', 'tabulator', 'ari_register'];
+        $options['if'] = 'Si';
+
+        foreach ($typesParameters as $typeParameter) {
+            if (in_array($typeParameter, ['parameter', 'concept', 'tabulator', 'ari_register'])) {
+                if ($typeParameter == 'parameter') {
+                    $types = Parameter::where(
+                        [
+                            'required_by' => 'payroll',
+                            'active'      => true,
+                        ]
+                    )->where('p_key', 'like', 'global_parameter_%')->get();
+                    foreach ($types as $type) {
+                        $jsonValue = json_decode($type->p_value);
+                        if (Str::contains($this->formula, 'parameter(' . $jsonValue->id . ')')) {
+                            $options['parameter(' . $jsonValue->id . ')'] = $jsonValue->name;
+                        }
+                    }
+                } elseif ($typeParameter == 'concept') {
+                    $types = PayrollConcept::all();
+                    foreach ($types as $type) {
+                        if (Str::contains($this->formula, 'concept(' . $type['id'] . ')')) {
+                            $options['concept(' . $type['id'] . ')'] = $type['name'];
+                        }
+                    }
+                } elseif ($typeParameter == 'tabulator') {
+                    $types = PayrollSalaryTabulator::all();
+                    foreach ($types as $type) {
+                        if (Str::contains($this->formula, 'tabulator(' . $type['id'] . ')')) {
+                            $options['tabulator(' . $type['id'] . ')'] = $type['name'];
+                        }
+                    }
+                } elseif ($typeParameter == 'ari_register') {
+                    if (Str::contains($this->formula, 'ari_register')) {
+                        $options['ari_register'] = 'Registro ARI';
+                    }
+                }
+            } else {
+                $types = $parameters->loadData($typeParameter);
+                foreach ($types as $type) {
+                    if (empty($type['children'])) {
+                        if (Str::contains($this->formula, $type['id'])) {
+                            $options[$type['id']] = $type['name'];
+                        }
+                    } else {
+                        foreach ($type['children'] as $children) {
+                            if (Str::contains($this->formula, $children['id'])) {
+                                $options[$children['id']] = $children['name'];
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return $options;
     }
 
     /**

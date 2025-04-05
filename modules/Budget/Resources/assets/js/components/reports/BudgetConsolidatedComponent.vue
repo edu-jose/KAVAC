@@ -168,26 +168,25 @@
                     }
                 }
 
-                let baseUrl = `${window.app_url}/budget/report/consolidated-export`;
-                let params = new URLSearchParams();
-
-                for (let key in data) {
-                    if (data.hasOwnProperty(key)) {
-                        if ('undefined' !== typeof(data[key])) {
-                            params.append(
-                                key,
-                                (typeof data[key] === 'object')
-                                    ? JSON.stringify(data[key])
-                                    : data[key]
-                            );
-                        }
-                    }
-                }
-                let finalUrl = baseUrl + '?' + params;
-                vm.loading = false;
-                window.open(finalUrl, '_blank');
-
-                return;
+                await axios.post(`${window.app_url}/budget/report/consolidated-export`, data).then(() => {
+                    vm.loading = false;
+                    vm.showMessage(
+                        'custom',
+                        'Reporte Generado',
+                        'primary',
+                        'screen-ok',
+                        'Su solicitud esta en proceso, esto puede tardar unos minutos. Se le notificara al terminar la operación.'
+                    );
+                }).catch(() => {
+                    vm.loading = false;
+                    vm.showMessage(
+                        'custom',
+                        'Error',
+                        'danger',
+                        'screen-error',
+                        'Ocurrió un error al generar el reporte.'
+                    );
+                });
             },
 
             /**

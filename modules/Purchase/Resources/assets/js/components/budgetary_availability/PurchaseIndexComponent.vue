@@ -600,7 +600,7 @@
                                                                     'alias': 'numeric',
                                                                     'allowMinus': 'false'
                                                                 "
-                                                                onfocus="$(this).select()"
+                                                                @focus="selectText"
                                                                 class="form-control input-sm"
                                                                 data-toggle="tooltip"
                                                                 title="Indique el monto a asignar para la cuenta seleccionada"

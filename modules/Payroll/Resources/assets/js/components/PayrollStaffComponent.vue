@@ -66,7 +66,8 @@
                             type="text"
                             class="form-control input-sm"
                             v-model="record.id_number"
-                            v-is-digits
+                            v-input-mask
+                            data-inputmask="'mask': '9{6,8}'"
                         />
                     </div>
                 </div>

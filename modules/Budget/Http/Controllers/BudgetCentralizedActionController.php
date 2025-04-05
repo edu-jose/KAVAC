@@ -130,7 +130,6 @@ class BudgetCentralizedActionController extends Controller
             'payroll_staff_id' => ['required'],
             'ca_description' => ['required'],
             'from_date' => ['required'],
-            'to_date' => ['required'],
         ];
 
         $messages = [
@@ -143,7 +142,6 @@ class BudgetCentralizedActionController extends Controller
             'payroll_staff_id.required'     => 'El campo responsable es obligatorio.',
             'ca_description.required' => 'El campo descripción es obligatorio. ',
             'from_date.required' => 'El campo fecha de inicio es obligatorio. ',
-            'to_date.required' => 'El campo fecha de finalización es obligatorio. ',
         ];
 
         if (Module::has('Payroll') && Module::isEnabled('Payroll')) {

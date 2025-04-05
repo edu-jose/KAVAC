@@ -250,6 +250,10 @@ ACTIVE_DIRECTORY_BASE_DN | Establece los datos del Nombre Distinguido Base del D
 
 BACKUP_ENABLED=true | Habilita / Deshabilita los respaldos de base de datos desde la interfaz de la aplicación
 
+Al configurar la variable BACKUP_ENABLED=true, se habilita la funcionalidad para realizar y restaurar respaldos de la base de datos. Estos respaldos se almacenan en la ruta (ruta-absoluta-de-instalacion)/database/snapshots/KAVAC. Para que la aplicación pueda acceder a este directorio, es necesario otorgarle los permisos adecuados. Esto se puede lograr ejecutando el siguiente comando:
+
+    # chmod -R 755 (ruta-absoluta-de-instalacion)/database/snapshots/KAVAC
+
 SESSION_CONNECTION=null | Valores permitidos **null** o **default**. Indica el tipo de conexión a utilizar para la gestión de sesiones, el valor por defecto es **null** cuando el valor de la variable **SESSION_DRIVER** es **database**, si el valor de la variable **SESSION_DRIVER** es **redis**, se debe modificar el valor de la variable **SESSION_CONNECTION** a **default**.
 
 ## Notificaciones por correo

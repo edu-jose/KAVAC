@@ -92,16 +92,20 @@
     @section('extra-js')
         @parent
         <script nonce="{{ session()->get('nonce') }}">
-            $(document).ready(function() {
-                $('.btn-download-backup').on('click', function() {
-                    location.href="{{ url('backup/download') }}/" + $(this).data('file-name');
-                });
-                $('.btn-upload-backup').on('click', function() {
-                    restore_backup($(this).data('file-name'));
-                });
-                $('.btn-trash-backup').on('click', function() {
-                    delete_backup($(this).data('file-name'));
-                });
+            document.addEventListener('click', function() {
+                if (event.target.classList.contains('btn-download-backup') || event.target.classList.contains('fa-cloud-download')) {
+                    const button = event.target.closest('.btn-download-backup');
+                    const fileName = button.dataset.fileName;
+                    location.href="{{ url('backup/download') }}/" + fileName;
+                } else if (event.target.classList.contains('btn-upload-backup') || event.target.classList.contains('fa-cloud-upload')) {
+                    const button = event.target.closest('.btn-upload-backup');
+                    const fileName = button.dataset.fileName;
+                    restore_backup(fileName);
+                } else if (event.target.classList.contains('btn-trash-backup') || event.target.classList.contains('fa-trash-o')) {
+                    const button = event.target.closest('.btn-trash-backup');
+                    const fileName = button.dataset.fileName;
+                    delete_backup(fileName);
+                }
             });
 
             /**

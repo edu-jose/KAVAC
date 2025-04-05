@@ -34,7 +34,7 @@
                 <div class="col-md-4">
                     <div class="form-group is-required">
                         <label for="date">Fecha de Solicitud</label>
-                        <input type="date" readonly data-toggle="tooltip"
+                        <input type="date" data-toggle="tooltip"
                                id="date" class="form-control input-sm"
                                title="Indique la fecha de solicitud" v-model="record.date">
                     </div>

@@ -3,7 +3,7 @@
         <v-client-table :columns="columns" :data="records" :options="table_options">
             <div slot="id" slot-scope="props" class="text-center">
                 <div class="d-inline-flex">
-                    <button @click="exportRegister(props.row.id)" class="btn btn-primary btn-xs btn-icon btn-action"
+                    <button @click="exportRegister(props.row.id, props.row.created_at)" class="btn btn-primary btn-xs btn-icon btn-action"
                         :disabled="props.row.document_status && props.row.document_status.action === 'PR'"
                         data-toggle="tooltip" title="Generar archivo .xlsx" data-placement="bottom" type="button">
                         <i class="fa fa-file-excel-o"></i>
@@ -40,7 +40,12 @@
                                 @click="props.row.payroll_payment_period.payroll_payment_type.skip_moments
                                  ? 'javascript:void(0)'
                                  : payrolConceptAccounts(props.row)"
-                                :disabled="props.row.payroll_payment_period.payroll_payment_type.skip_moments">
+                                :disabled="
+                                    props.row.payroll_payment_period.payroll_payment_type.skip_moments
+                                    || (props.row.document_status && props.row.document_status.action === 'PR')
+                                    || (props.row.document_status && props.row.document_status.action === 'AP')
+                                    || (props.row.document_status && props.row.document_status.action === 'CE')
+                                ">
                                 <i class="fa fa-commenting"></i>
                             </button>
                         </span>
@@ -343,9 +348,23 @@ export default {
             });
         },
 
-        exportRegister(id) {
+        exportRegister(id, created_at) {
             const vm = this;
-            location.href = `${window.app_url}/payroll/registers/export/${id}`;
+            vm.loading = true;
+
+            axios
+                .get(`${window.app_url}/payroll/registers/export/${id}`, { responseType: 'blob' })
+                .then((response) => {
+                    const date = moment(created_at).format('DD-MM-YYYY');
+                    const url = window.URL.createObjectURL(new Blob([response.data]));
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.setAttribute('download', `payroll_register${date}.xlsx`);
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    vm.loading = false;
+                });
         },
 
         payrolConceptAccounts(item) {
@@ -361,7 +380,7 @@ export default {
                             + item.payroll_payment_period.payroll_concepts.map(concept => concept.name) + "."
                 );
 
-                return;
+                return false;
             }
         },
     }

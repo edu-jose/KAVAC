@@ -67,6 +67,7 @@ class SecurityHeaders
                         'CONTENT_SECURITY_POLICY',
                         "default-src 'self'; " .
                         "script-src 'self' 'nonce-NONCEVAL' " . env('APP_URL') . " 'unsafe-eval'; " .
+                        "script-src-elem 'self' 'unsafe-inline' " . env('APP_URL') . " 'unsafe-eval'; " .
                         "style-src 'self' 'unsafe-inline' " . env('APP_URL') . " ; " .
                         "img-src 'self' * data:; " .
                         "font-src 'self' " . env('APP_URL') . " data: ; " .

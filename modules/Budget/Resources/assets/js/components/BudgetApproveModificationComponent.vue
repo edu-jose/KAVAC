@@ -31,7 +31,7 @@
                         </button>
                         <h6>
                             <i class="icofont icofont-ui-check success ico-x2"></i>
-                            APROBAR LA MODIFICACION PRESUPUESTARIA {{ code }}
+                            APROBAR LA MODIFICACIÓN PRESUPUESTARIA {{ code }}
                         </h6>
                     </div>
                     <!-- Final modal-header -->
@@ -105,7 +105,7 @@
                                     Cerrar
                                 </button>
                                 <button
-                                    type="button" 
+                                    type="button"
                                     class="btn btn-primary btn-sm btn-round btn-modal-save"
                                     @click="approveModification('AP', id)
                                 "
@@ -169,7 +169,7 @@ export default {
 
         /**
          * Método que obtiene el mensaje de alerta a tomar en cuenta antes de seguir con el proceso de aprobación
-         * 
+         *
          * @author Francisco J. P. Ruiz <fjpenya@cenditel.gob.ve> | <javierrupe19@gmail.com>
          * @author Pedro Contreras <pmcontreras@cenditel.gob.ve>
          *
@@ -182,7 +182,7 @@ export default {
 
             if (vm.record.approved_date < vm.approved_at.slice(0, 10)) {
                 vm.errors.push(
-                    "La fecha de aprobación debe ser mayor o igual a la fecha de creación."
+                    "La fecha de aprobación debe ser mayor o igual a la fecha de creación. " + vm.format_date(vm.approved_at)
                 );
             }
 
@@ -200,8 +200,8 @@ export default {
                 );
                 vm.record.id = id;
                 bootbox.confirm({
-                    title: "¿Aprobar Modificacion Presupuestaria?",
-                    message: "¿Esta seguro de aprobar esta modificacion?. Una vez aprobado el registro no se podrá modificar y/o eliminar.",
+                    title: "¿Aprobar Modificación Presupuestaria?",
+                    message: "¿Esta seguro de aprobar esta modificación? Una vez aprobado el registro no se podrá modificar y/o eliminar.",
                     buttons: {
                             cancel: {
                                 label: '<i class="fa fa-times"></i> Cancelar',
@@ -216,7 +216,7 @@ export default {
                     callback: function(result) {
                         if (result) {
                             vm.loading = true;
-                            axios.post(url, { status: status, approved_date: vm.record.approved_date }).then(response => {
+                            axios.post(url, { status: status, approved_date: vm.record.approved_date, approved_at: vm.approved_at }).then(response => {
                                 if (response.status == 200){
                                     location.reload();
                                     vm.showMessage('custom', '¡Éxito!', 'success', 'screen-ok', 'Modificación presupuestaria aprobada');
@@ -251,8 +251,8 @@ export default {
 
         /**
          * Método que permite levantar el modal
-         * @param {*} modal_id 
-         * @param {*} event 
+         * @param {*} modal_id
+         * @param {*} event
          */
         async showModal(modal_id, event){
             const vm = this;

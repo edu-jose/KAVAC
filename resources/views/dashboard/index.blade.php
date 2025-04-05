@@ -52,7 +52,7 @@
                 e.preventDefault();
                 setUserModalMessage($(this).data('id'));
             });
-            $('.btn-users-settings').on('click', function (e) {
+            $('.btn-user-settings').on('click', function (e) {
                 e.preventDefault();
                 setUser($(this).data('id'));
             });
@@ -61,13 +61,33 @@
                 setUserModalNotify($(this).data('id'));
             });
             $('.btn-user-info').on('click', function (e) {
+                const relatedElement = $(e.relatedTarget)?.data('id');
+                const id = $(this).data('id');
                 e.preventDefault();
-                view_user_info($(this).data('id'));
+                view_user_info(id || relatedElement || '');
             });
             $('.btn-user-filter').on('click', function (e) {
                 e.preventDefault();
                 location="{{ url('auth/assign/roles-permissions') }}/" + $(this).data('id');
-            })
+            });
+            $('.datatable').on('draw.dt', function () {
+                $('.btn-user-info').on('click', function(e) {
+                    if (!$('.modal').hasClass('show')) {
+                        const relatedElement = $(e.relatedTarget)?.data('id');
+                        const id = $(this).data('id');
+                        e.preventDefault();
+                        view_user_info(id || relatedElement || '');
+                    }
+                });
+                $('.btn-user-filter').on('click', function(e) {
+                    const relatedElement = $(e.relatedTarget)?.data('id');
+                    const id = $(this).data('id') || relatedElement || '';
+                    e.preventDefault();
+                    if (id) {
+                        location="{{ url('auth/assign/roles-permissions') }}/" + $(this).data('id');
+                    }
+                });
+            });
         });
 
         var unlockUser = function (userId) {

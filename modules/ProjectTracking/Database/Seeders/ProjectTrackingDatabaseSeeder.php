@@ -26,7 +26,8 @@ class ProjectTrackingDatabaseSeeder extends Seeder
         Model::unguard();
 
         $this->call([
-            ProjectTrackingRoleAndPermissionsTableSeeder::class
+            ProjectTrackingRoleAndPermissionsTableSeeder::class,
+            ProjectTrackingTaskTypesTableSeeder::class,
         ]);
     }
 }

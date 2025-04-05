@@ -130,7 +130,8 @@
                         <div class="divider"></div>
                     @endif
                     <a
-                        class="dropdown-item dropdown-item-logout" href="{{ route('logout') }}" title="{{ __('Salir de la aplicación') }}"
+                        href="{{ route('logout') }}"
+                        class="dropdown-item dropdown-item-logout" title="{{ __('Salir de la aplicación') }}"
                         data-toggle="tooltip" data-placement="left"
                     >
                         <i class="ion-log-out"></i> {{ __('Salir') }}

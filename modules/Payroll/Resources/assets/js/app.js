@@ -1016,6 +1016,17 @@ Vue.component('payroll-text-file', () =>
 );
 
 /**
+ * Componente para crear un archivo txt de nómina
+ *
+ * @author Daniel Contreras <dcontreras@cenditel.gob.ve>
+ */
+Vue.component('payroll-trust-text-file', () =>
+    import(
+        /* webpackChunkName: "payroll-trust-text-file" */
+        './components/trust_text_file/PayrollTrustTextFileComponent.vue')
+);
+
+/**
  * Componente para listar, crear, actualizar y borrar datos de grupos de supervisados
  *
  * @author Daniel Contreras <dcontreras@cenditel.gob.ve>
@@ -1213,6 +1224,30 @@ Vue.component('payroll-arc-info', () =>
 );
 
 /**
+ * Componente para crear, listar, actualizar y borrar códigos de procesos
+ *
+ * @author Daniel Contreras <dcontreras@cenditel.gob.ve>
+ */
+Vue.component('payroll-process-codes', () =>
+    import(
+        /* webpackChunkName: "payroll-process-codes" */
+        './components/settings/PayrollProcessCodeComponent.vue'
+    )
+);
+
+/**
+ * Componente para crear, listar, actualizar y borrar cargas horarias
+ *
+ * @author Daniel Contreras <dcontreras@cenditel.gob.ve>
+ */
+Vue.component('payroll-workloads', () =>
+    import(
+        /* webpackChunkName: "payroll-process-codes" */
+        './components/settings/PayrollWorkloadComponent.vue'
+    )
+);
+
+/**
  * Opciones de configuración global del módulo de Nómina
  */
 Vue.mixin({
@@ -1251,9 +1286,11 @@ Vue.mixin({
             vm.payroll_payment_types = [];
             await axios.get(`${window.app_url}/payroll/get-payment-types`).then(response => {
                 vm.payroll_payment_types = response.data.map((item) => {
+                    /** @todo Comentario temporal para efectos de pruebas.
                     if (!enabled) {
                         item['disabled'] = (item['payroll_ids'].length > 0) && (!item['payroll_ids'].includes(vm.payroll_id));
                     }
+                    */
                     return item;
                 });;
             });

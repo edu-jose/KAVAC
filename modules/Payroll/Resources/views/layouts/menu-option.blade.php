@@ -79,10 +79,20 @@
                 Registro ARI
             </a>
         </li>
-        <li class="{!! set_active_menu(['payroll.text-file.index']) !!}">
-            <a href="{{ route('payroll.text-file.index') }}" data-toggle="tooltip" data-placement="right" title="Gestión para la generación de archivos txt de nómina">
-                Archivo txt de Nómina
-            </a>
+        <li>
+            <a href="javascript:void(0)" data-toggle="tooltip" data-placement="right" title="Gestión para la generación de archivos txt">Archivo txt</a>
+            <ul class="submenu" style="{!! display_submenu(['text-file', 'text-trust-file']) !!}">
+                <li class="{!! set_active_menu(['payroll.text-file.index']) !!}">
+                    <a href="{{ route('payroll.text-file.index') }}" data-toggle="tooltip" data-placement="right" title="Gestión para la generación de archivos txt de nómina">
+                        Nómina
+                    </a>
+                </li>
+                <li class="{!! set_active_menu(['payroll.trust-text-file.create']) !!}">
+                    <a href="{{ route('payroll.trust-text-file.create') }}" data-toggle="tooltip" data-placement="right" title="Gestión para la generación de archivos txt de fideicomiso">
+                        Fideicomiso
+                    </a>
+                </li>
+            </ul>
         </li>
         <li>
             <a href="javascript:void(0)" data-toggle="tooltip" data-placement="right" title="Gestiona las solicitudes de vacaciones, prestaciones y constancias.">Solicitudes</a>

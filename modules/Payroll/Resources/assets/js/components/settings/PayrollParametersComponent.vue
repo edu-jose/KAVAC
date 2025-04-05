@@ -94,7 +94,7 @@
                                     <label for="value">Valor:</label>
                                     <input id="value" class="form-control input-sm" type="text"
                                            data-toggle="tooltip" placeholder="Valor"
-                                           onfocus="this.select()"
+                                           @focus="selectText"
                                            title="Indique el valor del parámetro (requerido)"
                                            v-model="record.value"
                                            v-input-mask data-inputmask="
@@ -234,7 +234,7 @@
                                     <label for="value_max">Valor máximo permitido:</label>
                                     <input id="value_max" class="form-control input-sm" type="text"
                                            data-toggle="tooltip" placeholder="Valor máximo permitido"
-                                           onfocus="this.select()"
+                                           @focus="selectText"
                                            title="Indique el valor máximo del parámetro"
                                            v-model="record.value_max"
                                            v-input-mask data-inputmask="
@@ -265,7 +265,7 @@
                                     <label for="max_value_allowed_per_time_sheet">Valor máximo permitido en hoja de tiempo:</label>
                                     <input id="max_value_allowed_per_time_sheet" class="form-control input-sm" type="text"
                                            data-toggle="tooltip" placeholder="valor máximo permitido en hoja de tiempo"
-                                           onfocus="this.select()"
+                                           @focus="selectText"
                                            :disabled="!record.exception_type"
                                            title="Indique el valor máximo permitido en hoja de tiempo"
                                            v-model="record.max_value_allowed_per_time_sheet"

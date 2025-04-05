@@ -8,7 +8,7 @@ use Illuminate\Database\Migrations\Migration;
  * @class CreateProjectTrackingActivityTypesTable
  * @brief  Ejecuta el proceso de migración de los tipos de actividades
  *
- * 
+ *
  *
  * @author Mauricio Araujo <araujoperezme20@gmail.com>
  *

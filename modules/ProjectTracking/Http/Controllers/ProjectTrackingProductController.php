@@ -13,6 +13,7 @@ use Modules\ProjectTracking\Models\ProjectTrackingProduct;
 use Modules\ProjectTracking\Models\ProjectTrackingProject;
 use Modules\ProjectTracking\Models\ProjectTrackingSubProject;
 use Nwidart\Modules\Facades\Module;
+use App\Models\Department;
 
 /**
  * @class ProjectTrackingProductController
@@ -107,14 +108,14 @@ class ProjectTrackingProductController extends Controller
             'SubProject',
             'Responsable',
             'TypeProduct',
-            'Dependency'
+            'dependency'
             ])->get();
         foreach ($ProductsList as $product) {
             $product['responsable_name'] = $product->Responsable->name;
             $product['project_name'] = $product->Project ? $product->Project->name : '';
             $product['subproject_name'] = $product->SubProject ? $product->SubProject->name : '';
             $product['type_product_name'] = $product->TypeProduct->name;
-            $product['dependency_name'] = $product->Dependency->name;
+            $product['dependency_name'] = $product->dependency ? $product->dependency->name : '';
         }
         /* Condicional que oculta el registro común si existe el módulo de Talento Humano */
         if (Module::has('Payroll') && Module::isEnabled('Payroll')) {
@@ -276,7 +277,7 @@ class ProjectTrackingProductController extends Controller
             'Project',
             'Subproject',
             'productTypes',
-            'Dependency',
+            'dependency',
         ])->find($id);
         $selectedProductTypes = [];
         foreach ($products->productTypes as $productType) {
@@ -309,7 +310,7 @@ class ProjectTrackingProductController extends Controller
             'Subproject',
             'productTypes',
             // 'TypeProduct',
-            'Dependency',
+            'dependency',
         ])->find($id);
         $selectedProductTypes = [];
         foreach ($products->productTypes as $productType) {

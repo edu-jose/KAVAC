@@ -44,7 +44,6 @@
                                         'id' => 'institution_id',
                                         'class' => 'select2',
                                         'data-toggle' => 'tooltip',
-                                        'onchange' => 'updateSelectActive($(this), $("#department_id"), "Department", undefined, undefined, [$("#payroll_position_id"), $("#payroll_staff_id")] )',
                                         'title' => __('Seleccione una institución')
                                     ]) !!}
                                 </div>
@@ -56,7 +55,6 @@
                                         'id' => 'department_id',
                                         'class' => 'select2',
                                         'data-toggle' => 'tooltip',
-                                        'onchange' => 'updateStaffSelect($(this), $("#payroll_staff_id"), "PayrollEmployment", "Payroll", "payrollStaff", [$("#payroll_position_id")])',
                                         'title' => __('Seleccione un departamento o dependencia'),
                                     ]) !!}
                                 </div>
@@ -68,7 +66,6 @@
                                         {!! Form::select('payroll_staff_id', $staffs, null, [
                                             'id' => 'payroll_staff_id',
                                             'class' => 'select2', 'data-toggle' => 'tooltip',
-                                            'onchange' => 'updateSelectCustomPosition($(this), $("#payroll_position_id"), "PayrollEmployment", "Payroll", "")',
                                             'title' => __('Seleccione una persona responsable del proyecto')
                                         ]) !!}
                                     </div>
@@ -124,7 +121,7 @@
                                 </div>
                             </div>
                             <div id="helpEndDate" class="col-3">
-                                <div class="form-group is-required">
+                                <div class="form-group">
                                     {!! Form::label('to_date', __('Fecha de finalización'), ['class' => 'control-label']) !!}
                                     {!! Form::date('to_date', (isset($model))?$model->to_date:old('to_date'), [
                                         'class' => 'form-control input-sm no-restrict',
@@ -142,7 +139,7 @@
                                             'id' => 'active',
                                             'class' => 'custom-control-input'
                                         ]) !!}
-                                        <label class="custom-control-label" for="active"></label>
+                                        <label class="custom-control-label" for="active">&nbsp;</label>
                                     </div>
                                 </div>
                             </div>
@@ -152,21 +149,17 @@
                                 <div class="form-group is-required">
                                     {!! Form::label('ca_description', __('Descripción'), ['class' => 'control-label']) !!}
                                     <ckeditor id="ca_description" class="form-control" name="ca_description"
-                                              data-toggle="tooltip"
-                                              placeholder="{!! __('Descripción de la acción centralizada') !!}"
-                                              ref="ca_descriptionEditor" rows="4" tag-name="textarea"
-                                              title="{!! __('Descripción de la acción centralizada') !!}"
-                                              :config="ckeditor.editorConfig" :editor="ckeditor.editor"
-                                              v-model="ckeditor.editorData"></ckeditor>
+                                                data-toggle="tooltip"
+                                                placeholder="{!! __('Descripción de la acción centralizada') !!}"
+                                                ref="ca_descriptionEditor" rows="4" tag-name="textarea"
+                                                title="{!! __('Descripción de la acción centralizada') !!}"
+                                                :config="ckeditor.editorConfig" :editor="ckeditor.editor"
+                                                v-model="ckeditor.editorData"></ckeditor>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!--<div class="card-footer text-right">
-                        @include('layouts.form-buttons')
-                    </div>-->
                     <div class="card-footer text-right">
-                        <!-- @include('layouts.form-buttons') -->
                         @if (!isset($hide_clear) || !$hide_clear)
                             {!! Form::button('<i class="fa fa-eraser"></i>', [
                                 'id' => 'reset-select',
@@ -178,11 +171,10 @@
                         @endif
                         @if (!isset($hide_previous) || !$hide_previous)
                             {!! Form::button('<i class="fa fa-ban"></i>', [
-                                'class' => 'btn btn-warning btn-icon btn-round',
+                                'class' => 'btn btn-warning btn-icon btn-round redirect-back',
                                 'type' => 'button',
                                 'data-toggle' => 'tooltip',
-                                'title' => __('Cancelar y regresar'),
-                                'onclick' => 'window.location.href="' . url()->previous() . '"',
+                                'title' => __('Cancelar y regresar')
                             ]) !!}
                         @endif
                         @if (!isset($hide_save) || !$hide_save)
@@ -205,20 +197,32 @@
     <script nonce="{{ session()->get('nonce') }}">
         $(document).ready(function() {
             app.ckeditor.editorData = "{!! (isset($model))?$model->ca_description:old('ca_description')  !!}";
+            $('#institution_id').on('change', function() {
+                updateSelectActive($(this), $("#department_id"), "Department", undefined, undefined, [$("#payroll_position_id"), $("#payroll_staff_id")] );
+            });
+
+            $('#department_id').on('change', function() {
+                updateStaffSelect($(this), $("#payroll_staff_id"), "PayrollEmployment", "Payroll", "payrollStaff", [$("#payroll_position_id")]);
+            });
+
+            $('#payroll_staff_id').on('change', function() {
+                updateSelectCustomPosition($(this), $("#payroll_position_id"), "PayrollEmployment", "Payroll", "");
+            });
+
             let date = new Date().toISOString();
             let newDate = moment(String(date)).format('YYYY-MM-DD');
             if ($('#custom_date').val() == '') {
                 $('#custom_date').val(newDate).change();
             }
 
-			$("#reset-select").on('click', function() {
-				$('#institution_id').val('').change();
-	    		$('#department_id').val('').change();
-	    		$('#payroll_staff_id').val('').change();
-	    		$('#payroll_position_id').val('').change();
-				app.ckeditor.editorData = "";
-			});
-		});
+            $("#reset-select").on('click', function() {
+                $('#institution_id').val('').change();
+                $('#department_id').val('').change();
+                $('#payroll_staff_id').val('').change();
+                $('#payroll_position_id').val('').change();
+                app.ckeditor.editorData = "";
+            });
+        });
 
         $(document).on('submit', function() {
             $('#department_id').attr('disabled', false);

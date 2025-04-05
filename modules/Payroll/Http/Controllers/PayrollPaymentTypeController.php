@@ -208,6 +208,9 @@ class PayrollPaymentTypeController extends Controller
             'skip_moments' => !empty($request->skip_moments)
                 ? $request->skip_moments
                 : false,
+            'is_trust' => !empty($request->is_trust)
+                ? $request->is_trust
+                : false,
             'start_date' => $request->start_date,
             'finance_bank_account_id' => $request->finance_bank_account_id ?? null,
             'finance_payment_method_id' => $request->finance_payment_method_id ?? null,
@@ -297,6 +300,9 @@ class PayrollPaymentTypeController extends Controller
             : false;
         $payrollPaymentType->skip_moments = !empty($request->skip_moments)
             ? $request->skip_moments
+            : false;
+        $payrollPaymentType->is_trust = !empty($request->is_trust)
+            ? $request->is_trust
             : false;
 
         $payrollPaymentType->start_date = $request->start_date;

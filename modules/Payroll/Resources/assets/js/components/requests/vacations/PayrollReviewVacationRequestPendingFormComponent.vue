@@ -233,7 +233,6 @@ export default {
             }
         },
         updateRecord(url) {
-            console.log(url)
             const vm = this;
             var id = $(".modal-body #id").val();
             if (typeof (url) != 'undefined') {

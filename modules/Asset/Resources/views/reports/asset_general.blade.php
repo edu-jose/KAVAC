@@ -34,20 +34,19 @@
                             <b>Seleccione el Tipo de Busqueda</b>
                         </div>
                         <div class="form-group col-md-2">
-                            <label>Busqueda por periodo </label>
+                            <label for="search_date">Busqueda por periodo </label>
                             <div>
                                 {!! Form::radio('search_type', 0, true, [
                                     'id' => 'search_date',
                                     'class' => 'form-control bootstrap-switch',
                                     'data-on-label' => 'SI',
                                     'data-off-label' => 'NO',
-                                    'onchange' => 'updateStatus()',
                                     'checked' => $request->search_type == 0 ? true : false,
                                 ]) !!}
                             </div>
                         </div>
                         <div class="form-group col-md-2">
-                            <label>Busqueda por mes</label>
+                            <label for="search_mes">Busqueda por mes</label>
                             <div>
                                 {!! Form::radio('search_type', 1, false, [
                                     'id' => 'search_mes',
@@ -113,7 +112,7 @@
                     </div>
                     <div class="row">
                         <div class="form-group col-md-4">
-                            <label>Desde: </label>
+                            <label for="start_date">Desde: </label>
                             <div class="input-group input-sm">
                                 <span class="input-group-addon">
                                     <i class="now-ui-icons ui-1_calendar-60"></i>
@@ -129,7 +128,7 @@
                             </div>
                         </div>
                         <div class="form-group col-md-4">
-                            <label>Hasta: </label>
+                            <label for="end_date">Hasta: </label>
                             <div class="input-group input-sm">
                                 <span class="input-group-addon">
                                     <i class="now-ui-icons ui-1_calendar-60"></i>
@@ -148,17 +147,16 @@
 
                     <div class="row">
                         <div class="col-12">
-                            <button type="Submit" class='btn btn-sm btn-info float-right'>
+                            <button type="submit" class='btn btn-sm btn-info float-right'>
                                 <i class="fa fa-search"></i>
                                 <span> Buscar </span>
                             </button>
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-12" align="left">
+                        <div class="col-12 text-left">
 
-                            <a type="button" href="../../asset/pdf2" target='_blank'
-                                class='btn btn-sm btn-primary btn-custom'>
+                            <a href="../../asset/pdf2" target='_blank' class='btn btn-sm btn-primary btn-custom'>
                                 <i class="fa fa-plus-circle"></i>
                                 <span> Generar reporte </span>
                             </a>
@@ -203,15 +201,20 @@
     </div>
     <div class="row">
         <div class="col-12">
-            <asset-report-create>
-            </asset-report-create>
+            <asset-report-create></asset-report-create>
         </div>
     </div>
 
 @stop
 
 @section('extra-js')
-    <script type="text/javascript" nonce="{{ session()->get('nonce') }}">
+    @parent
+    <script nonce="{{ session()->get('nonce') }}">
+        $(document).ready(function() {
+            const searchDate = document.getElementById('search_date');
+
+            searchDate.addEventListener('change', updateStatus);
+        });
         var search_mes = document.getElementById('search_date');
         var search_periodo = document.getElementById('search_mes');
 

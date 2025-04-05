@@ -53,7 +53,6 @@ class UpdateFieldsToProjectTrackingProductsTable extends Migration
      */
     public function down()
     {
-        Schema::table('project_tracking_products', function (Blueprint $table) {
-        });
+        //
     }
 }

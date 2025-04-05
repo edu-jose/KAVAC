@@ -19,6 +19,7 @@ use Modules\Payroll\Models\Payroll;
 use Maatwebsite\Excel\Facades\Excel;
 use Modules\Payroll\Models\Institution;
 use Modules\Payroll\Models\PayrollStaff;
+use App\Notifications\SystemNotification;
 use Illuminate\Support\Facades\Validator;
 use Modules\Payroll\Models\PayrollConcept;
 use Modules\Payroll\Models\PayrollTimeSheet;
@@ -533,15 +534,71 @@ class PayrollReportController extends Controller
 
             if ($allStaffs !== false) {
                 if ($allRelationships !== false) {
-                    $records = PayrollSocioeconomic::has('payrollChildrens')->get();
+                    $records = PayrollSocioeconomic::with(
+                        ['payrollStaff' => fn($query) => $query->without(
+                            [
+                                'payrollNationality',
+                                'payrollFinancial',
+                                'payrollGender',
+                                'payrollBloodType',
+                                'payrollDisability',
+                                'payrollLicenseDegree',
+                                'payrollStaffUniformSize',
+                                'payrollSocioeconomic',
+                                'payrollProfessional',
+                                'payrollResponsibility'
+                            ]
+                        )->select('id', 'first_name', 'last_name', 'id_number')->with(
+                            ['payrollEmployment' => fn($query) => $query->without(
+                                [
+                                    'payrollPositionType',
+                                    'payrollCoordination',
+                                    'payrollStaffType',
+                                    'payrollInactivityType',
+                                    'payrollContractType',
+                                    'payrollPreviousJob'
+                                ]
+                            )->select('id', 'payroll_staff_id', 'department_id')->with(['department' => fn($query) => $query->select('id', 'name')])
+                            ]
+                        )]
+                    )->has('payrollChildrens')
+                    ->without('maritalStatus')
+                    ->get();
                 } else {
                     $realtionshipsIds = array_column($request->payroll_relationships, 'id');
 
-                    $records = PayrollSocioeconomic::query()
-                        ->whereHas('payrollChildrens', function ($query) use ($realtionshipsIds) {
+                    $records = PayrollSocioeconomic::with(
+                        ['payrollStaff' => fn($query) => $query->without(
+                            [
+                                'payrollNationality',
+                                'payrollFinancial',
+                                'payrollGender',
+                                'payrollBloodType',
+                                'payrollDisability',
+                                'payrollLicenseDegree',
+                                'payrollStaffUniformSize',
+                                'payrollSocioeconomic',
+                                'payrollProfessional',
+                                'payrollResponsibility'
+                            ]
+                        )->select('id', 'first_name', 'last_name', 'id_number')->with(
+                            ['payrollEmployment' => fn($query) => $query->without(
+                                [
+                                    'payrollPositionType',
+                                    'payrollCoordination',
+                                    'payrollStaffType',
+                                    'payrollInactivityType',
+                                    'payrollContractType',
+                                    'payrollPreviousJob'
+                                ]
+                            )->select('id', 'payroll_staff_id', 'department_id')->with(['department' => fn($query) => $query->select('id', 'name')])
+                            ]
+                        )]
+                    )->whereHas('payrollChildrens', function ($query) use ($realtionshipsIds) {
                             $query->whereIn('payroll_relationships_id', $realtionshipsIds);
-                        })
-                        ->get();
+                    })
+                    ->without('maritalStatus')
+                    ->get();
                 }
             } else {
                 if ($allRelationships !== false) {
@@ -549,6 +606,7 @@ class PayrollReportController extends Controller
 
                     $records = PayrollSocioeconomic::query()
                         ->has('payrollChildrens')
+                        ->without('maritalStatus')
                         ->whereIn('payroll_staff_id', $staffIds)
                         ->get();
                 } else {
@@ -560,6 +618,7 @@ class PayrollReportController extends Controller
                         ->whereHas('payrollChildrens', function ($query) use ($realtionshipsIds) {
                             $query->whereIn('payroll_relationships_id', $realtionshipsIds);
                         })
+                        ->without('maritalStatus')
                         ->get();
                 }
             }
@@ -582,7 +641,15 @@ class PayrollReportController extends Controller
             ]
         );
         $url = route('payroll.reports.show', [$filename]);
-        return response()->json(['result' => true, 'redirect' => $url], 200);
+        if ($request->current == 'family-burden') {
+            if ($allStaffs !== false && $allRelationships !== false) {
+                $user->notify(new SystemNotification('Éxito', 'Ha finalizado la generación del reporte de carga familiar. Por favor abra este enlace para ver el documento: <a href="' . $url . '" class="link-download">Enlace</a>'));
+                return response()->json(['all_data' => true, 'result' => false, 'redirect' => env('APP_URL') . '/payroll/reports/family-burden'], 200);
+            }
+            return response()->json(['all_data' => true, 'result' => true, 'redirect' => $url], 200);
+        } else {
+            return response()->json(['all_data' => true, 'result' => true, 'redirect' => $url], 200);
+        }
     }
 
     /**
