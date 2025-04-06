@@ -30,7 +30,7 @@ class CitizenServiceRoleAndPermissionsTableSeeder extends Seeder
         $adminRole = Role::where('slug', 'admin')->first();
 
         $citizenServiceRole = Role::updateOrCreate(
-            ['slug' => 'CitizenService'],
+            ['slug' => 'citizenservice'],
             ['name' => 'OAC', 'description' => 'Coordinador de atención al ciudadano']
         );
 
