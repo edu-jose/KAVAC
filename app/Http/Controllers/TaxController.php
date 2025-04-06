@@ -77,8 +77,8 @@ class TaxController extends Controller
         $tax = Tax::create([
             'name' => $request->name,
             'description' => $request->description,
-            'affect_tax' => ($request->affect_tax !== null),
-            'active' => ($request->active !== null),
+            'affect_tax' => ($request->affect_tax !== null && $request->affect_tax === true),
+            'active' => ($request->active !== null && $request->active === true),
         ]);
 
         HistoryTax::create([

@@ -34,7 +34,6 @@ class UpdateDescriptionFieldToProjectTrackingProjectTypesTable extends Migration
      */
     public function down()
     {
-        Schema::table('project_tracking_project_types', function (Blueprint $table) {
-        });
+        //
     }
 }

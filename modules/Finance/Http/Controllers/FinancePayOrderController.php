@@ -10,7 +10,6 @@ use App\Models\Deduction;
 use Illuminate\Http\Request;
 use App\Models\DocumentStatus;
 use App\Models\FiscalYear;
-use App\Models\Parameter;
 use App\Models\Source;
 use Illuminate\Validation\Rule;
 use Illuminate\Routing\Controller;
@@ -19,7 +18,6 @@ use Nwidart\Modules\Facades\Module;
 use App\Repositories\ReportRepository;
 use Modules\Finance\Models\FinancePayOrder;
 use Modules\Finance\Models\FinancePayOrderFinancePaymentExecute;
-use Illuminate\Contracts\Support\Renderable;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use App\Rules\DateBeforeFiscalYear;
 use Illuminate\Support\Facades\Log;
@@ -209,7 +207,7 @@ class FinancePayOrderController extends Controller
             ) {
                 //Si la orden de pago es de una retencion se verifica si el beneficiario ya ha sido registrado
                 if ($request->type === 'NP' && $request->documentType == 'T') {
-                    $existAccounting = $existAccounting = Module::has('Accounting') && Module::isEnabled('Accounting');
+                    $existAccounting = Module::has('Accounting') && Module::isEnabled('Accounting');
                     $deductions_ids = json_decode($request->deductions_ids, false);
                     $documentStatusEL = default_document_status_el();
                     $financePaymentDeductions = FinancePaymentDeduction::query()
@@ -265,10 +263,38 @@ class FinancePayOrderController extends Controller
                             ]
                         );
                     } else {
-                        $receiver = Receiver::find($request->name_sourceable_id);
+                        $receiver = Receiver::query()
+                            ->when(
+                                !empty($request->receiver) && array_key_exists('class', $request->receiver),
+                                function ($query) use ($request) {
+                                    $query->where(function ($query) use ($request) {
+                                        $query->where('receiverable_type', $request->receiver['class'])
+                                            ->where('receiverable_id', $request->name_sourceable_id);
+                                    })->orWhere('id', $request->name_sourceable_id);
+                                },
+                                function ($query) use ($request) {
+                                    $query->where('id', $request->name_sourceable_id);
+                                }
+                            )
+                            ->latest()
+                            ->first();
                     }
                 } else {
-                    $receiver = Receiver::find($request->name_sourceable_id);
+                    $receiver = Receiver::query()
+                        ->when(
+                            !empty($request->receiver) && array_key_exists('class', $request->receiver),
+                            function ($query) use ($request) {
+                                $query->where(function ($query) use ($request) {
+                                    $query->where('receiverable_type', $request->receiver['class'])
+                                        ->where('receiverable_id', $request->name_sourceable_id);
+                                })->orWhere('id', $request->name_sourceable_id);
+                            },
+                            function ($query) use ($request) {
+                                $query->where('id', $request->name_sourceable_id);
+                            }
+                        )
+                        ->latest()
+                        ->first();
                 }
 
                 $isCustom = false;
@@ -400,6 +426,8 @@ class FinancePayOrderController extends Controller
     public function edit($id)
     {
         $payOrder = FinancePayOrder::find($id);
+        $receiver = Receiver::find($payOrder->receiverId());
+        $payOrder['receiver'] = $receiver;
         $registeredAccounts = \Modules\Accounting\Models\AccountingEntryable::with('accountingEntry.accountingAccounts')
             ->where('accounting_entryable_type', FinancePayOrder::class)
             ->where('accounting_entryable_id', $id)
@@ -474,6 +502,29 @@ class FinancePayOrderController extends Controller
                 }
             }
         }
+        $documentStatus = default_document_status();//Status del docmento en PR = En Proceso
+        $existAccounting = Module::has('Accounting') && Module::isEnabled('Accounting');
+        $deductions_ids = $request->deductions_ids ? json_decode($request->deductions_ids, false) : [];
+        $documentStatusEL = default_document_status_el();
+        $financePaymentDeductions = [];
+
+        if ($request->type === 'NP' && $request->documentType === 'T') {
+            $financePaymentDeduction = FinancePaymentDeduction::query()
+            ->where('id', $financePayOrder->document_number)
+            ->where('document_status_id', $documentStatus->id)
+            ->first();
+
+            /*
+             | Si Existe la deducción que agrupara varias deducciones se procede a actualizar el estatus
+             | Y se elimina la antigua deducción.
+             */
+            if (isset($financePaymentDeduction)) {
+                $financePaymentDeductions = FinancePaymentDeduction::query()
+                ->whereIn('id', json_decode($financePaymentDeduction->deductions_ids))
+                ->where('document_status_id', $documentStatus->id)
+                ->get();
+            }
+        }
 
         DB::transaction(function () use (
             $request,
@@ -481,30 +532,19 @@ class FinancePayOrderController extends Controller
             $specificActionId,
             $isCustom,
             $compromise,
+            $documentStatus,
+            $existAccounting,
+            $deductions_ids,
+            $documentStatusEL,
+            $financePaymentDeductions
         ) {
-            $documentStatus = default_document_status();//Status del docmento en PR = En Proceso
-
             //Si la orden de pago es de una retencion se verifica si el beneficiario ya ha sido registrado
             if ($request->type === 'NP' && $request->documentType === 'T') {
-                $existAccounting = Module::has('Accounting') && Module::isEnabled('Accounting');
-                $deductions_ids = json_decode($request->deductions_ids, false);
-                $documentStatusEL = default_document_status_el();
-
-                $financePaymentDeduction = FinancePaymentDeduction::query()
-                ->where('id', $financePayOrder->document_number)
-                ->where('document_status_id', $documentStatus->id)
-                ->first();
-
                 /*
                  | Si Existe la deducción que agrupara varias deducciones se procede a actualizar el estatus
                  | Y se elimina la antigua deducción.
                  */
                 if (isset($financePaymentDeduction)) {
-                    $financePaymentDeductions = FinancePaymentDeduction::query()
-                    ->whereIn('id', json_decode($financePaymentDeduction->deductions_ids))
-                    ->where('document_status_id', $documentStatus->id)
-                    ->get();
-
                     /*
                      | Se procede a Cambiar el status del documeto a EL = Elaborado(a)
                      | de todas las deducciones agrupadas que se están pagando
@@ -527,10 +567,10 @@ class FinancePayOrderController extends Controller
                     ->where('document_status_id', $documentStatusEL->id)
                     ->get();
 
-                    /*
-                     | Se procede a Cambiar el status del documeto a PR = En Proceso
-                     | de todas las deducciones agrupadas que se están pagando
-                     */
+                /*
+                 | Se procede a Cambiar el status del documeto a PR = En Proceso
+                 | de todas las deducciones agrupadas que se están pagando
+                 */
                 foreach (
                     $financePaymentDeductions as $paymentDeduction
                 ) {
@@ -575,10 +615,38 @@ class FinancePayOrderController extends Controller
                         ]
                     );
                 } else {
-                    $receiver = Receiver::find($request->name_sourceable_id);
+                    $receiver = Receiver::query()
+                        ->when(
+                            !empty($request->receiver) && array_key_exists('class', $request->receiver),
+                            function ($query) use ($request) {
+                                $query->where(function ($query) use ($request) {
+                                    $query->where('receiverable_type', $request->receiver['class'])
+                                        ->where('receiverable_id', $request->name_sourceable_id);
+                                })->orWhere('id', $request->name_sourceable_id);
+                            },
+                            function ($query) use ($request) {
+                                $query->where('id', $request->name_sourceable_id);
+                            }
+                        )
+                        ->latest()
+                        ->first();
                 }
             } else {
-                $receiver = Receiver::find($request->name_sourceable_id);
+                $receiver = Receiver::query()
+                    ->when(
+                        !empty($request->receiver) && array_key_exists('class', $request->receiver),
+                        function ($query) use ($request) {
+                            $query->where(function ($query) use ($request) {
+                                $query->where('receiverable_type', $request->receiver['class'])
+                                    ->where('receiverable_id', $request->name_sourceable_id);
+                            })->orWhere('id', $request->name_sourceable_id);
+                        },
+                        function ($query) use ($request) {
+                            $query->where('id', $request->name_sourceable_id);
+                        }
+                    )
+                    ->latest()
+                    ->first();
             }
 
             if (

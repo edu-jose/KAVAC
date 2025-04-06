@@ -136,7 +136,7 @@
 				errors: [],
 				records: [],
 				countries: [],
-				columns: ['country.name', 'symbol', 'name', 'default', 'id'],
+				columns: ['country.name', 'symbol', 'name', 'plural_name', 'default', 'id'],
 			}
 		},
 		methods: {
@@ -154,6 +154,7 @@
 					name: '',
 					plural_name: '',
 				};
+				this.errors = [];
 			},
 		},
 		created() {
@@ -161,15 +162,17 @@
 				'country.name': 'Pais',
 				'symbol': 'Símbolo',
 				'name': 'Nombre',
+				'plural_name': 'Nombre en plural',
 				'default': 'Por defecto',
 				'id': 'Acción'
 			};
-			this.table_options.sortable = ['name', 'symbol', 'country.name'];
-			this.table_options.filterable = ['name', 'symbol', 'country.name'];
+			this.table_options.sortable = ['name', 'plural_name', 'symbol', 'country.name'];
+			this.table_options.filterable = ['name', 'plural_name', 'symbol', 'country.name'];
 			this.table_options.columnsClasses = {
 				'country.name': 'col-md-3',
 				'symbol': 'col-md-1',
-				'name': 'col-md-5',
+				'name': 'col-md-2',
+				'plural_name': 'col-md-3',
 				'default': 'col-md-1',
 				'id': 'col-md-2'
 			};

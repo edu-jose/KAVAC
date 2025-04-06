@@ -263,14 +263,16 @@ class CreateBudgetAnalyticalMajorJob implements ShouldQueue
     {
         $project_accounts_open = array();
         $compromised = 0;
+        $documentStatus = DocumentStatus::getStatus('AP');
 
         foreach ($project->specificActions as $specificAction) {
             $finalAccounts = [];
 
+            $subSpecificFormulation = $specificAction
+                ->subSpecificFormulations
+                ->where('year', Carbon::parse($initialDate)->format('Y'))
+                ->first();
             $accounts = BudgetAccount::query()
-                ->with(['accountOpens' => function ($query) use ($specificAction) {
-                    $query->where('budget_sub_specific_formulation_id', $specificAction->subSpecificFormulations[0]->id);
-                }, 'accountParent'])
                 ->whereHas('accountOpens', function ($query) use ($initialDate, $finalDate) {
                     $query
                         ->with('subSpecificFormulation')
@@ -280,18 +282,23 @@ class CreateBudgetAnalyticalMajorJob implements ShouldQueue
                                 ->where('date', '<=', $finalDate);
                         });
                 })
+                ->with(['accountOpens' => function ($query) use ($subSpecificFormulation) {
+                    $query->where('budget_sub_specific_formulation_id', $subSpecificFormulation->id);
+                }, 'accountParent'])
                 ->get();
 
             $modificationAccounts = BudgetAccount::query()
-                ->with(['modificationAccounts' => function ($query) use ($specificAction) {
-                    $query->where('budget_sub_specific_formulation_id', $specificAction->subSpecificFormulations[0]->id);
+                ->whereHas('modificationAccounts.budgetModification', function ($query) use ($initialDate, $finalDate, $documentStatus) {
+                    $query
+                        ->where('document_status_id', $documentStatus->id)
+                        ->where('status', 'AP')
+                        ->whereDate('approved_date', '>=', $initialDate)
+                        ->whereDate('approved_date', '<=', $finalDate);
+                })
+                ->with(['modificationAccounts' => function ($query) use ($subSpecificFormulation) {
+                    $query->where('budget_sub_specific_formulation_id', $subSpecificFormulation->id);
                 }, 'accountParent', 'modificationAccounts.budgetSubSpecificFormulation.accountOpens',
                 'modificationAccounts.budgetModification'])
-                ->whereHas('modificationAccounts.budgetModification', function ($query) use ($initialDate, $finalDate) {
-                    $query
-                        ->where('approved_at', '>=', $initialDate)
-                        ->where('approved_at', '<=', $finalDate);
-                })
                 ->get();
 
             $formFormId = [];
@@ -723,7 +730,7 @@ class CreateBudgetAnalyticalMajorJob implements ShouldQueue
                 $project_accounts_open,
                 [
                     $finalAccounts,
-                    $specificAction->subSpecificFormulations[0],
+                    $subSpecificFormulation,
                     "project_code" => $project->code,
                     "specific_action_code" => $specificAction->code,
                     "specific_action_name" => $specificAction->name,
@@ -851,23 +858,60 @@ class CreateBudgetAnalyticalMajorJob implements ShouldQueue
         $anulatedStatus = DocumentStatus::where('action', 'AN')->first();
 
         if (count($compromised) > 0) {
-            if (isset($compromised[0]) && isset($compromised[0]['budgetCompromise'])) {
-                foreach ($compromised as $com) {
-                    if ($com->budgetCompromise) {
-                        $budgetCompromiseId = $com->budgetCompromise->id;
+            foreach ($compromised as $com) {
+                if ($com->budgetCompromise) {
+                    $budgetCompromiseId = $com->budgetCompromise->id;
 
-                        // Iteración con monto en positivo
-                        $positiveKey = $budgetCompromiseId;
+                    // Iteración con monto en positivo
+                    $positiveKey = $budgetCompromiseId;
+
+                    // Verificamos si el identificador existe en $compromises y lo inicializamos si no
+                    if (!array_key_exists($positiveKey, $compromises)) {
+                        $amount = [
+                            'amount' => 0,
+                            'date' => ''
+                        ];
+                    } else {
+                        // Si ya existe, obtenemos su valor actual
+                        $amount = $compromises[$positiveKey];
+                    }
+
+                    if ($com->budgetCompromise->budgetStages) {
+                        $stageCau = false;
+                        foreach ($com->budgetCompromise->budgetStages as $stage) {
+                            if ($stage->type == 'CAU') {
+                                $stageCau = true;
+                            }
+                            $date = $stage->stageable->ordered_at ?? $stage->stageable->payment_date;
+                            // Seteamos la fecha desde el último elemento de budgetStages
+                            if (gettype($date) === 'string') {
+                                $amount['date'] = Carbon::rawCreateFromFormat('Y-m-d', $date);
+                            } else {
+                                $amount['date'] = $date;
+                            }
+                        }
+
+                        $newAmount = $com->amount;
+
+                        if ($stageCau) {
+                            $amount['amount'] += $newAmount;
+                            $compromises[$positiveKey] = $amount; // Actualizamos el valor en el arreglo $compromises
+                        }
+                    }
+
+                    if ($anulatedStatus->id == $com->document_status_id) {
+                        // Iteración con monto en negativo
+                        $negativeKey = $budgetCompromiseId . '_negative';
 
                         // Verificamos si el identificador existe en $compromises y lo inicializamos si no
-                        if (!array_key_exists($positiveKey, $compromises)) {
+                        if (!array_key_exists($negativeKey, $compromises)) {
                             $amount = [
                                 'amount' => 0,
                                 'date' => ''
                             ];
                         } else {
                             // Si ya existe, obtenemos su valor actual
-                            $amount = $compromises[$positiveKey];
+                            $amount = $compromises[$negativeKey];
                         }
 
                         if ($com->budgetCompromise->budgetStages) {
@@ -885,57 +929,18 @@ class CreateBudgetAnalyticalMajorJob implements ShouldQueue
                                 }
                             }
 
-                            $newAmount = $com->amount;
+                            $newAmount = $com->amount * -1;
 
                             if ($stageCau) {
                                 $amount['amount'] += $newAmount;
-                                $compromises[$positiveKey] = $amount; // Actualizamos el valor en el arreglo $compromises
-                            }
-                        }
-
-                        if ($anulatedStatus->id == $com->document_status_id) {
-                            // Iteración con monto en negativo
-                            $negativeKey = $budgetCompromiseId . '_negative';
-
-                            // Verificamos si el identificador existe en $compromises y lo inicializamos si no
-                            if (!array_key_exists($negativeKey, $compromises)) {
-                                $amount = [
-                                    'amount' => 0,
-                                    'date' => ''
-                                ];
-                            } else {
-                                // Si ya existe, obtenemos su valor actual
-                                $amount = $compromises[$negativeKey];
-                            }
-
-                            if ($com->budgetCompromise->budgetStages) {
-                                $stageCau = false;
-                                foreach ($com->budgetCompromise->budgetStages as $stage) {
-                                    if ($stage->type == 'CAU') {
-                                        $stageCau = true;
-                                    }
-                                    $date = $stage->stageable->ordered_at ?? $stage->stageable->payment_date;
-                                    // Seteamos la fecha desde el último elemento de budgetStages
-                                    if (gettype($date) === 'string') {
-                                        $amount['date'] = Carbon::rawCreateFromFormat('Y-m-d', $date);
-                                    } else {
-                                        $amount['date'] = $date;
-                                    }
-                                }
-
-                                $newAmount = $com->amount * -1;
-
-                                if ($stageCau) {
-                                    $amount['amount'] += $newAmount;
-                                    $compromises[$negativeKey] = $amount; // Actualizamos el valor en el arreglo $compromises
-                                }
+                                $compromises[$negativeKey] = $amount; // Actualizamos el valor en el arreglo $compromises
                             }
                         }
                     }
                 }
-
-                return $compromises;
             }
+
+            return $compromises;
         }
 
         return $compromises;
@@ -973,23 +978,60 @@ class CreateBudgetAnalyticalMajorJob implements ShouldQueue
         ];
 
         if (count($compromised) > 0) {
-            if (isset($compromised[0]) && isset($compromised[0]['budgetCompromise'])) {
-                foreach ($compromised as $com) {
-                    if ($com->budgetCompromise) {
-                        $budgetCompromiseId = $com->budgetCompromise->id;
+            foreach ($compromised as $com) {
+                if ($com->budgetCompromise) {
+                    $budgetCompromiseId = $com->budgetCompromise->id;
 
-                        // Iteración con monto en positivo
-                        $positiveKey = $budgetCompromiseId;
+                    // Iteración con monto en positivo
+                    $positiveKey = $budgetCompromiseId;
+
+                    // Verificamos si el identificador existe en $compromises y lo inicializamos si no
+                    if (!array_key_exists($positiveKey, $compromises)) {
+                        $amount = [
+                            'amount' => 0,
+                            'date' => ''
+                        ];
+                    } else {
+                        // Si ya existe, obtenemos su valor actual
+                        $amount = $compromises[$positiveKey];
+                    }
+
+                    if ($com->budgetCompromise->budgetStages) {
+                        $stagePag = false;
+                        foreach ($com->budgetCompromise->budgetStages as $stage) {
+                            if ($stage->type == 'PAG') {
+                                $stagePag = true;
+                            }
+                            $date = $stage->stageable->paid_at ?? $stage->stageable->payment_date;
+                            // Seteamos la fecha desde el último elemento de budgetStages
+                            if (gettype($date) === 'string') {
+                                $amount['date'] = Carbon::rawCreateFromFormat('Y-m-d', $date);
+                            } else {
+                                $amount['date'] = $date;
+                            }
+                        }
+
+                        $newAmount = $com->amount;
+
+                        if ($stagePag) {
+                            $amount['amount'] += $newAmount;
+                            $compromises[$positiveKey] = $amount; // Actualizamos el valor en el arreglo $compromises
+                        }
+                    }
+
+                    if ($anulatedStatus->id == $com->document_status_id) {
+                        // Iteración con monto en negativo
+                        $negativeKey = $budgetCompromiseId . '_negative';
 
                         // Verificamos si el identificador existe en $compromises y lo inicializamos si no
-                        if (!array_key_exists($positiveKey, $compromises)) {
+                        if (!array_key_exists($negativeKey, $compromises)) {
                             $amount = [
                                 'amount' => 0,
                                 'date' => ''
                             ];
                         } else {
                             // Si ya existe, obtenemos su valor actual
-                            $amount = $compromises[$positiveKey];
+                            $amount = $compromises[$negativeKey];
                         }
 
                         if ($com->budgetCompromise->budgetStages) {
@@ -1007,57 +1049,18 @@ class CreateBudgetAnalyticalMajorJob implements ShouldQueue
                                 }
                             }
 
-                            $newAmount = $com->amount;
+                            $newAmount = $com->amount * -1;
 
                             if ($stagePag) {
                                 $amount['amount'] += $newAmount;
-                                $compromises[$positiveKey] = $amount; // Actualizamos el valor en el arreglo $compromises
-                            }
-                        }
-
-                        if ($anulatedStatus->id == $com->document_status_id) {
-                            // Iteración con monto en negativo
-                            $negativeKey = $budgetCompromiseId . '_negative';
-
-                            // Verificamos si el identificador existe en $compromises y lo inicializamos si no
-                            if (!array_key_exists($negativeKey, $compromises)) {
-                                $amount = [
-                                    'amount' => 0,
-                                    'date' => ''
-                                ];
-                            } else {
-                                // Si ya existe, obtenemos su valor actual
-                                $amount = $compromises[$negativeKey];
-                            }
-
-                            if ($com->budgetCompromise->budgetStages) {
-                                $stagePag = false;
-                                foreach ($com->budgetCompromise->budgetStages as $stage) {
-                                    if ($stage->type == 'PAG') {
-                                        $stagePag = true;
-                                    }
-                                    $date = $stage->stageable->paid_at ?? $stage->stageable->payment_date;
-                                    // Seteamos la fecha desde el último elemento de budgetStages
-                                    if (gettype($date) === 'string') {
-                                        $amount['date'] = Carbon::rawCreateFromFormat('Y-m-d', $date);
-                                    } else {
-                                        $amount['date'] = $date;
-                                    }
-                                }
-
-                                $newAmount = $com->amount * -1;
-
-                                if ($stagePag) {
-                                    $amount['amount'] += $newAmount;
-                                    $compromises[$negativeKey] = $amount; // Actualizamos el valor en el arreglo $compromises
-                                }
+                                $compromises[$negativeKey] = $amount; // Actualizamos el valor en el arreglo $compromises
                             }
                         }
                     }
                 }
-
-                return $compromises;
             }
+
+            return $compromises;
         }
 
         return $compromises;

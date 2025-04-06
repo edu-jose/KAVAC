@@ -1,5 +1,5 @@
 <template>
-    <div class="modal fade" id="modalSendNotification" tabindex="-1" role="dialog" 
+    <div class="modal fade" id="modalSendNotification" tabindex="-1" role="dialog"
         aria-labelledby="modalSendNotificationTitle" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
             <div class="modal-content">
@@ -74,9 +74,10 @@
         },
         mounted() {
             const vm = this;
-            $("#modalSendNotification").on("shown.bs.modal", function () {
-                let el = document.getElementById('user');
-                vm.getUserInfo(el.value);
+            $("#modalSendNotification").on("shown.bs.modal", function (e) {
+                const relatedElement = $(e.relatedTarget)?.data('id');
+                const el = document.getElementById('user');
+                vm.getUserInfo(el.value || relatedElement || '');
             });
             $('#modalSendNotification').on('hidden.bs.modal', function (e) {
                 vm.record = {

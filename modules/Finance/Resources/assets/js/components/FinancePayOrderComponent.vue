@@ -630,17 +630,21 @@ export default {
                         }
                     });
 
-                    if(vm.record.documentType == 'T' && documentSource && documentSource.receiver && documentSource.receiver.description) {
-                        vm.searchReceivers(documentSource.receiver.description);
+                    if(vm.record.documentType == 'T' && documentSource) {
+                        let editData = {};
+                        if (vm.edit_object) {
+                            editData = JSON.parse(vm.edit_object);
+                        }
+                        vm.searchReceivers(documentSource.receiver.description || editData.receiver_name);
 
                         setTimeout(() => {
                             let receiver = {
-                                text: documentSource.receiver.description,
-                                id: documentSource.receiver.receiverable_id,
-                                class: documentSource.receiver.receiverable_type,
-                                group: documentSource.receiver.group,
+                                text: documentSource.receiver.description || editData.receiver.description,
+                                id: documentSource.receiver.receiverable_id || editData.receiver.id,
+                                class: documentSource.receiver.receiverable_type || editData.name_sourceable_type,
+                                group: documentSource.receiver.group || editData.receiver.group,
                                 accounting_account_id:
-                                    documentSource.receiver.associateable_id,
+                                    documentSource.receiver.associateable_id || editData.receiver.associateable_id,
                             };
 
                             vm.record.receiver = receiver;
@@ -660,7 +664,7 @@ export default {
                             this.accounting && this.accounting.currency ?
                             this.accounting.currency.decimal_places : 2
                         ) : 0;
-                    vm.record.concept = (documentSource) ? documentSource.description : '';
+
                     vm.record.amount = (documentSource) ?
                         parseFloat(documentSource.budget_total_amount).toFixed(
                             this.accounting && this.accounting.currency ?
@@ -834,6 +838,7 @@ export default {
             vm.record.document_sourceable_id = vm.record.documentType != 'T' ? editData.document_sourceable_id : null;
             vm.record.month = editData.month;
             vm.record.period = editData.period;
+            vm.record.concept = editData.concept;
             vm.record.is_payroll_contribution = editData.is_payroll_contribution;
 
             if (vm.record.documentType == 'M') {

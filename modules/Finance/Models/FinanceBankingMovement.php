@@ -6,6 +6,7 @@ use App\Models\Currency;
 use App\Models\Institution;
 use App\Traits\ModelsTrait;
 use App\Models\DocumentStatus;
+use Illuminate\Support\Facades\DB;
 use Nwidart\Modules\Facades\Module;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Database\Eloquent\Model;
@@ -208,5 +209,29 @@ class FinanceBankingMovement extends Model implements Auditable
             }
         }
         return false;
+    }
+
+    /**
+     * Scope para buscar y filtrar datos de movimientos bancarios
+     *
+     * @author Francisco J. P. Ruíz <fjpenya@cenditel.gob.ve | javierrupe19@gmail.com>
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query Objeto con la consulta
+     * @param  string         $search    Cadena de texto a buscar
+     *
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeSearch($query, $search)
+    {
+        return $query
+            ->where(DB::raw('upper(code)'), 'LIKE', '%' . strtoupper($search) . '%')
+            ->orWhere(DB::raw('upper(amount)'), 'LIKE', '%' . strtoupper($search) . '%')
+            ->orWhereRaw("TO_CHAR(payment_date, 'DD/MM/YYYY') LIKE '%" . strtoupper($search) . "%'")
+            ->orWhere(DB::raw('upper(transaction_type)'), 'LIKE', '%' . strtoupper($search) . '%')
+            ->orWhere(DB::raw('upper(concept)'), 'LIKE', '%' . strtoupper($search) . '%')
+            ->orWhere(DB::raw('upper(reference)'), 'LIKE', '%' . strtoupper($search) . '%')
+            ->orWhereHas('documentStatus', function ($query) use ($search) {
+                $query->where(DB::raw('upper(name)'), 'LIKE', '%' . strtoupper($search) . '%');
+            });
     }
 }

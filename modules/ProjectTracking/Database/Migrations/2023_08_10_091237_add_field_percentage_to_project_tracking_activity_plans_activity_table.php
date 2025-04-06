@@ -22,18 +22,15 @@ class AddFieldPercentageToProjectTrackingActivityPlansActivityTable extends Migr
      */
     public function up()
     {
-        Schema::table('project_tracking_activity_plans_activity', function (Blueprint $table) {
-
-        });
         if (Schema::hasTable('project_tracking_activity_plans_activity')) {
             Schema::table('project_tracking_activity_plans_activity', function (Blueprint $table) {
                 if (!Schema::hasColumn('project_tracking_activity_plans_activity', 'percentage')) {
                     $table->string('percentage')->comment(
                         'Porcentaje asociado a la actividad'
                     )->nullable();
-                };
+                }
             });
-        };
+        }
     }
 
     /**
@@ -47,8 +44,8 @@ class AddFieldPercentageToProjectTrackingActivityPlansActivityTable extends Migr
             Schema::table('project_tracking_activity_plans_activity', function (Blueprint $table) {
                 if (Schema::hasColumn('project_tracking_activity_plans_activity', 'percentage')) {
                     $table->dropColumn('percentage');
-                };
+                }
             });
-        };
+        }
     }
 }

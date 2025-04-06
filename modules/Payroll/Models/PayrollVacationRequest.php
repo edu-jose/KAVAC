@@ -40,7 +40,8 @@ class PayrollVacationRequest extends Model implements Auditable
      */
     protected $fillable = [
         'code', 'status', 'days_requested', 'vacation_period_year', 'start_date',
-        'end_date', 'status_parameters', 'payroll_staff_id', 'institution_id'
+        'end_date', 'status_parameters', 'payroll_staff_id', 'institution_id', 'created_at',
+        'is_from_xlsx_file'
     ];
 
     /**

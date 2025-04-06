@@ -110,7 +110,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="(x, index) in record_items" class="row" :key="index">
+                        <tr v-for="x in record_items" class="row">
                             <td
                                 style="border: 1px solid #dee2e6;"
                                 class="col-1 text-center"
@@ -164,7 +164,11 @@
                                     oninput="this.value=this.value.replace(/[^0-9,.]/g, '').replace(/,/g, '.');"
                                     data-toggle="tooltip"
                                     title="Precio"
-                                    v-model="unitPrice"
+                                    v-model="
+                                        (x.pivot_purchase)
+                                        ? x.pivot_purchase.unit_price
+                                        : x.unit_price
+                                    "
                                     @input="CalculateTot"
                                 >
                             </td>
@@ -467,6 +471,27 @@ export default {
     },
     methods: {
         /**
+         * Obtiene un arreglo con las monedas registradas
+         *
+         * @author Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
+         *
+         * @param  {integer} id Identificador de la moneda a buscar, este parámetro es opcional
+         */
+        async getCurrencies(id) {
+            const vm = this;
+            let currency_id = (typeof (id) !== "undefined") ? '/' + id : '';
+            const url = vm.setUrl(`get-currencies${currency_id}`);
+            vm.currencies = [];
+            await axios.get(url).then(response => {
+                vm.currencies = [{'id': '', 'text': 'Seleccione...'}].concat(response.data);
+            }).catch(error => {
+                console.error(error);
+            });
+            vm.currency_id = vm.base_budget_edit.currency_id;
+            vm.currency = vm.base_budget_edit.currency_id;
+        },
+
+        /**
          * Reinicia los valores de los campos del formulario
          *
          * @author Pedro Buitrago <pbuitrago@cenditel.gob.ve | pedrobui@gmail.com>
@@ -499,27 +524,6 @@ export default {
                 var r = this.record_items[i];
                 r.unit_price = 0;
             }
-        },
-
-        /**
-         * Obtiene un arreglo con las monedas registradas
-         *
-         * @author Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
-         *
-         * @param  {integer} id Identificador de la moneda a buscar, este parámetro es opcional
-         */
-        async getCurrencies(id) {
-            const vm = this;
-            let currency_id = (typeof (id) !== "undefined") ? '/' + id : '';
-            const url = vm.setUrl(`get-currencies${currency_id}`);
-            vm.currencies = [];
-            await axios.get(url).then(response => {
-                vm.currencies = [{'id': '', 'text': 'Seleccione...'}].concat(response.data);
-            }).catch(error => {
-                console.error(error);
-            });
-            vm.currency_id = vm.base_budget_edit.currency_id;
-            vm.currency = vm.base_budget_edit.currency_id;
         },
 
         /**
@@ -662,7 +666,7 @@ export default {
         /**
          * Establece la cantidad de decimales correspondientes a la moneda que se maneja
          *
-         * @author Juan Rosas <jrosas@cenditel.gob.ve> | <juan.rosasr01@gmail.com>
+         * @author Juan Rosas <jrosas@cenditel.gob.ve | juan.rosasr01@gmail.com>
          */
         cualculateLimitDecimal() {
             var res = "0.";
@@ -756,18 +760,6 @@ export default {
     computed: {
         currency_symbol: function () {
             return (this.currency) ? this.currency.symbol : '';
-        },
-        unitPrice: {
-            get() {
-                return (this.x.pivot_purchase) ? this.x.pivot_purchase.unit_price : this.x.unit_price;
-            },
-            set(value) {
-                if (this.x.pivot_purchase) {
-                    this.x.pivot_purchase.unit_price = value;
-                } else {
-                    this.x.unit_price = value;
-                }
-            }
         }
     }
 };

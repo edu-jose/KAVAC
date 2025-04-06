@@ -29,30 +29,41 @@
 
             <div class="row">
                 <div class="col-4 mt-4">
-                    <label for="fileName" class="is-required">Nombre del archivo</label>
-                    <input type="text" class="form-control" id="fileName" v-model="record.fileName">
+                    <div class="form-group is-required">
+                        <label for="fileName">Nombre del archivo</label>
+                        <input type="text" class="form-control" id="fileName" v-model="record.fileName">
+                    </div>
                 </div>
                 <div class="col-4 mt-4">
-                    <label for="fileName" class="is-required">Número de archivo</label>
-                    <input type="text" class="form-control" id="fileName" v-model="record.fileNumber">
+                    <div class="form-group is-required">
+                        <label for="fileName">Número de archivo</label>
+                        <input type="text" class="form-control" id="fileName"
+                                v-model="record.fileNumber"
+                                v-input-mask data-inputmask-regex="^([0-9]{1,10})$"
+                        >
+                    </div>
                 </div>
                 <div id="date" class="col-4 mt-4">
-                    <label for="periodStartDate" class="is-required">Fecha de pago</label>
-                    <div class="input-group input-sm">
-                        <span class="input-group-addon">
-                            <i class="now-ui-icons ui-1_calendar-60"></i>
-                        </span>
-                        <input type="date" class="form-control no-restrict" data-toggle="tooltip" title="Desde la fecha"
-                            v-model="record.date" id="periodStartDate" placeholder="Fecha">
+                    <div class="form-group is-required">
+                        <label for="periodStartDate">Fecha de pago</label>
+                        <div class="input-group input-sm">
+                            <span class="input-group-addon">
+                                <i class="now-ui-icons ui-1_calendar-60"></i>
+                            </span>
+                            <input type="date" class="form-control no-restrict" data-toggle="tooltip" title="Desde la fecha"
+                                v-model="record.date" id="periodStartDate" placeholder="Fecha">
+                        </div>
                     </div>
                 </div>
             </div>
             <div class="row">
                 <div class="col-4 mt-4">
-                    <label for="payroll" class="is-required">Nómina</label>
-                    <v-multiselect :options="closedPayrollList" track_by="text" :hide_selected="false"
-                        v-model="record.payrollId" :group_values="'group'" :group_label="'label'" style="margin-top: -5px;">
-                    </v-multiselect>
+                    <div class="form-group is-required">
+                        <label for="payroll" class="is-required">Nómina</label>
+                        <v-multiselect :options="closedPayrollList" track_by="text" :hide_selected="false"
+                            v-model="record.payrollId" :group_values="'group'" :group_label="'label'" style="margin-top: -5px;">
+                        </v-multiselect>
+                    </div>
                 </div>
             </div>
         </div>
@@ -150,6 +161,7 @@ export default {
         async createRecord(url) {
             const vm = this;
             try {
+                vm.loading = true;
                 const validateResponse = await axios.post(`${window.app_url}/payroll/validate-txt-data`, vm.record);
                 if (validateResponse.status == 200) {
                     const response = await axios.get(`${window.app_url}/payroll/generate-txt`, {
@@ -172,8 +184,11 @@ export default {
                     link.click();
 
                     window.URL.revokeObjectURL(url);
-                }
 
+                    vm.reset();
+                    vm.errors = [];
+                    vm.loading = false;
+                }
             } catch (error) {
                 vm.errors = [];
                 for (var index in error.response.data.errors) {
@@ -182,6 +197,7 @@ export default {
                     }
                 }
                 console.log(error.response.data.errors);
+                vm.loading = false;
             }
         },
     },

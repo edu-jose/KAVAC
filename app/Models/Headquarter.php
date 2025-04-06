@@ -2,11 +2,12 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use OwenIt\Auditing\Contracts\Auditable;
-use OwenIt\Auditing\Auditable as AuditableTrait;
 use App\Traits\ModelsTrait;
+use Illuminate\Database\Eloquent\Model;
+use OwenIt\Auditing\Contracts\Auditable;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use OwenIt\Auditing\Auditable as AuditableTrait;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * @class IstitutionSector
@@ -39,5 +40,67 @@ class Headquarter extends Model implements Auditable
      *
      * @var array $fillable
      */
-    protected $fillable = ['name'];
+    protected $fillable = [
+        'name',
+        'rif',
+        'address',
+        'city_id',
+        'municipality_id',
+        'region_id',
+    ];
+
+    protected function getAddressAttribute($value)
+    {
+        return $value ?? '';
+    }
+
+    protected function getRifAttribute($value)
+    {
+        return $value ?? '';
+    }
+
+    protected function getCityIdAttribute($value)
+    {
+        return $value ?? '';
+    }
+
+    protected function getMunicipalityIdAttribute($value)
+    {
+        return $value ?? '';
+    }
+
+    protected function getRegionIdAttribute($value)
+    {
+        return $value ?? '';
+    }
+
+    /**
+     * Get the city that owns the Headquarter
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function city(): BelongsTo
+    {
+        return $this->belongsTo(City::class);
+    }
+
+    /**
+     * Get the municipoality that owns the Headquarter
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function municipality(): BelongsTo
+    {
+        return $this->belongsTo(Municipality::class);
+    }
+
+    /**
+     * Get the region that owns the Headquarter
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function region(): BelongsTo
+    {
+        return $this->belongsTo(Region::class);
+    }
 }

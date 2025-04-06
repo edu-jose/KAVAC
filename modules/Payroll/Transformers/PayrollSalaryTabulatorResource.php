@@ -38,7 +38,15 @@ class PayrollSalaryTabulatorResource extends JsonResource
             'description' => $this->resource->description,
             'payroll_salary_tabulator_type' => $this->resource->payroll_salary_tabulator_type,
             'code' => $this->resource->code,
-            'is_active' => $this->resource->is_active
+            'is_active' => $this->resource->is_active,
+            'payroll_salary_adjustment' => [
+                'increase_of_type' => $this->resource->payroll_salary_adjustments?->increase_of_type,
+                'value' => $this->resource->payroll_salary_adjustments?->value ?? 0.00,
+                'created_at' => $this->resource->payroll_salary_adjustments?->created_at,
+                'start_increase_date' => $this->resource->payroll_salary_adjustments?->start_increase_date,
+                'end_increase_date' => $this->resource->payroll_salary_adjustments?->end_increase_date,
+                'salary_values' => $this->resource->payroll_salary_adjustments?->salary_values ?? null
+            ]
         ];
         $headers = [];
         if ($this->resource->payroll_horizontal_salary_scale_id > 0) {

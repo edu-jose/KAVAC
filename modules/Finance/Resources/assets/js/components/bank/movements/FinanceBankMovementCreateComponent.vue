@@ -88,7 +88,7 @@
                             data-inputmask="
                                 'alias': 'numeric',
                                 'allowMinus': 'false'"
-                            onfocus="$(this).select()"
+                            @focus="selectText"
                             class="form-control input-sm"
                             data-toggle="tooltip"
                             title="Monto"
@@ -290,7 +290,7 @@
                                                     data-inputmask="
                                                         'alias': 'numeric',
                                                         'allowMinus': 'false'"
-                                                    onfocus="$(this).select()"
+                                                    @focus="selectText"
                                                     class="form-control input-sm"
                                                     data-toggle="tooltip"
                                                     title="Indique el monto a asignar para la cuenta seleccionada"
@@ -938,7 +938,17 @@
                     !vm.account_concept ||
                     vm.account_amount === ""
                 ) {
-                    bootbox.alert("Debe indicar todos los datos requeridos (*)");
+                    bootbox.alert({
+                        title: "Advertencia",
+                        message: "Debe indicar todos los datos requeridos (*)",
+                        closeButton: false,
+                        buttons: {
+                            ok: {
+                                label: "Cerrar",
+                                className: 'btn-light'
+                            }
+                        }
+                    });
                     return;
                 }
                 vm.loading = true;
@@ -1174,7 +1184,17 @@
                     });
                 } else {
                     $("#add_account").find('.close').click();
-                    bootbox.alert('Debe indicar la institución y la fecha del pago antes de agregar cuentas a un compromiso');
+                    bootbox.alert({
+                        title: 'Advertencia',
+                        message: 'Debe indicar la institución y la fecha del pago antes de agregar cuentas a un compromiso',
+                        closeButton: false,
+                        buttons: {
+                            ok: {
+                                label: "Cerrar",
+                                className: 'btn-light'
+                            }
+                        }
+                    });
                 }
 
                 vm.loading = false;

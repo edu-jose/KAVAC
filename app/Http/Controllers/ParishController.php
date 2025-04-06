@@ -57,7 +57,9 @@ class ParishController extends Controller
 
         return response()->json([
             'data' => $data->items(),
-            'count' => $data->total()
+            'count' => $data->total(),
+            'tableRef' => 'tableResults',
+            'records' => $data->items()
         ], 200, [], env('APP_DEBUG') == true ? JSON_PRETTY_PRINT : 0);
     }
 

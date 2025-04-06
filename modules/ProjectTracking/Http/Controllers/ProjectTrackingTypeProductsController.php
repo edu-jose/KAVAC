@@ -48,8 +48,11 @@ class ProjectTrackingTypeProductsController extends Controller
      */
     public function __construct()
     {
-        // Establece permisos de acceso para cada método del controlador
-        //$this->middleware('permission:asset.setting.condition');
+        /** Establece permisos de acceso para cada método del controlador */
+        $this->middleware('permission:project.tracking.product.type.create', ['only' => ['store']]);
+        $this->middleware('permission:project.tracking.product.type.edit', ['only' => ['update']]);
+        $this->middleware('permission:project.tracking.product.type.delete', ['only' => 'destroy']);
+
         /* Define las reglas de validación para el formulario */
         $this->validateRules = [
             'name'     => ['required',  'max:100', Rule::unique('asset_conditions')],

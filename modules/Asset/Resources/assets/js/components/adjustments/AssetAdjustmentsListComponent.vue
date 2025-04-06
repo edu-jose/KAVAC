@@ -1,8 +1,8 @@
 <template>
     <div>
-        <v-client-table
+        <v-server-table
+            :url="route_list"
             :columns="columns"
-            :data="records"
             :options="table_options"
             ref="tableResults"
         >
@@ -43,7 +43,7 @@
                         </button>
                 </div>
             </div>
-        </v-client-table>
+        </v-server-table>
         <asset-info ref="AssetInfo"></asset-info>
     </div>
 </template>

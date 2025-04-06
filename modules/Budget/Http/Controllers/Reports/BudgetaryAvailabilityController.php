@@ -5,7 +5,6 @@ namespace Modules\Budget\Http\Controllers\Reports;
 use App\Models\FiscalYear;
 use App\Models\Institution;
 use App\Models\Parameter;
-use App\Models\Receiver;
 use App\Repositories\ReportRepository;
 use Illuminate\Routing\Controller;
 use Modules\Payroll\Models\Payroll;
@@ -55,13 +54,15 @@ class BudgetaryAvailabilityController extends Controller
             'reviewedBy.payrollStaff',
             'verifiedBy.payrollStaff',
             'firstSignature.payrollStaff',
-            'secondSignature.payrollStaff'
+            'secondSignature.payrollStaff',
+            'purchaseCommonBudgetaryAvailability',
         )->find($id);
 
         if ($module == 'Payroll') {
             $payroll = Payroll::with([
                 'payrollPaymentPeriod.payrollPaymentType.payrollConcepts.currency',
-                'payrollPaymentPeriod.payrollPaymentType.payrollConcepts.budgetAccount'
+                'payrollPaymentPeriod.payrollPaymentType.payrollConcepts.budgetAccount',
+                'purchaseCommonBudgetaryAvailability',
             ])->find($id);
 
             $round = Parameter::where('p_key', 'round')->where('required_by', 'payroll')->first();
@@ -146,6 +147,11 @@ class BudgetaryAvailabilityController extends Controller
 
         /* Base para generar el pdf */
         $pdf = new ReportRepository();
+        $code = match ($module) {
+             'Purchase' => $record->purchaseCommonBudgetaryAvailability?->code ?? '',
+             'Payroll' => $payroll->purchaseCommonBudgetaryAvailability?->code ?? '',
+             default => ''
+        };
 
         $pdf->setConfig(
             [
@@ -154,7 +160,7 @@ class BudgetaryAvailabilityController extends Controller
             ]
         );
 
-        $pdf->setHeader('Reporte de Disponibilidad Presupuestaria');
+        $pdf->setHeader('Reporte de Disponibilidad Presupuestaria', $code);
 
         $pdf->setFooter();
 

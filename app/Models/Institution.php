@@ -71,10 +71,12 @@ class Institution extends Model implements Auditable
      */
     protected $fillable = [
         'onapre_code', 'rif', 'acronym', 'name', 'business_name', 'start_operations_date', 'legal_base',
-        'legal_form', 'main_activity', 'mission', 'vision', 'legal_address', 'web', 'composition_assets',
+        'legal_form', 'main_activity', 'mission', 'vision', 'legal_address', 'web', 'email', 'composition_assets',
         'postal_code', 'active', 'default', 'retention_agent', 'institution_sector_id',
         'institution_type_id', 'municipality_id', 'city_id', 'logo_id', 'banner_id'
     ];
+
+    protected $with = ['phones'];
 
     /**
      * Ejecuta acciones generales del modelo
@@ -181,7 +183,7 @@ class Institution extends Model implements Auditable
     }
 
     /**
-     * Método que obtiene los perfiles de usuarios asociados a una Organización
+     * Obtiene los perfiles de usuarios asociados a una Organización
      *
      * @author  Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
      *
@@ -193,7 +195,7 @@ class Institution extends Model implements Auditable
     }
 
     /**
-     * Método que obtiene los años fiscales asociados a una Organización
+     * Obtiene los años fiscales asociados a una Organización
      *
      * @author  Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
      *
@@ -226,5 +228,10 @@ class Institution extends Model implements Auditable
     public function buildings(): HasMany
     {
         return $this->hasMany(AssetBuilding::class);
+    }
+
+    public function phones()
+    {
+        return $this->morphMany(Phone::class, 'phoneable');
     }
 }

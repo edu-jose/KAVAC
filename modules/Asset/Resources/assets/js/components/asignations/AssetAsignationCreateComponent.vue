@@ -71,7 +71,7 @@
 							v-model="record.location_place">
 					</div>
 				</div> -->
-				<div class="col-md-3">
+				<div class="col-md-4">
 					<div class="form-group is-required">
 						<label for="input_buildings">Edificación:</label>
 						<select2 id="input_buildings" :options="buildings" v-model="record.building_id"
@@ -79,7 +79,7 @@
 						</select2>
 					</div>
 				</div>
-				<div class="col-md-3">
+				<div class="col-md-4">
 					<div class="form-group is-required">
 						<label for="input_floors">Nivel:</label>
 						<select2 id="input_floors" :options="floors" v-model="record.floor_id"
@@ -87,7 +87,7 @@
 						</select2>
 					</div>
 				</div>
-				<div class="col-md-3">
+				<div class="col-md-4">
 					<div class="form-group is-required">
 						<label for="input_sections">Sección:</label>
 						<select2 id="input_sections" :options="sections" v-model="record.section_id">
@@ -420,7 +420,17 @@ export default {
 			const vm = this;
 			vm.errors = [];
 			if (!vm.selected.length > 0) {
-				bootbox.alert("Debe agregar al menos un elemento a la solicitud");
+				bootbox.alert({
+					title: "Advertencia",
+					message: "Debe agregar al menos un elemento a la solicitud",
+					closeButton: false,
+					buttons: {
+						ok: {
+							label: "Cerrar",
+							className: 'btn-light'
+						}
+					}
+				});
 				return false;
 			};
 			vm.record.assets = vm.selected;

@@ -97,7 +97,7 @@ class InstitutionTypeController extends Controller
     {
         $this->validate($request, [
             'name' => ['required', 'max:100'],
-            'acronym' => ['max:4']
+            'acronym' => ['required', 'max:4']
         ]);
 
         $institutionType->name = $request->name;

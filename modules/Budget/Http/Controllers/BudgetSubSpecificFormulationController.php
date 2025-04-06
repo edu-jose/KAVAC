@@ -14,6 +14,7 @@ use Nwidart\Modules\Facades\Module;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Repositories\ReportRepository;
 use Maatwebsite\Excel\HeadingRowImport;
+use Modules\Budget\Models\Currency;
 use Modules\Budget\Models\DocumentStatus;
 use Illuminate\Contracts\Support\Renderable;
 use Modules\Budget\Models\BudgetAccountOpen;
@@ -63,7 +64,9 @@ class BudgetSubSpecificFormulationController extends Controller
     public function index()
     {
         $records = BudgetSubSpecificFormulation::all();
-        return view('budget::formulations.list');
+        $hasConfirmPermission = auth()->user()->hasPermission('budget.formulation.confirm');
+
+        return view('budget::formulations.list', compact('hasConfirmPermission'));
     }
 
     /**
@@ -268,6 +271,10 @@ class BudgetSubSpecificFormulationController extends Controller
         if (isset($request->assigned) && $request->assigned) {
             // Instrucciones para la asignación de presupuesto
             $formulation->assigned = $request->assigned;
+            $formulation->save();
+        } elseif (isset($request->confirmed) && $request->confirmed) {
+            // Instrucciones para la confirmación de presupuesto
+            $formulation->confirmed = $request->confirmed;
             $documentStatus = DocumentStatus::where('action', 'AP')->first();
             $formulation->document_status_id = $documentStatus->id;
             $formulation->save();
@@ -284,10 +291,10 @@ class BudgetSubSpecificFormulationController extends Controller
                     ['year' => $formulation->year]
                 )
             ]);
-        } elseif ($formulation->assigned) {
+        } elseif ($formulation->confirmed) {
             $request->session()->flash('message', [
                 'type' => 'other', 'icon' => 'screen-ok',
-                'text' => 'La formulación de presupuesto ya se encuentra asignada y no puede ser modificada'
+                'text' => 'La formulación de presupuesto ya se encuentra confirmada y no puede ser modificada'
             ]);
         } else {
             $this->validate($request, [
@@ -367,15 +374,52 @@ class BudgetSubSpecificFormulationController extends Controller
      * Obtiene los registros de formulaciones a mostrar en listados de componente Vue
      *
      * @author Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
+     * @author Ing. Juan Rosas <jrosas@cenditel.gob.ve> | <juan.rosasr01@gmail.com>
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function vueList()
+    public function vueList(Request $request)
     {
+        $default_currency = Currency::where('default', true)->first();
+
+        // Obtener las formulaciones con las relaciones necesarias
+        $records = BudgetSubSpecificFormulation::search($request->query('query'))
+        ->with([
+            'specificAction:id,code,name',
+            'currency' => function ($query) {
+                return $query->withTrashed()->select('id', 'symbol', 'name');
+            },
+        ])->select(
+            'id',
+            'code',
+            'year',
+            'total_formulated',
+            'date',
+            'currency_id',
+            'assigned',
+            'confirmed',
+            'budget_specific_action_id'
+        )
+        ->orderBy('id', 'asc')->paginate($request->limit ?? 10);
+
+        // Convertir cada monto a la moneda por defecto
+        $records->each(function ($formulation) use ($default_currency) {
+            $formulation->default_currency_amount = number_format(
+                \Modules\Budget\Facades\CurrencyConverter::convert(
+                    $formulation->total_formulated,
+                    $formulation->date,
+                    $formulation->currency,
+                    $default_currency
+                ),
+                $default_currency->decimal_places,
+                ',',
+                ''
+            );
+        });
+
         return response()->json([
-            'records' => BudgetSubSpecificFormulation::with(['institution', 'specificAction', 'currency' => function ($query) {
-                return $query->withTrashed();
-            }])->get()
+            'data' => $records->items(),
+            'count' => $records->total(),
         ], 200);
     }
 
@@ -489,7 +533,7 @@ class BudgetSubSpecificFormulationController extends Controller
      *
      * @return    BinaryFileResponse           Respuesta de la solicitud para descargar el reporte
      */
-    public function printFormulated($id)
+    public function printFormulated(Request $request, $id)
     {
         $pdf = new ReportRepository();
         $formulation = BudgetSubSpecificFormulation::with([
@@ -497,6 +541,15 @@ class BudgetSubSpecificFormulationController extends Controller
             'institution'
         ])
             ->where('id', $id)->first();
+
+        if (!$request->has('currency')) {
+            $currency = Currency::where('id', $formulation->currency_id)->first();
+        } else {
+            $currency = Currency::find($request->currency);
+        }
+
+        $conversion_history = \Modules\Budget\Facades\CurrencyHistory::getExchangeRateHistory($formulation->date, $formulation->date, $formulation->currency, $currency);
+
         $filename = 'formulated-' . $formulation->id . '.pdf';
         $pdf->setConfig(
             [
@@ -508,7 +561,7 @@ class BudgetSubSpecificFormulationController extends Controller
         );
         $pdf->setHeader("Oficina de Programación y Presupuesto", "Presupuesto de Gastos por Sub Específicas");
         $pdf->setFooter();
-        $pdf->setBody('budget::reports.formulation', true, compact('formulation'));
+        $pdf->setBody('budget::reports.formulation', true, compact('formulation', 'currency', 'conversion_history'));
         $file = storage_path() . '/reports/' . $filename;
         return response()->download($file, $filename, [], 'inline');
     }
@@ -524,14 +577,21 @@ class BudgetSubSpecificFormulationController extends Controller
      *
      * @return    BinaryFileResponse|\Illuminate\Http\RedirectResponse
      */
-    public function export($id)
+    public function export(Request $request, $id)
     {
         try {
             $formulation = BudgetSubSpecificFormulation::query()->with([
                 'currency',
                 'institution'
             ])->where('id', $id)->first();
-            $export = new BudgetSubSpecificFormulationExport(BudgetSubSpecificFormulation::class);
+
+            if (!$request->has('currency')) {
+                $currency = Currency::where('id', $formulation->currency_id)->first();
+            } else {
+                $currency = Currency::find($request->currency);
+            }
+
+            $export = new BudgetSubSpecificFormulationExport(BudgetSubSpecificFormulation::class, $currency);
             $export->setBudgetFormulationId($formulation->id);
             return Excel::download($export, 'budget_formulation' . $formulation->created_at . '.xlsx');
         } catch (\Throwable $th) {

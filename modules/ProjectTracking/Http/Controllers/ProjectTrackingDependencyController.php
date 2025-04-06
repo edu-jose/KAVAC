@@ -11,12 +11,13 @@ use Illuminate\Contracts\Support\Renderable;
 use Illuminate\Routing\Controller;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Modules\ProjectTracking\Models\ProjectTrackingDependency;
+use App\Models\Department;
 
 /**
  * @class ProjectTrackingDependencyController
  * @brief Clase que gestiona las dependencias
  *
- * @author  William Páez <wpaez@cenditel.gob.ve>
+ * @author William Páez <wpaez@cenditel.gob.ve>
  *
  * @license
  *     [LICENCIA DE SOFTWARE CENDITEL](http://conocimientolibre.cenditel.gob.ve/licencia-de-software-v-1-3/)
@@ -48,42 +49,49 @@ class ProjectTrackingDependencyController extends Controller
      */
     public function __construct()
     {
-        {
-            /* Define las reglas de validación para el formulario */
-            $this->validateRules = [
-                'name'                                  => ['required'],
-                'description'                           => ['nullable', 'max:250'],
-            ];
+        /**
+ * Establece permisos de acceso para cada método del controlador
+*/
+        $this->middleware('permission:project.tracking.dependency.create', ['only' => ['store']]);
+        $this->middleware('permission:project.tracking.dependency.edit', ['only' => ['update']]);
+        $this->middleware('permission:project.tracking.dependency.delete', ['only' => 'destroy']);
 
-            /* Define los mensajes de validación para las reglas del formulario */
-            $this->messages = [
-                'name.required'                                  => 'El campo nombre es obligatorio.',
-            ];
-            }
+        /* Define las reglas de validación para el formulario */
+        $this->validateRules = [
+            'name'                                  => ['required'],
+            'description'                           => ['nullable', 'max:250'],
+        ];
+
+        /* Define los mensajes de validación para las reglas del formulario */
+        $this->messages = [
+            'name.required'                                  => 'El campo nombre es obligatorio.',
+        ];
     }
 
     /**
      * Muestra todos los registros de dependencias
      *
      * @author William Páez <wpaez@cenditel.gob.ve>
+     * @modified by Miguel Narvaez <mnarvaez@cenditel.gob.ve>
      *
      * @return \Illuminate\Http\JsonResponse    Json con los datos de dependencias
      */
     public function index()
     {
-        return response()->json(['records' => ProjectTrackingDependency::all()], 200);
+        return response()->json(['records' => Department::all()], 200);
     }
 
     /**
      * Retorna un json con todas las dependencias para ser usado en un componente <select2>
      *
      * @author Oscar González <xxmaestroyixx@gmail.com>
+     * @modified by Miguel Narvaez <mnarvaez@cenditel.gob.ve>
      *
      * @return \Illuminate\Http\JsonResponse
      */
     public function getDependencies()
     {
-        $dependenciesList = ProjectTrackingDependency::all();
+        $dependenciesList = Department::all();
         $dependencies = [];
         array_push(
             $dependencies,
@@ -131,7 +139,10 @@ class ProjectTrackingDependencyController extends Controller
             'name' => ['required', 'max:100', 'unique:project_tracking_dependencies,name']
             ]
         );
-        $projecttrackingDependency = ProjectTrackingDependency::create(['name' => $request->name, 'description' => $request->description]);
+        $projecttrackingDependency = ProjectTrackingDependency::create([
+            'name' => $request->name,
+            'description' => $request->description
+        ]);
         return response()->json(['record' => $projecttrackingDependency, 'message' => 'Success'], 200);
     }
 
@@ -171,7 +182,11 @@ class ProjectTrackingDependencyController extends Controller
         $this->validate(
             $request,
             [
-            'name' => ['required', 'max:100', 'unique:project_tracking_dependencies,name,' . $projecttrackingDependency->id],
+            'name' => [
+                'required',
+                'max:100',
+                'unique:project_tracking_dependencies,name,' . $projecttrackingDependency->id
+            ],
             'description' => ['nullable', 'max:200']
             ]
         );
@@ -201,11 +216,14 @@ class ProjectTrackingDependencyController extends Controller
      * Obtiene las dependencias registradas
      *
      * @author William Páez <wpaez@cenditel.gob.ve>
+     * @modified by Miguel Narvaez <mnarvaez@cenditel.gob.ve>
      *
      * @return \Illuminate\Http\JsonResponse    Json con los datos de cargos
      */
     public function getProjectTrackingDependencies()
     {
-        return response()->json(template_choices('Modules\ProjectTracking\Models\ProjectTrackingDependency', 'name', '', true));
+        return response()->json(
+            template_choices('App\Models\Department', 'name', '', true)
+        );
     }
 }

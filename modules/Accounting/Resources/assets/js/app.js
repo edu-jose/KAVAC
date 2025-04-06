@@ -251,6 +251,18 @@ Vue.component("accounting-report-balance-sheet-state-of-results", () =>
 );
 
 /**
+ * Componente index para el reporte de estado de flujo de efectivo
+ *
+ * @author  Juan Rosas <jrosas@cenditel.gob.ve> | <juan.rosasr01@gmail.com>
+ */
+Vue.component("accounting-report-cash-flow-statement", () =>
+    import(
+        /* webpackChunkName: "accounting-report-cash-flow-statement" */
+        "./components/reports/AccountingCashFlowStatementComponent.vue"
+    )
+);
+
+/**
  * Componente index para el reporte de Balance General y reporte de satdo de resultados
  *
  * @author  Oscar González <ojgonzalez@cenditel.gob.ve | xxmaestroyixx@gmail.com>

@@ -1,29 +1,14 @@
 <template>
     <div>
-        <a
-            class="btn btn-info btn-xs btn-icon btn-action"
-            href="#"
-            title="Ver información de la Solicitud"
-            data-toggle="tooltip"
-            @click="addRecord('view_request', route_list, $event)"
-        >
+        <a class="btn btn-info btn-xs btn-icon btn-action" href="#" title="Ver información de la Solicitud"
+            data-toggle="tooltip" @click="addRecord('view_request', route_list, $event)">
             <i class="fa fa-eye"></i>
         </a>
-        <div
-            class="modal fade text-left"
-            tabindex="-1"
-            role="dialog"
-            id="view_request"
-        >
+        <div class="modal fade text-left" tabindex="-1" role="dialog" id="view_request">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <button
-                            type="button"
-                            class="close"
-                            data-dismiss="modal"
-                            aria-label="Close"
-                        >
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">x</span>
                         </button>
                         <h6>
@@ -32,51 +17,30 @@
                         </h6>
                     </div>
                     <div class="modal-body">
-                        <div
-                            class="alert alert-danger"
-                            v-if="errors.length > 0"
-                        >
+                        <div class="alert alert-danger" v-if="errors.length > 0">
                             <ul>
                                 <li v-for="error in errors" :key="error">
                                     {{ error }}
                                 </li>
                             </ul>
                         </div>
-                        <ul
-                            class="nav nav-tabs custom-tabs justify-content-center"
-                            role="tablist"
-                        >
+                        <ul class="nav nav-tabs custom-tabs justify-content-center" role="tablist">
                             <li class="nav-item">
-                                <a
-                                    class="nav-link active"
-                                    data-toggle="tab"
-                                    href="#general"
-                                    id="info_general"
-                                    role="tab"
-                                >
+                                <a class="nav-link active" data-toggle="tab" href="#general" id="info_general"
+                                    role="tab">
                                     <i class="ion-android-person"></i>
                                     Información general
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a
-                                    class="nav-link"
-                                    data-toggle="tab"
-                                    href="#contact"
-                                    role="tab"
-                                >
+                                <a class="nav-link" data-toggle="tab" href="#contact" role="tab">
                                     <i class="ion-android-person"></i>
                                     Información de contacto
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a
-                                    class="nav-link"
-                                    data-toggle="tab"
-                                    href="#equipment"
-                                    role="tab"
-                                    @click="loadEquipment()"
-                                >
+                                <a class="nav-link" data-toggle="tab" href="#equipment" role="tab"
+                                    @click="loadEquipment()">
                                     <i class="ion-arrow-swap"></i> Equipos
                                     solicitados
                                 </a>
@@ -84,25 +48,13 @@
                         </ul>
 
                         <div class="tab-content">
-                            <div
-                                class="tab-pane active"
-                                id="general"
-                                role="tabpanel"
-                            >
+                            <div class="tab-pane active" id="general" role="tabpanel">
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <strong
-                                                >Fecha de la solicitud</strong
-                                            >
-                                            <div
-                                                class="row"
-                                                style="margin: 1px 0"
-                                            >
-                                                <span
-                                                    class="col-md-12"
-                                                    id="date_init"
-                                                >
+                                            <strong>Fecha de la solicitud</strong>
+                                            <div class="row" style="margin: 1px 0">
+                                                <span class="col-md-12" id="date_init">
                                                 </span>
                                             </div>
                                             <input type="hidden" id="id" />
@@ -111,17 +63,9 @@
 
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <strong
-                                                >Motivo de la solicitud</strong
-                                            >
-                                            <div
-                                                class="row"
-                                                style="margin: 1px 0"
-                                            >
-                                                <span
-                                                    class="col-md-12"
-                                                    id="motive"
-                                                >
+                                            <strong>Motivo de la solicitud</strong>
+                                            <div class="row" style="margin: 1px 0">
+                                                <span class="col-md-12" id="motive">
                                                 </span>
                                             </div>
                                         </div>
@@ -130,14 +74,8 @@
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <strong>Tipo de solicitud</strong>
-                                            <div
-                                                class="row"
-                                                style="margin: 1px 0"
-                                            >
-                                                <span
-                                                    class="col-md-12"
-                                                    id="type"
-                                                >
+                                            <div class="row" style="margin: 1px 0">
+                                                <span class="col-md-12" id="type">
                                                 </span>
                                             </div>
                                         </div>
@@ -145,18 +83,10 @@
 
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <strong
-                                                >Fecha de entrega de los
-                                                bienes</strong
-                                            >
-                                            <div
-                                                class="row"
-                                                style="margin: 1px 0"
-                                            >
-                                                <span
-                                                    class="col-md-12"
-                                                    id="delivery_date"
-                                                >
+                                            <strong>Fecha de entrega de los
+                                                bienes</strong>
+                                            <div class="row" style="margin: 1px 0">
+                                                <span class="col-md-12" id="delivery_date">
                                                 </span>
                                             </div>
                                         </div>
@@ -164,17 +94,9 @@
 
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <strong
-                                                >Ubicación de los bienes</strong
-                                            >
-                                            <div
-                                                class="row"
-                                                style="margin: 1px 0"
-                                            >
-                                                <span
-                                                    class="col-md-12"
-                                                    id="ubication"
-                                                >
+                                            <strong>Ubicación de los bienes</strong>
+                                            <div class="row" style="margin: 1px 0">
+                                                <span class="col-md-12" id="ubication">
                                                 </span>
                                             </div>
                                         </div>
@@ -186,14 +108,8 @@
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <strong>Nombre</strong>
-                                            <div
-                                                class="row"
-                                                style="margin: 1px 0"
-                                            >
-                                                <span
-                                                    class="col-md-12"
-                                                    id="agent_name"
-                                                >
+                                            <div class="row" style="margin: 1px 0">
+                                                <span class="col-md-12" id="agent_name">
                                                 </span>
                                             </div>
                                         </div>
@@ -202,14 +118,8 @@
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <strong>Teléfono</strong>
-                                            <div
-                                                class="row"
-                                                style="margin: 1px 0"
-                                            >
-                                                <span
-                                                    class="col-md-12"
-                                                    id="agent_telf"
-                                                >
+                                            <div class="row" style="margin: 1px 0">
+                                                <span class="col-md-12" id="agent_telf">
                                                 </span>
                                             </div>
                                         </div>
@@ -218,104 +128,74 @@
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <strong>Correo</strong>
-                                            <div
-                                                class="row"
-                                                style="margin: 1px 0"
-                                            >
-                                                <span
-                                                    class="col-md-12"
-                                                    id="agent_email"
-                                                >
+                                            <div class="row" style="margin: 1px 0">
+                                                <span class="col-md-12" id="agent_email">
                                                 </span>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            <div
-                                class="tab-pane"
-                                id="equipment"
-                                role="tabpanel"
-                            >
+                            <div class="tab-pane" id="equipment" role="tabpanel">
                                 <div class="row">
                                     <div class="col-md-12">
                                         <hr />
-                                        <v-client-table
-                                            :columns="columns"
-                                            :data="records"
-                                            :options="table_options"
-                                        >
-                                            <div
-                                                class="text-center"
-                                                slot="asset.asset_details.code"
-                                                slot-scope="props"
-                                            >
+                                        <v-client-table :columns="columns" :data="records" :options="table_options">
+                                            <div class="text-center" slot="asset.asset_details.code" slot-scope="props">
                                                 <span>{{
                                                     props.row.asset
                                                         .asset_details !== null
                                                         ? props.row.asset
-                                                              .asset_details
-                                                              .code
+                                                            .asset_details
+                                                            .code
                                                         : "No definido"
                                                 }}</span>
                                             </div>
-                                            <div
-                                                class="text-center"
-                                                slot="asset.asset_specific_category.name"
-                                                slot-scope="props"
-                                            >
+                                            <div class="text-center" slot="asset.asset_specific_category.name"
+                                                slot-scope="props">
                                                 <span>{{
                                                     props.row.asset
                                                         .asset_specific_category
                                                         ? prepareText(
-                                                              props.row.asset
-                                                                  .asset_specific_category
-                                                                  .name
-                                                          )
+                                                            props.row.asset
+                                                                .asset_specific_category
+                                                                .name
+                                                        )
                                                         : "No definido"
                                                 }}</span>
                                             </div>
-                                            <div
-                                                class="text-center"
-                                                slot="asset.asset_details.serial"
-                                                slot-scope="props"
-                                            >
+                                            <div class="text-center" slot="asset.asset_details.serial"
+                                                slot-scope="props">
                                                 <span>{{
                                                     props.row.asset
                                                         .asset_details !== null
                                                         ? props.row.asset
-                                                              .asset_details
-                                                              .serial
+                                                            .asset_details
+                                                            .serial
                                                         : "No definido"
                                                 }}</span>
                                             </div>
-                                            <div
-                                                class="text-center"
-                                                slot="asset.asset_details.brand"
-                                                slot-scope="props"
-                                            >
+                                            <div class="text-center" slot="asset.asset_details.brand"
+                                                slot-scope="props">
                                                 <span>{{
                                                     props.row.asset
                                                         .asset_details !== null
                                                         ? props.row.asset
-                                                              .asset_details
-                                                              .brand
+                                                            .asset_details
+                                                            .brand
                                                         : "No definido"
                                                 }}</span>
                                             </div>
-                                            <div
-                                                class="text-center"
-                                                slot="asset.asset_details.model"
-                                                slot-scope="props"
-                                            >
+                                            <div class="text-center" slot="asset.asset_details.model"
+                                                slot-scope="props">
                                                 <span>{{
                                                     props.row.asset
                                                         .asset_details !== null
                                                         ? prepareText(
-                                                              props.row.asset
-                                                                  .asset_details
-                                                                  .model
-                                                          )
+                                                            props.row.asset
+                                                                .asset_details
+                                                                .model
+                                                        )
                                                         : "No definido"
                                                 }}</span>
                                             </div>
@@ -327,11 +207,8 @@
                     </div>
 
                     <div class="modal-footer">
-                        <button
-                            type="button"
-                            class="btn btn-default btn-sm btn-round btn-modal-close"
-                            data-dismiss="modal"
-                        >
+                        <button type="button" class="btn btn-default btn-sm btn-round btn-modal-close"
+                            data-dismiss="modal">
                             Cerrar
                         </button>
                     </div>

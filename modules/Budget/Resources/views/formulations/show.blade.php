@@ -26,15 +26,23 @@
                     </h6>
                     <div class="card-btns">
                         @include('buttons.previous', ['route' => route('budget.subspecific-formulations.index')])
-                        @include('buttons.print', ['route' => route('print.formulated', ['id' => $formulation->id])])
-                        <a href="{{ route('export', ['id' => $formulation->id]) }}" class="btn btn-sm btn-primary btn-custom" data-toggle="tooltip"
-                        title="{{ __('Exportar registro') }}" target="_blank">
-                            <i class="fa fa-file-excel-o"></i>
-                        </a>
-
+                        
+                        <budget-print-with-modal
+                        report_url={{ route('print.formulated', ['id' => $formulation->id]) }}
+                        id={{ $formulation->id }}
+                        />
+                    </div>
+                    <div class="card-btns">
+                        <budget-export-with-modal
+                        report_url={{ route('export', ['id' => $formulation->id]) }}
+                        id={{ $formulation->id }}
+                        />
+                    </div>
+                    <div class="card-btns">
                         @if ($enable)
-                            {{-- @include('buttons.sign', ['route' => route('print.formulatedsign', ['id' => $formulation->id])]) --}}
+                        {{-- @include('buttons.sign', ['route' => route('print.formulatedsign', ['id' => $formulation->id])]) --}}
                         @endif
+
                         @include('buttons.minimize')
                     </div>
                 </div>
@@ -169,16 +177,31 @@
 
 @section('extra-js')
     @parent
-    <script>
+    <script nonce="{{ session()->get('nonce') }}">
         $(document).ready(function() {
-            @if ($formulation->assigned)
+            @if ($formulation->assigned && !$formulation->confirmed)
                 /**
                  * Muestra un mensaje al usuario en caso de que la formulación de presupuesto
                  * ya se encuentra asignada
                  */
                 $.gritter.add({
                     title: '{{ __('Advertencia!') }}',
-                    text: '{{ __('Este presupuesto ya se encuentra asignado y no puede ser modificado') }}',
+                    text: '{{ __('Este presupuesto ya se encuentra asignado y no puede ser eliminado') }}',
+                    class_name: 'growl-danger',
+                    image: "{{ asset('images/screen-warning.png') }}",
+                    sticky: false,
+                    time: 2000
+                });
+            @endif
+
+            @if ($formulation->assigned && $formulation->confirmed)
+                /**
+                 * Muestra un mensaje al usuario en caso de que la formulación de presupuesto
+                 * ya se encuentra asignada
+                 */
+                $.gritter.add({
+                    title: '{{ __('Advertencia!') }}',
+                    text: '{{ __('Este presupuesto ya se encuentra confirmado y no puede ser modificado') }}',
                     class_name: 'growl-danger',
                     image: "{{ asset('images/screen-warning.png') }}",
                     sticky: false,
@@ -191,7 +214,7 @@
                 if (el.is(':checked')) {
                     bootbox.confirm(
                         '{{ __(
-                            'Esta seguro de asignar esta formulación?. Una vez asignado no puede ser modificado'
+                            'Esta seguro de asignar esta formulación?. Una vez asignado no puede ser eliminado'
                             )
                         }}',
                         function(result) {
@@ -209,10 +232,6 @@
 
         var printFormulated = (id, esp) => {
             location.href = window.app_url + '/budget/print-formulated/' + id;
-        };
-
-        var export = (id, esp) => {
-            location.href = window.app_url + '/budget/export/' + id;
         };
     </script>
 @endsection

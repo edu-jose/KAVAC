@@ -199,6 +199,7 @@
 					color: '#FFFFFF',
 					action: '',
 				};
+				this.errors = [];
 			}
 		},
 		created() {

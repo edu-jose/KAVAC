@@ -427,7 +427,8 @@
                 event.preventDefault();
                 axios.post(`${window.app_url}/payroll/reports/${current}/create`, fields).then(response => {
                     if (typeof(response.data.redirect) !== "undefined") {
-                        window.open(response.data.redirect, '_blank');
+                        const reportWindow = window.open(response.data.redirect, '_blank');
+                        reportWindow.focus();
                     }
                     else {
                         vm.reset();

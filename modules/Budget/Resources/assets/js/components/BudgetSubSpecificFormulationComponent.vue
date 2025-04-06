@@ -194,7 +194,7 @@
                     <tbody>
                         <tr v-for="(account, index) in records" data-formulated="false" :id="account.id"
                             :class="account.specific === '00' ? 'disable-row' : ''" class="accounts"
-                            :data-code="account.code" :data-index="index" :key="index">
+                            :data-code="account.code.trim()" :data-index="index" :key="index">
                             <td>
                                 <i v-if="account.locked" class="fa fa-ban text-white"
                                     title="Elemento bloqueado, de solo lectura" data-toggle="tooltip"></i>
@@ -206,7 +206,7 @@
                             <td>{{ account.denomination }}</td>
                             <td class="td-with-border">
                                 <input class="form-control input-sm total_real" type="text" data-toggle="tooltip"
-                                    onfocus="this.select()"
+                                    @focus="selectText"
                                     oninput="this.value=this.value.replace(/[^0-9,.]/g, '').replace(/,/g, '.');"
                                     :readonly="account.locked" v-model="account.total_real_amount"
                                     v-show="account.locked || account.formulated"
@@ -214,7 +214,7 @@
                             </td>
                             <td class="td-with-border">
                                 <input class="form-control input-sm total_estimated" type="text" data-toggle="tooltip"
-                                    onfocus="this.select()"
+                                    @focus="selectText"
                                     oninput="this.value=this.value.replace(/[^0-9,.]/g, '').replace(/,/g, '.');"
                                     :readonly="account.locked" v-model="account.total_estimated_amount"
                                     v-show="account.locked || account.formulated"
@@ -222,7 +222,7 @@
                             </td>
                             <td class="td-with-border">
                                 <input class="form-control input-sm total_year" type="text" data-toggle="tooltip"
-                                    onfocus="this.select()"
+                                    @focus="selectText"
                                     oninput="this.value=this.value.replace(/[^0-9,.]/g, '').replace(/,/g, '.');"
                                     :readonly="account.locked" v-model="account.total_year_amount"
                                     v-show="account.locked || account.formulated"
@@ -230,7 +230,7 @@
                             </td>
                             <td class="td-with-border">
                                 <input class="form-control input-sm jan" type="text" data-toggle="tooltip"
-                                    onfocus="this.select()"
+                                    @focus="selectText"
                                     oninput="this.value=this.value.replace(/[^0-9,.]/g, '').replace(/,/g, '.');"
                                     :readonly="account.locked" v-model="account.jan_amount"
                                     v-show="account.locked || account.formulated"
@@ -238,7 +238,7 @@
                             </td>
                             <td class="td-with-border">
                                 <input class="form-control input-sm feb" type="text" data-toggle="tooltip"
-                                    onfocus="this.select()"
+                                    @focus="selectText"
                                     oninput="this.value=this.value.replace(/[^0-9,.]/g, '').replace(/,/g, '.');"
                                     :readonly="account.locked" v-model="account.feb_amount"
                                     v-show="account.locked || account.formulated"
@@ -246,7 +246,7 @@
                             </td>
                             <td class="td-with-border">
                                 <input class="form-control input-sm mar" type="text" data-toggle="tooltip"
-                                    onfocus="this.select()"
+                                    @focus="selectText"
                                     oninput="this.value=this.value.replace(/[^0-9,.]/g, '').replace(/,/g, '.');"
                                     :readonly="account.locked" v-model="account.mar_amount"
                                     v-show="account.locked || account.formulated"
@@ -254,7 +254,7 @@
                             </td>
                             <td class="td-with-border">
                                 <input class="form-control input-sm apr" type="text" data-toggle="tooltip"
-                                    onfocus="this.select()"
+                                    @focus="selectText"
                                     oninput="this.value=this.value.replace(/[^0-9,.]/g, '').replace(/,/g, '.');"
                                     :readonly="account.locked" v-model="account.apr_amount"
                                     v-show="account.locked || account.formulated"
@@ -262,7 +262,7 @@
                             </td>
                             <td class="td-with-border">
                                 <input class="form-control input-sm may" type="text" data-toggle="tooltip"
-                                    onfocus="this.select()"
+                                    @focus="selectText"
                                     oninput="this.value=this.value.replace(/[^0-9,.]/g, '').replace(/,/g, '.');"
                                     :readonly="account.locked" v-model="account.may_amount"
                                     v-show="account.locked || account.formulated"
@@ -270,7 +270,7 @@
                             </td>
                             <td class="td-with-border">
                                 <input class="form-control input-sm jun" type="text" data-toggle="tooltip"
-                                    onfocus="this.select()"
+                                    @focus="selectText"
                                     oninput="this.value=this.value.replace(/[^0-9,.]/g, '').replace(/,/g, '.');"
                                     :readonly="account.locked" v-model="account.jun_amount"
                                     v-show="account.locked || account.formulated"
@@ -278,7 +278,7 @@
                             </td>
                             <td class="td-with-border">
                                 <input class="form-control input-sm jul" type="text" data-toggle="tooltip"
-                                    onfocus="this.select()"
+                                    @focus="selectText"
                                     oninput="this.value=this.value.replace(/[^0-9,.]/g, '').replace(/,/g, '.');"
                                     :readonly="account.locked" v-model="account.jul_amount"
                                     v-show="account.locked || account.formulated"
@@ -286,7 +286,7 @@
                             </td>
                             <td class="td-with-border">
                                 <input class="form-control input-sm aug" type="text" data-toggle="tooltip"
-                                    onfocus="this.select()"
+                                    @focus="selectText"
                                     oninput="this.value=this.value.replace(/[^0-9,.]/g, '').replace(/,/g, '.');"
                                     :readonly="account.locked" v-model="account.aug_amount"
                                     v-show="account.locked || account.formulated"
@@ -294,7 +294,7 @@
                             </td>
                             <td class="td-with-border">
                                 <input class="form-control input-sm sep" type="text" data-toggle="tooltip"
-                                    onfocus="this.select()"
+                                    @focus="selectText"
                                     oninput="this.value=this.value.replace(/[^0-9,.]/g, '').replace(/,/g, '.');"
                                     :readonly="account.locked" v-model="account.sep_amount"
                                     v-show="account.locked || account.formulated"
@@ -302,19 +302,19 @@
                             </td>
                             <td class="td-with-border">
                                 <input class="form-control input-sm oct" type="text" data-toggle="tooltip"
-                                    onfocus="this.select()" :readonly="account.locked" v-model="account.oct_amount"
+                                    @focus="selectText" :readonly="account.locked" v-model="account.oct_amount"
                                     v-show="account.locked || account.formulated"
                                     @change="calculateAmounts(index, 'month')" />
                             </td>
                             <td class="td-with-border">
                                 <input class="form-control input-sm nov" type="text" data-toggle="tooltip"
-                                    onfocus="this.select()" :readonly="account.locked" v-model="account.nov_amount"
+                                    @focus="selectText" :readonly="account.locked" v-model="account.nov_amount"
                                     v-show="account.locked || account.formulated"
                                     @change="calculateAmounts(index, 'month')" />
                             </td>
                             <td class="td-with-border">
                                 <input class="form-control input-sm dec" type="text" data-toggle="tooltip"
-                                    onfocus="this.select()" :readonly="account.locked" v-model="account.dec_amount"
+                                    @focus="selectText" :readonly="account.locked" v-model="account.dec_amount"
                                     v-show="account.locked || account.formulated"
                                     @change="calculateAmounts(index, 'month')" />
                             </td>
@@ -797,7 +797,17 @@ export default {
 
         validateCurrency() {
             if (!this.record.currency_id) {
-                bootbox.alert('Debe seleccionar primero un tipo de moneda');
+                bootbox.alert({
+                    title: 'Advertencia',
+                    message: 'Debe seleccionar primero un tipo de moneda',
+                    closeButton: false,
+					buttons: {
+						ok: {
+							label: "Cerrar",
+							className: 'btn-light'
+						}
+					}
+                });
                 return false;
             }
         },
@@ -1295,6 +1305,7 @@ export default {
                                     <li>En la hoja de cálculo, los montos pueden ser ingresados mensualmente según lo solicitado para la formulación. También es posible colocar el monto total en la columna denominada total_anho, distribuyéndolo uniformemente a lo largo de todos los meses del año, tal como se muestra en el ejemplo del formato de hoja de cálculo.</li>
                                     <li>Los títulos de cada columna deben ser exactos a los del ejemplo</li>
                                     <li>Solo incluya las cuentas a formular, sin las cuentas de nivel superior</li>
+                                    <li>Utilice el carácter punto (.) como separador decimal</li>
                                 </ul>
                             </small>`,
                 size: 'large',
@@ -1313,6 +1324,7 @@ export default {
                 }
             });
         },
+
         /**
          * Importa información de la formulación a partir de una hoja de cálculo
          *
@@ -1326,71 +1338,108 @@ export default {
             var formData = new FormData();
             var inputFile = document.querySelector(`#${input_id}`);
             formData.append('file', inputFile.files[0]);
-            await axios.post(`${window.app_url}/budget/get-import-formulation`, formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
-                }
-            }).then(response => {
-                if (response.data.result && response.data.records) {
-                    $.each(response.data.records, function (i, row) {
-                        let objData = {};
-                        $.each(row, function (j, col) {
-                            objData[j] = col ? col : 0;
-                        });
-                        var accountEl = $(
-                            `[data-code="${objData.codigo}"]`
-                        );
-                        if (accountEl) {
-                            vm.createBootbox = true;
-                            accountEl.find('[id^=add_account]').click();
-                            var index = accountEl.data('index');
-                            vm.records[index].total_real_amount =
-                                objData.total_real;
-                            vm.records[index].total_estimated_amount =
-                                objData.total_estimado;
-                            vm.records[index].total_year_amount =
-                                objData.total_anho;
-                            vm.records[index].jan_amount = objData.ene;
-                            vm.records[index].feb_amount = objData.feb;
-                            vm.records[index].mar_amount = objData.mar;
-                            vm.records[index].apr_amount = objData.abr;
-                            vm.records[index].may_amount = objData.may;
-                            vm.records[index].jun_amount = objData.jun;
-                            vm.records[index].jul_amount = objData.jul;
-                            vm.records[index].aug_amount = objData.ago;
-                            vm.records[index].sep_amount = objData.sep;
-                            vm.records[index].oct_amount = objData.oct;
-                            vm.records[index].nov_amount = objData.nov;
-                            vm.records[index].dec_amount = objData.dic;
-                            vm.calculateAmounts(
-                                index,
-                                objData.total_anho > 0 ? 'year' : 'month'
+
+            const resetAccounts = new Promise((resolve, reject) => {
+                vm.records.forEach((record) => {
+                    if (record.total_year_amount > 0) {
+                        let add_account = $('#add_account_' + record.id);
+                        add_account.addClass('fa-eye');
+                        add_account.removeClass('fa-eye-slash');
+                        add_account.addClass('text-blue');
+                        add_account.removeClass('text-red');
+
+                        record.total_real_amount = 0;
+                        record.total_estimated_amount = 0;
+                        record.total_year_amount = 0;
+                        record.jan_amount = 0;
+                        record.jan_amount = 0;
+                        record.feb_amount = 0;
+                        record.mar_amount = 0;
+                        record.apr_amount = 0;
+                        record.may_amount = 0;
+                        record.jun_amount = 0;
+                        record.jul_amount = 0;
+                        record.aug_amount = 0;
+                        record.sep_amount = 0;
+                        record.oct_amount = 0;
+                        record.nov_amount = 0;
+                        record.dec_amount = 0;
+                        record.formulated = !record.formulated;
+                    }
+                });
+
+                vm.createBootbox = false;
+                resolve();
+            });
+
+            resetAccounts.then(() => {
+                axios.post(`${window.app_url}/budget/get-import-formulation`, formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                }).then(response => {
+                    if (response.data.result && response.data.records) {
+                        console.log(response.data.records);
+                        $.each(response.data.records, function (i, row) {
+                            let objData = {};
+                            $.each(row, function (j, col) {
+                                objData[j] = col ? col : 0;
+                            });
+                            var accountEl = $(
+                                `[data-code="${objData.codigo}"]`
                             );
-                        }
-                    });
-                    vm.showMessage('update');
-                } else {
+                            if (accountEl) {
+                                accountEl.find('[id^=add_account]').click();
+                                var index = accountEl.data('index');
+                                vm.records[index].total_real_amount =
+                                    objData.total_real;
+                                vm.records[index].total_estimated_amount =
+                                    objData.total_estimado;
+                                vm.records[index].total_year_amount =
+                                    objData.total_anho;
+                                vm.records[index].jan_amount = objData.ene;
+                                vm.records[index].feb_amount = objData.feb;
+                                vm.records[index].mar_amount = objData.mar;
+                                vm.records[index].apr_amount = objData.abr;
+                                vm.records[index].may_amount = objData.may;
+                                vm.records[index].jun_amount = objData.jun;
+                                vm.records[index].jul_amount = objData.jul;
+                                vm.records[index].aug_amount = objData.ago;
+                                vm.records[index].sep_amount = objData.sep;
+                                vm.records[index].oct_amount = objData.oct;
+                                vm.records[index].nov_amount = objData.nov;
+                                vm.records[index].dec_amount = objData.dic;
+                                vm.calculateAmounts(
+                                    index,
+                                    objData.total_anho > 0 ? 'year' : 'month'
+                                );
+                            }
+                        });
+                        vm.showMessage('update');
+                    } else {
+                        vm.showMessage(
+                            'custom',
+                            'Error!',
+                            'danger',
+                            'screen-error',
+                            response.data.message
+                        );
+                    }
+                }).catch(error => {
+                    console.log(error);
                     vm.showMessage(
                         'custom',
                         'Error!',
                         'danger',
                         'screen-error',
-                        response.data.message
+                        'Ah ocurrido un error en la importación de los datos, intente nuevamente'
                     );
-                }
-            }).catch(error => {
-                console.log(error);
-                vm.showMessage(
-                    'custom',
-                    'Error!',
-                    'danger',
-                    'screen-error',
-                    'Ah ocurrido un error en la importación de los datos, intente nuevamente'
-                );
+                });
+
+                vm.loading = false;
+                vm.createBootbox = false;
+                inputFile.value = '';
             });
-            vm.loading = false;
-            vm.createBootbox = false;
-            inputFile.value = '';
         },
         /**
          * Exporta la información de las cuentas formuladas

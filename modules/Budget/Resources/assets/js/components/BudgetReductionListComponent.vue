@@ -60,6 +60,9 @@
             <div slot="approved_at" slot-scope="props">
                 {{ format_date(props.row.approved_at, 'DD/MM/YYYY') }}
             </div>
+            <div slot="r-code" slot-scope="props" class="text-center">
+                {{  props.row.code }}
+            </div>
             <div
                 slot="code"
                 slot-scope="props">
@@ -73,99 +76,103 @@
                 }}
             </div>
             <div slot="status" slot-scope="props" class="text-center">
-                <span
-                    v-if="
-                        props.row.status === 'PE'
-                        || props.row.status === null
-                    "
-                    class="text-warning"
-                >
-                    Pendiente
-                </span>
-                <span
-                    v-else
-                    class="text-success"
-                >
-                    Aprobado
+                <span :style="`color: ${props.row.document_status.color}`">
+                    {{ props.row.document_status.name }}
                 </span>
             </div>
             <div slot="id" slot-scope="props" class="text-center">
-                <button
-                    @click.prevent="setDetails('Budget', props.row.id, 'Budget')"
-                    class="btn btn-info btn-xs btn-icon btn-action btn-tooltip"
-                    title="Ver registro"
-                    data-toggle="tooltip"
-                    data-placement="bottom"
-                    type="button"
-                >
-                    <i class="fa fa-eye"></i>
-                </button>
-                <a
-                    class="btn btn-primary btn-xs btn-icon"
-                    title="Imprimir registro"
-                    data-toggle="tooltip"
-                    target="_blank"
-                    :href="budget_reduction_pdf + props.row.id"
-                    v-has-tooltip
-                >
-                    <i class="fa fa-print"></i>
-                </a>
-                <button
-                    v-if="
-                        props.row.status === 'PE'
-                        || props.row.status === null
-                    "
-                    class="btn btn-success btn-xs btn-icon btn-action"
-                    title="Aprobar registro"
-                    @click="changeStatus('AP', props.row.id)"
-                    type="button"
-                >
-                    <i class="fa fa-check"></i>
-                </button>
-                <template
-                    v-if="
-                        (lastYear && format_date(
-                        props.row.approved_at, 'YYYY') <= lastYear)
-                    "
-                >
+                <div class="d-inline-flex">
                     <button
-                        class="btn btn-warning btn-xs btn-icon"
-                        type="button"
-                        disabled
-                    >
-                        <i class="fa fa-edit"></i>
-                    </button>
-                    <button
-                        class="btn btn-danger btn-xs btn-icon"
-                        type="button"
-                        disabled
-                    >
-                        <i class="fa fa-trash-o"></i>
-                    </button>
-                </template>
-                <template v-else>
-                    <button
-                        @click="editForm(props.row.id)"
-                        data-placement="bottom"
-                        class="btn btn-warning btn-xs btn-icon"
-                        title="Modificar registro"
+                        @click.prevent="setDetails('Budget', props.row.id, 'Budget')"
+                        class="btn btn-info btn-xs btn-icon btn-action btn-tooltip"
+                        title="Ver registro"
                         data-toggle="tooltip"
-                        type="button"
-                        :disabled="props.row.status === 'AP'"
-                    >
-                        <i class="fa fa-edit"></i>
-                    </button>
-                    <button
-                        @click="deleteRecord(props.row.id, '')"
                         data-placement="bottom"
-                        class="btn btn-danger btn-xs btn-icon"
-                        title="Eliminar registro" data-toggle="tooltip"
                         type="button"
-                        :disabled="props.row.status === 'AP'"
                     >
-                        <i class="fa fa-trash-o"></i>
+                        <i class="fa fa-eye"></i>
                     </button>
-                </template>
+                    <a
+                        class="btn btn-primary btn-xs btn-icon"
+                        title="Imprimir registro"
+                        data-toggle="tooltip"
+                        target="_blank"
+                        :href="budget_reduction_pdf + props.row.id"
+                        v-has-tooltip
+                    >
+                        <i class="fa fa-print"></i>
+                    </a>
+                    <template v-if="
+                        (lastYear && format_date(
+                            props.row.approved_at, 'YYYY'
+                        ) <= lastYear) ||
+                        props.row.status === 'AP'
+                    ">
+                        <button
+                            class="btn btn-success btn-xs btn-icon btn-action"
+                            type="button"
+                            disabled
+                        >
+                            <i class="fa fa-check"></i>
+                        </button>
+                    </template>
+                    <template v-else>
+                        <budget-approve-modification
+                            v-show="props.row.status === 'PE'
+                                || props.row.status === null"
+                            :id="props.row.id"
+                            :code="props.row.code"
+                            :approved_at="props.row.approved_at"
+                            :fiscal_year="
+                                (fiscal_years.length > 0) ? fiscal_years[0].text : ''
+                            "
+                        />
+                    </template>
+                    <template
+                        v-if="
+                            (lastYear && format_date(
+                            props.row.approved_at, 'YYYY') <= lastYear)
+                        "
+                    >
+                        <button
+                            class="btn btn-warning btn-xs btn-icon"
+                            type="button"
+                            disabled
+                        >
+                            <i class="fa fa-edit"></i>
+                        </button>
+                        <button
+                            class="btn btn-danger btn-xs btn-icon"
+                            type="button"
+                            disabled
+                        >
+                            <i class="fa fa-trash-o"></i>
+                        </button>
+                    </template>
+                    <template v-else>
+                        <button
+                            @click="editForm(props.row.id)"
+                            data-placement="bottom"
+                            class="btn btn-warning btn-xs btn-icon"
+                            title="Modificar registro"
+                            data-toggle="tooltip"
+                            type="button"
+                            :disabled="props.row.status === 'AP'"
+                        >
+                            <i class="fa fa-edit"></i>
+                        </button>
+                        <button
+                            @click="deleteRecord(props.row.id, '')"
+                            data-placement="bottom"
+                            class="btn btn-danger btn-xs btn-icon"
+                            title="Eliminar registro" data-toggle="tooltip"
+                            type="button"
+                            :disabled="props.row.status === 'AP'"
+                        >
+                            <i class="fa fa-trash-o"></i>
+                        </button>
+                    </template>
+                </div>
             </div>
         </v-client-table>
         <budget-reduction-modal ref="Budget"></budget-reduction-modal>
@@ -178,10 +185,12 @@
             return {
                 records: [],
                 lastYear: "",
+                fiscal_years: [],
                 tmpRecords: [],
                 budget_reduction_pdf: `${window.app_url}/budget/reductions/pdf/`,
                 columns: [
                     'approved_at',
+                    'r-code',
                     'code',
                     'description',
                     'document',
@@ -197,6 +206,7 @@
         created() {
             this.table_options.headings = {
                 'approved_at': 'Fecha',
+                'r-code': 'Código de Reducción',
                 'code': 'Código de la Acción Específica',
                 'description': 'Descripción',
                 'document': 'Documento',
@@ -205,6 +215,7 @@
             };
             this.table_options.sortable = [
                 'approved_at',
+                'r-code',
                 'code',
                 'description',
                 'document',
@@ -212,14 +223,16 @@
             ];
             this.table_options.filterable = [
                 'approved_at',
+                'r-code',
                 'code',
                 'description',
                 'document',
                 'status',
             ];
             this.table_options.columnsClasses = {
-                'approved_at': 'col-md-2 text-center',
-                'code': 'col-md-2 text-center',
+                'approved_at': 'col-md-1 text-center',
+                'r-code': 'col-md-1 text-center',
+                'code': 'col-md-1 text-center',
                 'description': 'col-md-3',
                 'document': 'col-md-2',
                 'status': 'col-md-1 text-center',
@@ -258,64 +271,6 @@
                 }).filter((rec) => {
                     return (vm.filterBy.code) ? (rec.budget_modification_accounts[0].budget_sub_specific_formulation.specific_action.code == vm.filterBy.code) : true;
                 })
-            },
-
-            /**
-             * Modifica el estatus del registro.
-             *
-             * @author Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
-             * @author Argenis Osorio <aosorio@cenditel.gob.ve> | <aosorio@cenditel.gob.ve>
-             *
-             * @param   {String}  status  Estatus a modificar.
-             * @param   {Object}  id  ID del registro a modificar.
-             */
-            changeStatus(status, id) {
-                const vm = this;
-                const url = vm.setUrl(
-                    `${window.app_url}/budget/modifications/change-status/${id}`
-                );
-                const titleList = ["Aprobar registro"];
-                const textList = [
-                    "¿Está seguro? Una vez aprobado el registro no se podrá modificar y/o eliminar.",
-                ];
-                const titleConfirm = (status == 'AP') ? titleList[0] : titleList[1];
-                const messageConfirm = (status == 'AP') ? textList[0] : textList[1];
-
-                bootbox.confirm({
-                    title: titleConfirm,
-                    message: messageConfirm,
-                    buttons: {
-                        cancel: {
-                            label: '<i class="fa fa-times"></i> No',
-                            className: 'btn btn-default btn-sm btn-round'
-                        },
-                        confirm: {
-                            label: '<i class="fa fa-check"></i> Si',
-                            className: 'btn btn-primary btn-sm btn-round'
-                        }
-                    },
-                    callback: function(result) {
-                        if (result) {
-                            axios.post(url, {status: status}).then(response => {
-                                vm.showMessage(
-                                    'custom',
-                                    '¡Éxito!',
-                                    'success',
-                                    'screen-ok',
-                                    response.data.message
-                                );
-                                location.reload();
-                            }).catch(error => {
-                                vm.showMessage(
-                                    'custom',
-                                    'Acceso Denegado',
-                                    'danger', 'screen-error',
-                                    'No tiene los permisos necesarios para ejecutar esta funcionalidad'
-                                )
-                            });
-                        }
-                    }
-                });
             },
 
             /**
@@ -381,7 +336,7 @@
         },
         async mounted() {
             // Obtener los registros.
-            axios.get('budget/modifications/vue-list/RE').then(response => {
+            axios.get('/budget/modifications/vue-list/RE').then(response => {
                 this.records = response.data.records;
                 // Variable usada para el reseteo de los filtros de la tabla.
                 this.tmpRecords = response.data.records;
@@ -389,6 +344,7 @@
 
             const vm = this;
             await vm.queryLastFiscalYear();
+            await vm.getOpenedFiscalYears();
         },
     };
 </script>

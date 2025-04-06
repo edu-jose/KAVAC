@@ -11,6 +11,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Validator;
 
 /**
  * @class InstitutionController
@@ -128,7 +129,11 @@ class InstitutionController extends Controller
             $errorMessages['banner_id.required'] = __('El banner o cintillo es obligatorio.');
         }
 
-        $this->validate($request, $validations, $errorMessages);
+        $validator = Validator::make($request->all(), $validations, $errorMessages);
+
+        if ($validator->fails()) {
+            return redirect()->route('settings.index')->withErrors($validator);
+        }
 
         /*
          * TODO: Validación para múltiples organizaciones para cuando se establece en verdadero en la configuración de
@@ -166,32 +171,28 @@ class InstitutionController extends Controller
             'mission' => ($request->mission) ? $request->mission : null,
             'vision' => ($request->vision) ? $request->vision : null,
             'web' => ($request->web) ? $request->web : null,
+            'email' => ($request->email) ? $request->email : null,
             'composition_assets' => ($request->composition_assets) ? $request->composition_assets : null,
             'retention_agent' => ($request->retention_agent !== null),
             'logo_id' => $logo,
             'banner_id' => $banner,
         ];
-        $multi_institution = false;
 
-        if (is_null($Parameter)) {
-            $multi_institution = false;
-        } else {
-            $multi_institution = $Parameter->p_value;
-        }
+        $multi_institution = !is_null($Parameter) ? ($Parameter->p_value == 'true' ? true : false) : false;
 
-        if (is_null($setting->multi_institution) || !$setting->multi_institution  and !$multi_institution) {
+        if (!$multi_institution) {
             /*
              * Crea o actualiza información de una organización si la aplicación esta configurada
              * para el uso de un solo organismo
              */
             $data['default'] = true;
-            Institution::updateOrCreate(['rif' => $request->rif], $data);
+            $institution = Institution::updateOrCreate(['rif' => $request->rif], $data);
         } else {
             if ($request->default !== null) {
-                      $Institutions = Institution::first();
+                $institutions = Institution::first();
 
-                if ($Institutions) {
-                    Institution::where('default', true)
+                if ($institutions) {
+                    $institution = Institution::where('default', true)
                       ->update(['default' => false]);
                 }
             }
@@ -200,12 +201,23 @@ class InstitutionController extends Controller
                 // Si existe el identificador de la organización, se actualizan sus datos
 
                 // Objeto con información de la organización
-                $inst = Institution::find($request->institution_id);
-                $inst->fill($data);
-                $inst->save();
+                $institution = Institution::find($request->institution_id);
+                $institution->fill($data);
+                $institution->save();
             } else {
                 // Si no existe un identificador de organización, se crea una nueva
-                Institution::create($data);
+                $institution = Institution::create($data);
+            }
+        }
+        if ($institution && $request->phone_type && count($request->phone_type) > 0) {
+            $institution->phones()->forceDelete();
+            foreach ($request->phone_number as $key => $phone) {
+                $institution->phones()->create([
+                    'area_code' => $request->phone_area_code[$key],
+                    'number' => $phone,
+                    'type' => $request->phone_type[$key] ?? 'T',
+                    'extension' => $request->phone_extension[$key]
+                ]);
             }
         }
 

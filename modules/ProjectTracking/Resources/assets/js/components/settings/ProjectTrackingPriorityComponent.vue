@@ -37,7 +37,7 @@
                             </div>
                         </div>
                         <div class="row">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
         						<div class="form-group is-required">
         							<label for="name">Nombre:</label>
         							<input type="text" id="name" placeholder="Nombre"
@@ -46,13 +46,33 @@
         							<input type="hidden" name="id" id="id" v-model="record.id">
         	                    </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="form-group">
         							<label for="description">Descripción:</label>
         							<input type="text" id="description" placeholder="Descripción"
         								   class="form-control input-sm" v-model="record.description" data-toggle="tooltip"
         								   title="Indique la descripción de la prioridad">
         	                    </div>
+                            </div>
+							<div class="col-md-4">
+								<label for="color">Color:</label>
+								<div class="row">
+									<input
+										type="color"
+										id="color"
+										placeholder="Color"
+										class="form-control input-sm"
+										v-model="record.color"
+										data-toggle="tooltip"
+										title="Indique el color del tipo de la actividad"
+										style="padding: 5px 12px !important"
+									/>
+									<span
+										class="text-danger"
+										style="position: relative; right: 10px"
+										>*</span
+									>
+								</div>
                             </div>
                         </div>
 	                </div>
@@ -74,7 +94,15 @@
 	                </div>
 	                <div class="modal-body modal-table text-center">
 	                	<v-client-table :columns="columns" :data="records" :options="table_options">
-	                		<div slot="id" slot-scope="props" class="text-center">
+							<div slot="color" slot-scope="props" class="text-center">
+								<span
+									:style="{ backgroundColor: props.row.color, 
+										display: 'inline-block', 
+										width: '40px', height: '20px', 
+										border: '1px solid #ccc' }"
+								></span>
+							</div>
+							<div slot="id" slot-scope="props" class="text-center">
 	                			<button @click="initUpdate(props.row.id, $event)"
 		                				class="btn btn-warning btn-xs btn-icon btn-action"
 		                				title="Modificar prioridad" data-toggle="tooltip" type="button">
@@ -102,11 +130,12 @@
 				record: {
 					id: '',
 					name: '',
-                    description: ''
+                    description: '',
+					color: ''
 				},
 				errors: [],
 				records: [],
-				columns: ['name', 'description', 'id'],
+				columns: ['name', 'description', 'color','id'],
 			}
 		},
 		methods: {
@@ -119,7 +148,8 @@
 				this.record = {
 					id: '',
 					name: '',
-                    description: ''
+                    description: '',
+					color: ''
 				};
 			},
 		},
@@ -127,13 +157,16 @@
 			this.table_options.headings = {
 				'name': 'Nombre',
                 'description': 'Descripción',
+				'color': 'Color',
 				'id': 'Acción'
+				
 			};
-			this.table_options.sortable = ['name'];
+			this.table_options.sortable = ['name', 'description', 'color'];
 			this.table_options.filterable = ['name'];
 			this.table_options.columnsClasses = {
-				'name': 'col-md-5',
-                'description': 'col-md-5',
+				'name': 'col-md-2',
+                'description': 'col-md-2',
+				'color': 'col-md-2',
 				'id': 'col-md-2'
 			};
 		},

@@ -81,6 +81,7 @@ class PayrollEmployment extends Model implements Auditable
      */
     protected $appends = [
         'startDateApn',
+        'payrollPositionWorkload',
         'payrollPosition',
         'payroll_position_id'
     ];
@@ -335,5 +336,20 @@ class PayrollEmployment extends Model implements Auditable
                     ->orWhere('email', 'ilike', '%' . $search . '%');
             });
         });
+    }
+
+    /**
+     * Obtiene la carga horaria asociada al cargo del trabajador
+     *
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function getPayrollPositionWorkloadAttribute()
+    {
+        return PayrollWorkloadPosition::query()
+        ->with('payrollWorkload')
+        ->where('payroll_position_id', $this->payroll_position_id)
+        ->first()
+        ?->payrollWorkload
+        ?->hours;
     }
 }

@@ -161,7 +161,7 @@ class PayrollStaffController extends Controller
         $parameter = Parameter::where([
             'active' => true, 'required_by' => 'payroll', 'p_key' => 'work_age',
         ])->first();
-        $this->rules['id_number'] = ['required', 'regex:/^([\d]{7}|[\d]{8})$/u', 'unique:payroll_staffs,id_number'];
+        $this->rules['id_number'] = ['required', 'regex:/^[0-9]{6,8}$/u', 'unique:payroll_staffs,id_number'];
         $this->rules['passport'] = ['nullable', 'max:20', 'unique:payroll_staffs,passport'];
         $this->rules['birthdate'] = ['required', 'date', new AgeToWork(($parameter) ? $parameter->p_value : 0)];
         $this->validate($request, $this->rules, [
@@ -337,7 +337,7 @@ class PayrollStaffController extends Controller
         ])->first();
         $payrollStaff = PayrollStaff::find($id);
         $this->rules['id_number'] = [
-            'required', 'regex:/^([\d]{7}|[\d]{8})$/u', 'unique:payroll_staffs,id_number,' . $payrollStaff->id,
+            'required', 'regex:/^[0-9]{6,8}$/u', 'unique:payroll_staffs,id_number,' . $payrollStaff->id,
         ];
         $this->rules['passport'] = ['nullable', 'max:20', 'unique:payroll_staffs,passport,' . $payrollStaff->id];
         $this->rules['rif'] = [

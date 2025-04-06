@@ -4,7 +4,9 @@ namespace Modules\Budget\Models;
 
 use App\Models\Source;
 use App\Models\Receiver;
+use App\Models\DocumentStatus;
 use App\Traits\ModelsTrait;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Modules\Finance\Models\FinancePayOrder;
 use Nwidart\Modules\Facades\Module;
@@ -127,7 +129,7 @@ class BudgetCompromise extends Model implements Auditable
      * financePayOrders belongs to FinancePayOrder.
      *
      * @author Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     * @return \Illuminate\Database\Eloquent\Relations\MorphMany|array
      */
     public function financePayOrders()
     {
@@ -230,7 +232,7 @@ class BudgetCompromise extends Model implements Auditable
     }
 
     /**
-     * Scope para buscar y filtrar datos de emisiones de pago
+     * Scope para buscar y filtrar datos de compromisos presupuestarios
      *
      * @author Daniel Contreras <dcontreras@cenditel.gob.ve>
      *
@@ -246,5 +248,96 @@ class BudgetCompromise extends Model implements Auditable
             ->orWhereRaw("TO_CHAR(compromised_at, 'DD/MM/YYYY') LIKE '%" . strtoupper($search) . "%'")
             ->orWhere(DB::raw('upper(description)'), 'LIKE', '%' . strtoupper($search) . '%')
             ->orWhere(DB::raw('upper(document_number)'), 'LIKE', '%' . strtoupper($search) . '%');
+    }
+
+    /**
+     * Scope para filtrar datos de compromisos
+     *
+     * @author Natanael Rojo <ndrojo@cenditel.gob.ve> | <rojonatanael99@gmail.com>
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query Objeto con la consulta
+     * @param  array         $params    Parametros de filtrado. Estos pueden ser
+     * 'start_date' Fecha inicial
+     * 'end_date'   Fecha final
+     * 'formulation_ids' Arreglo con los identificadores de las formulaciones
+     *
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeFilterCompromises(Builder $query, array $filterParams): Builder
+    {
+        $start_date = isset($filterParams['start_date']) ? $filterParams['start_date'] : null;
+        $end_date = isset($filterParams['end_date']) ? $filterParams['end_date'] : null;
+        $isProject = BudgetProject::class;
+        $isCentralizedAction = BudgetCentralizedAction::class;
+        $byProject = $filterParams['is_project'] == 1 ? true : false;
+        $projectId = $filterParams['project_id'] ? $filterParams['project_id'] : null;
+        $centralizedActionId = $filterParams['centralized_action_id'] ? $filterParams['centralized_action_id'] : null;
+        $allSpecificActions = $filterParams['all_specific_actions'] == 'true' ? true : false;
+        $formulationIds = $allSpecificActions ?
+            [] : explode(',', $filterParams['formulation_id'][0]);
+        $allParams = $filterParams['all'] == 'true' ? true : false;
+        $documentStatus = DocumentStatus::where('action', 'AN')->first();
+
+        return $query
+        ->when($allParams, function ($query) use ($formulationIds) {
+            $query
+            ->whereHas('budgetCompromiseDetails', function ($query) use ($formulationIds) {
+                $query
+                ->whereHas('budgetSubSpecificFormulation', function ($query) use ($formulationIds) {
+                    $query
+                    ->has('specificAction');
+                });
+            });
+        })
+        ->when(!$allSpecificActions && !$allParams, function ($query) use ($formulationIds) {
+            $query
+            ->whereHas('budgetCompromiseDetails', function ($query) use ($formulationIds) {
+                $query
+                ->whereHas('budgetSubSpecificFormulation', function ($query) use ($formulationIds) {
+                    $query
+                    ->whereHas('specificAction', function ($query) use ($formulationIds) {
+                        $query->whereIn('id', $formulationIds);
+                    });
+                });
+            });
+        })
+        ->when($allSpecificActions && !$allParams, function ($query) use ($byProject, $isProject, $isCentralizedAction, $projectId, $centralizedActionId) {
+            if ($byProject) {
+                $query
+                ->whereHas('budgetCompromiseDetails', function ($query) use ($isProject, $projectId) {
+                    $query
+                    ->whereHas('budgetSubSpecificFormulation', function ($query) use ($isProject, $projectId) {
+                        $query
+                        ->whereHas('specificAction', function ($query) use ($isProject, $projectId) {
+                            $query->whereHasMorph('specificable', [BudgetProject::class], function ($query) use ($isProject, $projectId) {
+                                return $query
+                                ->where('specificable_type', $isProject)
+                                ->where('specificable_id', $projectId);
+                            });
+                        });
+                    });
+                });
+            } else {
+                $query
+                ->whereHas('budgetCompromiseDetails', function ($query) use ($isCentralizedAction, $centralizedActionId) {
+                    $query
+                    ->whereHas('budgetSubSpecificFormulation.specificAction', function ($query) use ($isCentralizedAction, $centralizedActionId) {
+                        $query
+                        ->whereHasMorph('specificable', [BudgetCentralizedAction::class], function ($query) use ($isCentralizedAction, $centralizedActionId) {
+                            return $query
+                            ->where('specificable_type', $isCentralizedAction)
+                            ->where('specificable_id', $centralizedActionId);
+                        });
+                    });
+                });
+            }
+        })
+        ->with([
+            'budgetCompromiseDetails',
+            'documentStatus',
+        ])
+        ->whereBetween('compromised_at', [$start_date, $end_date])
+        ->orderBy('compromised_at', 'asc')
+        ->orderBy('id', 'asc');
     }
 }

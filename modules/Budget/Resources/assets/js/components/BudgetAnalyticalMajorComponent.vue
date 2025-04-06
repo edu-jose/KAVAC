@@ -207,7 +207,7 @@
                 id="budgetMajorAnayticalGenerateReport"
             >
                 <span>Generar reporte</span>
-                <i class="fa fa-print"></i>
+                <i class="fa fa-file-pdf-o"></i>
             </button>
             <button
                 class="btn btn-primary btn-sm"
@@ -217,7 +217,7 @@
                 id="budgetMajorAnayticalExportReport"
             >
                 <span>Exportar reporte</span>
-                <i class="fa fa-print"></i>
+                <i class="fa fa-file-excel-o"></i>
             </button>
         </div>
         <div v-else class="card-footer text-right">
@@ -229,7 +229,7 @@
                 id="budgetMajorAnayticalExportReport"
             >
                 <span>Exportar reporte</span>
-                <i class="fa fa-print"></i>
+                <i class="fa fa-file-excel-o"></i>
             </button>
         </div>
         <!-- Final card-footer -->

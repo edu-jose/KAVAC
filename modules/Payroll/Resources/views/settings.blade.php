@@ -184,7 +184,8 @@
     <!--Sección de Configuración de parametros para reporte de nómina -->
     <!-- Consulta de los parametros almacenados en el modelo Parameter -->
     @php
-        $PayrollReportConfigurations = (Modules\Payroll\Models\Parameter::where(['active' => true, 'required_by' => 'payroll'])->orderBy('id')->get())
+        $PayrollReportConfigurations = (Modules\Payroll\Models\Parameter::where(['active' => true, 'required_by' => 'payroll'])->orderBy('id')->get());
+        $payrollTrustCode = (Modules\Payroll\Models\Parameter::where(['active' => true, 'required_by' => 'payroll', 'p_key' => 'trust_code'])->first());
     @endphp
     <div class="row">
         <div class="col-12">
@@ -239,6 +240,53 @@
                                 @endif
                             @endforeach
                         @endif
+                    </div>
+                </div>
+                <div class="card-footer text-right" id="helpParamReport">
+                    @include('layouts.form-buttons')
+                </div>
+                {!! Form::close() !!}
+            </div>
+        </div>
+    </div>
+    <!--Sección de Configuración de código de fideicomitente -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card" id="helpPayrollTrustCode">
+                <div class="card-header">
+                    <h6 class="card-title">
+                        {{ __('Configuración de código de fideicomitente') }}
+                        @include('buttons.help', [
+                            'helpId' => 'PayrollTrustCode',
+                            'helpSteps' => get_json_resource('ui-guides/settings/report_configurations.json', 'payroll')
+                        ])
+                    </h6>
+                    <div class="card-btns">
+                        @include('buttons.previous', ['route' => url()->previous()])
+                        @include('buttons.minimize')
+                    </div>
+                </div>
+                {!! Form::open(['id' => 'form-trust-code', 'route' => 'payroll.parameters.update-trust-code', 'method' => 'post']) !!}
+                {!! Form::token() !!}
+                <div class="card-body" style="min-height: 100px">
+                    @if($errors->any() && $errors->has('p_value') && preg_match('/^(\w+) edad laboral (\w+)/i', $errors->first('p_value')))
+                        @include('layouts.form-errors')
+                    @endif
+                    <div class="row">
+                        <div class="col-md-4" id="helpTrustCode">
+                            <div class="form-group">
+                                {!!
+                                Form::label('trust_code', 'Código de fideicomitente', []) !!}
+                                {!!
+                                Form::text('trust_code', ($payrollTrustCode) ? $payrollTrustCode['p_value'] : old('trust_code'), [
+                                'class' => 'form-control input-sm', 'data-toggle' => 'tooltip',
+                                'title' => 'Indique el Código de fideicomitente',
+                                'placeholder' => 'Código de fideicomitente',
+                                'v-is-numeric'
+                                ])
+                                !!}
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="card-footer text-right" id="helpParamReport">
@@ -336,6 +384,12 @@
 
                         {{-- Responsables de ARC --}}
                         <payroll-arc-responsibles></payroll-arc-responsibles>
+
+                        {{-- Códigos de procesos --}}
+                        <payroll-process-codes></payroll-process-codes>
+
+                        {{-- Cargas horarias --}}
+                        <payroll-workloads></payroll-workloads>
                     </div>
                 </div>
             </div>

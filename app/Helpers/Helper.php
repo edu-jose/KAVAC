@@ -55,18 +55,18 @@ if (!function_exists('display_submenu')) {
      * @return string  Retorna una cadena vacia para contraer las opciones del submenú,
      *                 de lo contrario retorna el css para mostrar el bloque de opciones
      */
-    function display_submenu($submenu)
+    function display_submenu($submenu, $type = 'style')
     {
         if (is_array($submenu)) {
             foreach ($submenu as $sb) {
                 if ($sb !== '' && strpos(Route::current()->getName(), $sb) !== false) {
-                    return 'display:block';
+                    return $type === 'class' ? 'display-submenu' : 'display:block';
                 }
             }
         }
         return (
             !is_array($submenu) && $submenu !== '' && strpos(Route::current()->getName(), $submenu) !== false
-        ) ? 'display:block;' : '';
+        ) ? ($type === 'class' ? 'display-submenu' : 'display:block;') : '';
     }
 }
 
@@ -387,12 +387,15 @@ if (!function_exists('get_json_resource')) {
      */
     function get_json_resource($file, $module = null)
     {
-        if (!is_null($module)) {
+        if (!is_null($module) && file_exists(rtrim(Module::getModulePath($module), "/") . "/Resources/" . $file)) {
             return json_decode(
-                file_get_contents(Module::getModulePath($module) . "/Resources/" . $file, true)
+                file_get_contents(rtrim(Module::getModulePath($module), "/") . "/Resources/" . $file, true)
             );
         }
 
+        if (!file_exists(app()->resourcePath($file))) {
+            return [];
+        }
         return json_decode(
             file_get_contents(app()->resourcePath($file), true)
         );
@@ -1134,7 +1137,7 @@ if (! function_exists('unidad')) {
                 $unitText = __("UN");
                 break;
             case 0:
-                $unitText = "";
+                $unitText = __("CERO");
                 break;
         }
         return $unitText;

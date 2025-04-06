@@ -7,7 +7,6 @@ use Illuminate\Routing\Controller;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Modules\Asset\Models\AssetSubcategory;
 use Modules\Asset\Models\AssetSpecificCategory;
-use Modules\Asset\Models\AssetRequiredItem;
 use Modules\Asset\Rules\Setting\AssetSpecificCategoryUnique;
 use Illuminate\Validation\Rule;
 
@@ -235,29 +234,6 @@ class AssetSpecificCategoryController extends Controller
                 ['code']
             )
             : [];
-    }
-
-    /**
-     * Obtiene el listado de los requerimientos de las categorias específicas de bienes institucionales
-     *
-     * @author    Henry Paredes <hparedes@cenditel.gob.ve>
-     *
-     * @param     integer    $id    Identificador único de la categoría específica
-     *
-     * @return    array      Arreglo con los registros a mostrar
-     */
-    public function getRequired($id)
-    {
-        $required = AssetRequiredItem::where('asset_specific_category_id', $id)->first();
-        if (is_null($required)) {
-            $required = [
-                'serial' => false,
-                'marca' => false,
-                'model' => false,
-                'address' => false
-            ];
-        }
-        return response()->json(['record' => $required], 200);
     }
 
     /**

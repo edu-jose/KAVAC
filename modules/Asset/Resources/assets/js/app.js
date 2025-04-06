@@ -318,18 +318,6 @@ Vue.component("asset-register", () =>
 );
 
 /**
- * Componente para gestionar el ingreso manual de bienes institucionales
- *
- * @author Henry Paredes <hparedes@cenditel.gob.ve>
- */
-Vue.component("asset-create", () =>
-    import(
-        /* webpackChunkName: "asset-create" */
-        "./components/registers/AssetCreateComponent.vue"
-    )
-);
-
-/**
  * Componente para mostrar un listado de bienes institucionales registrados
  *
  * @author Henry Paredes <hparedes@cenditel.gob.ve>

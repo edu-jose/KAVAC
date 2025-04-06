@@ -2,42 +2,46 @@
 
 namespace Modules\Payroll\Http\Controllers;
 
-use App\Models\DocumentStatus;
 use Carbon\Carbon;
 use App\Models\User;
 use App\Models\Source;
 use App\Models\Parameter;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
+use App\Models\DocumentStatus;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Log;
 use Modules\Payroll\Models\Payroll;
 use Maatwebsite\Excel\Facades\Excel;
 use Modules\Payroll\Models\Institution;
 use Modules\Payroll\Models\PayrollStaff;
+use App\Notifications\SystemNotification;
+use Illuminate\Support\Facades\Validator;
 use Modules\Payroll\Models\PayrollConcept;
+use Modules\Payroll\Models\PayrollTimeSheet;
 use Modules\Payroll\Models\PayrollEmployment;
 use Modules\Payroll\Models\PayrollConceptType;
 use Modules\Payroll\Models\PayrollPaymentType;
 use Modules\Payroll\Models\PayrollStaffPayroll;
+use Modules\Payroll\Models\PayrollExceptionType;
 use Modules\Payroll\Models\PayrollPaymentPeriod;
+use Modules\Payroll\Models\PayrollSocioeconomic;
 use Modules\Payroll\Models\PayrollVacationPolicy;
+use Modules\Payroll\Models\PayrollSupervisedGroup;
 use Modules\Payroll\Models\PayrollVacationRequest;
 use Modules\Payroll\Repositories\ReportRepository;
 use Modules\Payroll\Exports\PayrollReportStaffsExport;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Modules\Payroll\Jobs\PayrollReportConceptExportJob;
-use Modules\Payroll\Jobs\PayrollSendRequestedReceiptsJob;
-use Modules\Payroll\Jobs\PayrollStaffPdfReportExportJob;
-use Modules\Payroll\Jobs\PayrollSendStaffPdfReportEmailJob;
-use Modules\Payroll\Models\PayrollExceptionType;
-use Modules\Payroll\Models\PayrollSupervisedGroup;
 use Modules\Payroll\Models\PayrollSupervisedGroupStaff;
-use Modules\Payroll\Models\PayrollTimeSheet;
-use Modules\Payroll\Models\PayrollSocioeconomic;
+use Modules\Payroll\Jobs\PayrollStaffPdfReportExportJob;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Modules\Payroll\Jobs\PayrollSendRequestedReceiptsJob;
+use Modules\Payroll\Jobs\PayrollSendStaffPdfReportEmailJob;
 
 /**
  * @class      PayrollReportController
@@ -53,6 +57,8 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 class PayrollReportController extends Controller
 {
     use ValidatesRequests;
+
+    protected $periods;
 
     /**
      * Define la configuración de la clase
@@ -72,6 +78,10 @@ class PayrollReportController extends Controller
         $this->middleware('permission:payroll.reports.concepts', ['only' => 'concepts']);
         $this->middleware('permission:payroll.reports.relationship.concepts', ['only' => 'relationshipConcepts']);
         $this->middleware('permission:payroll.reports.payment.receipts', ['only' => 'paymentReceipt']);
+        $this->middleware('permission:payroll.workers.report.create', ['only' => ['filterWorkersByPayroll']]);
+        $this->middleware('permission:payroll.timesheets.report.create', ['only' => ['timeSheetsPdf']]);
+        $this->middleware('permission:payroll.family.burden.report.create', ['only' => ['create']]);
+        $this->middleware('permission:payroll.historical.positions.report.create', ['only' => ['create']]);
     }
 
     /**
@@ -128,6 +138,8 @@ class PayrollReportController extends Controller
      */
     public function create(Request $request)
     {
+        // Aumento de tiempo de expiracion de la peticion
+        ini_set('max_execution_time', 3600);
         $user = auth()->user();
         $profileUser = $user->profile;
         if (($profileUser) && isset($profileUser->institution_id)) {
@@ -155,6 +167,8 @@ class PayrollReportController extends Controller
             $body = 'payroll::pdf.payroll-relationship-concepts';
         } elseif ($request->current == 'family-burden') {
             $body = 'payroll::pdf.payroll-family-burden';
+        } elseif ($request->current == 'historical-position') {
+            $body = 'payroll::pdf.payroll-historical-position';
         } else {
             $body = '';
         }
@@ -171,6 +185,67 @@ class PayrollReportController extends Controller
         if ($request->current == 'vacation-requests') {
             $records = PayrollVacationRequest::find($request->input('id'));
             $pdf->setHeader("Reporte de solicitudes de vacaciones");
+        } elseif ($request->current == 'historical-position') {
+            $this->periods = [];
+            $historicPositions = '';
+            $records = PayrollStaffPayroll::where(
+                'payroll_staff_id',
+                $request->payroll_staff_id
+            )->whereHas('payroll', function ($query) use ($request) {
+                $query->whereHas('payrollPaymentPeriod', function ($q) use ($request) {
+                    if ($request->start_date) {
+                        $q->where('start_date', '>=', $request->start_date);
+                    }
+                    if ($request->end_date) {
+                        $q->where('end_date', '<=', $request->end_date);
+                    }
+                });
+            })->orderBy('created_at', 'desc')->get();
+
+            if ($records->isEmpty()) {
+                $empty = ['records' => ''];
+                $validator = Validator::make(
+                    $empty,
+                    ['records' => 'required'],
+                    ['records.required' => 'No hay cargos disponibles para este periodo.']
+                )->validate();
+            }
+
+            $records = $records->map(
+                function ($payrollStaffPayroll) {
+                    $basicData = (object)$payrollStaffPayroll->basic_payroll_staff_data;
+                    $conceptTypesArr = $payrollStaffPayroll->concept_type;
+                    $institution = $payrollStaffPayroll->payrollStaff->payrollEmployment->department->institution;
+                    $totalSalary = 0;
+
+                    if (count($conceptTypesArr) > 0) {
+                        foreach ($conceptTypesArr as $conceptTypes) {
+                            foreach ($conceptTypes as $conceptType) {
+                                if ($conceptType['sign'] === '+') {
+                                    $totalSalary += (float)$conceptType['value'];
+                                } elseif ($conceptType['sign'] === '-') {
+                                    $totalSalary -= (float)$conceptType['value'];
+                                }
+                            }
+                        }
+                    }
+                    return [
+                        'payroll_id' => $payrollStaffPayroll->payroll_id,
+                        'payroll_staff_id' => $payrollStaffPayroll->payroll_staff_id,
+                        'full_name' => $basicData->full_name,
+                        'id_number' => $basicData->id_number,
+                        'position' => $basicData->position,
+                        //'position_start_date' => $this->periods[Str::slug($basicData->position)]['start_date'],
+                        'position_start_date' => $payrollStaffPayroll->payroll->payrollPaymentPeriod->start_date,
+                        //'position_end_date' => $this->periods[Str::slug($basicData->position)]['end_date'],
+                        'position_end_date' => $payrollStaffPayroll->payroll->payrollPaymentPeriod->end_date,
+                        'institution' => $institution,
+                        'start_date' => Carbon::parse($basicData->start_date)->format('d-m-Y'),
+                        'total_salary' => $totalSalary
+                    ];
+                }
+            );
+            $pdf->setHeader("Reporte histórico de cargo");
         } elseif ($request->current == 'registers') {
             $payrollRegister = Payroll::find($request->input('id'));
             $records = $payrollRegister->payrollStaffPayrolls;
@@ -193,6 +268,8 @@ class PayrollReportController extends Controller
                 )
                     ->where('status', 'approved')
                     ->where('institution_id', $institution->id)->get();
+            } elseif ($request->current == 'staff-vacation-enjoyment') {
+                //pass
             } else {
                 $records = PayrollVacationRequest::whereBetween('start_date', [$request->start_date, now()])
                     ->where('status', 'approved')
@@ -457,15 +534,71 @@ class PayrollReportController extends Controller
 
             if ($allStaffs !== false) {
                 if ($allRelationships !== false) {
-                    $records = PayrollSocioeconomic::has('payrollChildrens')->get();
+                    $records = PayrollSocioeconomic::with(
+                        ['payrollStaff' => fn($query) => $query->without(
+                            [
+                                'payrollNationality',
+                                'payrollFinancial',
+                                'payrollGender',
+                                'payrollBloodType',
+                                'payrollDisability',
+                                'payrollLicenseDegree',
+                                'payrollStaffUniformSize',
+                                'payrollSocioeconomic',
+                                'payrollProfessional',
+                                'payrollResponsibility'
+                            ]
+                        )->select('id', 'first_name', 'last_name', 'id_number')->with(
+                            ['payrollEmployment' => fn($query) => $query->without(
+                                [
+                                    'payrollPositionType',
+                                    'payrollCoordination',
+                                    'payrollStaffType',
+                                    'payrollInactivityType',
+                                    'payrollContractType',
+                                    'payrollPreviousJob'
+                                ]
+                            )->select('id', 'payroll_staff_id', 'department_id')->with(['department' => fn($query) => $query->select('id', 'name')])
+                            ]
+                        )]
+                    )->has('payrollChildrens')
+                    ->without('maritalStatus')
+                    ->get();
                 } else {
                     $realtionshipsIds = array_column($request->payroll_relationships, 'id');
 
-                    $records = PayrollSocioeconomic::query()
-                        ->whereHas('payrollChildrens', function ($query) use ($realtionshipsIds) {
+                    $records = PayrollSocioeconomic::with(
+                        ['payrollStaff' => fn($query) => $query->without(
+                            [
+                                'payrollNationality',
+                                'payrollFinancial',
+                                'payrollGender',
+                                'payrollBloodType',
+                                'payrollDisability',
+                                'payrollLicenseDegree',
+                                'payrollStaffUniformSize',
+                                'payrollSocioeconomic',
+                                'payrollProfessional',
+                                'payrollResponsibility'
+                            ]
+                        )->select('id', 'first_name', 'last_name', 'id_number')->with(
+                            ['payrollEmployment' => fn($query) => $query->without(
+                                [
+                                    'payrollPositionType',
+                                    'payrollCoordination',
+                                    'payrollStaffType',
+                                    'payrollInactivityType',
+                                    'payrollContractType',
+                                    'payrollPreviousJob'
+                                ]
+                            )->select('id', 'payroll_staff_id', 'department_id')->with(['department' => fn($query) => $query->select('id', 'name')])
+                            ]
+                        )]
+                    )->whereHas('payrollChildrens', function ($query) use ($realtionshipsIds) {
                             $query->whereIn('payroll_relationships_id', $realtionshipsIds);
-                        })
-                        ->get();
+                    })
+                    ->without('maritalStatus')
+                    ->get();
                 }
             } else {
                 if ($allRelationships !== false) {
@@ -473,6 +606,7 @@ class PayrollReportController extends Controller
 
                     $records = PayrollSocioeconomic::query()
                         ->has('payrollChildrens')
+                        ->without('maritalStatus')
                         ->whereIn('payroll_staff_id', $staffIds)
                         ->get();
                 } else {
@@ -484,6 +618,7 @@ class PayrollReportController extends Controller
                         ->whereHas('payrollChildrens', function ($query) use ($realtionshipsIds) {
                             $query->whereIn('payroll_relationships_id', $realtionshipsIds);
                         })
+                        ->without('maritalStatus')
                         ->get();
                 }
             }
@@ -506,7 +641,15 @@ class PayrollReportController extends Controller
             ]
         );
         $url = route('payroll.reports.show', [$filename]);
-        return response()->json(['result' => true, 'redirect' => $url], 200);
+        if ($request->current == 'family-burden') {
+            if ($allStaffs !== false && $allRelationships !== false) {
+                $user->notify(new SystemNotification('Éxito', 'Ha finalizado la generación del reporte de carga familiar. Por favor abra este enlace para ver el documento: <a href="' . $url . '" class="link-download">Enlace</a>'));
+                return response()->json(['all_data' => true, 'result' => false, 'redirect' => env('APP_URL') . '/payroll/reports/family-burden'], 200);
+            }
+            return response()->json(['all_data' => true, 'result' => true, 'redirect' => $url], 200);
+        } else {
+            return response()->json(['all_data' => true, 'result' => true, 'redirect' => $url], 200);
+        }
     }
 
     /**
@@ -649,6 +792,16 @@ class PayrollReportController extends Controller
     public function paymentReceipt(): View
     {
         return view('payroll::reports.payroll-report-payment-receipt');
+    }
+
+    /**
+     * Reporte Histórico de cargos
+     *
+     * @return \Illuminate\View\View
+     */
+    public function historicalPosition(): View
+    {
+        return view('payroll::reports.payroll-historical-positions');
     }
 
     /**

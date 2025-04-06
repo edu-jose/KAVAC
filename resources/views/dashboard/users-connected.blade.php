@@ -26,18 +26,18 @@
                                 "
                             >
                             </i>
-                        <span>{{ __('Conectados') }}</span>
+                            <span>{{ __('Conectados') }}</span>
                         </div>
                         </div>
                         <div class="row mg-bottom-20" id="helpDisconneted">
                         <div class="col-md-4 panel-legend">
-                        <i
-                            class="fa fa-user text-danger"
-                            data-toggle="tooltip"
-                            title="
-                                {{ __('Los usuarios con este estatus no están conectados a la aplicación') }}"
-                        ></i>
-                        <span>{{ __('Desconectados') }}</span>
+                            <i
+                                class="fa fa-user text-danger"
+                                data-toggle="tooltip"
+                                title="
+                                    {{ __('Los usuarios con este estatus no están conectados a la aplicación') }}"
+                            ></i>
+                            <span>{{ __('Desconectados') }}</span>
                         </div>
                     </div>
                 </div>
@@ -109,49 +109,48 @@
                                         Nunca
                                     @endif
                                 </td>
-                                <td class="text-center" width="10%">
+                                <td class="text-center col-2">
                                     @if($user->blocked_at)
                                         {!! Form::button('<i class="fa fa-unlock"></i>', [
-                                            'class' => 'btn btn-success btn-xs btn-icon btn-action',
+                                            'class' => 'btn btn-success btn-xs btn-icon btn-action btn-unlock-user',
                                             'data-toggle' => 'tooltip',
+                                            'data-id' => $user->id,
                                             'title' => __('Desbloquear usuario'),
-                                            'onclick' => 'unlockUser('.$user->id.')'
+                                            'data-id' => $user->id,
                                         ]) !!}
                                     @endif
                                     {!! Form::button('<i class="fa fa-comment"></i>', [
-                                        'class' => 'btn btn-default btn-xs btn-icon btn-action',
+                                        'class' => 'btn btn-default btn-xs btn-icon btn-action btn-send-message',
                                         'data-toggle' => 'modal', 'data-target' => '#modalSendMessage',
                                         'title' => __('Enviar mensaje al usuario'),
-                                        'onclick' => "setUserModalMessage(".$user->id.")",
+                                        'data-id' => $user->id,
                                         'disabled' => (auth()->user()->id === $user->id)
                                     ]) !!}
                                     {!! Form::button('<i class="fa fa-cogs"></i>', [
-                                        'class' => 'btn btn-primary btn-xs btn-icon btn-action',
+                                        'class' => 'btn btn-primary btn-xs btn-icon btn-action btn-user-settings',
                                         'data-toggle' => 'modal', 'data-target' => '#modalUserSettings',
-                                        'onclick' => 'setUser('.$user->id.')',
+                                        'data-id' => $user->id,
                                         'title' => __('Configurar cuenta de usuario'),
                                         'disabled' => (auth()->user()->id === $user->id)
                                     ]) !!}
                                     {!! Form::button('<i class="fa fa-bell"></i>', [
-                                        'class' => 'btn btn-danger btn-xs btn-icon btn-action',
+                                        'class' => 'btn btn-danger btn-xs btn-icon btn-action btn-send-notification',
                                         'data-toggle' => 'modal', 'data-target' => '#modalSendNotification',
+                                        'data-id' => $user->id,
                                         'title' => __('Enviar notificación de proceso'),
-                                        'onclick' => "setUserModalNotify(".$user->id.")",
                                         'disabled' => (auth()->user()->id === $user->id)
                                     ]) !!}
                                     {!! Form::button('<i class="fa fa-info-circle"></i>', [
-                                        'class' => 'btn btn-info btn-xs btn-icon btn-action',
+                                        'class' => 'btn btn-info btn-xs btn-icon btn-action btn-user-info',
                                         'data-toggle' => 'tooltip',
-                                        'onclick' => 'view_user_info('.$user->id.')',
+                                        'data-id' => $user->id,
                                         'title' => __('Ver información del usuario'),
                                         'disabled' => (auth()->user()->id === $user->id)
                                     ]) !!}
                                     {!! Form::button('<i class="fa fa-filter"></i>', [
-                                        'class' => 'btn btn-warning btn-xs btn-icon btn-action',
+                                        'class' => 'btn btn-warning btn-xs btn-icon btn-action btn-user-filter',
                                         'data-toggle' => 'tooltip',
-                                        'onclick' => 'location="' . route('assign.access', [
-                                            'user' => $user->id
-                                        ]) . '"',
+                                        'data-id' => $user->id,
                                         'title' => __('Asignar permisos de acceso.'),
                                         'disabled' => (auth()->user()->id === $user->id)
                                     ]) !!}

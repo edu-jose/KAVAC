@@ -591,21 +591,51 @@
                 if (vm.action === 'Asignación'){
                     url = `${window.app_url}/asset/asignations/asignations-record-pdf`;
                     if(!(vm.authorized_by && vm.formed_by && vm.delivered_by)){
-                        bootbox.alert("Debe seleccionar todos los campos obligatorios (*) para completar la generación del acta.");
+                        bootbox.alert({
+                            title: "Advertencia",
+                            message: "Debe seleccionar todos los campos obligatorios (*) para completar la generación del acta.",
+                            closeButton: false,
+                            buttons: {
+                                ok: {
+                                    label: "Cerrar",
+                                    className: 'btn-light'
+                                }
+                            }
+                        });
                         return false;
                     }
                 }
                 if (vm.action === 'Desincorporación'){
                     url = `${window.app_url}/asset/disincorporations/disincorporations-record-pdf`;
                     if(!(vm.authorized_by && vm.formed_by && vm.produced_by)){
-                        bootbox.alert("Debe seleccionar todos los campos obligatorios (*) para completar la generación del acta.");
+                        bootbox.alert({
+                            title: "Advertencia",
+                            message: "Debe seleccionar todos los campos obligatorios (*) para completar la generación del acta.",
+                            closeButton: false,
+                            buttons: {
+                                ok: {
+                                    label: "Cerrar",
+                                    className: 'btn-light'
+                                }
+                            }
+                        });
                         return false;
                     }
                 }
                 if (vm.action === 'Entrega'){
                     url = `${window.app_url}/asset/asignations/deliveries-record-pdf`;
                     if(!(vm.approved_by && vm.received_by)){
-                        bootbox.alert("Debe seleccionar todos los campos obligatorios (*) para completar la generación del acta.");
+                        bootbox.alert({
+                            title: "Advertencia",
+                            message: "Debe seleccionar todos los campos obligatorios (*) para completar la generación del acta.",
+                            closeButton: false,
+                            buttons: {
+                                ok: {
+                                    label: "Cerrar",
+                                    className: 'btn-light'
+                                }
+                            }
+                        });
                         return false;
                     }
                 }

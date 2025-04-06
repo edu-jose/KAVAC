@@ -4,6 +4,7 @@ namespace Modules\Budget\Providers;
 
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\ServiceProvider;
+use Modules\Budget\Console\Commands\UpdateStatusModifications;
 
 /**
  * @class BudgetServiceProvider
@@ -44,6 +45,7 @@ class BudgetServiceProvider extends ServiceProvider
         $this->registerViews();
         $this->registerFactories();
         $this->loadMigrationsFrom(module_path($this->moduleName, 'Database/Migrations'));
+        $this->registerCommands();
     }
 
     /**
@@ -54,6 +56,7 @@ class BudgetServiceProvider extends ServiceProvider
     public function register()
     {
         $this->app->register(RouteServiceProvider::class);
+        $this->app->register(CurrencyServiceProvider::class);
     }
 
     /**
@@ -142,5 +145,20 @@ class BudgetServiceProvider extends ServiceProvider
             }
         }
         return $paths;
+    }
+
+    /**
+     * Registra los comandos del módulo
+     *
+     * @return void
+     */
+    public function registerCommands()
+    {
+        if ($this->app->runningInConsole()) {
+            // Registrar comandos solo si se está ejecutando en la consola
+            $this->commands([
+                UpdateStatusModifications::class,
+            ]);
+        }
     }
 }

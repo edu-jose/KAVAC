@@ -26,25 +26,26 @@
                         @include('buttons.previous', ['route' => url()->previous()])
                         @include('buttons.new', ['route' => route('payroll.professionals.create')])
                         @permission('payroll.professionals.import')
-                        {!! Form::button('<i class="fa fa-upload"></i>', [
-                            'class'       => 'btn btn-sm btn-primary btn-custom',
-                            'data-toggle' => 'tooltip',
-                            'type'        => 'button',
-                            'title'       => __('Importar registros'),
-                            'onclick'     => "$('input[name=importFile]').click()"
-                        ]) !!}
-                        <input  id="importFile" name="importFile"
-                        type="file" style="display:none"
-                        onchange="importData()">
+                            {!! Form::button('<i class="fa fa-upload"></i>', [
+                                'id'          => 'btnImport',
+                                'class'       => 'btn btn-sm btn-primary btn-custom',
+                                'data-toggle' => 'tooltip',
+                                'type'        => 'button',
+                                'title'       => __('Importar registros')
+                            ]) !!}
+                            <input
+                                id="importFile" name="importFile"
+                                type="file" style="display:none"
+                            >
                         @endpermission
                         @permission('payroll.professionals.export')
-                        {!! Form::button('<i class="fa fa-download"></i>', [
-                            'class'       => 'btn btn-sm btn-primary btn-custom',
-                            'data-toggle' => 'tooltip',
-                            'type'        => 'button',
-                            'title'       => "Presione para descargar el documento con la información de los registros.",
-                            'onclick'     => "exportData()"
-                        ]) !!}
+                            {!! Form::button('<i class="fa fa-download"></i>', [
+                                'id'          => 'btnExport',
+                                'class'       => 'btn btn-sm btn-primary btn-custom',
+                                'data-toggle' => 'tooltip',
+                                'type'        => 'button',
+                                'title'       => "Presione para descargar el documento con la información de los registros."
+                            ]) !!}
                         @endpermission
                         @include('buttons.minimize')
                     </div>
@@ -63,13 +64,26 @@
     </div>
 @stop
 @section('extra-js')
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="{{ session()->get('nonce') }}">
+        $(document).ready(function() {
+            const btnImport = document.querySelector('#btnImport');
+            const importFile = document.querySelector('#importFile');
+            const btnExport = document.querySelector('#btnExport');
+            btnImport.addEventListener('click', function() {
+                $('input[name=importFile]').click();
+            });
+            importFile.addEventListener('change', importData);
+            btnExport.addEventListener('click', exportData);
+        });
+
         var records;
+
         function exportData() {
             location.href = `${window.app_url}/payroll/registers/export/professional/all`;
         }
+
         function importData() {
-        var url = `${window.app_url}/payroll/registers/import/professional/all`;
+            var url = `${window.app_url}/payroll/registers/import/professional/all`;
             var formData = new FormData();
             var importFile = document.querySelector('#importFile');
             formData.append("file", importFile.files[0]);

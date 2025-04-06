@@ -168,6 +168,7 @@
                     formula: '',
                     active: false
                 };
+                this.errors = [];
             },
             /**
              * Obtiene un listado de cuentas patrimoniales

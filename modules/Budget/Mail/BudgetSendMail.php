@@ -49,6 +49,23 @@ class BudgetSendMail extends Mailable
     public $messageText;
 
     /**
+     * MimeType del archivo
+     *
+     * @var array $MIMES
+     */
+    public $MIMES = [
+        'pdf' => 'application/pdf',
+        'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    ];
+
+    /**
+     * Extension del archivo
+     *
+     * @var string $fileExtension
+     */
+    public $fileExtension;
+
+    /**
      * Crea una nueva instancia de la clase.
      *
      * @param string $pdfPath Ruta del archivo
@@ -56,10 +73,11 @@ class BudgetSendMail extends Mailable
      *
      * @return void
      */
-    public function __construct($pdfPath, $subjectMsg)
+    public function __construct(string $pdfPath, string $subjectMsg, string $fileExtension = 'pdf')
     {
         $this->pdfPath = $pdfPath;
         $this->subjectMsg = $subjectMsg;
+        $this->fileExtension = $fileExtension;
         $this->messageText = '';
         $this->fromEmail = config('mail.from.address');
     }
@@ -71,10 +89,10 @@ class BudgetSendMail extends Mailable
      */
     public function build()
     {
-        return $this->from(config('mail.from.address'))->subject($this->subjectMsg)->markdown('emails.email')
+        return $this->from($this->fromEmail)->subject($this->subjectMsg)->markdown('emails.email')
             ->attach($this->pdfPath, [
-                'as' => 'reporte_de_presupuesto.pdf',
-                'mime' => 'application/pdf'
+                'as' => 'reporte_de_presupuesto.' . $this->fileExtension,
+                'mime' => $this->MIMES[$this->fileExtension]
             ]);
     }
 }

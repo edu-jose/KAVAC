@@ -47,6 +47,7 @@ class ProjectTrackingTask extends Model implements Auditable
         'start_date',
         'end_date',
         'activity_status_id',
+        'depending_task_id',
         'weight'
     ];
 
@@ -128,5 +129,15 @@ class ProjectTrackingTask extends Model implements Auditable
     public function priority()
     {
         return $this->belongsTo(ProjectTrackingPriority::class);
+    }
+
+    public function subTasks()
+    {
+        return $this->hasMany(ProjectTrackingSubTask::class, 'task_id', 'id');
+    }
+
+    public function dependingTask()
+    {
+        return $this->belongsTo(ProjectTrackingTask::class);
     }
 }

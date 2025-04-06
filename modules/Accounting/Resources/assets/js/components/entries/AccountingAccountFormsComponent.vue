@@ -613,8 +613,8 @@ export default {
             if (vm.validateErrors()) {
                 return;
             }
-            vm.data["tot"] = vm.data.totDebit;
-            vm.data["tot_confirmation"] = vm.data.totAssets;
+            vm.data["tot"] = vm.addDecimals(vm.data.totDebit);
+            vm.data["tot_confirmation"] = vm.addDecimals(vm.data.totAssets);
             vm.data["accountingAccounts"] = vm.recordsAccounting;
             vm.data["rowsToDelete"] = vm.rowsToDelete;
 

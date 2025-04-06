@@ -1,7 +1,4 @@
 table.table.table-big {
-	td.wrapping {
-		//max-width: 200px;
-	}
 	td, th {
 		white-space: pre-wrap !important;
 		word-break: break-word !important;
@@ -76,4 +73,63 @@ table {
 	align-items: center;
 	background-color: #FF3636 !important;
 	color: white;
+}
+
+/** Estilos para tabla con scroll vertical y columnas fijas */
+.table-container-with-vscroll {
+    position: relative;
+    max-height: 80vh; /* Altura máxima para el scroll */
+    overflow-y: auto; /* Habilitar scroll vertical */
+
+    table {
+        width: 100%;
+
+        &.cellpadding-0 {
+            padding: 0 !important;
+        }
+
+        &.cellspacing-0 {
+            border-collapse: collapse !important;
+            border-spacing: 0 !important;
+        }
+
+        &.with-border-1 {
+            border: 1px solid #000000;
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+
+        th:first-child, td:first-child {
+            position: sticky; /* Fijar la columna */
+            left: 0;
+            background-color: #f9f9f9; /* Color de fondo para la columna fija */
+            z-index: 1; /* Asegura que la columna fija esté por encima */
+        }
+
+        thead th {
+            position: sticky; /* Fijar el encabezado */
+            top: 0;
+            border-top: 1px solid #dee2e6;
+            background-color: #ffffff; /* Color de fondo para el encabezado */
+            z-index: 1; /* Asegura que el encabezado esté por encima */
+        }
+
+        tbody {
+            tr.odd-row {
+                background-color: rgba(0, 0, 0, 0.05);
+            }
+
+            tr.even-row {
+                background-color: transparent; /* Color para filas pares */
+            }
+        }
+    }
+}
+.table-title {
+    text-transform: uppercase;
+    text-align: center;
+    color: #0073b7;
 }

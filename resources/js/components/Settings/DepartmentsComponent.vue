@@ -171,6 +171,7 @@
 					name: '',
 					active: false,
 				};
+				this.errors = [];
 			},
 		},
 		created() {

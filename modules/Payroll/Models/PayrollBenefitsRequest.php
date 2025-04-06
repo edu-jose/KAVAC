@@ -30,7 +30,7 @@ class PayrollBenefitsRequest extends Model implements Auditable
      *
      * @var array $dates
      */
-    protected $dates = ['deleted_at'];
+    protected $dates = ['created_at', 'deleted_at'];
 
     /**
      * Lista de atributos que pueden ser asignados masivamente
@@ -38,7 +38,7 @@ class PayrollBenefitsRequest extends Model implements Auditable
      * @var array $fillable
      */
     protected $fillable = [
-        'code', 'status', 'status_parameters', 'amount_requested', 'motive', 'payroll_staff_id', 'institution_id'
+        'created_at', 'code', 'status', 'status_parameters', 'amount_requested', 'motive', 'payroll_staff_id', 'institution_id'
     ];
 
     /**

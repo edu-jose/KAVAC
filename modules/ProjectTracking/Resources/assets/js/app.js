@@ -81,18 +81,6 @@ Vue.component("project-tracking-personal-register", () =>
 );
 
 /**
- * Componente para listar, crear, actualizar y borrar datos de las dependencias
- *
- * @author William Páez <wpaez@cenditel.gob.ve>
- */
-Vue.component("project-tracking-dependencies", () =>
-    import(
-        /* webpackChunkName: "projecttracking-dependencies" */
-        "./components/settings/ProjectTrackingDependencyComponent.vue"
-    )
-);
-
-/**
  * Componente para listar, crear, actualizar y borrar datos de las prioridades
  *
  * @author William Páez <wpaez@cenditel.gob.ve>
@@ -103,6 +91,47 @@ Vue.component("project-tracking-priorities", () =>
         "./components/settings/ProjectTrackingPriorityComponent.vue"
     )
 );
+
+ /**
+* Componente para registrar nombre, descripción y color del tipo de actividades
+*
+* @author Mauricio Araujo <araujoperezme20@gmail.com>
+*/
+Vue.component('project-tracking-task-types', () =>
+    import(
+      /* webpackChunkName: "projecttracking-task-types" */
+      './components/settings/ProjectTrackingTaskTypesComponent.vue'
+    )
+   );
+
+ /**
+* Componente para registrar nombre y color de etiquetas
+*
+* @author Mauricio Araujo <araujoperezme20@gmail.com>
+*/
+Vue.component('project-tracking-tags', () =>
+    import(
+      /* webpackChunkName: "projecttracking-tags" */
+      './components/settings/ProjectTrackingTagsComponent.vue'
+    )
+   );
+  
+  Vue.component('project-tracking-subprojects'), () =>
+   import(
+     /* webpackChunkName: "projecttracking-subprojects" */
+     './components/settings/ProjectTrackingSubProjectComponent.vue'
+)
+ /**
+* Componente para registrar nombre y descripciòn de tipo de dependencias 
+*
+* @author Mauricio Araujo <araujoperezme20@gmail.com>
+*/
+Vue.component('project-tracking-dependencies-type', () =>
+    import(
+      /* webpackChunkName: "projecttracking-dependenciestype" */
+      './components/settings/ProjectTrackingDependenciesTypeComponent.vue'
+    )
+   );
 
 /**
  * Componente para listar, crear, actualizar y borrar datos de los estatus de actividades
@@ -229,6 +258,18 @@ Vue.component("project-tracking-delivery-status", () =>
     import(
         /* webpackChunkName: "project-tracking-delivery-status" */
         "./components/settings/ProjectTrackingDeliveryStatusComponent.vue"
+    )
+);
+
+/**
+ * Componente para gestionar las jornadas laborales
+ * 
+ * @author Natanael Rojo <ndrojo@cenditel.gob.ve> | <rojonatanael99@gmail.com>
+ */
+Vue.component("project-tracking-working-hours", () =>
+    import(
+        /* webpackChunkName: "project-tracking-working-hours" */
+        "./components/settings/ProjectTrackingWorkingHoursComponent.vue"
     )
 );
 

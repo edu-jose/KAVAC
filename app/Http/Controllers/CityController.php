@@ -59,10 +59,13 @@ class CityController extends Controller
         if (!restore_record(City::class, ['name' => $request->name, 'estate_id' => $request->estate_id])) {
             $this->validate($request, [
                 'name' => ['required', 'max:100', new UniqueCityName()],
-                'estate_id' => ['required']
+                'estate_id' => ['required', 'exists:estates,id'],
+                'country_id' => ['required', 'exists:countries,id']
             ], [
                 'name.max' => ('El campo nombre no debe ser mayor que 100 caracteres.'),
                 'estate_id.required' => ('El campo estado es obligatorio.'),
+                'country_id.required' => ('El campo pais es obligatorio.'),
+                'name.unique' => ('El campo nombre ya se encuentra registrado.')
             ]);
         }
 
@@ -89,7 +92,12 @@ class CityController extends Controller
     {
         $this->validate($request, [
             'name' => ['required', 'max:100'],
-            'estate_id' => ['required']
+            'estate_id' => ['required', 'exists:estates,id'],
+            'country_id' => ['required', 'exists:countries,id']
+        ], [
+            'name.max' => ('El campo nombre no debe ser mayor que 100 caracteres.'),
+            'estate_id.required' => ('El campo estado es obligatorio.'),
+            'country_id.required' => ('El campo pais es obligatorio.'),
         ]);
 
         $city->name = $request->name;

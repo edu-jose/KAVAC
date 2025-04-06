@@ -4,6 +4,7 @@ namespace Modules\Purchase\Models;
 
 use App\Traits\ModelsTrait;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use OwenIt\Auditing\Auditable as AuditableTrait;
 use OwenIt\Auditing\Contracts\Auditable;
@@ -56,6 +57,7 @@ class PurchaseBudgetaryAvailability extends Model implements Auditable
         'spac_description',
         'budget_account_id',
         'budget_specific_action_id',
+        'purchase_common_budgetary_availability_id',
     ];
 
     /**
@@ -66,5 +68,25 @@ class PurchaseBudgetaryAvailability extends Model implements Auditable
     public function documentFile()
     {
         return $this->morphOne(Document::class, 'documentable');
+    }
+
+    /**
+     * Establece la relación con los datos comunes de la disponibilidad presupuestaria
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function purchaseCommonBudgetaryAvailability(): BelongsTo
+    {
+        return $this->belongsTo(PurchaseCommonBudgetaryAvailability::class);
+    }
+
+    /**
+     * Get the PurchaseBaseBudget that owns the PurchaseBudgetaryAvailability
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function purchaseBaseBudget(): BelongsTo
+    {
+        return $this->belongsTo(PurchaseBaseBudget::class, 'purchase_base_budgets_id');
     }
 }

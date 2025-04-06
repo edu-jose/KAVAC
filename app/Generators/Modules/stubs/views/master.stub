@@ -2,7 +2,7 @@
 
 @section('module-css')
     @parent
-    {!! Html::style(mix('css/$LOWER_NAME$.css'), ['media' => 'screen'], Request::secure()) !!}
+    {!! Html::style(mix('modules/$LOWER_NAME$/css/app.css'), ['media' => 'screen'], Request::secure()) !!}
 @endsection
 
 @section('modules-js')

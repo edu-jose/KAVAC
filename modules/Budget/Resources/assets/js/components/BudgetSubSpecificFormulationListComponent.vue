@@ -35,7 +35,12 @@
         </div>
         <hr>
         <!-- Final de filtros de la tabla -->
-        <v-client-table :columns="columns" :data="records" :options="table_options">
+        <v-server-table
+            :columns="columns"
+            :url="'budget/subspecific-formulations/vue-list'"
+            :options="table_options"
+            ref="tableResults"
+            >
             <div slot="date" slot-scope="props" class="text-center">
                 {{ props.row.date ? format_date(props.row.date, 'DD/MM/YYYY') : "Sin fecha asignada" }}
             </div>
@@ -54,13 +59,13 @@
                         aria-label="Eliminar registro">
                         <i class="fa fa-trash-o"></i>
                     </button>
-                    <button class="btn btn-success btn-xs btn-icon btn-action btn-tooltip" type="button" disabled
-                        aria-label="Asignar Presupuesto">
+                    <button class="btn btn-secondary btn-xs btn-icon btn-action btn-tooltip" type="button" disabled
+                        aria-label="Confirmar Presupuesto">
                         <i class="fa fa-check"></i>
                     </button>
                 </template>
                 <template v-else>
-                    <button v-if="!props.row.assigned" class="btn btn-warning btn-xs btn-icon btn-action btn-tooltip"
+                    <button v-if="!props.row.confirmed" class="btn btn-warning btn-xs btn-icon btn-action btn-tooltip"
                         type="button" title="Modificar registro" aria-label="Editar registro" data-placement="bottom"
                         data-toggle="tooltip" @click="editForm(props.row.id)">
                         <i class="fa fa-edit"></i>
@@ -70,9 +75,9 @@
                         data-toggle="tooltip" type="button" @click="deleteRecord(props.row.id, '')">
                         <i class="fa fa-trash-o"></i>
                     </button>
-                    <button v-if="!props.row.assigned" class="btn btn-success btn-xs btn-icon btn-action btn-tooltip"
-                        type="button" data-placement="bottom" data-toggle="tooltip" title="Asignar Presupuesto"
-                        aria-label="Asignar Presupuesto" @click="asignR(props.row.id)">
+                    <button v-if="props.row.assigned && !props.row.confirmed" class="btn btn-secondary btn-xs btn-icon btn-action btn-tooltip"
+                        type="button" data-placement="bottom" data-toggle="tooltip" title="Confirmar Presupuesto"
+                        aria-label="Confirmar Presupuesto" @click="confirmR(props.row.id)">
                         <i class="fa fa-check"></i>
                     </button>
                 </template>
@@ -92,23 +97,32 @@
                     formatToCurrency(props.row.total_formulated, props.row.currency.symbol)
                 }}
             </div>
+            <div slot="default_currency_amount" slot-scope="props" class="text-right">
+                {{
+                    formatToCurrency(parseFloat(props.row.default_currency_amount), currencyDefaultSymbol)
+                }}
+            </div>
             <div slot="assigned" slot-scope="props">
                 <span class="text-danger text-bold" v-if="!props.row.assigned">NO</span>
                 <span class="text-success text-bold" v-else>SI</span>
             </div>
-        </v-client-table>
+        </v-server-table>
     </section>
 </template>
 
 <script>
 export default {
+    props: ["has_confirm_permission"],
     data() {
         return {
             records: [],
-            tmpRecords: [],
             assigned: {
                 _method: "PUT",
                 assigned: "1",
+            },
+            confirmed: {
+                _method: "PUT",
+                confirmed: "1",
             },
             columns: [
                 "date",
@@ -130,18 +144,52 @@ export default {
                 { id: false, text: "No" }
             ],
             lastYear: '',
+            currencyDefaultSymbol: '',
         };
     },
     created() {
+        const vm = this;
+        
         this.table_options.headings = {
             date: "Fecha de generación",
             code: "Código",
             year: "Año",
             specific_action: "Acción Específica",
             total_formulated: "Total Formulado",
+            default_currency_amount: "Conversión",
             assigned: "Asignado",
             id: "Acción",
         };
+
+        axios.get('get-currencies').then(response => {
+            if (response.data.length > 0) {
+                vm.currencyDefaultSymbol = response.data.find(currency => currency.default === true).text.split(" - ")[0];
+                
+                vm.columns = [
+                    "date",
+                    "code",
+                    "year",
+                    "specific_action",
+                    "total_formulated",
+                    "default_currency_amount",
+                    "assigned",
+                    "id",
+                ];
+
+                this.table_options.columnsClasses = {
+                    date: "col-md-1",
+                    code: "col-md-1",
+                    year: "col-md-1",
+                    name: "col-md-3",
+                    specific_action: "col-md-4",
+                    total_formulated: "col-md-1",
+                    total_formulated: "col-md-1",
+                    assigned: "col-md-1 text-center",
+                    id: "col-md-1",
+                };
+            }
+        });
+
         this.table_options.sortable = [
             "date",
             "code",
@@ -184,7 +232,7 @@ export default {
                 code: '',
                 assigned: '',
             };
-            vm.records = vm.tmpRecords;
+            vm.$refs.tableResults.refresh();
         },
 
         /**
@@ -197,20 +245,20 @@ export default {
          */
         filterTable() {
             const vm = this;
-            var varAssigned;
-            if (vm.filterBy.assigned == "true") {
-                varAssigned = true;
+
+            let params = {
+                query: vm.filterBy,
+                limit: 10,
+                ascending: 1,
+                page: 1,
+                byColumn: 0
             }
-            else if (vm.filterBy.assigned == "false") {
-                varAssigned = false;
-            }
-            vm.records = vm.tmpRecords.filter((rec) => {
-                return (vm.filterBy.date) ? (rec.date === vm.filterBy.date) : true;
-            }).filter((rec) => {
-                return (vm.filterBy.code) ? (rec.code === vm.filterBy.code) : true;
-            }).filter((rec) => {
-                return (vm.filterBy.assigned) ? (rec.assigned === varAssigned) : true;
-            })
+
+            axios.get(`${window.app_url}/budget/subspecific-formulations/vue-list`, {params: params})
+                .then(response => {
+                        vm.$refs.tableResults.data = response.data.data;
+                        vm.$refs.tableResults.count = response.data.count;
+                    });
         },
 
         /**
@@ -222,9 +270,9 @@ export default {
         asignR(id) {
             const vm = this;
             var dialog = bootbox.confirm({
-                title: "Esta seguro de asignar esta formulación?",
+                title: "¿Está seguro de asignar esta formulación?",
                 message:
-                    "Una vez asignado no puede ser modificado",
+                    " ",
                 size: "medium",
                 buttons: {
                     cancel: {
@@ -259,14 +307,60 @@ export default {
                 vm.initRecords(vm.route_list, "");
             }, 2000);
         },
-    },
-    mounted() {
-        // this.initRecords(this.route_list, "");
-        axios.get('budget/subspecific-formulations/vue-list').then(response => {
-            this.records = response.data.records;
-            // Variable usada para el reseteo de los filtros de la tabla.
-            this.tmpRecords = response.data.records;
-        });
+
+        confirmR(id) {
+            const vm = this;
+
+            if (
+                vm.has_confirm_permission == ''
+                || vm.has_confirm_permission == false
+                || vm.has_confirm_permission == 0
+            ) {
+                vm.showMessage(
+                    'custom', 'Acceso Denegado', 'danger', 'screen-error',
+                    'No tiene permisos para acceder a esta funcionalidad'
+                );
+
+                return;
+            }
+            var dialog = bootbox.confirm({
+                title: "¿Está seguro de confirmar esta formulación?",
+                message:
+                    "Una vez confirmado el presupuesto no puede ser modificado ni eliminado",
+                size: "medium",
+                buttons: {
+                    cancel: {
+                        label: '<i class="fa fa-times"></i> Cancelar',
+                    },
+                    confirm: {
+                        label: '<i class="fa fa-check"></i> Confirmar',
+                    },
+                },
+                callback: function (result) {
+                    if (result) {
+                        axios({
+                            method: "post",
+                            url: `${window.app_url}/budget/subspecific-formulations/${id}`,
+                            data: vm.confirmed,
+                        })
+                            .then((response) => {
+                                vm.errors = [];
+                                vm.showMessage("store");
+                            })
+                            .catch(error => {
+                                if (typeof (error.response) !== "undefined") {
+                                    vm.showMessage(
+                                        'custom', 'Acceso Denegado', 'danger', 'screen-error', error.response.data.message
+                                    );
+                                }
+                            });
+                    }
+                },
+            });
+            setTimeout(function () {
+                vm.initRecords(vm.route_list, "");
+            }, 2000);
+        },
     },
 };
 </script>

@@ -1,6 +1,10 @@
 <?php
 
+use Illuminate\Support\Str;
 use Modules\Budget\Models\BudgetSubSpecificFormulation;
+use Modules\Budget\Models\CodeSetting;
+use Modules\Budget\Models\ExchangeRate;
+use Modules\Budget\Models\Currency;
 
 if (! function_exists('budget_available')) {
     /**
@@ -75,5 +79,79 @@ if (! function_exists('budget_check_opened_account')) {
         }
 
         return $opened;
+    }
+}
+
+if (! function_exists('generate_budget_availability_code')) {
+    function generate_budget_availability_code($prefix, $code_length, $suffix, $model, $field)
+    {
+        $separator = config('budget.budget_availability.separator');
+        $newCode = 1;
+
+        $targetModel = $model::select($field)->where($field, 'like', "{$prefix}{$separator}%" . ($suffix ? "{$separator}{$suffix}" : ""))
+            ->withTrashed()->orderBy('id', 'desc')->first();
+
+        $codeSetting = CodeSetting::where([
+                'module' => 'purchase',
+                'table'  => 'purchase_budgetary_availabilities',
+                'field'  => 'code',
+                'type'   => null
+            ])->first();
+
+        if ($targetModel && $codeSetting) {
+            $segments = explode($separator, $codeSetting->format_code);
+            $position = array_search(true, array_map(fn($segment) => ctype_digit($segment) && $segment == str_repeat('0', strlen($segment)), $segments));
+
+            $segmentsNew = explode($separator, $targetModel?->$field ?? '');
+
+            $newCode += (int) $segmentsNew[$position];
+        }
+
+        if (strlen((string)$newCode) > $code_length) {
+            return ["error" => "El nuevo código excede la longitud permitida"];
+        }
+
+        return "{$prefix}{$separator}{$newCode}" . ($suffix ? "{$separator}{$suffix}" : "");
+    }
+}
+
+if (! function_exists('currency_converter')) {
+    /**
+     * Convierte un monto a la moneda por defecto
+     * @author Ing. Juan Rosas < jrosas@cenditel.gob.ve | juan.rosasr01@gmailcom>
+     *
+     * @param float $amount Monto a convertir
+     * @param string $date Fecha de la conversión
+     * @param int $fromCurrencyId ID de la moneda origen
+     * @return float|null Monto convertido o null si no se encuentra la tasa de cambio
+     */
+    function currency_converter(float $amount, string $date, Currency $fromCurrency, Currency $toCurrency)
+    {
+        if (!$toCurrency) {
+            return null;
+        }
+
+        // Si las monedas son iguales, no es necesario convertir
+        if ($fromCurrency->id == $toCurrency->id) {
+            return $amount;
+        }
+
+        // Obtener la tasa de cambio
+        $exchangeRate = ExchangeRate::where('from_currency_id', $fromCurrency->id)
+            ->where('to_currency_id', $toCurrency->id)
+            ->where('start_at', '<=', $date)
+            ->where(function ($query) use ($date) {
+                $query->where('end_at', '>=', $date)
+                        ->orWhereNull('end_at');
+            })
+            ->orderBy('start_at', 'desc')
+            ->first();
+
+        if (!$exchangeRate) {
+            return null;
+        }
+
+        // Realizar la conversión
+        return ($amount * $exchangeRate->amount);
     }
 }

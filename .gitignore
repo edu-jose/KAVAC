@@ -1,5 +1,6 @@
 /.phpintel
 /node_modules
+/public/build
 /public/hot
 /public/storage
 /public/css/
@@ -30,3 +31,4 @@ yarn-error.log
 .php_cs.cache
 phpstan.neon
 .vscode/
+modules/**/vendor

@@ -97,5 +97,25 @@
 				</div>
 			</div>
 		</div>
+
+		<div class="col-12">
+			<div class="card" id="helpCashFlowStatementFrom">
+				<div class="card-header">
+					<h6 class="card-title">
+						Estado de Flujo de efectivo
+						@include('buttons.help', [
+							'helpId' => 'AccountingCashFlow',
+							'helpSteps' => get_json_resource('ui-guides/reports/finance_statements/cash_flow_statement.json', 'accounting')
+						])
+					</h6>
+					<div class="card-btns">
+						@include('buttons.minimize')
+					</div>
+				</div>
+				<div class="card-body">
+					<accounting-report-cash-flow-statement year_old="{{ $yearOld }}" />
+				</div>
+			</div>
+		</div>
 	</div>
 @stop

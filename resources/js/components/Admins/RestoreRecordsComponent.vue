@@ -206,10 +206,8 @@ export default {
             const vm = this;
             if (vm.end_delete_at) {
                 $('#startDeleteAt').attr('max', vm.end_delete_at);
-            } else {
-                if (!$('#startDeleteAt').hasClass('no-restrict')) {
-                    $('#startDeleteAt').attr('max', vm.getCurrentDate());
-                }
+            } else if (!$('#startDeleteAt').hasClass('no-restrict')) {
+                $('#startDeleteAt').attr('max', vm.getCurrentDate());
             }
         }
     },
@@ -238,7 +236,7 @@ export default {
             bootbox.confirm('Está seguro de restaurar el registro seleccionado?', function(result) {
                 if (result) {
                     vm.loading = true;
-                    axios.post('/app/restore-record', {
+                    axios.post(window.app_url.replace(/\/$/, "") + '/app/restore-record', {
                         module: moduleClass,
                         id: id
                     }).then(response => {
@@ -269,7 +267,7 @@ export default {
         async readRecords() {
             const vm = this;
             vm.loading = true;
-            await axios.post('/app/deleted-records', {
+            await axios.post(window.app_url.replace(/\/$/, "") + '/app/deleted-records', {
                 start_delete_at: vm.start_delete_at,
                 end_delete_at: vm.end_delete_at,
                 module_delete_at: vm.module_delete_at

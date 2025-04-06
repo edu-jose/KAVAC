@@ -15,6 +15,7 @@ use Modules\Purchase\Models\PurchaseBaseBudget;
 use Modules\Purchase\Models\PurchaseRequirement;
 use Modules\Purchase\Jobs\PurchaseManageBaseBudget;
 use Illuminate\Foundation\Validation\ValidatesRequests;
+use Modules\Purchase\Models\PurchaseCommonBudgetaryAvailability;
 use Modules\Purchase\Models\PurchasePivotModelsToRequirementItem;
 
 /**
@@ -171,7 +172,8 @@ class PurchaseBaseBudgetController extends Controller
             'reviewedBy.payrollStaff',
             'verifiedBy.payrollStaff',
             'firstSignature.payrollStaff',
-            'secondSignature.payrollStaff'
+            'secondSignature.payrollStaff',
+            'purchaseCommonBudgetaryAvailability'
         )->find($id)], 200);
     }
 
@@ -313,14 +315,65 @@ class PurchaseBaseBudgetController extends Controller
      */
     public function sendNotify(Request $request)
     {
+        if (Module::has('Budget') && Module::isEnabled('Budget')) {
+            $codeSetting = \Modules\Budget\Models\CodeSetting::query()
+                ->where('table', 'purchase_budgetary_availabilities')->first();
+            if (!$codeSetting) {
+                $request->session()->flash('message', [
+                    'type' => 'other', 'title' => 'Alerta', 'icon' => 'screen-error', 'class' => 'growl-danger',
+                    'text' => 'Debe configurar previamente el formato para el código de disponibilidad presupuestaria a generar',
+                ]);
+
+                return response()->json(['result' => false, 'redirect' => route('budget.settings.index')], 200);
+            }
+        }
+
         if ($request->module == 'payroll' && Module::has('Payroll') && Module::isEnabled('Payroll')) {
             $payroll = \Modules\Payroll\Models\Payroll::with('payrollPaymentPeriod')->find($request->id);
             $payroll->payrollPaymentPeriod->availability_status = 'send' ;
             $payroll->payrollPaymentPeriod->save();
+
+            if (Module::has('Budget') && Module::isEnabled('Budget')) {
+                list($year, $month, $day) = explode("-", $payroll->created_at);
+
+                $code = generate_budget_availability_code(
+                    $codeSetting->format_prefix,
+                    strlen($codeSetting->format_digits),
+                    (empty($codeSetting->format_year)) ? '' : ((strlen($codeSetting->format_year) == 2) ? substr($year, 2, 2) : $year),
+                    \Modules\Purchase\Models\PurchaseCommonBudgetaryAvailability::class,
+                    'code'
+                );
+
+                PurchaseCommonBudgetaryAvailability::firstOrCreate([
+                    'budgetable_id' => $payroll->id,
+                    'budgetable_type' => \Modules\Payroll\Models\Payroll::class,
+                ], [
+                    'code' => $code,
+                ]);
+            }
         } else {
             $record = PurchaseBaseBudget::find($request->id);
             $record->send_notify = true;
             $record->save();
+
+            if (Module::has('Budget') && Module::isEnabled('Budget')) {
+                list($year, $month, $day) = explode("-", $record->date);
+
+                $code = generate_budget_availability_code(
+                    $codeSetting->format_prefix,
+                    strlen($codeSetting->format_digits),
+                    (empty($codeSetting->format_year)) ? '' : ((strlen($codeSetting->format_year) == 2) ? substr($year, 2, 2) : $year),
+                    \Modules\Purchase\Models\PurchaseCommonBudgetaryAvailability::class,
+                    'code'
+                );
+
+                PurchaseCommonBudgetaryAvailability::firstOrCreate([
+                    'budgetable_id' => $record->id,
+                    'budgetable_type' => \Modules\Purchase\Models\PurchaseBaseBudget::class,
+                ], [
+                    'code' => $code,
+                ]);
+            }
         }
 
         $user = User::find($request->user_id);

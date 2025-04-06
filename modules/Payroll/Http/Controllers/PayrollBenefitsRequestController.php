@@ -2,14 +2,15 @@
 
 namespace Modules\Payroll\Http\Controllers;
 
-use Illuminate\Contracts\Support\Renderable;
+use Carbon\Carbon;
+use App\Models\FiscalYear;
+use App\Models\CodeSetting;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Illuminate\Foundation\Validation\ValidatesRequests;
-use Modules\Payroll\Models\PayrollBenefitsRequest;
 use Modules\Payroll\Models\Institution;
-use App\Models\CodeSetting;
-use App\Models\FiscalYear;
+use Illuminate\Contracts\Support\Renderable;
+use Modules\Payroll\Models\PayrollBenefitsRequest;
+use Illuminate\Foundation\Validation\ValidatesRequests;
 
 /**
  * @class      PayrollBenefitsRequestController
@@ -119,6 +120,7 @@ class PayrollBenefitsRequestController extends Controller
     public function store(Request $request)
     {
         $this->validate($request, $this->validateRules, $this->messages);
+        $created_at = new Carbon($request->input('created_at'));
 
         $codeSetting = CodeSetting::where('table', 'payroll_benefits_requests')->first();
         if (is_null($codeSetting)) {
@@ -157,7 +159,8 @@ class PayrollBenefitsRequestController extends Controller
             'amount_requested' => $request->input('amount_requested'),
             'motive'           => $request->input('motive'),
             'payroll_staff_id' => $request->input('payroll_staff_id'),
-            'institution_id'   => $request->input('institution_id') ?? $institution->id
+            'institution_id'   => $request->input('institution_id') ?? $institution->id,
+            'created_at'       => $created_at->toDateTimeString()
         ]);
 
         $request->session()->flash('message', ['type' => 'store']);
@@ -221,6 +224,7 @@ class PayrollBenefitsRequestController extends Controller
      */
     public function update(Request $request, $id)
     {
+        $created_at = new Carbon($request->input('created_at'));
         /* Objeto asociado al modelo PayrollBenefitsRequest */
         $payrollBenefitsRequest = PayrollBenefitsRequest::find($id);
         $this->validate($request, $this->validateRules, $this->messages);
@@ -236,7 +240,8 @@ class PayrollBenefitsRequestController extends Controller
             'amount_requested' => $request->input('amount_requested'),
             'motive'           => $request->input('motive'),
             'payroll_staff_id' => $request->input('payroll_staff_id'),
-            'institution_id'   => $request->input('institution_id')
+            'institution_id'   => $request->input('institution_id'),
+            'created_at'       => $created_at->toDateTimeString()
         ]);
 
         $request->session()->flash('message', ['type' => 'update']);

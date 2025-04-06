@@ -66,7 +66,6 @@ class BudgetProjectController extends Controller
             'name' => ['required'],
             'description' => ['required'],
             'from_date' => ['required'],
-            'to_date' => ['required'],
         ];
 
         /* Define los mensajes de error para el formulario */
@@ -80,7 +79,6 @@ class BudgetProjectController extends Controller
             'name.required' => 'El campo nombre es obligatorio. ',
             'description.required' => 'El campo descripción es obligatorio. ',
             'from_date.required' => 'El campo fecha de inicio es obligatorio. ',
-            'to_date.required' => 'El campo fecha de finalización es obligatorio. ',
         ];
     }
 
@@ -380,7 +378,7 @@ class BudgetProjectController extends Controller
                 foreach ($budgetProject->specificActions as $specificAction) {
                     if (count($specificAction->subSpecificFormulations) > 0) {
                         foreach ($specificAction->subSpecificFormulations as $formulation) {
-                            if ($formulation->assigned == true) {
+                            if ($formulation->confirmed == true) {
                                 $budgetProject->disabled = true;
                                 if (!in_array($budgetProject, $records)) {
                                     array_push($records, $budgetProject);
@@ -463,7 +461,7 @@ class BudgetProjectController extends Controller
     {
         $project_assinegnet = [['id' => '', 'text' => 'Seleccione...']];
         $budgetProjectAssinegnets = BudgetProject::where('active', true)->with(['specificActions.subSpecificFormulations' => function ($query) {
-                $query->where('assigned', true);
+                $query->where('confirmed', true);
         }])->get();
         foreach ($budgetProjectAssinegnets as $budgetProjectAssinegnet) {
             if ($budgetProjectAssinegnet && count($budgetProjectAssinegnet->specificActions) > 0) {

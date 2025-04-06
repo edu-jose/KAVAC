@@ -95,6 +95,10 @@ class PayrollPositionController extends Controller
                         'nullable',
                         'max:200'
                     ],
+                    'process_type' => [
+                        'nullable',
+                        Rule::in(['operation', 'support'])
+                    ]
                 ]
             );
         } else {
@@ -112,10 +116,15 @@ class PayrollPositionController extends Controller
                     ],
                     'number_positions_assigned' => [
                         'required',
+                    ],
+                    'process_type' => [
+                        'nullable',
+                        Rule::in(['operation', 'support'])
                     ]
                 ],
                 [
                     'number_positions_assigned.required' => 'El campo cantidad de cargos asignados es obligatorio.',
+                    'process_type.in' => 'El campo tipo de proceso solo puede tener dos tipos (operacion o apoyo)'
                 ]
             );
         }
@@ -124,7 +133,8 @@ class PayrollPositionController extends Controller
             'name' => $request->name,
             'description' => $request->description,
             'number_positions_assigned' => $request->responsible ? 1 : $request->number_positions_assigned,
-            'responsible' => $request->responsible
+            'responsible' => $request->responsible,
+            'process_type' => $request->process_type
         ]);
 
         return response()->json([
@@ -209,6 +219,10 @@ class PayrollPositionController extends Controller
                         'nullable',
                         'max:200'
                     ],
+                    'process_type' => [
+                        'nullable',
+                        Rule::in(['operation', 'support'])
+                    ]
                 ]
             );
         } else {
@@ -225,11 +239,16 @@ class PayrollPositionController extends Controller
                     ],
                     'number_positions_assigned' => [
                         'required',
+                    ],
+                    'process_type' => [
+                        'nullable',
+                        Rule::in(['operation', 'support'])
                     ]
                 ],
                 [
                     'number_positions_assigned.required'
                     => 'El campo cantidad de cargos asignados es obligatorio.',
+                    'process_type.in' => 'El campo tipo de proceso solo puede tener dos tipos (operacion o apoyo)',
                 ]
             );
         }
@@ -239,6 +258,7 @@ class PayrollPositionController extends Controller
         $payrollPosition->number_positions_assigned = $request->responsible
             ? 1 : $request->number_positions_assigned;
         $payrollPosition->responsible = $request->responsible;
+        $payrollPosition->process_type = $request->process_type;
         $payrollPosition->save();
 
         return response()->json(['message' => 'Success'], 200);

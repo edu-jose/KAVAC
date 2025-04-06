@@ -9,8 +9,10 @@ use App\Models\FiscalYear;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\Rule;
+use Modules\Budget\Models\BudgetProject;
 use Modules\ProjectTracking\Models\ProjectTrackingProject;
 use Nwidart\Modules\Facades\Module;
+use App\Models\Department;
 
 /**
  * @class ProjectTrackingProjectController
@@ -48,6 +50,11 @@ class ProjectTrackingProjectController extends Controller
      */
     public function __construct()
     {
+        /** Establece permisos de acceso para cada método del controlador */
+        $this->middleware('permission:project.tracking.project.create', ['only' => ['store']]);
+        $this->middleware('permission:project.tracking.project.edit', ['only' => ['update']]);
+        $this->middleware('permission:project.tracking.project.delete', ['only' => 'destroy']);
+
         /* Establece permisos de acceso para cada método del controlador */
         // $this->middleware('permission:asset.setting.building');
         /* Define las reglas de validación para el formulario */
@@ -95,21 +102,55 @@ class ProjectTrackingProjectController extends Controller
      *
      * @return    \Illuminate\Http\JsonResponse
      */
-    public function index()
+    public function index(): JsonResponse
     {
+        $payroll = false;
+        $budget = false;
+        $projectsBudgetList = [];
+
+        if (Module::has('Budget') && Module::isEnabled('Budget')) {
+            $budget = true;
+            $ProjectsList = BudgetProject::query()
+            ->select([
+                'id',
+                'name',
+                'description',
+                'from_date',
+                'to_date',
+            ])->get()
+            ->all();
+
+            foreach ($ProjectsList as $project) {
+                $projectsBudgetList[] = [
+                    'id' => $project->id,
+                    'text' => $project->name,
+                    'description' => $project->description,
+                    'start_date' => $project->from_date,
+                    'end_date' => $project->to_date,
+                ];
+            }
+
+            // dd($projectsBudgetList);
+
+            // return response()->json([
+            //     'records' => $ProjectsList,
+            //     'payroll' => false,
+            //     'budget' => true,
+            // ], JsonResponse::HTTP_OK);
+        }
         /* Contiene los registros del personal, tipos de proyecto y los tipos de producto */
         $ProjectsList = ProjectTrackingProject::with([
             'Responsable',
             'ProjectType',
             'productTypes',
-            'Dependency',
+            'dependency',
         ])->get()
             ->all();
         foreach ($ProjectsList as $project) {
             $project['responsable_name'] = $project->Responsable->name;
             $project['project_type_name'] = $project->ProjectType->name;
             $project['type_product_name'] = $project->TypeProduct ? $project->TypeProduct->name : '';
-            $project['dependency_name'] = $project->Dependency->name;
+            $project['dependency_name'] = $project->dependency ? $project->dependency->name : '';
         }
         /* Condicional que oculta el registro común si existe el módulo de Talento Humano */
         if (Module::has('Payroll')) {
@@ -117,7 +158,12 @@ class ProjectTrackingProjectController extends Controller
         } else {
             $payroll = false;
         }
-        return response()->json(['records' => $ProjectsList, 'payroll' => $payroll], 200);
+        return response()->json([
+            'records' => $ProjectsList,
+            'projects_budget' => $projectsBudgetList,
+            'budget' => $budget,
+            'payroll' => $payroll
+        ], 200);
     }
 
     /**

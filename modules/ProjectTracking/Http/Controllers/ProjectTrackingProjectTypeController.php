@@ -14,6 +14,8 @@ use Modules\ProjectTracking\Models\ProjectTrackingProjectType;
  *
  * Controlador dedicado a procesar los 'request' de mostrar, crear, guardar, editar, actualizar y eliminar registros.
  *
+ * @author    Henry Paredes <hparedes@cenditel.gob.ve>
+ * @author Natanael Rojo <ndrojo@cenditel.gob.ve> | <rojonatanael99@gmail.com>
  * @author Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
  *
  * @license
@@ -46,7 +48,12 @@ class ProjectTrackingProjectTypeController extends Controller
      */
     public function __construct()
     {
-        /* Define las reglas de validación para el formulario */
+        /** Establece permisos de acceso para cada método del controlador */
+        $this->middleware('permission:project.tracking.project.type.create', ['only' => ['store']]);
+        $this->middleware('permission:project.tracking.project.type.edit', ['only' => ['update']]);
+        $this->middleware('permission:project.tracking.project.type.delete', ['only' => 'destroy']);
+
+        /** Define las reglas de validación para el formulario */
         $this->validateRules = [
             'name'                                  => ['required'],
         ];

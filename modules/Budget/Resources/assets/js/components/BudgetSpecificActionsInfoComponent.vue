@@ -42,7 +42,7 @@
                                         <strong>Fecha final:</strong>
                                         <div class="row" style="margin: 1px 0">
                                             <span class="col-md-12">
-                                                {{ format_date(record.to_date) }}
+                                                {{ record.to_date ? format_date(record.to_date) : 'No definido' }}
                                             </span>
                                         </div>
                                     </div>

@@ -70,6 +70,21 @@ class RecordsExport implements FromView
             ]);
         }
 
+        if ($this->data['report_type_id'] == "3") {
+            return view($this->data['report_view'], [
+                'records'        => $this->data['records'],
+                'institution'    => $this->data['institution'],
+                'currencySymbol' => $this->data['currencySymbol'],
+                'fiscal_year'    => $this->data['fiscal_year'],
+                'report_date'    => $this->data['report_date'],
+                'initialDate'    => $this->data['initialDate'],
+                'finalDate'      => $this->data['finalDate'],
+                'profile'        => $this->data['profile'],
+                'project'        => isset($this->data['project']) ? $this->data['project'] : null,
+                'date'           => $this->data['date'],
+            ]);
+        }
+
         throw new \Exception('No se encontró una vista válida para retornar');
     }
 }

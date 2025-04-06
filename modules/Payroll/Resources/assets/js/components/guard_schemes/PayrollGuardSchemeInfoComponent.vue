@@ -130,9 +130,9 @@
                                     <table class="table table-hover table-striped table-bordered table-responsive" style="display: table; height: 100%;">
                                         <thead style="top: -2px">
                                             <tr>
-                                                <th class="text-capitalize" rowspan="2">N°</th>
-                                                <th class="text-capitalize" style="min-width: 100px" rowspan="2">Ficha</th>
-                                                <th class="text-capitalize" style="min-width: 100px" rowspan="2">Trabajador</th>
+                                                <th class="text-capitalize" rowspan="3">N°</th>
+                                                <th class="text-capitalize" style="min-width: 100px" rowspan="3">Ficha</th>
+                                                <th class="text-capitalize" style="min-width: 100px" rowspan="3">Trabajador</th>
                                                 <th class="text-capitalize" style="min-width: 100px"
                                                     v-for="(month, index) in months" :key="index"
                                                     :colspan="daysPerMonth[month].length">
@@ -143,7 +143,16 @@
                                                 <th v-for="(field, index) in totalDays" :key="index"
                                                     class="text-capitalize cursor-pointer"
                                                     style="min-width: 100px; background-color: darkgray;">
-                                                    <span>{{ field['day'] + ' - ' + field['day_name'] }}</span>
+                                                    <span>{{ field['day'] }}</span>
+                                                </th>
+                                            </tr>
+                                            <tr>
+                                                <th v-for="(field, index) in totalDays" :key="index"
+                                                    class="text-capitalize cursor-pointer"
+                                                    :style="(field.style)
+                                                        ? 'min-width: 50px; background-color: darkgray;'
+                                                        : 'min-width: 50px; background-color: #dddddd'">
+                                                    <span>{{ field['day_code'] }}</span>
                                                 </th>
                                             </tr>
                                         </thead>
@@ -328,9 +337,13 @@
                         vm.daysPerMonth[str_date] = [];
                     }
                     vm.daysPerMonth[str_date].push(start_date.format("D"));
+                    const inicioMes = start_date.clone().startOf('month');
+                    const numeroSemanaMes = Math.ceil((start_date.date() + inicioMes.day()) / 7);
                     vm.totalDays.push({
                         'month': str_date,
                         'day': start_date.format("D"),
+                        'style': numeroSemanaMes % 2 === 0,
+                        'day_code': start_date.format("dd"),
                         'day_name': start_date.format("dddd"),
                         'view': false
                     });

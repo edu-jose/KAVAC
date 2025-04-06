@@ -2,6 +2,7 @@
 
 namespace Modules\Payroll\Exports\Sheets;
 
+use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Events\AfterSheet;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Concerns\WithEvents;
@@ -14,6 +15,7 @@ use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use Modules\Payroll\Models\PayrollSalaryTabulator;
 use Maatwebsite\Excel\Concerns\WithCustomStartCell;
+use Modules\Payroll\Models\PayrollSalaryTabulatorScale;
 
 /**
  * @class PayrollSalaryTabulatorsSheet
@@ -40,6 +42,13 @@ class PayrollSalaryTabulatorsSheet implements
      * @var  array $payrollSalaryTabulator
      */
     protected $payrollSalaryTabulator;
+
+    /**
+     * Fecha del periodo del pago de nomina
+     *
+     * @var  string $period_date
+     */
+    protected $period_date;
 
     /**
      * Información del salario
@@ -78,6 +87,16 @@ class PayrollSalaryTabulatorsSheet implements
     }
 
     /**
+     * Establece la fecha del período del pago de nómina
+     *
+     * @return string
+     */
+    public function setPayrollPaymentPeriod($payrollPaymentPeriod): string
+    {
+        return $this->period_date = $payrollPaymentPeriod;
+    }
+
+    /**
      * Establece el título de la hoja
      *
      * @return string
@@ -104,7 +123,132 @@ class PayrollSalaryTabulatorsSheet implements
      */
     public function collection(): Collection
     {
-        return new Collection($this->payrollSalaryTabulator);
+        $period_end = $this->period_date;
+        $payrollSalaryTabulator = PayrollSalaryTabulator::find($this->info['id']);
+        $payrollSalaryAdjustment = null;
+
+        if ($payrollSalaryTabulator) {
+            /* Revisar si el tabulador salarial tiene ajustes por la fecha del periodo final */
+            $salaryAdjustmentWithEndDate = $payrollSalaryTabulator->payrollSalaryAdjustments()
+                ->whereNotNull('end_increase_date')
+                ->whereDate('start_increase_date', '<=', $period_end)
+                ->whereDate('end_increase_date', '>=', $period_end);
+
+            if ($salaryAdjustmentWithEndDate->get()->isNotEmpty()) {
+                $payrollSalaryAdjustment = $salaryAdjustmentWithEndDate->first();
+            }
+
+            $salaryAdjustmentWithoutEndDate = $payrollSalaryTabulator->payrollSalaryAdjustments()
+                ->whereNull('end_increase_date')
+                ->whereDate('start_increase_date', '<=', $period_end);
+
+            if ($salaryAdjustmentWithoutEndDate->get()->isNotEmpty()) {
+                $payrollSalaryAdjustment = $salaryAdjustmentWithoutEndDate->first();
+            }
+        }
+
+        $fields  = [];
+        $records = [];
+        if ($payrollSalaryTabulator) {
+            $payrollSalaryTabulatorScales = PayrollSalaryTabulatorScale::where([
+                'payroll_salary_tabulator_id' => $payrollSalaryTabulator->id
+            ])->with([
+                'payrollSalaryTabulator',
+                'payrollHorizontalScale',
+                'payrollVerticalScale'
+            ])->get();
+
+            $salary_values = $payrollSalaryAdjustment?->salary_values ? json_decode($payrollSalaryAdjustment->salary_values) :  null;
+            $count = 0;
+
+            foreach ($payrollSalaryTabulatorScales as $payrollSalaryTabulatorScale) {
+                if (($payrollSalaryTabulator->payroll_horizontal_salary_scale_id > 0) && ($payrollSalaryTabulator->payroll_vertical_salary_scale_id > 0)) {
+                    $horizontalScale = $payrollSalaryTabulatorScale->payrollHorizontalScale;
+                    $verticalScale = $payrollSalaryTabulatorScale->payrollVerticalScale;
+                    if ($payrollSalaryAdjustment) {
+                        if ($payrollSalaryAdjustment->increase_of_type == 'absolute_value') {
+                            $fields[$horizontalScale->name . '-' . $verticalScale->name] =
+                                $payrollSalaryTabulatorScale->value + $payrollSalaryAdjustment->value;
+                        } elseif ($payrollSalaryAdjustment->increase_of_type == 'percentage') {
+                            $fields[$horizontalScale->name . '-' . $verticalScale->name] =
+                                $payrollSalaryTabulatorScale->value  * $payrollSalaryAdjustment->value / 100;
+                        } else {
+                            $fields[$horizontalScale->name . '-' . $verticalScale->name] =
+                                $salary_values ? $salary_values[$count]->value : $payrollSalaryTabulatorScale->value;
+                        }
+                    } else {
+                        $fields[$horizontalScale->name . '-' . $verticalScale->name] =
+                            $payrollSalaryTabulatorScale->value;
+                    }
+                } elseif ($payrollSalaryTabulator->payroll_horizontal_salary_scale_id > 0) {
+                    $horizontalScale = $payrollSalaryTabulatorScale->payrollHorizontalScale;
+                    if ($payrollSalaryAdjustment) {
+                        if ($payrollSalaryAdjustment->increase_of_type == 'absolute_value') {
+                            $fields[$horizontalScale->name] =
+                                $payrollSalaryTabulatorScale->value + $payrollSalaryAdjustment->value;
+                        } elseif ($payrollSalaryAdjustment->increase_of_type == 'percentage') {
+                            $fields[$horizontalScale->name] =
+                                $payrollSalaryTabulatorScale->value * $payrollSalaryAdjustment->value / 100;
+                        } else {
+                            $fields[$horizontalScale->name] =
+                                $salary_values ? $salary_values[$count]->value : $payrollSalaryTabulatorScale->value;
+                        }
+                    } else {
+                        $fields[$horizontalScale->name] = $payrollSalaryTabulatorScale->value;
+                    }
+                } elseif ($payrollSalaryTabulator->payroll_vertical_salary_scale_id > 0) {
+                    $verticalScale = $payrollSalaryTabulatorScale->payrollVerticalScale;
+                    if ($payrollSalaryAdjustment) {
+                        if ($payrollSalaryAdjustment->increase_of_type == 'absolute_value') {
+                            $fields[$verticalScale->name] =
+                                $payrollSalaryTabulatorScale->value + $payrollSalaryAdjustment->value;
+                        } elseif ($payrollSalaryAdjustment->increase_of_type == 'percentage') {
+                            $fields[$verticalScale->name] =
+                                $payrollSalaryTabulatorScale->value * $payrollSalaryAdjustment->value / 100;
+                        } else {
+                            $fields[$verticalScale->name] =
+                                $salary_values && isset($salary_values[$count])
+                                ? $salary_values[$count]->value
+                                : $payrollSalaryTabulatorScale->value;
+                        }
+                    } else {
+                        $fields[$verticalScale->name] = $payrollSalaryTabulatorScale->value;
+                    }
+                }
+                $count++;
+            }
+
+            if (($payrollSalaryTabulator->payroll_horizontal_salary_scale_id > 0) && ($payrollSalaryTabulator->payroll_vertical_salary_scale_id > 0)) {
+                $payrollHorizontalSalaryScale = $payrollSalaryTabulator->payrollHorizontalSalaryScale;
+                $payrollVerticalSalaryScale = $payrollSalaryTabulator->payrollVerticalSalaryScale;
+
+                foreach ($payrollVerticalSalaryScale->payrollScales as $payrollVerticalScale) {
+                    array_push($records, $payrollVerticalScale->name);
+                    foreach ($payrollHorizontalSalaryScale->payrollScales as $payrollHorizontalScale) {
+                        array_push(
+                            $records,
+                            $fields[$payrollHorizontalScale->name . '-' . $payrollVerticalScale->name]
+                        );
+                    }
+                }
+                $records = array_chunk($records, count($payrollHorizontalSalaryScale->payrollScales) + 1);
+            } elseif ($payrollSalaryTabulator->payroll_horizontal_salary_scale_id > 0) {
+                $payrollHorizontalSalaryScale = $payrollSalaryTabulator->payrollHorizontalSalaryScale;
+                array_push($records, 'Incidencia');
+                foreach ($payrollHorizontalSalaryScale->payrollScales as $payrollHorizontalScale) {
+                    array_push($records, $fields[$payrollHorizontalScale->name]);
+                }
+                $records = array_chunk($records, count($payrollHorizontalSalaryScale->payrollScales) + 1);
+            } elseif ($payrollSalaryTabulator->payroll_vertical_salary_scale_id > 0) {
+                $payrollVerticalSalaryScale = $payrollSalaryTabulator->payrollVerticalSalaryScale;
+                foreach ($payrollVerticalSalaryScale->payrollScales as $payrollVerticalScale) {
+                    array_push($records, $payrollVerticalScale->name);
+                    array_push($records, $fields[$payrollVerticalScale->name]);
+                }
+                $records = array_chunk($records, 2);
+            }
+            return new Collection($records);
+        }
     }
 
     /**

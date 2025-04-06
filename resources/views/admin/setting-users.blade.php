@@ -72,9 +72,9 @@
                                     <td class="text-center">
                                         @if ($user->deleted_at == null)
                                             {!! Form::button('<i class="fa fa-info-circle"></i>', [
-                                                'class' => 'btn btn-info btn-xs btn-icon btn-action',
+                                                'class' => 'btn btn-info btn-xs btn-icon btn-action btn-view-user-info',
                                                 'data-toggle' => 'tooltip', 'type' => 'button',
-                                                'onclick' => 'view_user_info('.$user->id.')',
+                                                'data-id' => $user->id,
                                                 'title' => __('Ver información del usuario'),
                                             ]) !!}
                                             @include('buttons.edit', ['route' => route('users.edit', $user->id)])
@@ -100,3 +100,21 @@
         </div>
     </div>
 @stop
+
+@section('extra-js')
+    @parent
+    <script nonce="{{ session()->get('nonce') }}">
+        $(document).ready(function() {
+            $('.btn-view-user-info').on('click', function() {
+                view_user_info($(this).data('id'));
+            });
+            $('.datatable').on('draw.dt', function () {
+                $('.btn-view-user-info').on('click', function() {
+                    if (!$('.modal').hasClass('show')) {
+                        view_user_info($(this).data('id'));
+                    }
+                });
+            } );
+        });
+    </script>
+@endsection

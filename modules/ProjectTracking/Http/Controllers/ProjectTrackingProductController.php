@@ -13,6 +13,7 @@ use Modules\ProjectTracking\Models\ProjectTrackingProduct;
 use Modules\ProjectTracking\Models\ProjectTrackingProject;
 use Modules\ProjectTracking\Models\ProjectTrackingSubProject;
 use Nwidart\Modules\Facades\Module;
+use App\Models\Department;
 
 /**
  * @class ProjectTrackingProductController
@@ -50,6 +51,11 @@ class ProjectTrackingProductController extends Controller
      */
     public function __construct()
     {
+        /** Establece permisos de acceso para cada método del controlador */
+        $this->middleware('permission:project.tracking.product.create', ['only' => ['store']]);
+        $this->middleware('permission:project.tracking.product.edit', ['only' => ['update']]);
+        $this->middleware('permission:project.tracking.product.delete', ['only' => 'destroy']);
+
         /* Define las reglas de validación para el formulario */
         $this->validateRules = [
             'name' => ['required', 'unique:Modules\ProjectTracking\Models\ProjectTrackingProduct,name', 'max:200'],
@@ -93,14 +99,23 @@ class ProjectTrackingProductController extends Controller
      */
     public function index(): JsonResponse
     {
-        /* Contiene los registros del personal, de proyecto, de subproyecto, de los tipos de producto y de las dependencias */
-        $ProductsList = ProjectTrackingProduct::with(['Project', 'SubProject', 'Responsable', 'TypeProduct', 'Dependency'])->get();
+        /*
+        Contiene los registros del personal, de proyecto, de subproyecto,
+         de los tipos de producto y de las dependencias
+         */
+        $ProductsList = ProjectTrackingProduct::with([
+            'Project',
+            'SubProject',
+            'Responsable',
+            'TypeProduct',
+            'dependency'
+            ])->get();
         foreach ($ProductsList as $product) {
             $product['responsable_name'] = $product->Responsable->name;
             $product['project_name'] = $product->Project ? $product->Project->name : '';
             $product['subproject_name'] = $product->SubProject ? $product->SubProject->name : '';
             $product['type_product_name'] = $product->TypeProduct->name;
-            $product['dependency_name'] = $product->Dependency->name;
+            $product['dependency_name'] = $product->dependency ? $product->dependency->name : '';
         }
         /* Condicional que oculta el registro común si existe el módulo de Talento Humano */
         if (Module::has('Payroll') && Module::isEnabled('Payroll')) {
@@ -262,7 +277,7 @@ class ProjectTrackingProductController extends Controller
             'Project',
             'Subproject',
             'productTypes',
-            'Dependency',
+            'dependency',
         ])->find($id);
         $selectedProductTypes = [];
         foreach ($products->productTypes as $productType) {
@@ -295,7 +310,7 @@ class ProjectTrackingProductController extends Controller
             'Subproject',
             'productTypes',
             // 'TypeProduct',
-            'Dependency',
+            'dependency',
         ])->find($id);
         $selectedProductTypes = [];
         foreach ($products->productTypes as $productType) {

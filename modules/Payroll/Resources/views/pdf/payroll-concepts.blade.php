@@ -9,7 +9,6 @@
             <th span="1">Tipo de nómina</th>
             <th span="1">Beneficiario</th>
             <th span="1">Cuenta contable del beneficiario</th>
-            <th span="1">Genera orden de pago</th>
         </tr>
     </thead>
     <tbody>
@@ -53,9 +52,6 @@
            </td>
            <td>
                 {{ $records->receiver ? $records->receiver['accounting_account'] . '-' . $records->receiver['denomination'] : 'No definido' }}
-            </td>
-            <td>
-                {{ $records->pay_order == true ? 'Si' : 'No' }}
             </td>
         </tr>
         @endforeach

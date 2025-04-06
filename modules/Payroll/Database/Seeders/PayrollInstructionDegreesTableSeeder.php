@@ -58,6 +58,12 @@ class PayrollInstructionDegreesTableSeeder extends Seeder
 
         DB::transaction(function () use ($payrollInstructionDegrees) {
             foreach ($payrollInstructionDegrees as $payrollInstructionDegree) {
+                $degree = PayrollInstructionDegree::where('name', $payrollInstructionDegree['name'])->withTrashed()->first();
+                if ($degree && $degree->deleted_at) {
+                    $degree->deleted_at = null;
+                    $degree->save();
+                    continue;
+                }
                 PayrollInstructionDegree::updateOrCreate(
                     ['name' => $payrollInstructionDegree['name']],
                     [

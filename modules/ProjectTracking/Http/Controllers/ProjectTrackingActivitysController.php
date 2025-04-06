@@ -2,11 +2,13 @@
 
 namespace Modules\ProjectTracking\Http\Controllers;
 
-use Illuminate\Contracts\Support\Renderable;
+use App\Models\FiscalYear;
+use App\Models\CodeSetting;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Controller;
-use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Routing\Controller;
+use Illuminate\Contracts\Support\Renderable;
+use Illuminate\Foundation\Validation\ValidatesRequests;
 use Modules\ProjectTracking\Models\ProjectTrackingActivity;
 
 /**
@@ -45,20 +47,27 @@ class ProjectTrackingActivitysController extends Controller
      */
     public function __construct()
     {
+        /** Establece permisos de acceso para cada método del controlador */
+        $this->middleware('permission:project.tracking.activity.create', ['only' => ['store']]);
+        $this->middleware('permission:project.tracking.activity.edit', ['only' => ['update']]);
+        $this->middleware('permission:project.tracking.activity.delete', ['only' => 'destroy']);
+
         /* Define las reglas de validación para el formulario */
         $this->validateRules = [
             'orden'                               => ['required'],
             'name_activity'                       => ['required'],
             'project_tracking_project_types_id'   => ['required'],
             'project_tracking_type_products_id' => ['required'],
+            'code' => ['nullable']
         ];
 
         /* Define los mensajes de validación para las reglas del formulario */
         $this->messages = [
-            'name_activity.required'                               => 'El campo nombre de la actividad  es obligatorio.',
+            'name_activity.required'                      => 'El campo nombre de la actividad  es obligatorio.',
             'orden.required'                              => 'El campo orden es obligatorio.',
             'project_tracking_project_types_id.required'  => 'El campo tipo de Proyecto es obligatorio.',
             'project_tracking_type_products_id.required' => 'El campo tipo de producto es obligatorio.',
+            'code' => 'El campo de código de actividad es obligatorio'
         ];
     }
 
@@ -100,12 +109,36 @@ class ProjectTrackingActivitysController extends Controller
     {
         $this->validate($request, $this->validateRules, $this->messages);
 
+        $codeSetting = CodeSetting::where('table', 'project_tracking_activities')->first();
+
+        if (is_null($codeSetting)) {
+            $request->session()->flash('message', [
+                'type' => 'other', 'title' => 'Alerta', 'icon' => 'screen-error', 'class' => 'growl-danger',
+                'text' => 'Debe configurar previamente el formato para el código a generar'
+            ]);
+            return response()->json(['result' => false, 'redirect' => route('projecttracking.setting.index')], 200);
+        }
+
+        $currentFiscalYear = FiscalYear::select('year')
+            ->where(['active' => true, 'closed' => false])->orderBy('year', 'desc')->first();
+
+        $code = generate_registration_code(
+            $codeSetting->format_prefix,
+            strlen($codeSetting->format_digits),
+            (strlen($codeSetting->format_year) == 2) ? (isset($currentFiscalYear) ?
+                substr($currentFiscalYear->year, 2, 2) : date('y')) : (isset($currentFiscalYear) ?
+                $currentFiscalYear->year : date('Y')),
+            ProjectTrackingActivity::class,
+            $codeSetting->field
+        );
+
         $activity = ProjectTrackingActivity::create([
             'orden' => $request->input('orden'),
             'name_activity' => $request->input('name_activity'),
             'description' => $request->input('description'),
             'project_tracking_type_products_id'  => $request->input('project_tracking_type_products_id'),
-            'project_tracking_project_types_id'  => $request->input('project_tracking_project_types_id')
+            'project_tracking_project_types_id'  => $request->input('project_tracking_project_types_id'),
+            'code' => $code
         ]);
 
         return response()->json(['record' => $activity, 'message' => 'Success'], 200);

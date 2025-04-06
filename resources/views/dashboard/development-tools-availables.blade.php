@@ -112,7 +112,7 @@
 
 @section('extra-js')
     @parent
-    <script>
+    <script nonce="{{ session()->get('nonce') }}">
         $(document).ready(function() {
             $('input[name=demo]').closest('.bootstrap-switch-wrapper').attr({
                 'title': '{{ __('Establecer la aplicación en modo demostración') }}',

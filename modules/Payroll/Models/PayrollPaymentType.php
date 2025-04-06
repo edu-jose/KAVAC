@@ -41,7 +41,8 @@ class PayrollPaymentType extends Model implements Auditable
     protected $fillable = [
         'code', 'name', 'payment_periodicity', 'correlative', 'start_date',
         'payment_relationship', 'associated_records', 'finance_bank_account_id', 'accounting_account_id',
-        'order', 'individual', 'accounting_entry_category_id', 'finance_payment_method_id', 'receipt', 'skip_moments'
+        'order', 'individual', 'accounting_entry_category_id', 'finance_payment_method_id', 'receipt', 'skip_moments',
+        'ordinary_payment', 'is_trust'
     ];
 
     /**

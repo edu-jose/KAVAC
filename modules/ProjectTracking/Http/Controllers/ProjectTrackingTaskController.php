@@ -7,9 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 use Modules\ProjectTracking\Models\ProjectTrackingProduct;
 use Modules\ProjectTracking\Models\ProjectTrackingProject;
 use Modules\ProjectTracking\Models\ProjectTrackingSubProject;
+use Modules\ProjectTracking\Models\ProjectTrackingSubTask;
 use Modules\ProjectTracking\Models\ProjectTrackingTask;
 
 /**
@@ -24,6 +26,35 @@ use Modules\ProjectTracking\Models\ProjectTrackingTask;
 class ProjectTrackingTaskController extends Controller
 {
     use ValidatesRequests;
+
+    /**
+     * Arreglo con las reglas de validación sobre los datos de un formulario
+     *
+     * @var array $validateRules
+     */
+    protected $validateRules;
+    /**
+     * Arreglo con los mensajes para las reglas de validación
+     *
+     * @var array $messages
+     */
+    protected $messages;
+
+    /**
+     * Define la configuración de la clase
+     *
+     * @author    Natanael Rojo <ndrojo@cenditel.gob.ve> | <rojonatanael99@gmail.com>
+     *
+     * @return    void
+     */
+    public function __construct()
+    {
+        /** Establece permisos de acceso para cada método del controlador */
+        $this->middleware('permission:project.tracking.task.index', ['only' => ['index']]);
+        $this->middleware('permission:project.tracking.task.create', ['only' => ['store']]);
+        $this->middleware('permission:project.tracking.task.edit', ['only' => ['update']]);
+        $this->middleware('permission:project.tracking.task.delete', ['only' => 'destroy']);
+    }
 
     /**
      * Muestra el listado de tareas
@@ -93,44 +124,76 @@ class ProjectTrackingTaskController extends Controller
             'tasks.*.end_date' => ['required', 'after_or_equal:tasks.*.start_date'],
             'tasks.*.activity_status_id' => ['required'],
             'tasks.*.weight' => ['nullable', 'integer', 'Min:1', 'Max:100'],
+            'tasks.*.subTasks.*.name' => ['sometimes', 'required'],
+            'tasks.*.subTasks.*.description' => ['sometimes', 'required'],
         ];
         $messages = [];
         foreach ($request->input('tasks', []) as $index => $task) {
-            $messages["tasks.{$index}.project_name.required"] = "El campo Proyecto en la tarea " . ($index + 1) . " es obligatorio";
-            $messages["tasks.{$index}.subproject_name.required"] = "El campo Subproyecto en la tarea " . ($index + 1) . " es obligatorio";
-            $messages["tasks.{$index}.product_name.required"] = "El campo Producto en la tarea " . ($index + 1) . " es obligatorio";
-            $messages["tasks.{$index}.activity_plan_id.required"] = "El campo Actividad en la tarea " . ($index + 1) . " es obligatorio";
-            $messages["tasks.{$index}.name.required"] = "El campo Nombre en la tarea " . ($index + 1) . " es obligatorio";
-            $messages["tasks.{$index}.description.max"] = "El campo Descripción en la tarea " . ($index + 1) . " no debe superar los 250 caracteres";
-            $messages["tasks.{$index}.employers_id.required"] = "El campo responsable de la tarea en la tarea " . ($index + 1) . " es obligatorio";
-            $messages["tasks.{$index}.priority_id.required"] = "El campo Prioridad en la tarea " . ($index + 1) . " es obligatorio";
-            $messages["tasks.{$index}.start_date.required"] = "El campo Fecha de inicio en la tarea " . ($index + 1) . " es obligatorio";
-            $messages["tasks.{$index}.end_date.required"] = "El campo Fecha de fin en la tarea " . ($index + 1) . " es obligatorio";
-            $messages["tasks.{$index}.end_date.after_or_equal"] = "La fecha de inicio no puede ser posterior a la fecha de fin en la tarea " . ($index + 1);
-            $messages["tasks.{$index}.start_date.before_or_equal"] = "La fecha de fin no puede ser anterior a la fecha de inicio en la tarea " . ($index + 1);
-            $messages["tasks.{$index}.weight.integer"] = "El campo Peso en la tarea " . ($index + 1) . " debe ser un valor numerico";
-            $messages["tasks.{$index}.weight.between"] = "El campo Peso en la tarea " . ($index + 1) . " debe estar entre 1 y 100";
-            $messages["tasks.{$index}.activity_status_id.required"] = "El campo estatus de la actividad  en la tarea " . ($index + 1) . " es obligatorio";
+            $messages["tasks.{$index}.project_name.required"] = "El campo Proyecto en la tarea "
+             . ($index + 1) . " es obligatorio";
+            $messages["tasks.{$index}.subproject_name.required"] = "El campo Subproyecto en la tarea "
+             . ($index + 1) . " es obligatorio";
+            $messages["tasks.{$index}.product_name.required"] = "El campo Producto en la tarea "
+            . ($index + 1) . " es obligatorio";
+            $messages["tasks.{$index}.activity_plan_id.required"] = "El campo Actividad en la tarea "
+             . ($index + 1) . " es obligatorio";
+            $messages["tasks.{$index}.name.required"] = "El campo Nombre en la tarea "
+             . ($index + 1) . " es obligatorio";
+            $messages["tasks.{$index}.description.max"] = "El campo Descripción en la tarea "
+             . ($index + 1) . " no debe superar los 250 caracteres";
+            $messages["tasks.{$index}.employers_id.required"] = "El campo responsable de la tarea en la tarea "
+             . ($index + 1) . " es obligatorio";
+            $messages["tasks.{$index}.priority_id.required"] = "El campo Prioridad en la tarea "
+             . ($index + 1) . " es obligatorio";
+            $messages["tasks.{$index}.start_date.required"] = "El campo Fecha de inicio en la tarea "
+             . ($index + 1) . " es obligatorio";
+            $messages["tasks.{$index}.end_date.required"] = "El campo Fecha de fin en la tarea "
+             . ($index + 1) . " es obligatorio";
+            $messages["tasks.{$index}.end_date.after_or_equal"] =
+            "La fecha de inicio no puede ser posterior a la fecha de fin en la tarea "
+             . ($index + 1);
+            $messages["tasks.{$index}.start_date.before_or_equal"] =
+            "La fecha de fin no puede ser anterior a la fecha de inicio en la tarea "
+             . ($index + 1);
+            $messages["tasks.{$index}.weight.integer"] = "El campo Peso en la tarea "
+             . ($index + 1) . " debe ser un valor numerico";
+            $messages["tasks.{$index}.weight.between"] = "El campo Peso en la tarea "
+             . ($index + 1) . " debe estar entre 1 y 100";
+            $messages["tasks.{$index}.activity_status_id.required"] = "El campo estatus de la actividad  en la tarea "
+             . ($index + 1) . " es obligatorio";
         }
 
         $this->validate($request, $rules, $messages);
 
-        foreach ($request->tasks as $task) {
-            ProjectTrackingTask::create([
-                'project_name' => $task['project_name'],
-                'subproject_name' => $task['subproject_name'],
-                'product_name' => $task['product_name'],
-                'activity_plan_id' => $task['activity_plan_id'],
-                'name' => $task['name'],
-                'description' => $task['description'],
-                'employers_id' => $task['employers_id'],
-                'priority_id' => $task['priority_id'],
-                'start_date' => $task['start_date'],
-                'end_date' => $task['end_date'],
-                'activity_status_id' => $task['activity_status_id'],
-                'weight' => $task['weight'],
-            ]);
-        }
+        DB::transaction(function () use ($request) {
+            foreach ($request->tasks as $task) {
+                $projectTrackingTask = ProjectTrackingTask::create([
+                    'project_name' => $task['project_name'],
+                    'subproject_name' => $task['subproject_name'],
+                    'product_name' => $task['product_name'],
+                    'activity_plan_id' => $task['activity_plan_id'],
+                    'name' => $task['name'],
+                    'description' => $task['description'],
+                    'employers_id' => $task['employers_id'],
+                    'priority_id' => $task['priority_id'],
+                    'start_date' => $task['start_date'],
+                    'end_date' => $task['end_date'],
+                    'activity_status_id' => $task['activity_status_id'],
+                    'depending_task_id' => $task['depending_task_id'],
+                    'weight' => $task['weight']
+                ]);
+
+                if ($task['subTasks'] && count($task['subTasks']) > 0) {
+                    foreach ($task['subTasks'] as $subTask) {
+                        ProjectTrackingSubTask::create([
+                            'task_id' => $projectTrackingTask->id,
+                            'name' => $subTask['name'],
+                            'description' => $subTask['description']
+                        ]);
+                    }
+                }
+            }
+        });
 
         return response()->json(['result' => true, 'redirect' => route('projecttracking.tasks.index')], 200);
     }
@@ -187,6 +250,7 @@ class ProjectTrackingTaskController extends Controller
                 'Responsable',
                 'Priority',
                 'ActivityStatus',
+                'subTasks',
             ])->first();
         return response()->json(['records' => $task], 200);
     }
@@ -218,6 +282,8 @@ class ProjectTrackingTaskController extends Controller
                 'end_date' => ['required', 'after_or_equal:start_date'],
                 'activity_status_id' => ['required'],
                 'weight' => ['nullable', 'integer', 'Min:1', 'Max:100'],
+                'subTasks.*.name' => ['sometimes', 'required'],
+                'subTasks.*.description' => ['sometimes', 'required'],
             ],
             [],
             [
@@ -231,9 +297,13 @@ class ProjectTrackingTaskController extends Controller
                 'end_date' => 'Fecha de culminación',
                 'activity_status_id' => 'Estatus de la Actividad',
                 'weight' => 'Peso',
+                'subTasks.*.name' => 'Nombre de la subtarea',
+                'subTasks.*.description' => 'Descripción de la subtarea',
             ]
         );
+
         $task = ProjectTrackingTask::find($request->input('id'));
+
         if (isset($request->project_name)) {
             $task->project_name = $request->input('project_name');
         } elseif (isset($request->subproject_name)) {
@@ -241,6 +311,7 @@ class ProjectTrackingTaskController extends Controller
         } else {
             $task->product_name = $request->input('product_name');
         }
+
         $task->activity_plan_id = $request->input('activity_plan_id');
         $task->name = $request->input('name');
         $task->description = $request->input('description');
@@ -249,8 +320,28 @@ class ProjectTrackingTaskController extends Controller
         $task->start_date = $request->input('start_date');
         $task->end_date = $request->input('end_date');
         $task->activity_status_id = $request->input('activity_status_id');
+        $task->depending_task_id = $request->input('depending_task_id');
         $task->weight = $request->input('weight');
         $task->save();
+
+        $subTasks = $request->input('subTasks');
+
+        foreach ($subTasks as $subTaskData) {
+            if (isset($subTaskData['id'])) {
+                $subTask = ProjectTrackingSubTask::find($subTaskData['id']);
+                $subTask->task_id = $task->id;
+                $subTask->name = $subTaskData['name'];
+                $subTask->description = $subTaskData['description'];
+                $subTask->save();
+            } else {
+                ProjectTrackingSubTask::create([
+                    'task_id' => $task->id,
+                    'name' => $subTaskData['name'],
+                    'description' => $subTaskData['description']
+                ]);
+            }
+        }
+
         return response()->json(['result' => true, 'redirect' => route('projecttracking.tasks.index')], 200);
     }
 
@@ -265,7 +356,7 @@ class ProjectTrackingTaskController extends Controller
      */
     public function recordInfo($id): JsonResponse
     {
-        $records = ProjectTrackingTask::where('id', $id)
+        $records = ProjectTrackingTask::where('id', $id)?->with('dependingTask')
             ->get()
             ->map(function (ProjectTrackingTask $record): array {
                 return array_merge($record->toArray(), [
@@ -275,7 +366,9 @@ class ProjectTrackingTaskController extends Controller
                     'priority' => $record->priority,
                     'activity_name' => $record->activity->name_activity,
                     'activity_status_name' => $record->activityStatus->name,
+                    'depending_task_name' => $record?->dependingTask?->name ?? null,
                     'employers_name' => $record->responsable->projectTrackingPersonalRegister->fullName,
+                    'subtasks' => $record?->subTasks,
                 ]);
             });
         return response()->json(['records' => $records[0]], 200);
@@ -286,14 +379,14 @@ class ProjectTrackingTaskController extends Controller
      *
      * @author    Oscar González <xxmaestroyixx@gmail.com/ojgonzalez@cenditel.gob.ve>
      *
-     * @param     integer    $id    Identificador del registro
+     * @param     ProjectTrackingTask $projectTrackingTask  Registro a eliminar.
      *
      * @return    \Illuminate\Http\JsonResponse
      */
-    public function destroy($id): JsonResponse
+    public function destroy(ProjectTrackingTask $projectTrackingTask): JsonResponse
     {
-        $task = ProjectTrackingTask::find($id);
-        $task->delete();
+        $projectTrackingTask->subTasks()->delete();
+        $projectTrackingTask->delete();
         return response()->json(['message' => 'destroy'], 200);
     }
 
@@ -316,6 +409,7 @@ class ProjectTrackingTaskController extends Controller
                     'subproject' => $record->subproject,
                     'product' => $record->product,
                     'employers_name' => $record->responsable->projectTrackingPersonalRegister->fullName,
+                    'subTasks' => $record->subTasks,
                 ]);
             });
         return response()->json(['records' => $records], 200);
@@ -341,9 +435,68 @@ class ProjectTrackingTaskController extends Controller
             $endDateEntity = Carbon::parse($entity->end_date);
             $startDateTask = Carbon::parse($request->tasks[$currentIndex]['start_date']);
             $endDateTask = Carbon::parse($request->tasks[$currentIndex]['end_date']);
-            if (!$startDateTask->between($startDateEntity, $endDateEntity) && !$endDateTask->between($startDateEntity, $endDateEntity)) {
-                $fail("La fecha de inicio y fin de la tarea " . $currentIndex + 1 . " debe estar entre {$startDateEntity->format('d/m/Y')} y {$endDateEntity->format('d/m/Y')}.");
+            if (
+                !$startDateTask->between($startDateEntity, $endDateEntity)
+                && !$endDateTask->between($startDateEntity, $endDateEntity)
+            ) {
+                $fail(
+                    "La fecha de inicio y fin de la tarea " . $currentIndex + 1 .
+                    " debe estar entre {$startDateEntity->format('d/m/Y')} y {$endDateEntity->format('d/m/Y')}."
+                );
             }
         }
+    }
+
+    /**
+     * Retorna un json con el cambio del estatus de la actividad
+     *
+     * @method changeActivityStatus
+     *
+     * @author Pedro Contreras <pdrocont@gmail.com/pmcontreras@cenditel.gob.ve>
+     *
+     * @return Renderable    [descripción de los datos devueltos]
+     */
+    public function changeActivityStatus(Request $request)
+    {
+        if ($request->activity_status_id != null) {
+            $task = ProjectTrackingTask::query()->find($request->id);
+            $task->activity_status_id = $request->activity_status_id;
+            $task->save();
+            return response()->json(['message' => 'success'], JsonResponse::HTTP_OK);
+        }
+
+        return response()->json(['message' => 'error'], JsonResponse::HTTP_BAD_REQUEST);
+    }
+
+    /**
+     * Retorna un json con todas las tareas
+     *
+     * @method getTasks
+     *
+     * @author Pedro Contreras <pdrocont@gmail.com/pmcontreras@cenditel.gob.ve>
+     *
+     * @return Renderable    [descripción de los datos devueltos]
+     */
+    public function getTasks(Request $request): JsonResponse
+    {
+        $query = ProjectTrackingTask::query()
+            ->where('activity_plan_id', $request->activity_plan_id)
+            ->where('id', '!=', $request->id)
+            ->where(function ($query) use ($request) {
+                $query->where('depending_task_id', '!=', $request->id)
+                    ->orWhereNull('depending_task_id');
+            });
+
+        $tasks = $query->get()->map(function ($task) {
+            return [
+                'id' => $task->id,
+                'text' => $task->name,
+            ];
+        })->prepend([
+            'id' => '',
+            'text' => 'Seleccione...',
+        ]);
+
+        return response()->json($tasks, JsonResponse::HTTP_OK);
     }
 }

@@ -36,7 +36,6 @@ class UpdateProjectTrackingActivityStatuses extends Migration
      */
     public function down()
     {
-        Schema::table('project_tracking_activity_statuses', function (Blueprint $table) {
-        });
+        //
     }
 }

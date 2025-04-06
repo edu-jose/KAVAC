@@ -1,16 +1,14 @@
-<table width="100%" cellpadding="4" style="font-size: 10rem">
+<table width="100%" cellpadding="4" style="font-size: 8rem">
     <tbody>
         <tr>
-            <td width="25%" style="font-weight: bold;">Institución:</td>
+            <td width="10%" style="font-weight: bold;">Institución:</td>
             <td width="75%">{{ $institution->name }}</td>
         </tr>
         <tr>
-            <td width="25%" style="font-weight: bold;">Expresado en:</td>
-            <td width="75%">{{ $currency->description }}</td>
-        </tr>
-        <tr>
-            <td width="25%" style="font-weight: bold;">Año Fiscal:</td>
-            <td width="75%">{{ $fiscal_year }}</td>
+            <td width="12%" style="font-weight: bold;">Expresado en:</td>
+            <td width="25%">{{ $currency->description }}</td>
+            <td width="10%" style="font-weight: bold;">Año Fiscal:</td>
+            <td width="25%">{{ $fiscal_year }}</td>
         </tr>
         <tr>
             <td colspan="2">&nbsp;</td>

@@ -63,6 +63,17 @@ Route::get('/refresh-captcha', [LoginController::class, 'refreshCaptcha']);
 
 /*
  | -----------------------------------------------------------------------
+ | Ruta para recargar el token csrf
+ | -----------------------------------------------------------------------
+ |
+ | Gestiona el proceso para generar un nuevo token csrf a petición del usuario
+ */
+Route::get('/refresh-csrf-token', function () {
+    return csrf_token();
+})->name('refresh.csrf.token');
+
+/*
+ | -----------------------------------------------------------------------
  | Ruta para generar logs del sistema
  | -----------------------------------------------------------------------
  |
@@ -232,6 +243,16 @@ Route::group(['middleware' => ['auth', 'verified']], function () {
     /* Rutas para la gestión de Parroquias de Municipios */
     Route::resource('parishes', 'ParishController', ['except' => ['create', 'show', 'edit']]);
 
+    /* Rutas para la gestión de localidades */
+    Route::resource('localities', 'LocalityController', ['except' => ['create', 'show', 'edit']]);
+    Route::get('get-localities/{parish?}', 'LocalityController@getLocalities')->name('get-localities');
+    Route::get('get-all-localities', 'LocalityController@getAll')->name('get-all-localities');
+
+    /* Rutas para la gestión de regiones */
+    Route::resource('regions', 'RegionController', ['except' => ['create', 'show', 'edit']]);
+    Route::get('get-regions/{estate?}', 'RegionController@getRegions')->name('get-regions');
+    Route::get('get-all-regions', 'RegionController@getAll')->name('get-all-regions');
+
     /* Rutas para gestionar los géneros */
     Route::resource('genders', 'GenderController', ['except' => ['create', 'show', 'edit']]);
 
@@ -271,7 +292,8 @@ Route::group(['middleware' => ['auth', 'verified']], function () {
         'get-select-data-custom/{parent_name}/{parent_id}/{model}/{module_name?}/{fk?}',
         'CommonController@getSelectDataCustom'
     )->name('get-select-data-custom');
-    /* Ruta para obtener datos de selects dependientes dinámicamente sin que ordene por el nombre y discriminando que sean atributos activos*/
+    /* Ruta para obtener datos de selects dependientes dinámicamente
+    sin que ordene por el nombre y discriminando que sean atributos activos*/
     Route::get(
         'get-select-data-active/{parent_name}/{parent_id}/{model}/{module_name?}/{fk?}',
         'CommonController@getSelectActive'

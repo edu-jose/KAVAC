@@ -32,5 +32,7 @@ class AccountingDatabaseSeeder extends Seeder
         $this->call(AccountingAccountsTableSeeder::class);
         /* Seeder para registrar categorias */
         $this->call(AccountingEntryCategoriesTableSeeder::class);
+        /* Seeder para registrar tipos de actividad */
+        $this->call(AccountingTypeActivitiesTableSeeder::class);
     }
 }

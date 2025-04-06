@@ -18,7 +18,7 @@
                     <i class="now-ui-icons ui-1_email-85"></i>
                 </span>
                 {!! Form::email('email', request()->email ?? old('email'), [
-                    'class' => 'form-control', 'placeholder' => __('Correo'), 'required' => 'required', 
+                    'class' => 'form-control', 'placeholder' => __('Correo'), 'required' => 'required',
                     'id' => 'email', 'data-toggle' => 'tooltip', 'title' => __('Indique el correo electrónico'),
                     'readonly' => 'readonly'
                 ]) !!}
@@ -64,8 +64,8 @@
         <div class="footer text-center">
             <div class="row">
                 <div class="col-6">
-                    <button class="btn btn-primary btn-round btn-block" data-toggle="tooltip" type="button"
-                            title="{{ __('Presione el botón para regresar') }}" onclick="location.href='/'">
+                    <button class="btn btn-primary btn-round btn-block btnn-back" data-toggle="tooltip" type="button"
+                            title="{{ __('Presione el botón para regresar') }}">
                         {{ __('Cancelar') }}
                     </button>
                 </div>

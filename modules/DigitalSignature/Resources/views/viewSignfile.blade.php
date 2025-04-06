@@ -81,7 +81,7 @@
     </div>
 @stop
 
-<script>
+<script nonce="{{ session()->get('nonce') }}">
     function signFilePdf() {
         console.log('signFile');
         let data = new FormData();
