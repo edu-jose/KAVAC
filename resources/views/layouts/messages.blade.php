@@ -1,4 +1,4 @@
-<script nonce="{{ session()->get('nonce') }}">
+<script>
     $(document).ready(function() {
         @if (session('message'))
             {{-- Mensajes de la aplicación --}}
@@ -66,7 +66,7 @@
                     sticky: false,
                     time: 2500
                 });
-
+                
                 @if (Route::current()->getName() !== 'settings.index')
                     setTimeout(() => {
                         location.href = "{{ route('settings.index') }}";

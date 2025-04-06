@@ -1,8 +1,3 @@
-@php
-    function convertCurrency($conversion_history, $amount, $date, $decimal_places, $separator, $decimal_separator) {
-        return number_format(($conversion_history[$date] * $amount), $decimal_places, $decimal_separator, $separator);
-    }
-@endphp
 <table
     width="100%"
     cellpadding="4"
@@ -23,7 +18,7 @@
         </tr>
         <tr>
             <td width="20%" style="font-weight: bold;">Moneda:</td>
-            <td width="80%">{{ $currency ? ("{$currency->symbol} - {$currency->name}")  : 'N/A' }}</td>
+            <td width="80%">{{ $formulation?->currency ? $formulation?->currency?->description : 'N/A' }}</td>
         </tr>
         <tr>
             <td width="20%" style="font-weight: bold;">Presupuesto:</td>
@@ -52,11 +47,11 @@
         </tr>
         <tr>
             <td width="20%" style="font-weight: bold;">Monto del Financiamiento:</td>
-            <td width="80%">{{ $currency->symbol }}&#160; {{ convertCurrency($conversion_history, $formulation->financement_amount, $formulation->date, $currency->decimal_places, ",", ".") }}</td>
+            <td width="80%">{{ $formulation->currency->symbol }}&#160; {{ number_format($formulation->financement_amount, $formulation->currency->decimal_places, ",", ".") }}</td>
         </tr>
         <tr>
             <td width="20%" style="font-weight: bold;">Total Formulado:</td>
-            <td width="80%">{{ $currency->symbol }}&#160;{{ convertCurrency($conversion_history, $formulation->total_formulated, $formulation->date, $currency->decimal_places, ",", ".") }}</td>
+            <td width="80%">{{ $formulation->currency->symbol }}&#160;{{ number_format($formulation->total_formulated, $formulation->currency->decimal_places, ",", ".") }}</td>
         </tr>
     </tbody>
 </table>
@@ -94,17 +89,22 @@
                     {{ $accountOpen?->budgetAccount?->denomination }}
                 </td>
                 <td width="20%" align="right">
-                    {{ convertCurrency($conversion_history, $accountOpen->total_year_amount, $formulation->date, $currency->decimal_places, ",", ".") }}
+                    {{ number_format(
+                        $accountOpen->total_year_amount,
+                        $formulation->currency->decimal_places, ",", "."
+                    ) }}
                 </td>
             </tr>
         @endforeach
         <tr>
             <td width="80%" style="font-weight: bold;" align="right">
                 {{ 'Total Formulado' }}&#160;
-                {{ $currency->symbol }}
+                {{ $formulation->currency->symbol }}
             </td>
             <td width="20%" style="font-weight: bold;" align="right">
-                {{ convertCurrency($conversion_history, $formulation->total_formulated, $formulation->date, $currency->decimal_places, ",", ".") }}
+                {{ number_format(
+                    $formulation->total_formulated, $formulation->currency->decimal_places, ",", "."
+                    ) }}
             </td>
         </tr>
     </tbody>

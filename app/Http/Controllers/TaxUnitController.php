@@ -19,7 +19,6 @@ use Illuminate\Http\JsonResponse;
  */
 class TaxUnitController extends Controller
 {
-    protected $ruleMessages;
     /**
      * Define la configuración de la clase
      *
@@ -32,14 +31,6 @@ class TaxUnitController extends Controller
         $this->middleware('permission:tax.unit.edit', ['only' => ['edit', 'update']]);
         $this->middleware('permission:tax.unit.delete', ['only' => 'destroy']);
         $this->middleware('permission:tax.unit.list', ['only' => 'index']);
-
-        $this->ruleMessages = [
-            'value.required' => 'El campo valor es requerido',
-            'value.numeric' => 'El campo valor debe ser numérico',
-            'start_date.required' => 'El campo fecha inicial es requerido',
-            'start_date.date' => 'El campo fecha inicial debe ser una fecha valida',
-            'end_date.after' => 'La fecha final debe ser mayor a la fecha inicial'
-        ];
     }
 
     /**
@@ -73,7 +64,11 @@ class TaxUnitController extends Controller
         if (!is_null($request->end_date)) {
             $rules['end_date'] = ['date', 'after:start_date'];
         }
-        $this->validate($request, $rules, $this->ruleMessages);
+        $this->validate($request, $rules, [
+            'value.required' => 'El campo valor es requerido',
+            'value.numeric' => 'El campo valor debe ser numérico',
+            'end_date.after' => 'La fecha final debe ser mayor a la fecha inicial'
+        ]);
 
         // Objeto con información de la unidad tributaria registrada
         $taxUnit = TaxUnit::create([
@@ -106,7 +101,11 @@ class TaxUnitController extends Controller
         if (!is_null($request->end_date)) {
             $rules['end_date'] = ['date', 'after:start_date'];
         }
-        $this->validate($request, $rules, $this->ruleMessages);
+        $this->validate($request, $rules, [
+            'value.required' => 'El campo valor es requerido',
+            'value.numeric' => 'El campo valor debe ser numérico',
+            'end_date.after' => 'La fecha final debe ser mayor a la fecha inicial'
+        ]);
 
         $taxUnit->value = $request->value;
         $taxUnit->start_date = $request->start_date;

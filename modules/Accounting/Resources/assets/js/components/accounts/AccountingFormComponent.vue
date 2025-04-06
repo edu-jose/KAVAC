@@ -4,11 +4,10 @@
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label for="sel_acc_record" class="control-label">
-                            Cuenta de nivel superior
-                        </label>
+                        <label class="control-label"
+                            >Cuenta de nivel superior</label
+                        >
                         <select2
-                            id="sel_acc_record"
                             :options="accRecords"
                             v-model="record_select"
                         ></select2>
@@ -16,7 +15,7 @@
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label for="code" class="control-label">Código</label>
+                        <label class="control-label">Código</label>
                         <div class="row inline-inputs">
                             <div class="col-6">
                                 <input
@@ -35,11 +34,12 @@
                                 />
                             </div>
                         </div>
+                        <!-- :onkeyup="record.code=justAllow(record.code)" -->
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label for="denomination" class="control-label">Denominación</label>
+                        <label class="control-label">Denominación</label>
                         <input
                             type="text"
                             class="form-control input-sm"
@@ -51,17 +51,6 @@
                             title="Denominación o concepto de la cuenta"
                             v-model="record.denomination"
                         />
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="form-group is-required">
-                        <label for="sel_type_activity" class="control-label">Tipo de actividad</label>
-                        <select2
-                            id="sel_type_activity"
-                            :options="typeActivities"
-                            :disabled="record.original"
-                            v-model="record.accounting_type_activity_id"
-                        ></select2>
                     </div>
                 </div>
                 <div class="col-md-1 col-3">
@@ -80,7 +69,10 @@
                                     v-model="record.active"
                                     :value="true"
                                 />
-                                <label class="custom-control-label" for="accountingActive">&nbsp;</label>
+                                <label
+                                    class="custom-control-label"
+                                    for="accountingActive"
+                                ></label>
                             </div>
                         </div>
                     </div>
@@ -101,7 +93,10 @@
                                     v-model="record.ingres"
                                     :value="true"
                                 />
-                                <label class="custom-control-label" for="accountingResource">&nbsp;</label>
+                                <label
+                                    class="custom-control-label"
+                                    for="accountingResource"
+                                ></label>
                             </div>
                         </div>
                     </div>
@@ -122,7 +117,10 @@
                                     v-model="record.egress"
                                     :value="true"
                                 />
-                                <label class="custom-control-label" for="accountingEgress">&nbsp;</label>
+                                <label
+                                    class="custom-control-label"
+                                    for="accountingEgress"
+                                ></label>
                             </div>
                         </div>
                     </div>
@@ -143,7 +141,10 @@
                                     v-model="record.original"
                                     :value="true"
                                 />
-                                <label class="custom-control-label" for="accountingOriginal">&nbsp;</label>
+                                <label
+                                    class="custom-control-label"
+                                    for="accountingOriginal"
+                                ></label>
                             </div>
                         </div>
                     </div>
@@ -209,12 +210,9 @@ export default {
                 original: false,
                 ingres: false,
                 egress: false,
-                accounting_type_activity_id: null,
             },
 
             urlPrevious: `${window.app_url}/accounting/accounts`,
-
-            typeActivities: []
         };
     },
     created() {
@@ -236,7 +234,6 @@ export default {
                     type: data.type,
                     ingres: false,
                     egress: false,
-                    accounting_type_activity_id: data.accounting_type_activity_id
                 };
                 if (data.type == "resource") {
                     this.record.ingres = true;
@@ -251,7 +248,7 @@ export default {
                     this.record.ingres = false;
                 }
                 if (data.parent) {
-                this.record_select = data.parent.id;
+                    this.record_select = data.parent.id;
                 }
             }
         });
@@ -259,10 +256,6 @@ export default {
     mounted() {
         var selector = document.getElementById("code");
         Inputmask("9.9.9.99.99.99.999").mask(selector);
-
-        axios.get("/accounting/type-activities").then((response) => {
-            this.typeActivities = response.data.records;
-        });
 
         this.reset();
     },
@@ -290,7 +283,6 @@ export default {
                 original: false,
                 ingres: false,
                 egress: false,
-                accounting_type_activity_id: null
             };
         },
         hasExistCode() {
@@ -351,7 +343,6 @@ export default {
                 active: false,
                 original: false,
                 type: "",
-                accounting_type_activity_id: null
             };
             /**
              * Se formatean los ultimos tres campos del codigo de ser necesario
@@ -368,8 +359,6 @@ export default {
             auxRecord.active = dt.active;
             auxRecord.original = dt.original;
             auxRecord.type = dt.type;
-            auxRecord.accounting_type_activity_id = dt.accounting_type_activity_id;
-
             if (dt.ingres == true) {
                 auxRecord.type = "resource";
             }

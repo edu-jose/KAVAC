@@ -167,7 +167,7 @@
 
 @section('extra-js')
     @parent
-    <script nonce="{{ session()->get('nonce') }}">
+    <script>
         $(document).ready(function() {
             /** Genera una nueva cuenta a partir de la cuenta seleccionada */
             $("#parent_id").on('change', function() {

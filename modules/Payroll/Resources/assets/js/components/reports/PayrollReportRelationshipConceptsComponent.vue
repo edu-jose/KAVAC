@@ -22,7 +22,7 @@
             <div class="row">
                 <div class="col-md-4">
                     <div class="form-group" style="z-index: unset">
-                        <label>Tipo de nómina</label>
+                        <label>Tipo de pago</label>
                         <v-multiselect
                             @input="errors = []"
                             track_by="text"
@@ -100,7 +100,7 @@
         </div>
 
         <div class="card-footer text-right">
-            <button @click.prevent="createReport('relationship-concepts', $event)"
+            <button @click.prevent="createReport('relationship-concepts')"
                 class="btn btn-primary btn-sm" data-toggle="tooltip" title="Generar Reporte"
                 type="button">
                 <span>Generar reporte</span>
@@ -149,7 +149,7 @@
                 };
             },
 
-            createReport(current, event) {
+            createReport(current) {
                 const vm = this;
 
                 vm.loading = true;
@@ -158,13 +158,11 @@
                     fields[index] = this.record[index];
                 }
                 fields['current'] = 'relationship-concepts';
-                event.preventDefault();
                 axios.post(`${window.app_url}/payroll/reports/${current}/create`, fields).then(response => {
                     if (response.data.result == false)
                         location.href = response.data.redirect;
                     else if (typeof(response.data.redirect) !== "undefined") {
-                        const reportWindow = window.open(response.data.redirect, '_blank');
-                        reportWindow.focus();
+                        window.open(response.data.redirect, '_blank');
                     }
                     else {
                         vm.reset();

@@ -7,14 +7,8 @@
                     :route_list="app_url + '/budget/detail-vue-centralized-actions/' + props.row.id"
                 >
                 </budget-centralized-actions-info>
-                <template v-if="(lastYear && format_date(props.row.to_date, 'YYYY') <= lastYear)">
-                    <button
-                        class="btn btn-warning btn-xs btn-icon btn-action"
-                        type="button"
-                        title="Modificar registro"
-                        data-toggle="tooltip"
-                        @click="editForm(props.row.id)"
-                    >
+                <template v-if="(lastYear && format_date(props.row.from_date, 'YYYY') <= lastYear)">
+                    <button class="btn btn-warning btn-xs btn-icon btn-action" type="button" disabled>
                         <i class="fa fa-edit"></i>
                     </button>
                     <button class="btn btn-danger btn-xs btn-icon btn-action" type="button" disabled>

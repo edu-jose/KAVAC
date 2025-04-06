@@ -1,39 +1,22 @@
 <template>
     <div id="ProjectTrackingActivityPlanInfo" class="modal fade" tabindex="-1" role="dialog"
-        aria-labelledby="ProjectTrackingActivityPlanInfoModalLabel" aria-hidden="true">
+         aria-labelledby="ProjectTrackingActivityPlanInfoModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg" role="document" style="max-width:60rem">
             <div class="modal-content">
                 <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">×</span>
                     </button>
                     <h6>
                         <i class="icofont icofont-read-book ico-2x"></i>
-                        Información Detallada del plan de actividades
+                         Información Detallada del plan de actividades
                     </h6>
                 </div>
+
                 <div class="modal-body">
-                    <ul class="nav nav-tabs custom-tabs justify-content-center" role="tablist">
-                        <li class="nav-item">
-                            <a class="nav-link active" data-toggle="tab" href="#general" id="info_general" role="tab">
-                                <i class="ion-android-person"></i> Información general
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" data-toggle="tab" href="#worker-team" role="tab">
-                                <i class="ion-android-person"></i>Equipo de trabajo
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" data-toggle="tab" href="#activities" role="tab">
-                                <i class="ion-arrow-swap"></i> Actividades macro
-                            </a>
-                        </li>
-                    </ul>
                     <div class="tab-content">
                         <div class="tab-pane active" id="general" role="tabpanel">
                             <div class="row">
-                                <h6 class="col-md-12" align="center"><br>Iformación general</h6>
                                 <div class="col-md-4">
                                     <div class="form-group">
                                         <strong>Código:</strong>
@@ -58,15 +41,14 @@
                                     <div class="form-group">
                                         <strong>Nombre:</strong>
                                         <div class="row" style="margin: 1px 0">
-                                            <span
-                                                v-if="record.project_name && record?.subproject_name && record?.sub_project">
-                                                {{ record?.sub_project ? record.sub_project.name : '' }}
-                                            </span>
-                                            <span v-else-if="record.project_name && record?.project">
+                                            <span v-if="record.project_name && record.project">
                                                 {{ record.project ? record.project.name : '' }}
                                             </span>
-                                            <span v-else>
+                                            <span v-else-if="record.product_name && record.product">
                                                 {{ record.product ? record.product.name : '' }}
+                                            </span>
+                                            <span v-else>
+                                                {{ record.sub_project && record.sub_project ? record.sub_project.name : '' }}
                                             </span>
                                         </div>
                                     </div>
@@ -76,22 +58,15 @@
                                         <strong>Responsable:</strong>
                                         <div class="row" style="margin: 1px 0">
                                             <span v-if="record.project_name && record.project">
-                                                {{ record.project.responsable.first_name ?
-                                                    record.project.responsable.first_name : record.project.responsable.name
-                                                }}
-                                                {{ record.project.responsable.last_name }}
+                                                {{ record.project.responsable.first_name ? record.project.responsable.first_name : record.project.responsable.name }}
+                                                {{ record.project.responsable.last_name  }}
                                             </span>
                                             <span v-else-if="record.product_name && record.product">
-                                                {{ record.product.responsable.first_name ?
-                                                    record.product.responsable.first_name : record.product.responsable.name
-                                                }}
-                                                {{ record.product.responsable.last_name }}
+                                                {{ record.product.responsable.first_name ? record.product.responsable.first_name : record.product.responsable.name }}
+                                                {{ record.product.responsable.last_name  }}
                                             </span>
                                             <span v-else>
-                                                {{ record.sub_project && record.sub_project.responsable ?
-                                                    record.sub_project.responsable.first_name : record.sub_project &&
-                                                        record.sub_project.responsable ? record.sub_project.responsable.name :
-                                                        '' }}
+                                                {{ record.sub_project && record.sub_project.responsable ? record.sub_project.responsable.first_name : record.sub_project && record.sub_project.responsable ? record.sub_project.responsable.name : '' }}
                                                 {{ record.sub_project ? record.sub_project.responsable.last_name : '' }}
                                             </span>
                                         </div>
@@ -152,18 +127,12 @@
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-                        <div class="tab-pane" id="worker-team" role="tabpanel">
-                            <div class="row">
                                 <h6 class="col-md-12" align="center"><br>Lista de trabajadores</h6>
                                 <div class="col-md-12" v-if="record.teams && record.teams.length > 0">
                                     <v-client-table :columns="columns" :data="record.teams" :options="table_options">
                                         <div slot="employers" slot-scope="props" class="text-center">
                                             {{
-                                                props.row.project_tracking_personal_register.first_name ?
-                                                    props.row.project_tracking_personal_register.first_name :
-                                                    props.row.project_tracking_personal_register.name
+                                                props.row.project_tracking_personal_register.first_name ? props.row.project_tracking_personal_register.first_name : props.row.project_tracking_personal_register.name
                                             }}
                                             {{ props.row.project_tracking_personal_register.last_name }}
                                         </div>
@@ -174,15 +143,9 @@
                                         </div>
                                     </v-client-table>
                                 </div>
-                            </div>
-                        </div>
-                        <div class="tab-pane" id="activities" role="tabpanel">
-                            <div class="row">
                                 <h6 class="col-md-12" align="center"><br>Lista de actividades macro</h6>
-                                <!-- <h6 class="col-md-12" align="center"><br>{{ team_members }}</h6> -->
                                 <div class="col-md-12" v-if="record.activities && record.activities.length > 0">
-                                    <v-client-table :columns="columns2" :data="record.activities"
-                                        :options="table_options">
+                                    <v-client-table :columns="columns2" :data="record.activities" :options="table_options">
                                         <div slot="activity" slot-scope="props" class="text-center">
                                             {{
                                                 props.row.project_tracking_activities.name_activity
@@ -190,8 +153,9 @@
                                         </div>
                                         <div slot="responsable_activity" slot-scope="props" class="text-center">
                                             {{
-                                                getActivityResponsable(props.row)
+                                                props.row.project_tracking_team_member.project_tracking_personal_register.first_name ? props.row.project_tracking_team_member.project_tracking_personal_register.first_name : props.row.project_tracking_team_member.project_tracking_personal_register.name
                                             }}
+                                            {{ props.row.project_tracking_team_member.project_tracking_personal_register.last_name }}
                                         </div>
                                     </v-client-table>
                                 </div>
@@ -199,92 +163,72 @@
                         </div>
                     </div>
                 </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default btn-sm btn-round btn-modal-close"
+                            data-dismiss="modal">
+                        Cerrar
+                    </button>
+                </div>
             </div>
-        </div>
-        <div class="modal-footer">
-            <button type="button" class="btn btn-default btn-sm btn-round btn-modal-close" data-dismiss="modal">
-                Cerrar
-            </button>
         </div>
     </div>
 </template>
 
-
 <script>
-export default {
-    data() {
-        return {
-            record: {
-                id: '',
-                project_name: '',
-                subproject_name: '',
-                product_name: '',
-                institution_id: '',
-                responsable: '',
-                dependency: '',
-                execution_year: '',
-                start_date: '',
-                end_date: '',
-                active: '',
-                name: '',
-                employers: '',
-                staff_classifications: '',
-                activity: '',
-                responsable_activity: '',
-                start_date_activity: '',
-                end_date_activity: '',
-            },
-            teams: [],
-            team_members: [],
-            payroll_staffs: [],
-            columns: ['employers', 'staff_classifications'],
-            activities: [],
-            columns2: [
-                'activity',
-                'responsable_activity',
-                'percentage',
-            ],
-        }
-    },
-    created() {
-        this.table_options.headings = {
-            employers: 'Trabajador',
-            staff_classifications: 'Rol',
-            activity: 'Actividad',
-            responsable_activity: 'Responsable de la Actividad',
-            percentage: '%',
-        };
-        this.table_options.sortable = ['employers', 'staff_classifications', 'activity', 'responsable_activity', 'percentage'];
-        this.table_options.columnsClasses = {
-            employers: 'col-md-4',
-            staff_classifications: 'col-md-4',
-            activity: 'col-md-4',
-            responsable_activity: 'col-md-4',
-            percentage: 'col-md-2 text-center',
-        };
-    },
-    methods: {
-        getActivityResponsable(activity) {
-            const vm = this;
-            for (let team of vm.record.teams) {
-                if (activity.responsable_activity_id == team.id) {
-                    for (let member of vm.team_members) {
-                        if (team.employers_id == member.employers_id) {
-                            let activity_responsable_name = member.employers.split('-')[1];
-                            return activity_responsable_name;
-                        }
-                    }
-                }
+    export default {
+        data() {
+            return {
+                record: {
+                    id: '',
+                    project_name: '',
+                    subproject_name: '',
+                    product_name: '',
+                    institution_id:'',
+                    responsable: '',
+                    dependency: '',
+                    execution_year: '',
+                    start_date: '',
+                    end_date: '',
+                    active:'',
+                    name: '',
+                    employers: '',
+                    staff_classifications: '',
+                    activity: '',
+                    responsable_activity: '',
+                    start_date_activity: '',
+                    end_date_activity: '',
+                },
+                teams: [],
+                columns: ['employers', 'staff_classifications'],
+                activities: [],
+                columns2: ['activity', 'responsable_activity', 'percentage'],
             }
         },
-        /**
-         * Método que borra todos los datos del formulario
-         * 
-         * @author  Daniel Contreras <dcontreras@cenditel.gob.ve>
-         */
-        reset() {
+        created() {
+            this.table_options.headings = {
+                employers: 'Trabajador',
+                staff_classifications: 'Rol',
+                activity: 'Actividad',
+                responsable_activity: 'Responsable de la Actividad',
+                percentage: '%',
+            };
+            this.table_options.sortable = ['employers', 'staff_classifications', 'activity', 'responsable_activity', 'percentage'];
+            this.table_options.columnsClasses = {
+                employers: 'col-md-4',
+                staff_classifications: 'col-md-4',
+                activity: 'col-md-4',
+                responsable_activity: 'col-md-4',
+                percentage: 'col-md-2 text-center',
+            };
         },
-    },
-}
-
+        methods: {
+            /**
+             * Método que borra todos los datos del formulario
+             *
+             * @author  Daniel Contreras <dcontreras@cenditel.gob.ve>
+             */
+            reset() {
+            },
+        },
+    }
 </script>

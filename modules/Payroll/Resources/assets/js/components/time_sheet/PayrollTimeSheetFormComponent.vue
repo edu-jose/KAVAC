@@ -90,8 +90,8 @@
                         <select2 :options="payroll_supervised_groups" v-model="record.payroll_supervised_group_id"
                             @input="
                                 getSupervisedGroupData();
-                                setTimeSheetData();
-                                loadDataCompletedPeriods();
+                            setTimeSheetData();
+                            loadDataCompletedPeriods();
                             ">
                         </select2>
                     </div>
@@ -126,8 +126,8 @@
                     <div class="form-group is-required">
                         <label>Parámetros de la hoja de tiempo:</label>
                         <select2 :options="payroll_time_sheet_parameters"
-                            v-model="record.payroll_time_sheet_parameter_id" 
-                            @input="setTimeSheetColumns();
+                            v-model="record.payroll_time_sheet_parameter_id" @input="
+                                setTimeSheetColumns();
                             loadDataCompletedPeriods();
                             ">
                         </select2>
@@ -156,7 +156,7 @@
                 </div>
             </div>
             <v-draggable-table ref="draggableTable" :columns="draggableColumns"
-                @error="receiveErrors" :data="draggableData" :parameters="parameters"></v-draggable-table>
+                :data="draggableData"></v-draggable-table>
         </div>
         <!-- Final card-body -->
 
@@ -196,7 +196,6 @@ export default {
                 time_sheet_data: {},
                 time_sheet_columns: {},
             },
-            parameters: {},
             peopleNotOneFound: false,
             payroll_supervised_groups: [],
             payroll_time_sheet_parameters: [],
@@ -208,21 +207,7 @@ export default {
             draggableData: [],
         };
     },
-    watch: {
-        'record.payroll_time_sheet_parameter_id': function (payrollTimeSheetParameterId) {
-            const vm = this;
-            if (payrollTimeSheetParameterId) {
-                vm.parameters = vm.payroll_time_sheet_parameters.filter((parameter) => {
-                    return parameter.id == payrollTimeSheetParameterId
-                    })[0].parameters;
-                }
-            }
-    },
     methods: {
-        receiveErrors(errors) {
-            const vm = this;
-            vm.errors = errors;
-        },
         /**
          * Método que borra todos los datos del formulario
          *
@@ -488,10 +473,6 @@ export default {
                 for (var index in vm.record) {
                     fields[index] = vm.record[index];
                 }
-                
-                if (vm.parameters) {
-                    fields["parameters"] = vm.parameters;
-                }
 
                 await axios
                     .post(url, fields)
@@ -579,11 +560,6 @@ export default {
             for (var index in vm.record) {
                 fields[index] = vm.record[index];
             }
-
-            if (vm.parameters) {
-                fields["parameters"] = vm.parameters;
-            }
-
             await axios
                 .patch(
                     `${url}${url.endsWith("/") ? "" : "/"}${vm.record.id}`,
@@ -641,12 +617,6 @@ export default {
                 });
 
             vm.record = recordEdit;
-
-            if (vm.record.payroll_time_sheet_parameter_id) {
-                vm.parameters = vm.payroll_time_sheet_parameters.filter((parameter) => {
-                    return parameter.id == vm.record.payroll_time_sheet_parameter_id
-                    })[0].parameters;
-            }
         },
 
         /**
@@ -775,28 +745,45 @@ export default {
                             }
                             // Recorrer el array original y crear uno nuevo filtrado
                             avalibilityItems.forEach(function (value, index) {
+
+                                
                                 if (!vm.peopleFound.some(item => item.id_number === value.id_number)) {
                                     if (
+
                                         vm.peopleNotFound.length == 0 &&
+
                                         !removeValue(value)
+
                                     ) {
                                         peopleMissing.push(value);
                                     } else {
                                         if (
+
                                             removeValue(value) &&
+
                                             vm.peopleNotFound.includes(value)
+
                                         ) {
+
                                             vm.peopleNotFound.splice(
+
                                                 peopleMissing.indexOf(value),
+
                                                 1
+
                                             );
+
                                         }
+
                                     }
 
                                     if (removeValue(value)) {
                                         vm.peopleFound.push(value)
+
                                     }
+
                                 }
+
                             });
 
                             if (vm.peopleNotFound.length == 0) {
@@ -809,22 +796,6 @@ export default {
                             );
                         } else {
                             vm.peopleNotOneFound = true;
-                        }
-
-                        let calcTotals = Object.entries(vm.$refs.draggableTable.calculate);
-
-                        if (calcTotals.length > 0) {
-                            calcTotals.forEach(element => {
-                                if (!element[0].includes('total')) {
-                                    element[0] = 'subtotal - ' + element[0];
-                                }
-
-                                Vue.set(
-                                    vm.$refs.draggableTable.inputValues,
-                                    element[0],
-                                    parseInt(element[1])
-                                );
-                            });
                         }
                     }
                     vm.showMessage(
@@ -859,7 +830,6 @@ export default {
         async loadDataCompletedPeriods() {
             const vm = this;
             if (
-                vm.record.id == '' &&
                 vm.record.from_date &&
                 vm.record.to_date &&
                 vm.record.payroll_supervised_group_id &&
@@ -892,7 +862,8 @@ export default {
                         )
                         .then((response) => {
                             if (
-                                response.data.result !== null
+                                typeof response.data.result !== "undefined" &&
+                                Object.keys(response.data.result).length > 0
                             ) {
                                 bootbox.confirm({
                                     title: "¿Cargar registros de periodos confirmados?",

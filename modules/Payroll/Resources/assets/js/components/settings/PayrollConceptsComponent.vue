@@ -535,8 +535,8 @@
                                         <div class="col-12 col-xl-5">
                                             <!-- ./calculadora -->
                                             <div class="formula-calculator">
-                                                <formula-calculator formulaInput='formulaShow' :withDisplay="false" ref="formulaResults"/>
-                                                <div class="form-group row mb-n1">
+                                            <formula-calculator formulaInput='formulaShow' :withDisplay="false" ref="formulaResults"/>
+                                            <div class="form-group row mb-n1">
                                                     <div class="col-12 col-md-8 col-md-6 text-center mx-auto">
                                                         <button
                                                             type="button" class="btn btn-info btn-sm btn-formula btn-function" data-toggle="tooltip"
@@ -550,23 +550,6 @@
                                                             @click="openFunctionWizard(false, 'sum')"
                                                             :style="{opacity: useFunction ? 0.5 : 1}">&#8721;</button>
                                                     </div>
-                                                </div>
-                                            </div>
-                                            <div class="form-group row mb-n1">
-                                                <div class="col-12 col-md-8 col-md-6 text-center mx-auto">
-                                                    <button
-                                                        type="button" class="btn btn-info btn-sm btn-formula btn-function" data-toggle="tooltip"
-                                                        title="presione para mover a la izquierda"
-                                                        @click="highlightPosition(false)"
-                                                        :style="{opacity: useFunction ? 0.5 : 1}">
-                                                        <i class="fa fa-long-arrow-left"></i>
-                                                    </button>
-                                                    <button type="button" class="btn btn-info btn-sm btn-formula btn-function" data-toggle="tooltip"
-                                                        title="presione para mover a la derecha"
-                                                        @click="highlightPosition(true)"
-                                                        :style="{opacity: useFunction ? 0.5 : 1}">
-                                                        <i class="fa fa-long-arrow-right"></i>
-                                                    </button>
                                                 </div>
                                             </div>
                                             <div class="form-group row" v-if="variable_option">
@@ -709,7 +692,7 @@
                                     @click="reset()">
                                 Cancelar
                             </button>
-                            <button type="button" @click="createConcept('payroll/concepts'); $refs.tableResults.refresh()"
+                            <button type="button" @click="createRecord('payroll/concepts'); $refs.tableResults.refresh()"
                                     class="btn btn-primary btn-sm btn-round btn-modal-save">
                                 Guardar
                             </button>
@@ -769,11 +752,7 @@
                     receiver: '',
                     receiver_account: '',
                     pay_order: true,
-                    formula_history: [],
-                    formula_show_history: [],
                 },
-                position: 0,
-                positionShow: 0,
                 fiscal_years: [],
                 variable:                  '',
                 variable_option:           '',
@@ -788,8 +767,8 @@
                 getAccount:                false,
                 useFunction:               false,
                 idFunction:                '',
-                //formulaHistory:            [],
-                //formulaShowHistory:        [],
+                formulaHistory:            [],
+                formulaShowHistory:        [],
                 functions:                 [
                     { "id": "", "text": "Ninguno" },
                     {
@@ -890,8 +869,7 @@
                     'absolute_value': 'Valor absoluto',
                     'tax_unit':       'Unidad tributaria',
                     'percent':        'Porcentaje'
-                },
-                recordOptions: {},
+                }
             }
         },
         props: {
@@ -949,25 +927,16 @@
                     let formulaDisplay = (!vm.useFunction) ? vm.record['formula'] : vm.formulaFunction;
                     let formulaDisplayShow = (!vm.useFunction) ? vm.record['formulaShow'] : vm.formulaFunctionShow;
 
-                    formulaDisplay = formulaDisplay.replace(' | ', '');
-                    formulaDisplayShow = formulaDisplayShow.replace(' | ', '');
-
                     let symbols = ['+', '-', '/', '*', '%'];
 
                     if (value === 'backspace') {
-                        //vm.formulaHistory.pop();
-                        //vm.formulaShowHistory.pop();
-                        //let dataF = vm.formulaHistory.pop();
-                        //let dataSF = vm.formulaShowHistory.pop();
+                        vm.formulaHistory.pop();
+                        vm.formulaShowHistory.pop();
+                        let dataF = vm.formulaHistory.pop();
+                        let dataSF = vm.formulaShowHistory.pop();
                         if (!vm.useFunction) {
-                            let newFormula = vm.getLastFormula();
-
-                            vm.record['formula'] = newFormula['formula'];
-                            vm.record['formulaShow'] = newFormula['formulaShow'];
-                            vm.highlightPosition();
-
-                            //vm.record['formula'] = ("undefined" != typeof(dataF)) ? dataF : "";
-                            //vm.record['formulaShow'] = ("undefined" != typeof(dataSF)) ? dataSF : "";
+                            vm.record['formula'] = ("undefined" != typeof(dataF)) ? dataF : "";
+                            vm.record['formulaShow'] = ("undefined" != typeof(dataSF)) ? dataSF : "";
                         } else {
                             vm.formulaFunction = formulaDisplay.substring(0, formulaDisplay.length-1);
                             vm.formulaFunctionShow = formulaDisplayShow.substring(0, formulaDisplayShow.length-1);
@@ -976,8 +945,6 @@
                     } else if (value === 'C') {
                         vm.variable = '';
                         vm.variable_option = '';
-                        vm.position = 0;
-                        vm.positionShow = 0;
                         $.each(vm.functions, function(index, field) {
                             if (field['id'] == "sum") {
                                 $.each(vm.functions[index]['parameters'], function(index, field) {
@@ -995,8 +962,6 @@
                         if (!vm.useFunction) {
                             vm.record['formula'] = '';
                             vm.record['formulaShow'] = '';
-                            //vm.formulaHistory = [];
-                            //vm.formulaShowHistory = [];
                         } else {
                             vm.formulaFunction = '';
                             vm.formulaFunctionShow = '';
@@ -1026,12 +991,10 @@
                     }
                     /** Se asigna los valores al campo determinado */
                     if (!vm.useFunction) {
-
-                        formulaDisplay = formulaDisplay.substring(0, vm.position) + value + formulaDisplay.substring(vm.position);
-                        formulaDisplayShow = formulaDisplayShow.substring(0, vm.positionShow) + value + formulaDisplayShow.substring(vm.positionShow);
+                        formulaDisplay += value;
+                        formulaDisplayShow += value;
                         vm.record['formula'] = formulaDisplay;
                         vm.record['formulaShow'] = formulaDisplayShow;
-                        vm.highlightPosition(true);
                     } else {
                         if (vm.idFunction != "") {
                             $.each(vm.getInfoFunction["parameters"] ?? [], function(index, field) {
@@ -1057,14 +1020,11 @@
             });
         },
         watch: {
-            /*'record.formula': {
+            'record.formula': {
                 handler(newVal) {
                     const vm = this;
-                    if (newVal && "" !== newVal) {
-                        const lastValue = vm.formulaHistory[vm.formulaHistory.length - 1];
-                        if (newVal !== lastValue) {
-                            vm.formulaHistory.push(newVal);
-                        }
+                    if (newVal && "" != newVal) {
+                        vm.formulaHistory.push(newVal);
                     }
                 },
                 deep: true,
@@ -1073,16 +1033,13 @@
             'record.formulaShow': {
                 handler(newVal) {
                     const vm = this;
-                    if (newVal && "" !== newVal) {
-                        const lastValue = vm.formulaShowHistory[vm.formulaShowHistory.length - 1];
-                        if (newVal !== lastValue) {
-                            vm.formulaShowHistory.push(newVal);
-                        }
+                    if (newVal && "" != newVal) {
+                        vm.formulaShowHistory.push(newVal);
                     }
                 },
                 deep: true,
                 immediate: false,
-            },*/
+            },
             /**
              * Método que supervisa los cambios en el campo variable y actualiza el listado de opciones
              *
@@ -1267,145 +1224,6 @@
             }
         },
         methods: {
-            highlightPosition(sum = null) {
-                const vm = this;
-                vm.record['formula'] = vm.record['formula'].replace(' | ', '');
-                vm.record['formulaShow'] = vm.record['formulaShow'].replace(' | ', '');
-
-                if (sum === true) {
-                    let formula = vm.record['formula'].substring(vm.position);
-
-                    let regexs = [
-                        /^concept\(\d+\)/,
-                        /^parameter\(\d+\)/,
-                        /^tabulator\(\d+\)/,
-                    ];
-
-                    const modifiedKeys = Object.keys(vm.recordOptions).map(key => new RegExp(`^${key}`)).sort((a, b) => a.length - b.length);
-                    regexs = [...regexs, ...modifiedKeys];
-
-                    let value = regexs.some(regex => {
-                        let result = formula.match(regex);
-                        if (result) {
-                            vm.position += result[0].length;
-                            vm.positionShow += vm.recordOptions[result[0]].length;
-                            return true;
-                        }
-                        return false;
-                    });
-
-                    if (!value) {
-                        if (vm.position < vm.record['formula'].length) {
-                            vm.position++;
-                        }
-                        if (vm.positionShow < vm.record['formulaShow'].length) {
-                            vm.positionShow++;
-                        }
-                    }
-                } else if (sum === false) {
-                    let formula = vm.record['formula'].substring(0, vm.position);
-
-                    let regexs = [
-                        /concept\(\d+\)$/,
-                        /parameter\(\d+\)$/,
-                        /tabulator\(\d+\)$/,
-                    ];
-
-                    const modifiedKeys = Object.keys(vm.recordOptions).map(key => new RegExp(`${key}$`)).sort((a, b) => a.length - b.length);
-                    regexs = [...regexs, ...modifiedKeys];
-
-                    let value = regexs.some(regex => {
-                        let result = formula.match(regex);
-                        if (result) {
-                            vm.position -= result[0].length;
-                            vm.positionShow -= vm.recordOptions[result[0]].length;
-                            return true;
-                        }
-                        return false;
-                    });
-
-                    if (!value) {
-                        if (vm.position > 0) {
-                            vm.position--;
-                        }
-                        if (vm.positionShow > 0) {
-                            vm.positionShow--;
-                        }
-                    }
-                }
-
-                if (vm.position !== 0 && vm.position !== vm.record['formula'].length) {
-                    vm.record['formula'] = vm.record['formula'].substring(0, vm.position) + ' | ' + vm.record['formula'].substring(vm.position);
-                }
-                if (vm.positionShow !== 0 && vm.positionShow !== vm.record['formulaShow'].length) {
-                    vm.record['formulaShow'] = vm.record['formulaShow'].substring(0, vm.positionShow) + ' | ' + vm.record['formulaShow'].substring(vm.positionShow);
-                }
-            },
-            getLastFormula() {
-                const vm = this;
-
-                let formula = vm.record['formula'].substring(0, vm.position);
-                let formulaShow = vm.record['formulaShow'].substring(0, vm.positionShow);
-                let regexs = [
-                    /concept\(\d+\)$/,
-                    /parameter\(\d+\)$/,
-                    /tabulator\(\d+\)$/,
-                ];
-
-                const modifiedKeys = Object.keys(vm.recordOptions).map(key => new RegExp(`${key}$`)).sort((a, b) => a.length - b.length);
-                regexs = [...regexs, ...modifiedKeys];
-
-                let value = regexs.some(regex => {
-                    let result = formula.match(regex);
-                    if (result) {
-                        formula = formula.substring(0, formula.length - result[0].length) + vm.record['formula'].substring(vm.position);
-                        formulaShow = formulaShow.substring(0, formulaShow.length - vm.recordOptions[result[0]].length)  + vm.record['formulaShow'].substring(vm.positionShow);
-                        vm.position -= result[0].length;
-                        vm.positionShow -= vm.recordOptions[result[0]].length;
-                        return true;
-                    }
-                    return false;
-                });
-
-                if (!value) {
-                    formula = vm.record['formula'].substring(0, vm.position-1) + vm.record['formula'].substring(vm.position);
-                    formulaShow = vm.record['formulaShow'].substring(0, vm.positionShow-1) + vm.record['formulaShow'].substring(vm.positionShow);
-
-                    if (vm.position > 0) {
-                        vm.position--;
-                    }
-                    if (vm.positionShow > 0) {
-                        vm.positionShow--;
-                    }
-
-                }
-
-                return {
-                    'formula': formula,
-                    'formulaShow': formulaShow
-                };
-            },
-            async getListParameters() {
-                const vm = this;
-
-                await axios.get(`${window.app_url}/payroll/get-parameter-records`).then(response => {
-                    if (response.data.length > 0) {
-                        
-                    } else {
-                        
-                    }
-                }).catch(error => {
-                    vm.logs('PayrollConceptsComponent', 258, error, 'getListParameters');
-                });
-
-            },
-            createConcept(url) {
-                const vm = this;
-                vm.record['formula'] = vm.record['formula'].replace(' | ', '');
-                vm.record['formulaShow'] = vm.record['formulaShow'].replace(' | ', '');
-
-                vm.createRecord(url);
-            },
             initRecords(url, modal_id) {
                 this.errors = [];
                 if (typeof this.reset === 'function') {
@@ -1425,14 +1243,12 @@
              */
             reset() {
                 const vm = this;
-                vm.position = 0;
-                vm.positionShow = 0;
                 vm.variable = '';
                 vm.variable_option = '';
                 vm.errors = [];
                 vm.useFunction = false;
-                //vm.formulaHistory = [];
-                //vm.formulaShowHistory = [];
+                vm.formulaHistory = [];
+                vm.formulaShowHistory = [];
                 $.each(vm.functions, function(index, field) {
                     if (field['id'] == "sum") {
                         $.each(vm.functions[index]['parameters'], function(index, field) {
@@ -1469,8 +1285,6 @@
                     receiver: '',
                     receiver_account: '',
                     pay_order: true,
-                    formula_history: [],
-                    formula_show_history: [],
                 };
                 vm.getCurrencies();
                 //vm.getBudgetAccounts();
@@ -1713,27 +1527,12 @@
                 let formulaDisplay = (!vm.useFunction) ? vm.record['formula'] : vm.formulaFunction;
                 let formulaDisplayShow = (!vm.useFunction) ? vm.record['formulaShow'] : vm.formulaFunctionShow;
 
-                formulaDisplay = formulaDisplay.replace(' | ', '');
-                formulaDisplayShow = formulaDisplayShow.replace(' | ', '');
-
                 /** Se asigna los valores al campo determinado */
                 if (!vm.useFunction) {
-                    let value = (variables.includes(vm.variable))
+                    formulaDisplay += (variables.includes(vm.variable))
                         ? (vm.variable + '(' + vm.variable_option + ')' )
                         : vm.variable_option;
-                    formulaDisplay = formulaDisplay.substring(0, vm.position) + value + formulaDisplay.substring(vm.position);
-                    formulaDisplayShow = formulaDisplayShow.substring(0, vm.positionShow) + vm.updateNameVariable + formulaDisplayShow.substring(vm.positionShow);
-
-                    if (variables.includes(vm.variable)) {
-                        vm.position += (vm.variable + '(' + vm.variable_option + ')' ).length;
-                        vm.positionShow += vm.updateNameVariable.length;
-                        vm.recordOptions[(vm.variable + '(' + vm.variable_option + ')' )] = vm.updateNameVariable;
-                    } else {
-                        vm.position += vm.variable_option.length;
-                        vm.positionShow += vm.updateNameVariable.length;
-                        vm.recordOptions[vm.variable_option] = vm.updateNameVariable;
-                    }
-
+                    formulaDisplayShow += vm.updateNameVariable;
                     vm.record['formula'] = formulaDisplay;
                     vm.record['formulaShow'] = formulaDisplayShow;
                 } else {
@@ -1754,7 +1553,6 @@
                         }
                     }
                 }
-                vm.highlightPosition();
             },
             getCodeVariable() {
                 const vm = this;
@@ -1882,8 +1680,8 @@
                     return rec.id === id;
                 })[0])) || vm.reset();
 
-                //vm.formulaHistory = recordEdit.formula_history ?? [];
-                //vm.formulaShowHistory = recordEdit.formula_show_history ?? [];
+                vm.formulaHistory = [];
+                vm.formulaShowHistory = [];
                 recordEdit.formulaShow = recordEdit.translate_formula ?? recordEdit.formula;
                 recordEdit.is_strict = recordEdit.is_strict == true ? 'true' : 'false';
                 if (recordEdit.receiver) {
@@ -1894,9 +1692,6 @@
                 }
 
                 vm.record = await recordEdit;
-                vm.recordOptions = recordEdit.parameter_options;
-                vm.position = vm.record['formula'].length;
-                vm.positionShow = vm.record['formulaShow'].length;
 
                 if (vm.record.budget_project_id) {
                     await vm.getSpecificActions('Project');

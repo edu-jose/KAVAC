@@ -32,10 +32,11 @@ class ProjectTrackingStaffClassificationController extends Controller
      */
     public function __construct()
     {
-        /** Establece permisos de acceso para cada método del controlador */
-        $this->middleware('permission:project.tracking.staff.classification.create', ['only' => 'store']);
-        $this->middleware('permission:project.tracking.staff.classification.edit', ['only' => ['update']]);
-        $this->middleware('permission:project.tracking.staff.classification.delete', ['only' => 'destroy']);
+        // Establece permisos de acceso para cada método del controlador
+        // $this->middleware('permission:projecttracking.staff.classifications.list', ['only' => 'index']);
+        // $this->middleware('permission:projecttracking.staff.classifications.create', ['only' => ['create', 'store']]);
+        // $this->middleware('permission:projecttracking.staff.classifications.edit', ['only' => ['edit', 'update']]);
+        // $this->middleware('permission:projecttracking.staff.classifications.delete', ['only' => 'destroy']);
     }
 
     /**

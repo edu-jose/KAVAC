@@ -44,14 +44,13 @@
                                     $prf = auth()->user()->profile;
                                     $img_profile = ($prf && $prf->image_id) ? $prf->image->url : null;
                                 @endphp
-                                <img
-                                    src="{{ asset($img_profile ?? 'images/default-avatar.png') }}"
-                                    alt="{{ $model->name ?? auth()->user()->name }}"
-                                    class="img-profile" style="cursor:pointer" id="helpProfilePicture"
-                                    title="{{ __('Click para modificar imagen de perfil') }}"
-                                    data-toggle="tooltip"
-                                >
-                                <input type="file" id="profile_image" name="profile_image" style="display:none" accept="image/*">
+                                <img src="{{ asset($img_profile ?? 'images/default-avatar.png') }}"
+                                     alt="{{ $model->name ?? auth()->user()->name }}"
+                                     class="img-profile" style="cursor:pointer" id="helpProfilePicture"
+                                     title="{{ __('Click para modificar imagen de perfil') }}"
+                                     data-toggle="tooltip" onclick="$('input[name=profile_image]').click()">
+                                <input type="file" id="profile_image" name="profile_image" style="display:none"
+                                       onchange="uploadProfileImage()" accept="image/*">
                             {!! Form::close() !!}
                         </div>
                         <div class="col-12 text-center">
@@ -61,7 +60,7 @@
                     </div>
                     <div class="row">
                         <div class="col-12">
-                            <button type="button" class="btn btn-info btn-block" id="helpProfileLockScreen"
+                            <button type="button" class="btn btn-info btn-block" id="helpProfileLockScreen" 
                                     @click="lockScreenNow">
                                 {{ __('Bloquear Pantalla') }}
                             </button>
@@ -248,19 +247,19 @@
                                         @foreach (auth()->user()->audits->take(20) as $audit)
                                             <li class="time-label">
                                                 @if ($audit->event === 'created')
-                                                    @php
+                                                    @php 
                                                         $bgcolor = 'green';
                                                         $event = 'creó';
                                                         $title = 'Registro de datos'
                                                     @endphp
                                                 @elseif ($audit->event === 'updated')
-                                                    @php
+                                                    @php 
                                                         $bgcolor = 'orange';
                                                         $event = 'actualizó';
                                                         $title = 'Actualización de datos';
                                                     @endphp
                                                 @elseif ($audit->event === 'deleted')
-                                                    @php
+                                                    @php 
                                                         $bgcolor = 'red';
                                                         $event = 'eliminó';
                                                         $title = 'Eliminación de datos';
@@ -280,7 +279,7 @@
                                                 <i class="fa fa-envelope bg-blue"></i>
                                                 <div class="timeline-item">
                                                     <span class="time">
-                                                        <i class="fa fa-clock-o"></i>
+                                                        <i class="fa fa-clock-o"></i> 
                                                         {{ $audit->updated_at->format('H:i A') }}
                                                     </span>
                                                     <h3 class="timeline-header">
@@ -288,7 +287,7 @@
                                                     </h3>
                                                     <div class="timeline-body">
                                                         @if (array_key_exists('last_login', $audit->new_values))
-                                                            Se ha registrado un acceso a su cuenta desde la IP
+                                                            Se ha registrado un acceso a su cuenta desde la IP 
                                                             {{ $audit->ip_address }}
                                                         @else
                                                             Usted {{ $event }} la siguiente información:
@@ -313,7 +312,7 @@
 
                                     {{-- Directorio institucional --}}
                                     <div class="list-group contact-group">
-                                        <table
+                                        <table 
                                             class="table table-hover table-striped dt-responsive nowrap @if (count($directory) > 0) datatable @endif"
                                         >
                                             <thead>
@@ -331,19 +330,19 @@
                                                                                    ? ($dir['profile']['image']['url'])
                                                                                    :'images/default-avatar.png';
                                                                         @endphp
-                                                                        <img
-                                                                            class="img-circle img-online"
+                                                                        <img 
+                                                                            class="img-circle img-online" 
                                                                             src="{{ asset($img) }}"
                                                                             alt="{{ __('usuario') }}">
                                                                     </div>
                                                                     <div class="media-body">
                                                                         <h4 class="media-heading">
-                                                                            {{ (isset($dir['profile']))?$dir['profile']['full_name']:'' }}
+                                                                            {{ (isset($dir['profile']))?$dir['profile']['full_name']:'' }} 
                                                                         </h4>
                                                                         <div class="media-content">
                                                                             <ul class="list-unstyled">
                                                                                 <li>
-                                                                                    <i class="fa fa-envelope-o"></i>
+                                                                                    <i class="fa fa-envelope-o"></i> 
                                                                                     {{ $dir['email'] }}
                                                                                 </li>
                                                                             </ul>
@@ -359,7 +358,7 @@
                                                             <h5 class="h5 text-center">Sin registros</h5>
                                                         </td>
                                                     </tr>
-                                                @endforelse
+                                                @endforelse 
                                             </tbody>
                                         </table>
                                     </div>
@@ -375,7 +374,7 @@
 
 @section('extra-js')
     @parent
-    <script nonce="{{ session()->get('nonce') }}">
+    <script>
         $(document).ready(function() {
             /** Script para medir la fortaleza de la contraseña */
             $('#password').complexify({}, function(valid, complexity) {
@@ -386,7 +385,7 @@
                 progressContainer.toggleClass('progress-danger', (complexity < 43));
                 progressContainer.toggleClass('progress-warning', (complexity >= 43 && complexity <= 70));
                 progressContainer.toggleClass('progress-success', (complexity > 70));
-
+        
                 if ((complexity < 43)) {
                     color = "text-danger";
                     progressContainer.find('.progress-badge').html('Débil');
@@ -397,18 +396,12 @@
                     color = "text-success";
                     progressContainer.find('.progress-badge').html('Fuerte');
                 }
-
+        
                 progressBar.css({ 'width': complexity + '%' });
-
+        
                 $('#complexity').addClass(color);
                 $('#complexity').text(Math.round(complexity) + '%');
                 $('#complexity-level').val(Math.round(complexity));
-            });
-            $('#helpProfilePicture').on('click', function() {
-                $('input[name=profile_image]').click();
-            });
-            $('#profile_image').on('change', function() {
-                uploadProfileImage();
             });
         });
         function uploadProfileImage() {

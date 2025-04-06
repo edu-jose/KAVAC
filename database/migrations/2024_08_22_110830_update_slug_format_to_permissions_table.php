@@ -17,11 +17,6 @@ class UpdateSlugFormatToPermissionsTable extends Migration
 
         foreach ($permissions as $permission) {
             $newSlug = Str::slug($permission->slug, config('roles.separator'));
-            $permData = DB::table('permissions')->where('slug', $newSlug)->first();
-
-            if ($permData) {
-                continue;
-            }
             DB::table('permissions')
                 ->where('id', $permission->id)
                 ->update(['slug' => $newSlug]);

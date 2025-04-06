@@ -73,20 +73,10 @@
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group">
-                                            <strong>Fecha de inicio:</strong>
+                                            <strong>Fecha:</strong>
                                             <div class="row">
                                                 <span class="col-md-12">
-                                                    {{ format_date(budget.from_date, 'DD/MM/YYYY') }}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="form-group">
-                                            <strong>Fecha de fin:</strong>
-                                            <div class="row">
-                                                <span class="col-md-12">
-                                                    {{ budget.to_date ? format_date(budget.to_date, 'DD/MM/YYYY') : 'No definido'}}
+                                                    {{ budget.custom_date }}
                                                 </span>
                                             </div>
                                         </div>

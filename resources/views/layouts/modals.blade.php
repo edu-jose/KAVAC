@@ -16,7 +16,7 @@
                         <div class="lockscreen-item">
                             <div class="lockscreen-image">
                                 @php
-                                    $avatar = ($img_profile!== null && !empty($img_profile) && file_exists(base_path($img_profile)))
+                                    $avatar = ($img_profile!== null && !empty($img_profile) && file_exists(base_path($img_profile))) 
                                               ? $img_profile : 'images/default-avatar.png';
                                 @endphp
                                 <img src="{{ asset($avatar, Request::secure()) }}"
@@ -33,7 +33,7 @@
                                         'id' => 'username'
                                     ]) !!}
                                     <div class="input-group-btn">
-                                        <button class="btn" type="button" id="unlock_session">
+                                        <button class="btn" type="button" id="unlock_session" onclick="unlockScreen()">
                                             <i class="fa fa-arrow-right text-muted"></i>
                                         </button>
                                     </div>

@@ -724,7 +724,7 @@ class PayrollEmploymentController extends Controller
                     $query->select('id', 'name', 'description');
                 },
                 'payrollPositions' => function ($query) {
-                    $query->with('payrollWorkloadPositions.payrollWorkload');
+                    $query->select('name', 'description', 'responsible');
                 },
                 'payrollCoordination',
                 'payrollStaffType' => function ($query) {

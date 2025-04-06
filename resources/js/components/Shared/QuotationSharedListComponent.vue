@@ -45,27 +45,30 @@
             :data="records"
             :options="table_options"
         >
-            <div slot="budgetary_availability_code" slot-scope="props">
-                <span>
-                    {{
-                        props.row.budgetary_availability_code
-                    }}
-                </span>
-            </div>
-            <div slot="code" slot-scope="props">
+            <a
+                slot="code"
+                slot-scope="props"
+                target="_blank"
+            >
                 <span>
                     {{
                         props.row.code
                     }}
                 </span>
-            </div>
-            <div slot="description" slot-scope="props">
+            </a>
+            <a
+                slot="description"
+                slot-scope="props"
+                target="_blank"
+            >
                 <span>
-                    {{
-                        props.row.description
-                    }}
+                    <span>
+                        {{
+                            props.row.description
+                        }}
+                    </span>
                 </span>
-            </div>
+            </a>
             <div slot="available" slot-scope="props">
                 <div class="d-inline-flex">
                     <span
@@ -233,7 +236,6 @@ export default {
             records_outstanding: [],
             table_outstanding_options: {},
             columns: [
-                "budgetary_availability_code",
                 "code",
                 "description",
                 "currency_name",
@@ -455,18 +457,18 @@ export default {
     },
     created() {
         this.table_options.headings = {
-            "budgetary_availability_code": "Código de Disponibilidad",
             "code": "Código del requerimiento",
             "description": "Descripcion",
             "currency_name": "Moneda",
             "available": "Estatus",
-            "id": "Acción",
+            id: "ACCIÓN",
         };
         this.table_options.columnsClasses = {
-            "budgetary_availability_code": "col-xs-2 text-center",
-            "code": "col-xs-2 text-center",
-            "description": "col-xs-3",
-            "currency_name": "col-xs-2 text-center",
+            "code":
+                "col-xs-3 text-center",
+            "description":
+                "col-xs-3",
+            "currency_name": "col-xs-3 text-center",
             "available": "text-center",
             "id": "col-xs-1",
         };
@@ -475,7 +477,6 @@ export default {
             "currency_name",
         ];
         this.table_options.filterable = [
-            "budgetary_availability_code",
             "code",
             "description",
             "currency_name",

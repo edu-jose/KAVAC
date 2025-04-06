@@ -51,14 +51,14 @@
                                 accept-charset="UTF-8">
                                 <input type="hidden" name="_token" value="{{ csrf_token() }}">
                                 <div>
-                                    <label for="pkcs12">Cargar Certificado firmante</label>
+                                    <label>Cargar Certificado firmante</label>
                                     <p>
                                         <input id="pkcs12" type="file" class="form-control" name="pkcs12"
                                             accept=".p12">
                                     </p>
                                     <p>
                                         <input id="phasepass" class="form-control" type="password" name="password"
-                                            placeholder="pkcs12 password" required />
+                                            tabindex="3" placeholder="pkcs12 password" required />
                                     </p>
                                 </div>
                                 <div>
@@ -72,11 +72,9 @@
                 </div>
             </div>
             <div class="card-footer text-right d-none">
-                <button
-                    data-toggle="tooltip" type="button"
-                    class="btn btn-warning btn-icon btn-round redirect-back"
-                    data-original-title="Cancelar y regresar"
-                >
+                <button data-toggle="tooltip" type="button"
+                    onclick="window.location.href=&quot;http://localhost:8000/citizenservice/settings&quot;"
+                    class="btn btn-warning btn-icon btn-round" data-original-title="Cancelar y regresar">
                     <i class="fa fa-ban"></i>
                 </button>
                 <button data-toggle="tooltip" id="save" type="submit" class="btn btn-success btn-icon btn-round"

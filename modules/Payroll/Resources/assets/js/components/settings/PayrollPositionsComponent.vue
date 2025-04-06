@@ -99,7 +99,7 @@
                                     >
                                 </div>
                             </div>
-                            <div class="col-md-2">
+                            <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Responsabilidad</label>
                                     <div
@@ -120,54 +120,6 @@
                                         <label
                                             class="custom-control-label"
                                             for="responsible"
-                                        ></label>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="form-group">
-                                    <label>Proceso de apoyo</label>
-                                    <div
-                                        class="custom-control custom-switch"
-                                        data-toggle="tooltip"
-                                        title="
-                                            Indique si el tipo de proceso es de apoyo
-                                        "
-                                    >
-                                        <input
-                                            type="checkbox"
-                                            class="custom-control-input"
-                                            name="sel_process_type"
-                                            id="sel_process_type_support"
-                                            @click="loadProcessType('support')"
-                                        >
-                                        <label
-                                            class="custom-control-label"
-                                            for="sel_process_type_support"
-                                        ></label>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="form-group">
-                                    <label>Proceso de operación</label>
-                                    <div
-                                        class="custom-control custom-switch"
-                                        data-toggle="tooltip"
-                                        title="
-                                            Indique si el tipo de proceso es de operación
-                                        "
-                                    >
-                                        <input
-                                            type="checkbox"
-                                            class="custom-control-input"
-                                            name="sel_process_type"
-                                            id="sel_process_type_operation"
-                                            @click="loadProcessType('operation')"
-                                        >
-                                        <label
-                                            class="custom-control-label"
-                                            for="sel_process_type_operation"
                                         ></label>
                                     </div>
                                 </div>
@@ -275,14 +227,6 @@
                                 }}
                             </div>
                             <div
-                                slot="process_type"
-                                slot-scope="props"
-                            >
-                                <span v-if="props.row.process_type == 'support'">Apoyo</span>
-                                <span v-else-if="props.row.process_type == 'operation'">Operación</span>
-                                <span v-else>N/A</span>
-                            </div>
-                            <div
                                 slot="id"
                                 slot-scope="props"
                                 class="text-center"
@@ -335,8 +279,7 @@
                     name: '',
                     description: '',
                     number_positions_assigned: '',
-                    responsible: '',
-                    process_type: '',
+                    responsible: ''
                 },
                 totalPayrollPositions: 0,
                 totalEmploymentCount: 0,
@@ -355,42 +298,11 @@
                     'number_of_positions_held',
                     'number_positions_available',
                     'responsible',
-                    'process_type',
                     'id'
                 ],
             }
         },
         methods: {
-            /**
-             * Método para cargar tipo de proceso.
-             *
-             * @method loadProcessType
-             *
-             * @author Fabián Palmera <fapalmera@cenditel.gob.ve>
-            */
-            async loadProcessType(type) {
-                const vm = this;
-                if (type == 'operation') {
-                    vm.record.process_type = type;
-                    if (document.getElementById(`sel_process_type_operation`).checked) {
-                        if (document.getElementById(`sel_process_type_support`).checked) {
-                            document.getElementById(`sel_process_type_support`).checked = false;
-                        }
-                    } else {
-                        vm.record.process_type = '';
-                    }
-                } else if (type == 'support') {
-                    vm.record.process_type = type;
-                    if (document.getElementById(`sel_process_type_support`).checked) {
-                        if (document.getElementById(`sel_process_type_operation`).checked) {
-                            document.getElementById(`sel_process_type_operation`).checked = false;
-                        }
-                    } else {
-                        vm.record.process_type = '';
-                    }
-                }
-            },
-
             /**
              * Método que devuelve el conteo de empleados asociados
              * a un cargo específico y que estén true en la tabla intermedia
@@ -464,7 +376,6 @@
                     description: '',
                     number_positions_assigned: '',
                     responsible: false,
-                    process_type: '',
                 };
             },
 
@@ -495,7 +406,6 @@
                 'number_of_positions_held': 'Cantidad de cargos ocupados',
                 'number_positions_available': 'Cantidad de cargos disponibles',
                 'responsible': 'Cargo de responsabilidad',
-                'process_type': 'Tipo de proceso',
                 'id': 'Acción'
             };
             this.table_options.sortable = ['name'];
@@ -506,27 +416,9 @@
                 'number_positions_assigned': 'col-md-1 text-center',
                 'number_of_positions_held': 'col-md-1 text-center',
                 'number_positions_available': 'col-md-1 text-center',
-                'responsible': 'col-md-1 text-center',
-                'process_type': 'col-md-1 text-center',
+                'responsible': 'col-md-2 text-center',
                 'id': 'col-md-2'
             };
-        },
-        updated() {
-            const vm = this;
-            if (vm.record.process_type == 'support') {
-                document.getElementById(`sel_process_type_support`).checked = true;
-                document.getElementById(`sel_process_type_operation`).checked = false;
-            }
-
-            if (vm.record.process_type == 'operation') {
-                document.getElementById(`sel_process_type_support`).checked = false;
-                document.getElementById(`sel_process_type_operation`).checked = true;
-            }
-
-            if (!vm.record.process_type) {
-                document.getElementById(`sel_process_type_support`).checked = false;
-                document.getElementById(`sel_process_type_operation`).checked = false;
-            }
         },
         async mounted () {
             const vm = this;

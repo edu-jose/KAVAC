@@ -47,7 +47,7 @@
                         'javascript:void(0)' :
                         cancel(props.row.id)
                     "
-                    :disabled="'AN' === props.row.document_status.action || props.row.has_approved_entry || props.row.year != execution_year"
+                    :disabled="'AN' === props.row.document_status.action || props.row.has_approved_entry"
                 >
                     <i class="fa fa-close"></i>
                 </button>
@@ -69,7 +69,6 @@ export default {
                 'status',
                 'id',
             ],
-            execution_year: window.execution_year
         };
     },
     created() {
@@ -134,10 +133,8 @@ export default {
                         let url = vm.setUrl('asset/depreciations/approve');
                         await axios.post(url + '/' + id).then(response => {
                             if (typeof(response.data.error) !== 'undefined') {
-                                vm.loading = false;
                                 /** Muestra un mensaje de error si sucede algún evento en la eliminación */
                                 vm.showMessage('custom', 'Alerta!', 'danger', 'screen-error', response.data.message);
-                                vm.loading = false;
                                 return false;
                             }
 

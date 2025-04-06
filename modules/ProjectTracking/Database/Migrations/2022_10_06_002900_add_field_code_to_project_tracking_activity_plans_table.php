@@ -28,9 +28,9 @@ class AddFieldCodeToProjectTrackingActivityPlansTable extends Migration
                     $table->string('code')->comment(
                         'Código del plan de actividades'
                     );
-                }
+                };
             });
-        }
+        };
     }
 
     /**
@@ -44,6 +44,6 @@ class AddFieldCodeToProjectTrackingActivityPlansTable extends Migration
             Schema::table('project_tracking_activity_plans', function (Blueprint $table) {
                 $table->dropColumn('code');
             });
-        }
+        };
     }
 }

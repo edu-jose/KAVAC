@@ -34,7 +34,7 @@
                 <div class="col-md-2" id="helpPayrollBenefitRequestDate">
                     <div class="form-group is-required">
                         <label>Fecha de la solicitud:</label>
-                        <input type="date" data-toggle="tooltip" title="Fecha de generación de la solicitud"
+                        <input type="date" readonly data-toggle="tooltip" title="Fecha de generación de la solicitud"
                             class="form-control input-sm" v-model="record.created_at">
                         <input type="hidden" v-model="record.id">
                     </div>

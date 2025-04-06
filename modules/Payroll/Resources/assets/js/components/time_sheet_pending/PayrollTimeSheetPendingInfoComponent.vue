@@ -72,9 +72,11 @@
                                         <div class="row" style="margin: 1px 0">
                                             <span class="col-md-12">
                                                 {{
-                                                    record.payroll_supervised_group
-                                                        ? record.payroll_supervised_group.supervisor
-                                                        : ''
+                                                    record.payroll_supervised_group ?
+                                                    record.payroll_supervised_group.supervisor.id_number + ' - ' +
+                                                    record.payroll_supervised_group.supervisor.first_name + ' ' +
+                                                    record.payroll_supervised_group.supervisor.last_name :
+                                                    ''
                                                 }}
                                             </span>
                                         </div>
@@ -86,9 +88,11 @@
                                         <div class="row" style="margin: 1px 0">
                                             <span class="col-md-12">
                                                 {{
-                                                    record.payroll_supervised_group
-                                                        ? record.payroll_supervised_group.approver
-                                                        : ''
+                                                    record.payroll_supervised_group ?
+                                                    record.payroll_supervised_group.approver.id_number + ' - ' +
+                                                    record.payroll_supervised_group.approver.first_name + ' ' +
+                                                    record.payroll_supervised_group.approver.last_name :
+                                                    ''
                                                 }}
                                             </span>
                                         </div>

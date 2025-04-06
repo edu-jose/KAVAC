@@ -34,30 +34,15 @@ class BudgetSubSpecificFormulationExport implements WithHeadings, ShouldAutoSize
     protected $budgetFormulationId;
 
     /**
-     * Moneda del presupuesto
-     *
-     * @var object $currency
-     */
-    protected $currency;
-
-    /**
      * Clase del modelo del cual exportar datos
      *
      * @var string|object|BudgetSubSpecificFormulation $model
      */
     protected $model;
 
-    /**
-     * Historico de conversiones
-     *
-     * @var array
-     */
-    protected $conversion_history;
-
-    public function __construct($model, $currency)
+    public function __construct($model)
     {
         $this->model = $model;
-        $this->currency = $currency;
     }
 
     /**
@@ -85,8 +70,6 @@ class BudgetSubSpecificFormulationExport implements WithHeadings, ShouldAutoSize
             'institution'
         ])->where('id', $this->budgetFormulationId)
         ->get();
-
-        $this->conversion_history = \Modules\Budget\Facades\CurrencyHistory::getExchangeRateHistory($formulation[0]->date, $formulation[0]->date, $formulation[0]->currency, $this->currency);
 
         return $formulation;
     }
@@ -155,11 +138,9 @@ class BudgetSubSpecificFormulationExport implements WithHeadings, ShouldAutoSize
         foreach ($row->accountOpens as $accountOpen) {
             $code = $accountOpen?->budgetAccount?->code;
             $denomination = $accountOpen?->budgetAccount?->denomination;
-            $total_year = $this->convertCurrency(
-                $this->conversion_history,
+            $total_year = number_format(
                 $accountOpen->total_year_amount,
-                $row->date,
-                $this->currency->decimal_places,
+                $row->currency->decimal_places,
                 ",",
                 "."
             );
@@ -167,15 +148,12 @@ class BudgetSubSpecificFormulationExport implements WithHeadings, ShouldAutoSize
             $array[] = [$code, $denomination, $total_year];
         }
 
-        $total_formulated = $this->convertCurrency(
-            $this->conversion_history,
+        $total_formulated = number_format(
             $row->total_formulated,
-            $row->date,
-            $this->currency->decimal_places,
+            $row->currency->decimal_places,
             ",",
             "."
         );
-
         $array[] = ['Total Formulado', '', $total_formulated];
 
         array_multisort(
@@ -207,7 +185,7 @@ class BudgetSubSpecificFormulationExport implements WithHeadings, ShouldAutoSize
                 $sheet->setCellValue('B1', $records[0]->date ? date("d/m/Y", strtotime($records[0]->date)) : 'Sin fecha asignada');
                 $sheet->setCellValue('B2', ($records[0]?->assigned || $records[0]?->assigned === '1') ? 'Sí' : 'No');
                 $sheet->setCellValue('B3', $records[0]?->specificAction ? $records[0]?->specificAction?->institution : 'N/A');
-                $sheet->setCellValue('B4', $this->currency ? "{$this->currency->symbol} - {$this->currency->name}" : 'N/A');
+                $sheet->setCellValue('B4', $records[0]?->currency ? $records[0]?->currency?->description : 'N/A');
                 $sheet->setCellValue('B5', $records[0]?->year ? $records[0]?->year : 'N/A');
                 $sheet->setCellValue('B6', $records[0]?->specificAction->specificable->code . ' - ' .
                     $records[0]?->specificAction?->specificable?->name ??
@@ -221,22 +199,17 @@ class BudgetSubSpecificFormulationExport implements WithHeadings, ShouldAutoSize
                 $sheet->setCellValue('B9', $records[0]?->budgetFinancementSource ?
                     $records[0]?->budgetFinancementSource?->name :
                     'N/A');
-                $sheet->setCellValue('B10', $this->currency->symbol . ' ' .
-                    $this->convertCurrency(
-                        $this->conversion_history,
+                $sheet->setCellValue('B10', $records[0]->currency->symbol . ' ' .
+                    number_format(
                         $records[0]->financement_amount,
-                        $records[0]->date,
-                        $this->currency->decimal_places,
+                        $records[0]->currency->decimal_places,
                         ',',
                         '.'
                     ));
-
-                $sheet->setCellValue('B11', $this->currency->symbol . ' ' .
-                    $this->convertCurrency(
-                        $this->conversion_history,
+                $sheet->setCellValue('B11', $records[0]->currency->symbol . ' ' .
+                    number_format(
                         $records[0]->total_formulated,
-                        $records[0]->date,
-                        $this->currency->decimal_places,
+                        $records[0]->currency->decimal_places,
                         ',',
                         '.'
                     ));
@@ -266,7 +239,7 @@ class BudgetSubSpecificFormulationExport implements WithHeadings, ShouldAutoSize
                         $sheet->setCellValueByColumnAndRow(
                             1,
                             $row,
-                            $cellValue . ' ' . $this->currency->symbol
+                            $cellValue . ' ' . $records[0]->currency->symbol
                         );
                         $sheet->getStyleByColumnAndRow(1, $row)->getFont()->setBold(true);
                         $sheet->getStyleByColumnAndRow(3, $row)->getFont()->setBold(true);
@@ -276,28 +249,5 @@ class BudgetSubSpecificFormulationExport implements WithHeadings, ShouldAutoSize
         ];
 
         return $data;
-    }
-
-    /**
-     * Aplica una conversión de moneda
-     *
-     * @param array $conversion_history Historial de tasas de cambio
-     * @param float $amount Monto del financiamiento
-     * @param string $date Fecha del financiamiento
-     * @param int $decimal_places Cantidad de decimales
-     * @param string $separator Separador de miles
-     * @param string $decimal_separator Separador de decimales
-     *
-     * @return string Monto convertido
-     */
-    private function convertCurrency(
-        array $conversion_history,
-        float $amount,
-        string $date,
-        int $decimal_places,
-        string $separator,
-        string $decimal_separator
-    ): string {
-        return number_format(($conversion_history[$date] * $amount), $decimal_places, $decimal_separator, $separator);
     }
 }

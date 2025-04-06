@@ -46,12 +46,12 @@
                                     <input type="hidden" v-model="record.id">
                                 </div>
                             </div>
-							<div class="col-12 col-md-2">
+							<div class="col-12 col-md-6 col-md-3">
 								<div class="form-group is-required">
 									<label class="col-12">Activo:</label>
-									<div class="custom-control custom-switch ml-2" data-toggle="tooltip"
+									<div class="custom-control custom-switch" data-toggle="tooltip" 
 										 title="Indique si la unidad tributaria esta o no activa">
-										<input type="checkbox" class="custom-control-input"
+										<input type="checkbox" class="custom-control-input" 
 											   id="taxUnitActive" v-model="record.active" :value="true">
 										<label class="custom-control-label" for="taxUnitActive"></label>
 									</div>
@@ -61,15 +61,15 @@
 	                </div>
 	                <div class="modal-footer">
 	                	<div class="form-group">
-	                		<button type="button" class="btn btn-default btn-sm btn-round btn-modal-close"
+	                		<button type="button" class="btn btn-default btn-sm btn-round btn-modal-close" 
 									@click="clearFilters" data-dismiss="modal">
 								Cerrar
 							</button>
-							<button type="button" class="btn btn-warning btn-sm btn-round btn-modal btn-modal-clear"
+							<button type="button" class="btn btn-warning btn-sm btn-round btn-modal btn-modal-clear" 
 									@click="reset()">
 								Cancelar
 							</button>
-							<button type="button" @click="createRecord('tax-units')"
+							<button type="button" @click="createRecord('tax-units')" 
 									class="btn btn-primary btn-sm btn-round btn-modal-save">
 								Guardar
 							</button>
@@ -142,7 +142,6 @@
 					end_date: '',
 					active: false
 				};
-				this.errors = [];
 			},
 		},
 		created() {

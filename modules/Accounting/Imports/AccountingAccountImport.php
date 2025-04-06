@@ -72,7 +72,6 @@ class AccountingAccountImport implements
             '*.denominacion' => ['required'],
             '*.activa' => ['required', 'max:2'],
             '*.original' => ['required', 'max:2'],
-            '*.tipo_de_actividad' => ['nullable', 'in:AI,AO,AF'],
         ];
     }
 
@@ -92,7 +91,6 @@ class AccountingAccountImport implements
             'activa.max' => 'Error en la fila :row. El campo :attribute debe ser de maximo 2 caracteres.',
             'original.required' => 'Error en la fila :row. El campo :attribute es obligatorio',
             'original.max' => 'Error en la fila :row. El campo :attribute debe ser de maximo 2 caracteres.',
-            'tipo_de_actividad.in' => 'Error en la fila :row. El campo :attribute debe ser AI, AO o AF.',
         ];
     }
 

@@ -412,7 +412,7 @@ class ReportRepository implements ReportInterface
         $fontFamily = $this->fontFamily;
         $lineStyle = $this->lineStyle;
         if (empty($footerText)) {
-            $footerText = strip_tags($this->institution->legal_address);
+            $footerText = $this->institution->legal_address;
         }
 
         $this->pdf->setFooterCallback(function ($pdf) use ($pages, $fontFamily, $footerText, $lineStyle) {

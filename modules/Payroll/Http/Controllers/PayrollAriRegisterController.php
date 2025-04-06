@@ -6,7 +6,6 @@ use DateTime;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Maatwebsite\Excel\Facades\Excel;
-use Illuminate\Support\Facades\Storage;
 use Modules\Payroll\Models\PayrollStaff;
 use Modules\Payroll\Models\PayrollAriRegister;
 use Modules\Payroll\Exports\PayrollAriRegisterExport;
@@ -230,15 +229,8 @@ class PayrollAriRegisterController extends Controller
         ]);
 
         $data['filePath'] = $request->file('file')->store('/tmp');
-        $user = auth()->user();
 
-        /** Crea el nombre del archivo de errores para la importación */
-        $errorsFilePath = 'import_' . uniqid() . '_.errors' . '.xlsx';
-
-        /* Crea el archivo de errores en el disco temporal */
-        Storage::disk('temporary')->put($errorsFilePath, '');
-
-        dispatch(new PayrollAriRegisterImportJob($data, $user, $errorsFilePath));
+        dispatch(new PayrollAriRegisterImportJob($data));
     }
 
     /**

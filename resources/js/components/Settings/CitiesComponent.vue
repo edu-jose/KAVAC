@@ -30,19 +30,26 @@
 			                    </div>
 							</div>
 							<div class="col-12 col-md-6">
-								<div class="form-group is-required">
+								<div class="form-group" v-show="editCities=='false'">
                                     <label>Estados:</label>
                                     <select2 :options="estates" v-model="record.estate_id"></select2>
+                                </div>
+                                <div class="form-group" v-show="editCities == 'true'">
+                                    <label>Estados:</label>
+                                    <select class="form-control select2 pb-2" v-model="record.estate_id">
+                                        <option :value="ste.id" :selected="ste.id == record.estate_id"
+												v-for="ste in estates" :key="ste.id">
+                                                {{ ste.text }}
+                                        </option>
+                                    </select>
                                 </div>
 							</div>
 							<div class="col-12">
 								<div class="form-group is-required">
 									<label>Nombre:</label>
-									<input
-										type="text" placeholder="Nombre de la Ciudad" data-toggle="tooltip"
-										title="Indique el nombre de la ciudad (requerido)"
-										class="form-control input-sm" v-model="record.name" v-is-text
-									>
+									<input type="text" placeholder="Nombre de la Ciudad" data-toggle="tooltip"
+										   title="Indique el nombre de la ciudad (requerido)"
+										   class="form-control input-sm" v-model="record.name" v-is-text>
 			                    </div>
 							</div>
 						</div>
@@ -101,8 +108,20 @@
 				countries: [],
 				estates: ['0'],
 				columns: ['estate.name', 'name', 'id'],
+				editCities: '',
 			}
 		},
+		 watch: {
+            record: {
+                deep: true,
+                handler: function(newValue, oldValue) {
+                    const vm = this;
+                    if (vm.record.id) {
+                        vm.record.estate_id = vm.selectedEstateId;
+                    }
+                }
+            },
+        },
 		methods: {
 			/**
 			 * Método que borra todos los datos del formulario
@@ -116,7 +135,7 @@
 					estate_id: '',
 					name: '',
 				};
-				this.errors = [];
+				this.editCities = 'false';
 			},
 
 			/**
@@ -136,9 +155,9 @@
                 })[0])) || vm.reset();
                 vm.record = recordEdit;
                 vm.record.country_id = recordEdit.estate.country_id;
-				setTimeout(() => {
-					vm.record.estate_id = recordEdit.estate.id;
-				}, 1000);
+                vm.getEstates(vm.record.country_id);
+                vm.record.estate_id = recordEdit.estate.id;
+                vm.selectedEstateId = recordEdit.estate.id;
                 event.preventDefault();
             }
 		},
@@ -159,6 +178,7 @@
 		},
 		mounted() {
 			const vm = this;
+			vm.editCities = 'false';
 			$("#add_city").on('show.bs.modal', function() {
 				vm.getCountries();
 			});

@@ -28,17 +28,6 @@
                 </div>
             </div>
             <div class="row">
-                <div class="col-sm-6 col-md-6 col-lg-3">
-                    <div class="form-group">
-                        <label class="control-label">Código de Disponibilidad Presupuestaria</label>
-                        <input
-                            type="text"
-                            readonly
-                            class="form-control input-sm"
-                            :value="record.purchase_common_budgetary_availability?.code"
-                        />
-                    </div>
-                </div>
                 <div class="col-3">
                     <div class="form-group is-required">
                         <label class="control-label">Fecha</label>
@@ -600,7 +589,7 @@
                                                                     'alias': 'numeric',
                                                                     'allowMinus': 'false'
                                                                 "
-                                                                @focus="selectText"
+                                                                onfocus="$(this).select()"
                                                                 class="form-control input-sm"
                                                                 data-toggle="tooltip"
                                                                 title="Indique el monto a asignar para la cuenta seleccionada"
@@ -761,6 +750,18 @@ export default {
                 return null;
             },
         },
+        budget_items: {
+            type: Array,
+            default: function () {
+                return [{ id: "", text: "Seleccione..." }];
+            },
+        },
+        specific_actions: {
+            type: Array,
+            default: function () {
+                return [{ id: "", text: "Seleccione..." }];
+            },
+        },
         has_budget: {
             type: Boolean,
             default: function () {
@@ -777,7 +778,6 @@ export default {
                 documentFiles: [],
             },
             accounts: [],
-            specific_actions: [],
             account_id: "",
             account_concept: "",
             account_code: "",
@@ -907,20 +907,6 @@ export default {
                     account_id: item.budget_account_id,
                     tax_id: "",
                 });
-            });
-
-            $("#add_account")
-            .on("shown.bs.modal", function() {
-                if (vm.specific_actions.length === 0) {
-                    /** Carga las acciones específicas para la respectiva formulación */
-                    vm.getSpecificActions();
-                }
-            })
-            .on("hide.bs.modal", function() {
-                /** @type {Array} Inicializa el arreglo de acciones específicas a seleccionar */
-                vm.specific_actions = [];
-                /** @type array Inicializa el arreglo de las cuentas presupuestarias seleccionadas */
-                vm.accounts = [];
             });
         }
     },
@@ -1184,7 +1170,8 @@ export default {
 
             if (
                 vm.record.date &&
-                vm.record.description
+                vm.record.source_document &&
+                vm.record.institution_id
             ) {
                 let year = vm.record.date.split("-")[0];
                 let url = `${window.app_url}/budget/get-group-specific-actions/${year}/1/${vm.record.institution_id}`;
@@ -1198,19 +1185,10 @@ export default {
                     });
             } else {
                 $("#add_account").find(".close").click();
-                bootbox.alert({
-                    title: "Advertencia",
-                    message: "Debe indicar la fecha y la descripción antes de agregar cuentas.",
-                    closeButton: false,
-					buttons: {
-						ok: {
-							label: "Cerrar",
-							className: 'btn-light'
-						}
-					}
-                });
+                bootbox.alert(
+                    "Debe indicar los datos del compromiso antes de agregar cuentas"
+                );
             }
-
 
             if (vm.editIndex != null) {
                 vm.specific_action_id =

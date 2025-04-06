@@ -61,14 +61,12 @@ class MunicipalityController extends Controller
         $this->validate($request, [
             'name' => ['required', 'max:100'],
             'code' => ['required', 'max:10', new UniqueMunicipalityCode()],
-            'country_id' => ['required', 'exists:countries,id'],
-            'estate_id' => ['required', 'exists:estates,id']
+            'estate_id' => ['required']
         ], [
             'name.max' => ('El campo nombre no debe ser mayor que 100 caracteres.'),
             'code.required' => ('El campo código es obligatorio.'),
             'code.max' => ('El campo código no debe ser mayor que 10 caracteres.'),
             'estate_id.required' => ('El campo estado es obligatorio.'),
-            'country_id.required' => ('El campo pais es obligatorio.'),
         ]);
 
         if (!restore_record(Municipality::class, ['name' => $request->name, 'estate_id' => $request->estate_id])) {
@@ -105,14 +103,7 @@ class MunicipalityController extends Controller
         $this->validate($request, [
             'name' => ['required', 'max:100'],
             'code' => ['required', 'max:10'],
-            'estate_id' => ['required', 'exists:estates,id'],
-            'country_id' => ['required', 'exists:countries,id']
-        ], [
-            'name.max' => ('El campo nombre no debe ser mayor que 100 caracteres.'),
-            'code.required' => ('El campo código es obligatorio.'),
-            'code.max' => ('El campo código no debe ser mayor que 10 caracteres.'),
-            'estate_id.required' => ('El campo estado es obligatorio.'),
-            'country_id.required' => ('El campo pais es obligatorio.'),
+            'estate_id' => ['required']
         ]);
 
         $municipality->name = $request->name;

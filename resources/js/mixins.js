@@ -365,13 +365,10 @@ Vue.mixin({
          *
          * @return     {[type]}  Objeto con información de la diferencia obtenida entre las dos fechas
          */
-        diff_datetimes: function (dateThen, fromDateTime = false, format = 'YYYY-MM-DD HH:mm:ss') {
-            let now = moment().format(format);
-            if (fromDateTime) {
-                now = moment(fromDateTime, format);
-            }
-            const ms = moment(dateThen, format).diff(fromDateTime ? now : moment(now, format));
-            const d = moment.duration(ms);
+        diff_datetimes: function (dateThen) {
+            var now = moment().format("YYYY-MM-DD HH:mm:ss");
+            var ms = moment(dateThen, "YYYY-MM-DD HH:mm:ss").diff(moment(now, "YYYY-MM-DD HH:mm:ss"));
+            var d = moment.duration(ms);
             return {
                 years: d._data.years,
                 months: d._data.months,
@@ -402,26 +399,6 @@ Vue.mixin({
                 mm = `0${mm}`;
             }
             return `${yyyy}-${mm}-${dd}`;
-        },
-        /**
-         * Obtiene el dia de la semana
-         *
-         * @author     Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
-         *
-         * @param   {string}  date  Fecha de la cual se desea obtener el dia
-         * @param   {string}  locale Idioma de la fecha
-         *
-         * @return  {string}        Devuelve el dia de la semana
-         */
-        getWeekDay(date, locale = 'es') {
-            const dateString = new Date(date);
-            let weekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-            if (locale === 'es') {
-                weekDays = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
-            }
-            const dayName = weekDays[dateString.getDay()];
-
-            return dayName;
         },
         /**
          * Método que muestra un número formateado
@@ -581,11 +558,7 @@ Vue.mixin({
 
             await axios.get(url).then(response => {
                 if (typeof (response.data.records) !== "undefined") {
-                    vm.records = response.data.records || [];
-
-                }
-                if (response.data?.tableRef) {
-                    vm.$refs[response.data.tableRef].refresh();
+                    vm.records = response.data.records;
                 }
             }).catch(error => {
                 vm.logs('mixins.js', 285, error, 'readRecords');
@@ -708,6 +681,7 @@ Vue.mixin({
         async initUpdate(id, event) {
             let vm = this;
             vm.errors = [];
+
             let recordEdit = await JSON.parse(JSON.stringify(vm.records.filter((rec) => {
                 return rec.id === id;
             })[0])) || vm.reset();
@@ -820,7 +794,7 @@ Vue.mixin({
                                 return rec.id !== id;
                             })));
                             if (typeof (vm.$refs.tableResults) !== "undefined") {
-                                vm.$refs.tableResults.refresh();
+                                vm.$refs.tableResults.refresh;
                             }
                             vm.showMessage('destroy');
                         }).catch(error => {
@@ -1263,9 +1237,9 @@ Vue.mixin({
                     }
                 }
 
-                if (vm.lockscreen.time > 0) {
+                if (vm.lockscreen.time > 0 ) {
                     // Bloquea la pantalla del sistema al no haber actividad por parte del usuario
-                    vm.lockscreen.timer_timeout = setTimeout(function () {
+                    vm.lockscreen.timer_timeout = setTimeout(function() {
                         if (window.screen_locked) {
                             return;
                         }
@@ -1344,64 +1318,6 @@ Vue.mixin({
             await axios.get(`${window.app_url}/receivers`).then(response => {
                 if (response.data.records.length > 0) {
                     vm.receivers = response.data.records;
-                }
-            }).catch(error => {
-                console.error(error);
-            });
-        },
-        /**
-         * Listado de localidades por parroquia
-         *
-         * @author     Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
-         */
-        getLocalities(parishId) {
-            const vm = this;
-            vm.localities = [];
-            if (parishId) {
-                axios.get(`${window.app_url}/get-localities/${parishId}`).then((response) => {
-                    vm.localities = response.data?.records || [];
-                });
-            }
-        },
-        /**
-         * Listado de localidades
-         *
-         * @author     Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
-         */
-        async getAllLocalities(listAttribute = 'localities') {
-            const vm = this;
-            await axios.get(`${window.app_url}/get-all-localities`).then(response => {
-                if (response.data.records.length > 0) {
-                    vm[listAttribute] = response.data.records;
-                }
-            }).catch(error => {
-                console.error(error);
-            });
-        },
-        /**
-         * Listado de regiones por estado
-         *
-         * @author     Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
-         */
-        getRegions(estateId) {
-            const vm = this;
-            vm.regions = [];
-            if (estateId) {
-                axios.get(`${window.app_url}/get-regions/${estateId}`).then((response) => {
-                    vm.regions = response.data?.records || [];
-                });
-            }
-        },
-        /**
-         * Listado de localidades
-         *
-         * @author     Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
-         */
-        async getAllRegions(listAttribute = 'regions') {
-            const vm = this;
-            await axios.get(`${window.app_url}/get-all-regions`).then(response => {
-                if (response.data.records.length > 0) {
-                    vm[listAttribute] = response.data.records;
                 }
             }).catch(error => {
                 console.error(error);
@@ -1555,9 +1471,6 @@ Vue.mixin({
             const birthdate = moment(fromDate);
             const age = moment().diff(birthdate, 'years');
             return age;
-        },
-        selectText(event) {
-            event.target.select();
         }
     },
     async created() {
@@ -1576,17 +1489,17 @@ Vue.mixin({
         $('.VueTables__limit-field').tooltip();
 
         let inputElements = document.querySelectorAll('input');
-        inputElements.forEach(function (element) {
+        inputElements.forEach(function(element) {
             if (element.type === 'date' && !element.classList.contains('no-restrict') && !element.classList.contains('fiscal-year-restrict')) {
                 let today = new Date();
                 let dd = today.getDate();
                 let mm = today.getMonth() + 1;
                 let yyyy = today.getFullYear();
-                if (dd < 10) {
-                    dd = '0' + dd;
+                if(dd<10) {
+                    dd='0'+dd;
                 }
-                if (mm < 10) {
-                    mm = '0' + mm;
+                if(mm<10) {
+                    mm='0'+mm;
                 }
                 let now = `${yyyy}-${mm}-${dd}`;
                 element.setAttribute('max', now);

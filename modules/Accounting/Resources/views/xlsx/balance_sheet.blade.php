@@ -226,8 +226,6 @@
                     <tr>
                         <td></td>
                         <td>TOTAL PASIVO + PATRIMONIO</td>
-                        <td></td>
-                        <td></td>
                         <td>{{ number_format($totPasivePatrimonialLast, (int) $currency->decimal_places, ',', '.') }}
                         </td>
                     </tr>

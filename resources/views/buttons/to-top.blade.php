@@ -5,7 +5,7 @@
 
 @section('extra-js')
     @parent
-    <script nonce="{{ session()->get('nonce') }}">
+    <script>
         document.addEventListener('DOMContentLoaded', (event) => {
     		$(window).scroll(function () {
                 if ($(this).scrollTop() > 50) {

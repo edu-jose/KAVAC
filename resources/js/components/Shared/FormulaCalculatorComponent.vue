@@ -24,7 +24,7 @@
                     title="presione para desahacer el último carácter" style="padding-right:11px;padding-left:11px;"
                     @click="setFormula('backspace')"
                 >
-                    <i class="mdi mdi-backspace-outline"></i>
+                    <i class="fa fa-long-arrow-left"></i>
                 </button>
                 <button
                     type="button" class="btn btn-info btn-sm btn-formula btn-start-parenthesis btn-operator" data-toggle="tooltip"

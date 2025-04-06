@@ -38,10 +38,6 @@
                     <parishes id="helpParishes"></parishes>
                     {{-- Configuración de Ciudades --}}
                     <cities id="helpCities"></cities>
-                    {{-- Configuración de localidades --}}
-                    <localities id="helpLocalities"></localities>
-                    {{-- Configuración de regiones --}}
-                    <regions id="helpRegions"></regions>
                     {{-- Configuración de monedas --}}
                     <currencies id="helpCurrencies"></currencies>
                     @if (App\Models\Currency::all()->count() > 1)

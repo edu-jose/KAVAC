@@ -84,7 +84,7 @@
                                 'PayrollSuspendVacation'
                             )
                         "
-                        :disabled="props?.row?.status != 'approved' || props?.row?.is_from_xlsx_file"
+                        :disabled="props?.row?.status != 'approved'"
                         class="btn btn-secondary btn-xs btn-action btn-tooltip"
                         data-toggle="tooltip"
                         title="Suspender vacaciones"
@@ -107,14 +107,13 @@
                                 props.row
                             )
                         "
-                        :disabled="props?.row?.status != 'approved' || props?.row?.is_from_xlsx_file"
+                        :disabled="props?.row?.status != 'approved'"
                         class="btn btn-warning btn-xs btn-action btn-tooltip"
                         data-toggle="tooltip"
                         title="Replanificar vacaciones"
                         v-has-tooltip
                         type="button"
                         data-placement="bottom"
-
                     >
                         <i
                             class="fa fa-file"

@@ -46,6 +46,7 @@
                                         [
                                             'id' => 'institution_id',
                                             'class' => 'select2', 'data-toggle' => 'tooltip',
+                                            'onchange' => 'updateSelectActive($(this), $("#department_id"), "Department", undefined, undefined, [$("#payroll_position_id"), $("#payroll_staff_id")] )',
                                             'title' => __('Seleccione una institución')
                                         ]
                                     ) !!}
@@ -63,6 +64,7 @@
                                             'id' => 'department_id',
                                             'class' => 'select2',
                                             'data-toggle' => 'tooltip',
+                                            'onchange' => 'updateStaffSelect($(this), $("#payroll_staff_id"), "PayrollEmployment", "Payroll", "payrollStaff", [$("#payroll_position_id")])',
                                             'title' => __('Seleccione un departamento o dependencia'),
                                         ]) !!}
                                     </div>
@@ -75,6 +77,7 @@
                                                 'id' => 'payroll_staff_id',
                                                 'class' => 'select2',
                                                 'data-toggle' => 'tooltip',
+                                                'onchange' => 'updateSelectCustomPosition($(this), $("#payroll_position_id"), "PayrollEmployment", "Payroll", "")',
                                                 'title' => __('Seleccione una persona responsable del proyecto')
                                             ]) !!}
                                         </div>
@@ -88,7 +91,7 @@
                                                 'id' => 'payroll_position_id',
                                                 'class' => 'select2',
                                                 'data-toggle' => 'tooltip',
-                                                'disabled' => (true),
+                                                'disabled' => ( true),
                                                 'title' => __('Seleccione el cargo de la persona responsable del proyecto')
                                             ]) !!}
                                         </div>
@@ -102,7 +105,8 @@
                                             'id' => 'department_id',
                                             'class' => 'select2',
                                             'data-toggle' => 'tooltip',
-                                            'disabled' => (false),
+                                            'disabled' => ( false),
+                                            'onchange' => 'updateStaffSelect($(this), $("#payroll_staff_id"), "PayrollEmployment", "Payroll", "payrollStaff",[$("#payroll_position_id")])',
                                             'title' => __('Seleccione un departamento o dependencia'),
                                         ]) !!}
                                     </div>
@@ -115,7 +119,8 @@
                                                 'id' => 'payroll_staff_id',
                                                 'class' => 'select2',
                                                 'data-toggle' => 'tooltip',
-                                                'disabled' => (false),
+                                                'disabled' => ( false),
+                                                'onchange' => 'updateSelectCustomPosition($(this), $("#payroll_position_id"), "PayrollEmployment", "Payroll", "")',
                                                 'title' => __('Seleccione una persona responsable del proyecto')
                                             ]) !!}
                                         </div>
@@ -129,7 +134,7 @@
                                                 'id' => 'payroll_position_id',
                                                 'class' => 'select2',
                                                 'data-toggle' => 'tooltip',
-                                                'disabled' => (true),
+                                                'disabled' => ( true),
                                                 'title' => __('Seleccione el cargo de la persona responsable del proyecto')
                                             ]) !!}
                                         </div>
@@ -187,7 +192,7 @@
                                 </div>
                             </div>
                             <div id="helpEndDate" class="col-12 col-lg-3">
-                                <div class="form-group">
+                                <div class="form-group is-required">
                                     {!! Form::label('to_date', __('Fecha de finalización'), ['class' => 'control-label']) !!}
                                     {!! Form::date('to_date', (isset($model))?$model->to_date:old('to_date'), [
                                         'class' => 'form-control input-sm no-restrict',
@@ -205,7 +210,7 @@
                                             'id' => 'active',
                                             'class' => 'custom-control-input'
                                         ]) !!}
-                                        <label class="custom-control-label" for="active">&nbsp;</label>
+                                        <label class="custom-control-label" for="active"></label>
                                     </div>
                                 </div>
                             </div>
@@ -240,9 +245,10 @@
                         @endif
                         @if (!isset($hide_previous) || !$hide_previous)
                         {!! Form::button('<i class="fa fa-ban"></i>', [
-                            'class' => 'btn btn-warning btn-icon btn-round redirect-back',
+                            'class' => 'btn btn-warning btn-icon btn-round',
                             'type' => 'button',
                             'data-toggle' => 'tooltip',
+                            'onclick' => 'window.location.href="' . url()->previous() . '"',
                             'title' => __('Cancelar y regresar'),
                         ]) !!}
                         @endif
@@ -263,19 +269,8 @@
 
 @section('extra-js')
     @parent
-    <script nonce="{{ session()->get('nonce') }}">
+    <script>
         $(document).ready(function() {
-            const payrollStaffId = document.getElementById('payroll_staff_id');
-            $('#institution_id').on('change', function() {
-                updateSelectActive($(this), $("#department_id"), "Department", undefined, undefined, [$("#payroll_position_id"), $("#payroll_staff_id")] );
-            });
-            $('#department_id').on('change', function() {
-                updateStaffSelect($(this), $("#payroll_staff_id"), "PayrollEmployment", "Payroll", "payrollStaff", [$("#payroll_position_id")]);
-            });
-            $('#payroll_staff_id').on('change', function() {
-                $('#payroll_position_id').attr('disabled', false);
-                updateSelectCustomPosition($(this), $("#payroll_position_id"), "PayrollEmployment", "Payroll", "");
-            });
             app.ckeditor.editorData = "{!! (isset($model))?$model->description:old('description')  !!}";
             $("#reset-select").on('click', function() {
                 $('#institution_id').val('').change();

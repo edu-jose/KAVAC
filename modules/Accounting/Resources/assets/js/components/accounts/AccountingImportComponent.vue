@@ -1,42 +1,36 @@
 <template>
     <div class="card-body">
         <accounting-show-errors :options="errors" />
-        <div class="card-body ">
+        <div class="card-body">
             <h6>EJEMPLO: Formato de hoja de cálculo</h6>
-            <div class="table-responsive">
-                <table  class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <td class="text-center"><strong>CÓDIGO</strong></td>
-                            <td class="text-center">
-                                <strong>DENOMINACION</strong>
-                            </td>
-                            <td class="text-center">
-                                <strong>TIPO DE CUENTA</strong>
-                            </td>
-                            <td class="text-center"><strong>ACTIVA</strong></td>
-                            <td class="text-center"><strong>ORIGINAL</strong></td>
-                            <td class="text-center">
-                                <strong>SUB-ESPECIFICA</strong>
-                            </td>
-                            <td class="text-center">
-                                <strong>TIPO DE ACTIVIDAD</strong>
-                            </td>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td class="text-center">Ej: 9.9.9.99.99.99.999</td>
-                            <td class="text-center">Nombre de denominación</td>
-                            <td class="text-center">INGRESO ó EGRESO</td>
-                            <td class="text-center">SI ó NO</td>
-                            <td class="text-center">SI ó NO</td>
-                            <td class="text-center">Ej: 9.9.9.99.99.99.999</td>
-                            <td class="text-center">AO ó AI ó AF</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+            <table cellpadding="1" border="1">
+                <thead>
+                    <tr>
+                        <td class="text-center"><strong>CÓDIGO</strong></td>
+                        <td class="text-center">
+                            <strong>DENOMINACION</strong>
+                        </td>
+                        <td class="text-center">
+                            <strong>TIPO DE CUENTA</strong>
+                        </td>
+                        <td class="text-center"><strong>ACTIVA</strong></td>
+                        <td class="text-center"><strong>ORIGINAL</strong></td>
+                        <td class="text-center">
+                            <strong>SUB-ESPECIFICA</strong>
+                        </td>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="text-center">Ej: 9.9.9.99.99.99.999</td>
+                        <td class="text-center">Nombre de denominación</td>
+                        <td class="text-center">INGRESO ó EGRESO</td>
+                        <td class="text-center">SI ó NO</td>
+                        <td class="text-center">SI ó NO</td>
+                        <td class="text-center">Ej: 9.9.9.99.99.99.999</td>
+                    </tr>
+                </tbody>
+            </table>
             <div class="card-footer text-right">
                 <div class="form-group">
                     <form

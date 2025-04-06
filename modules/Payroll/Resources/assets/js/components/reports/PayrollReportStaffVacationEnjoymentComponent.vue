@@ -110,7 +110,7 @@
 			</v-client-table>
 		</div>
 		<div class="card-footer text-right">
-			<button @click.prevent="createReport('staff-vacation-enjoyment', $event)" :disabled="records.length == 0"
+			<button @click.prevent="createReport('staff-vacation-enjoyment')" :disabled="records.length == 0"
 				class="btn btn-primary btn-sm" data-toggle="tooltip" title="Generar Reporte"
 				type="button">
 				<span>Generar reporte</span>
@@ -154,7 +154,7 @@ export default {
 				payroll_staff_id: ''
 			};
 		},
-		createReport(current, event) {
+		createReport(current) {
 			const vm = this;
 			vm.loading = true;
 			let fields = {
@@ -163,12 +163,10 @@ export default {
 				start_date: this.record.start_date,
 				end_date: this.record.end_date,
 			};
-
-			event.preventDefault();
 			axios.post(`${window.app_url}/payroll/reports/${current}/create`, fields).then(response => {
 				if (typeof response.data.redirect !== 'undefined') {
-                    const windowReport = window.open(response.data.redirect, '_blank');
-					windowReport.focus();
+					var url = response.data.redirect;
+                        window.open(url, '_blank');
 				} else {
 					vm.reset();
 				}

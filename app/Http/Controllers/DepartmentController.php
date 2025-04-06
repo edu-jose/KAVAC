@@ -26,7 +26,6 @@ class DepartmentController extends Controller
      * @var array $data
      */
     protected $data = [];
-    protected $acronymRule;
 
     /**
      * Método constructor de la clase
@@ -39,7 +38,6 @@ class DepartmentController extends Controller
             'id' => '',
             'text' => 'Seleccione...',
         ];
-        $this->acronymRule = ['nullable', 'max:4'];
     }
 
     /**
@@ -67,24 +65,22 @@ class DepartmentController extends Controller
     public function store(Request $request)
     {
         $rules = [
-            'name' => ['required', 'unique:departments,name'],
+            'name' => ['required'],
             'institution_id' => ['required'],
-            'acronym' => $this->acronymRule,
+            'acronym' => ['max:4'],
         ];
         $mesg = [
             'name.required' => 'El campo nombre es obligatorio.',
-            'name.unique' => 'El campo nombre ya ha sido registrado en la institución.',
+            'name.unique' => 'El campo nombre ya ha sido registrado.',
             'acronym.max' => 'El campo acrónimo no debe ser mayor a 4 caracteres.',
             'acronym.unique' => 'El campo acrónimo ya ha sido registrado.',
             'institution_id.required' => 'El campo institución es obligatorio.',
 
         ];
-        $acronym = Department::where([
-            'institution_id' => $request->institution_id,
-            'acronym' => $request->acronym
-        ])->first();
 
-        if ($request->acronym && $acronym) {
+        $acronym = Department::where(['institution_id' => $request->institution_id, 'acronym' => $request->acronym])->first();
+
+        if ($acronym != null) {
             $rules = array_merge($rules, [
                 'acronym' => ['max:4', 'unique:departments,acronym'],
             ]);
@@ -93,6 +89,17 @@ class DepartmentController extends Controller
             ]);
         }
 
+        $name = Department::where(['institution_id' => $request->institution_id, 'name' => $request->name])->first();
+        if ($name != null) {
+            $rules = array_merge($rules, [
+
+                'name' => ['unique:departments,name'],
+
+            ]);
+            $mesg = array_merge($mesg, [
+                'name.unique' => 'El campo nombre ya ha sido registrado en la institucion.',
+            ]);
+        }
         $this->validate($request, $rules, $mesg);
 
         // Establece la jerarquía del departamento
@@ -107,8 +114,16 @@ class DepartmentController extends Controller
         }
 
         // Objeto con información del departamento registrado
-        $request->merge(['hierarchy' => $hierarchy]);
-        $department = Department::create($request->all());
+        $department = Department::create([
+            'name' => $request->name,
+            'acronym' => ($request->acronym) ? $request->acronym : null,
+            'hierarchy' => $hierarchy,
+            'issue_requests' => $request->issue_requests ?? false,
+            'active' => $request->active ?? false,
+            'administrative' => $request->administrative ?? false,
+            'parent_id' => ($request->parent_id) ? $request->parent_id : null,
+            'institution_id' => $request->institution_id,
+        ]);
 
         return response()->json(['record' => $department, 'message' => 'Success'], 200);
     }
@@ -127,33 +142,45 @@ class DepartmentController extends Controller
     public function update(Request $request, Department $department)
     {
         $rules = [
-            'name' => ['required', Rule::unique('departments', 'name')->ignore($department->id)],
+            'name' => ['required'],
             'institution_id' => ['required'],
-            'acronym' => $this->acronymRule,
+            'acronym' => ['max:4'],
         ];
         $mesg = [
             'name.required' => 'El campo nombre es obligatorio.',
-            'name.unique' => 'El campo nombre ya ha sido registrado en la institución.',
+            'name.unique' => 'El campo nombre ya ha sido registrado.',
             'acronym.max' => 'El campo acrónimo no debe ser mayor a 4 caracteres.',
             'acronym.unique' => 'El campo acrónimo ya ha sido registrado.',
             'institution_id.required' => 'El campo institución es obligatorio.',
 
         ];
 
-        $acronym = Department::where([
-            'institution_id' => $request->institution_id,
-            'acronym' => $request->acronym
-        ])->first();
+        $acronym = Department::where(['institution_id' => $request->institution_id, 'acronym' => $request->acronym])->first();
 
-        if ($request->acronym && $acronym && $acronym->id != $department->id) {
-            $rules = array_merge($rules, [
-                'acronym' => [Rule::unique('departments', 'acronym')->ignore($department->id)],
-            ]);
-            $mesg = array_merge($mesg, [
-                'acronym.unique' => 'El campo acrónimo ya ha sido registrado en la institucion.',
-            ]);
+        if ($acronym != null) {
+            if ($acronym->id != $department->id) {
+                $rules = array_merge($rules, [
+                    'acronym' => [Rule::unique('departments', 'acronym')->ignore($department->id)],
+                ]);
+                $mesg = array_merge($mesg, [
+                    'acronym.unique' => 'El campo acrónimo ya ha sido registrado en la institucion.',
+                ]);
+            }
         }
 
+        $name = Department::where(['institution_id' => $request->institution_id, 'name' => $request->name])->first();
+        if ($name != null) {
+            if ($name->id != $department->id) {
+                $rules = array_merge($rules, [
+
+                    'name' => [Rule::unique('departments', 'name')->ignore($department->id)],
+
+                ]);
+                $mesg = array_merge($mesg, [
+                    'name.unique' => 'El campo nombre ya ha sido registrado en la institucion.',
+                ]);
+            }
+        }
         $this->validate($request, $rules, $mesg);
 
         $hierarchy = 0;
@@ -165,8 +192,15 @@ class DepartmentController extends Controller
             }
         }
 
-        $request->merge(['hierarchy' => $hierarchy]);
-        $department->update($request->all());
+        $department->name = $request->name;
+        $department->acronym = ($request->acronym) ? $request->acronym : null;
+        $department->hierarchy = (string) $hierarchy;
+        $department->issue_requests = $request->issue_requests ?? false;
+        $department->active = $request->active ?? false;
+        $department->administrative = $request->administrative ?? false;
+        $department->parent_id = ($request->parent_id) ? $request->parent_id : null;
+        $department->institution_id = $request->institution_id;
+        $department->save();
 
         return response()->json(['message' => __('Registro actualizado correctamente')], 200);
     }

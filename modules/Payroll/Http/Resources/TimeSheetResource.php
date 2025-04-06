@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Modules\Payroll\Http\Resources;
 
-use Carbon\Carbon;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Modules\Payroll\Models\PayrollSupervisedGroup;
 
@@ -34,7 +33,6 @@ class TimeSheetResource extends JsonResource
             'institution' => $this->resource->institution,
             'document_status_id' => $this->resource->document_status_id,
             'document_status' => $this->resource->documentStatus,
-            'date' => Carbon::parse($this->resource->from_date)->format('d/m/Y') . ' - ' . Carbon::parse($this->resource->to_date)->format('d/m/Y'),
             'from_date' => $this->resource->from_date,
             'to_date' => $this->resource->to_date,
             'payroll_supervised_group_id' => $payrollSuperviedGroup->id,
@@ -43,13 +41,21 @@ class TimeSheetResource extends JsonResource
                     'code' => $payrollSuperviedGroup->code,
                     'supervisor_id' => $payrollSuperviedGroup->supervisor_id,
                     'supervisor' => !empty($payrollSuperviedGroup->supervisor)
-                        ? (($payrollSuperviedGroup->supervisor->id_number ?? $payrollSuperviedGroup->supervisor->passport) .
-                        ' - ' . $payrollSuperviedGroup->supervisor->first_name . ' ' . $payrollSuperviedGroup->supervisor->last_name)
+                        ? [
+                            'code' => $payrollSuperviedGroup->supervisor->code,
+                            'first_name' => $payrollSuperviedGroup->supervisor->first_name,
+                            'last_name' => $payrollSuperviedGroup->supervisor->last_name,
+                            'id_number' => $payrollSuperviedGroup->supervisor->id_number,
+                        ]
                         : null,
                     'approver_id' => $payrollSuperviedGroup->approver_id,
                     'approver' => !empty($payrollSuperviedGroup->approver)
-                        ? (($payrollSuperviedGroup->approver->id_number ?? $payrollSuperviedGroup->approver->passport) .
-                        ' - ' . $payrollSuperviedGroup->approver->first_name . ' ' . $payrollSuperviedGroup->approver->last_name)
+                        ? [
+                            'code' => $payrollSuperviedGroup->approver->code,
+                            'first_name' => $payrollSuperviedGroup->approver->first_name,
+                            'last_name' => $payrollSuperviedGroup->approver->last_name,
+                            'id_number' => $payrollSuperviedGroup->approver->id_number,
+                        ]
                         : null,
                 ]
                 : null,

@@ -108,7 +108,6 @@
                     acronym: '',
                     name: ''
                 };
-                this.errors = [];
             },
             /**
              * Método para la eliminación de registros

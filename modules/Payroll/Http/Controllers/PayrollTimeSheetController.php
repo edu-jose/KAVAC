@@ -121,35 +121,6 @@ class PayrollTimeSheetController extends Controller
             $institution = Institution::where('active', true)->where('default', true)->first();
         }
 
-        $categoryGroups = [];
-        $turnsArray = array_reduce($request->parameters, function ($carry, $group) use (&$categoryGroups) {
-            foreach ($group as $item) {
-                $carry[$item['text']] = $item['max_value_allowed_per_time_sheet'];
-                $categoryGroups["subtotal - " . $item['group'] . "-"] = $item['max'];
-            }
-            return $carry;
-        }, []);
-
-
-        foreach ($request->time_sheet_data as $requestKey => $requestValue) {
-            foreach ($turnsArray as $resultKey => $resultValue) {
-                if (strpos($requestKey, $resultKey) === 0) {
-                    if (intval($requestValue) > intval($resultValue)) {
-                        return response()->json(['errors' => ['error' => ['El valor de ' . $resultKey . ' no debe ser mayor a ' . $resultValue]]], 422);
-                    }
-                }
-            }
-        }
-        foreach ($request->time_sheet_data as $requestKey => $requestValue) {
-            foreach ($categoryGroups as $category => $categoryMaxValue) {
-                if (strpos($requestKey, $category) === 0) {
-                    if (intval($requestValue) > intval($categoryMaxValue)) {
-                        return response()->json(['errors' => ['error' => ['El valor de la categoria ' . $category . ' no debe ser mayor a ' . $categoryMaxValue]]], 422);
-                    }
-                }
-            }
-        }
-
         $payrollLastTimeSheet = PayrollTimeSheet::query()
             ->where([
                 'institution_id' => $institution->id,
@@ -178,7 +149,7 @@ class PayrollTimeSheetController extends Controller
                 $messages,
                 [
                     'from_date.after' =>
-                    'Ya existe un registro para este grupo de supervisados con el periodo indicado.
+                        'Ya existe un registro para este grupo de supervisados con el periodo indicado.
                             El campo Desde debe ser mayor al ' . $to_date_formatted . '.',
                 ]
             );
@@ -275,34 +246,6 @@ class PayrollTimeSheetController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $categoryGroups = [];
-        $turnsArray = array_reduce($request->parameters, function ($carry, $group) use (&$categoryGroups) {
-            foreach ($group as $item) {
-                $carry[$item['text']] = $item['max_value_allowed_per_time_sheet'];
-                $categoryGroups["subtotal - " . $item['group'] . "-"] = $item['max'];
-            }
-            return $carry;
-        }, []);
-
-        foreach ($request->time_sheet_data as $requestKey => $requestValue) {
-            foreach ($turnsArray as $resultKey => $resultValue) {
-                if (strpos($requestKey, $resultKey) === 0) {
-                    if (intval($requestValue) > intval($resultValue)) {
-                        return response()->json(['errors' => ['error' => ['El valor de ' . $resultKey . ' no debe ser mayor a ' . $resultValue]]], 422);
-                    }
-                }
-            }
-        }
-        foreach ($request->time_sheet_data as $requestKey => $requestValue) {
-            foreach ($categoryGroups as $category => $categoryMaxValue) {
-                if (strpos($requestKey, $category) === 0) {
-                    if (intval($requestValue) > intval($categoryMaxValue)) {
-                        return response()->json(['errors' => ['error' => ['El valor de la categoria ' . $category . ' no debe ser mayor a ' . $categoryMaxValue]]], 422);
-                    }
-                }
-            }
-        }
-
         $payrollTimeSheet = PayrollTimeSheet::find($id);
 
         $this->validateRules['from_date'] = [
@@ -389,8 +332,7 @@ class PayrollTimeSheetController extends Controller
         }
 
         $request->session()->flash('message', [
-            'type' => 'other',
-            'title' => '¡Éxito!',
+            'type' => 'other', 'title' => '¡Éxito!',
             'text' => 'Hoja de tiempo aprobada correctamente',
             'icon' => 'screen-ok',
             'class' => 'growl-success'
@@ -429,7 +371,7 @@ class PayrollTimeSheetController extends Controller
                     new SystemNotification(
                         'Exito',
                         'Se ha rechazado la hoja de tiempo registrada debido a las siguientes observaciones: ' .
-                            $request->observation
+                        $request->observation
                     )
                 );
 
@@ -447,8 +389,7 @@ class PayrollTimeSheetController extends Controller
         }
 
         $request->session()->flash('message', [
-            'type' => 'other',
-            'title' => '¡Éxito!',
+            'type' => 'other', 'title' => '¡Éxito!',
             'text' => 'Hoja de tiempo rechazada correctamente',
             'icon' => 'screen-ok',
             'class' => 'growl-success'
@@ -528,8 +469,7 @@ class PayrollTimeSheetController extends Controller
         }
 
         $request->session()->flash('message', [
-            'type' => 'other',
-            'title' => '¡Éxito!',
+            'type' => 'other', 'title' => '¡Éxito!',
             'text' => 'Hoja de tiempo confirmada correctamente',
             'icon' => 'screen-ok',
             'class' => 'growl-success'
@@ -549,25 +489,23 @@ class PayrollTimeSheetController extends Controller
         $profileUser = $user->profile;
 
         if ($user->hasRole('admin, payroll')) {
-            return response()->json([
-                'records' => TimeSheetResource::collection(PayrollTimeSheet::query()
-                    ->with([
-                        'payrollTimeSheetParameters.payrollParameterTimeSheetParameters.parameter',
-                    ])
-                    ->get())
+            return response()->json(['records' => TimeSheetResource::collection(PayrollTimeSheet::query()
+                ->with([
+                    'payrollTimeSheetParameters.payrollParameterTimeSheetParameters.parameter',
+                ])
+                ->get())
             ], 200);
         } else {
-            return response()->json([
-                'records' => TimeSheetResource::collection(PayrollTimeSheet::query()
-                    ->with([
-                        'payrollTimeSheetParameters.payrollParameterTimeSheetParameters.parameter',
-                    ])
-                    ->whereHas('payrollSupervisedGroup', function ($query) use ($profileUser) {
-                        $query
-                            ->where('supervisor_id', $profileUser->employee_id)
-                            ->orWhere('approver_id', $profileUser->employee_id);
-                    })
-                    ->get())
+            return response()->json(['records' => TimeSheetResource::collection(PayrollTimeSheet::query()
+                ->with([
+                    'payrollTimeSheetParameters.payrollParameterTimeSheetParameters.parameter',
+                ])
+                ->whereHas('payrollSupervisedGroup', function ($query) use ($profileUser) {
+                    $query
+                        ->where('supervisor_id', $profileUser->employee_id)
+                        ->orWhere('approver_id', $profileUser->employee_id);
+                })
+                ->get())
             ], 200);
         }
     }
@@ -581,12 +519,11 @@ class PayrollTimeSheetController extends Controller
      */
     public function vueInfo($id)
     {
-        return response()->json([
-            'record' => TimeSheetResource::make(PayrollTimeSheet::query()
-                ->with([
-                    'payrollTimeSheetParameters.payrollParameterTimeSheetParameters.parameter',
-                ])
-                ->find($id))
+        return response()->json(['record' => TimeSheetResource::make(PayrollTimeSheet::query()
+            ->with([
+                'payrollTimeSheetParameters.payrollParameterTimeSheetParameters.parameter',
+            ])
+            ->find($id))
         ], 200);
     }
 

@@ -130,6 +130,7 @@ class BudgetCentralizedActionController extends Controller
             'payroll_staff_id' => ['required'],
             'ca_description' => ['required'],
             'from_date' => ['required'],
+            'to_date' => ['required'],
         ];
 
         $messages = [
@@ -142,6 +143,7 @@ class BudgetCentralizedActionController extends Controller
             'payroll_staff_id.required'     => 'El campo responsable es obligatorio.',
             'ca_description.required' => 'El campo descripción es obligatorio. ',
             'from_date.required' => 'El campo fecha de inicio es obligatorio. ',
+            'to_date.required' => 'El campo fecha de finalización es obligatorio. ',
         ];
 
         if (Module::has('Payroll') && Module::isEnabled('Payroll')) {
@@ -357,7 +359,7 @@ class BudgetCentralizedActionController extends Controller
                 foreach ($centralizedAction->specificActions as $specificAction) {
                     if (count($specificAction->subSpecificFormulations) > 0) {
                         foreach ($specificAction->subSpecificFormulations as $formulation) {
-                            if ($formulation->confirmed == true) {
+                            if ($formulation->assigned == true) {
                                 $centralizedAction->disabled = true;
                                 if (!in_array($centralizedAction, $records)) {
                                     array_push($records, $centralizedAction);
@@ -427,7 +429,7 @@ class BudgetCentralizedActionController extends Controller
         $departments = Department::find($id);
         $cargo = [];
 
-        if (Module::has('Payroll') && Module::isEnabled('Payroll')) {
+        if (Module::has('Payroll') && Module::isAvailable('Payroll')) {
             $cargo = \Modules\Payroll\Models\PayrollStaff::where("id", $budget->payroll_staff_id)->first();
         }
 
@@ -456,7 +458,7 @@ class BudgetCentralizedActionController extends Controller
             true
         )->with([
             'specificActions.subSpecificFormulations' => function ($query) {
-                $query->where('confirmed', true);
+                $query->where('assigned', true);
             }
         ])->get();
 

@@ -222,11 +222,7 @@ class PayrollTextFileController extends Controller
         $bank_accounts = [];
 
         $payrolls = Payroll::whereHas('payrollPaymentPeriod', function ($query) {
-            $query
-                ->where('payment_status', 'generated')
-                ->whereHas('payrollPaymentType', function ($query) {
-                    $query->where('is_trust', false);
-                });
+            $query->where('payment_status', 'generated');
         })->get()->toArray();
 
         foreach ($payrolls as $payroll) {

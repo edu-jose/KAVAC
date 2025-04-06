@@ -33,17 +33,14 @@
                 <div class="col-2">
                     <div class="form-group">
                         <label class="control-label">Años de formulación</label>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-group">
                         <select2
                             v-model="params.year"
                             :options="years"
                         ></select2>
-                    </div>
-                </div>
-                <div class="col-md-4" id="helpAssetCurrency">
-                    <div class="form-group">
-                        <label>Moneda</label>
-                        <select2 :options="currencies"
-                            v-model="params.currency_id"></select2>
                     </div>
                 </div>
             </div>
@@ -181,19 +178,10 @@
                 class="btn btn-primary btn-sm"
                 data-toggle="tooltip"
                 title="Generar Reporte"
-                @click="getPdf(false)"
+                @click="getPdf"
             >
                 <span>Generar reporte</span>
                 <i class="fa fa-print"></i>
-            </button>
-            <button
-                class="btn btn-primary btn-sm"
-                data-toggle="tooltip"
-                title="Generar Reporte"
-                @click="getPdf(true)"
-            >
-                <span>Exportar reporte</span>
-                <i class="fa fa-file-excel-o"></i>
             </button>
         </div>
         <!-- Final card-footer -->
@@ -241,14 +229,12 @@ export default {
             all_specific_actions: false,
             params: {
                 year: "",
-                currency_id: "",
                 start_date: "",
                 end_date: "",
                 project_id: "",
                 centralized_action_id: "",
                 formulation_id: "",
             },
-            currencies: [],
             budgetProjectsArray: JSON.parse(this.budgetProjects),
             budgetCentralizedActionsArray: JSON.parse(
                 this.budgetCentralizedActions
@@ -258,9 +244,7 @@ export default {
     },
     async created() {
         await this.getFormulations();
-        await this.getCurrencies();
         this.all_specific_actions = false;
-        this.params.currency_id = this.currencies[0].id;
     },
     watch: {
         "params.project_id": async function (newValue, _) {
@@ -337,11 +321,10 @@ export default {
                 project_id: "",
                 centralized_action_id: "",
                 formulation_id: "",
-                currency_id: this.currencies[0].id,
             };
         },
 
-        getPdf(xml) {
+        getPdf() {
             let formulationIds = [];
 
             for (this.params.formulation_id of this.params.formulation_id) {
@@ -353,11 +336,7 @@ export default {
                 `&start_date=${this.params.start_date}` +
                 `&end_date=${this.params.end_date}` +
                 `&all_specific_actions=${this.all_specific_actions}` +
-                `&is_project=${this.isProject}` +
-                `&xml=${xml}` +
-                `&project_id=${this.params.project_id}` +
-                `&centralized_action_id=${this.params.centralized_action_id}` +
-                `&currency_id=${this.params.currency_id}`
+                `&is_project=${this.isProject}`
             );
 
             this.reset();

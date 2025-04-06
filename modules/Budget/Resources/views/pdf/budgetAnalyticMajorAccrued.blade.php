@@ -23,9 +23,6 @@
             </td>
         </tr>
         <tr>
-            <td width="25%" style="font-weight: bold;">Desde: {{ $initialDate }} Hasta: {{ $finalDate }}</td>
-        </tr>
-        <tr>
             <td width="25%" style="font-weight: bold;">Generado por:</td>
             @php
                 $analist_name = isset($profile) ? $profile->first_name . ' ' . $profile->last_name : '';
@@ -92,18 +89,19 @@
                 $decrement_des = $budgetAccount['decrement_descriptions'] ?? '';
                 $specific = $budgetAccount->specific ?? $budgetAccount->budgetAccount->specific;
                 $styles = $specific === '00' ? 'font-weight: bold;' : '';
-                $total_account_increment = 0;
-                $total_account_decrement = 0;
-                $total_account_current = 0;
-                $total_account_compromised = 0;
-                $total_account_caused = 0;
-                $total_account_paid = 0;
-                $total_account_self_available = 0;
-                $date = '';
-                $account_current = 0;
-                $account_self_available = 0;
             @endphp
             @if (isset($budgetAccount['modifications']) && count($budgetAccount['modifications']) > 0)
+                @php
+                    $total_account_increment = 0;
+                    $total_account_decrement = 0;
+                    $total_account_current = 0;
+                    $total_account_compromised = 0;
+                    $total_account_caused = 0;
+                    $total_account_paid = 0;
+                    $total_account_self_available = 0;
+                    $date = '';
+                @endphp
+
                 @foreach ($budgetAccount['modifications'] as $modification)
                     @php
                         $last_modification = $budgetAccount['modifications'];

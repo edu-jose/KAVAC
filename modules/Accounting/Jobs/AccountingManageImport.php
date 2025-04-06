@@ -8,7 +8,6 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Modules\Accounting\Models\AccountingAccount;
-use Modules\Accounting\Models\AccountingTypeActivity;
 
 /**
  * @class AccountingManageImport
@@ -52,25 +51,8 @@ class AccountingManageImport implements ShouldQueue
      */
     public function handle()
     {
-        $accTypeActivity = [];
-
-        $AccountingTypeActivity = AccountingTypeActivity::select('id', 'slug')->get();
-
-        foreach ($AccountingTypeActivity as $key => $value) {
-            $abr = '';
-
-            if ($value->slug == 'actividad-operativa') {
-                $abr = 'AO';
-            } elseif ($value->slug == 'actividad-de-inversion') {
-                $abr = 'AI';
-            } elseif ($value->slug == 'actividad-de-financiamiento') {
-                $abr = 'AF';
-            }
-
-            $accTypeActivity[$abr] = $value->id;
-        }
-
         $mother = explode('.', $this->data['sub_especifica']);
+
 
         /* Información de cuenta padre */
         $parent = AccountingAccount::where('group', $mother[0]);
@@ -88,8 +70,6 @@ class AccountingManageImport implements ShouldQueue
 
         $code = explode('.', $this->data['codigo']);
         if (count($code) == 7) {
-            $typActId = $this->data['original'] != 'SI' ? data_get($accTypeActivity, $this->data['tipo_de_actividad']) : null;
-
             return AccountingAccount::updateOrCreate(
                 [
                     'group' => $code[0],
@@ -107,7 +87,6 @@ class AccountingManageImport implements ShouldQueue
                     'egress' => isset($this->data['tipo_de_cuenta']) ? (($this->data['tipo_de_cuenta'] == 'EGRESO') ? true : false) : null,
                     'active' => ($this->data['activa'] == 'SI') ? true : false,
                     'original' => ($this->data['original'] == 'SI') ? true : false,
-                    'accounting_type_activity_id' => is_numeric($typActId) ? $typActId : null,
                 ]
             );
         }

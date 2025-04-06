@@ -17,7 +17,6 @@ use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Modules\Payroll\Models\PayrollConceptType;
 use Modules\Payroll\Models\PayrollStaffPayroll;
-use Modules\Payroll\Models\PayrollPaymentPeriod;
 use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 use Maatwebsite\Excel\Concerns\WithCustomStartCell;
 use Modules\Payroll\Exports\Sheets\PayrollConceptsSheet;
@@ -117,8 +116,6 @@ class PayrollExport implements
      */
     public function sheets(): array
     {
-        $payrollPaymentPeriod = PayrollPaymentPeriod::find($this->payroll->payroll_payment_period_id);
-
         $sheets = [
             'Payroll' => $this,
             'Concepts' => new PayrollConceptsSheet($this->payroll->concept_types)
@@ -126,7 +123,6 @@ class PayrollExport implements
 
         foreach ($this->payroll->salary_tabulators as $key => $payrollSalaryTabulator) {
             $sheets['Tabulator' . $key] = new PayrollSalaryTabulatorsSheet($payrollSalaryTabulator);
-            $sheets['Tabulator' . $key]->setPayrollPaymentPeriod($payrollPaymentPeriod->end_date);
         }
 
         return $sheets;

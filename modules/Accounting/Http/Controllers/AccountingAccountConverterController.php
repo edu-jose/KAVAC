@@ -6,7 +6,6 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
-use Illuminate\Support\Facades\Log;
 use Nwidart\Modules\Facades\Module;
 use Modules\Accounting\Models\Accountable;
 use Illuminate\Contracts\Support\Renderable;
@@ -321,12 +320,17 @@ class AccountingAccountConverterController extends Controller
         /* id de rango final de busqueda */
         $end_id = 0;
 
-        if (!$request->all) {
-            $init_id = ($request->init_id > $request->end_id) ? $request->end_id : $request->init_id;
-            $end_id = ($request->init_id > $request->end_id) ? $request->init_id : $request->end_id;
+        if (!$request->all()) {
+            $init_id = $request->merge([
+                'init_id' => ($request->init_id > $request->end_id) ? $request->end_id : $request->init_id,
+            ])->init_id;
+            $end_id = $request->merge([
+                'end_id' => ($request->init_id > $request->end_id) ? $request->init_id : $request->end_id,
+            ])->end_id;
         }
+
         if ($request->type == 'budget') {
-            if ($request->all) {
+            if ($request->all()) {
                 /* Se obtienen el primer y ultimo id de las cuentas presupuestarias */
                 $init_id = \Modules\Budget\Models\BudgetAccount::orderBy('created_at', 'ASC')
                     ->where('parent_id', null)->first()->id;
@@ -364,7 +368,7 @@ class AccountingAccountConverterController extends Controller
             ];
             $cont++;
         }
-        return response()->json(['records' => $records,'cont' => $cont, 'message' => 'Success', 200]);
+        return response()->json(['records' => $records, 'message' => 'Success', 200]);
     }
 
     /**

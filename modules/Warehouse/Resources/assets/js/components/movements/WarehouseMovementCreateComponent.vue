@@ -154,7 +154,7 @@
                 </div>
                 <div slot="id" slot-scope="props">
                     <div>
-                        <input type="number" class="form-control table-form input-sm" data-toggle="tooltip" min=0 :max="props.row.exist" :id="'movement_product_'+props.row.id" @focus="selectText" @input="selectElement(props.row.id)">
+                        <input type="number" class="form-control table-form input-sm" data-toggle="tooltip" min=0 :max="props.row.exist" :id="'movement_product_'+props.row.id" onfocus="this.select()" @input="selectElement(props.row.id)">
                     </div>
                 </div>
                 <div slot="destiny" slot-scope="props">
@@ -180,7 +180,7 @@
                                     'alias': 'numeric',
                                     'allowMinus': 'false',
                                     'digits': 0"
-                                @focus="selectText">
+                                onfocus="this.select()">
                         </div>
                     </div>
                      <br>
@@ -193,13 +193,13 @@
                                     'alias': 'numeric',
                                     'allowMinus': 'false',
                                     'digits': 0"
-                                @focus="selectText">
+                                onfocus="this.select()">
                         </div>
                     </div>
                 </div>
                 <div slot="id" slot-scope="props">
                     <div>
-                        <input type="number" class="form-control table-form input-sm" data-toggle="tooltip" min=0 :max="props.row.exist" :id="'movement_product_'+props.row.id" @focus="selectText" @input="selectElement(props.row.id);
+                        <input type="number" class="form-control table-form input-sm" data-toggle="tooltip" min=0 :max="props.row.exist" :id="'movement_product_'+props.row.id" onfocus="this.select()" @input="selectElement(props.row.id);
                             validateInput(props.row.real, props.row.code, props.row.id)">
                     </div>
                 </div>
@@ -475,32 +475,12 @@
                 vm.record.warehouse_inventory_products = [];
                 if ((vm.validateValue).length > 0) {
                     $.each(vm.validateValue, function (index, campo) {
-                        bootbox.alert({
-                            title: 'Advertencia',
-                            message: "La cantidad de producto a movilizar (Código: " + campo + ") es mayor a la cantidad disponible",
-                            closeButton: false,
-                            buttons: {
-                                ok: {
-                                    label: "Cerrar",
-                                    className: 'btn-light'
-                                }
-                            }
-                        });
+                        bootbox.alert("La cantidad de producto a movilizar (Código: " + campo + ") es mayor a la cantidad disponible");
                     });
                     return false;
                 }
                 if (!vm.selected.length > 0){
-                    bootbox.alert({
-                        title: "Advertencia",
-                        message: "Debe agregar al menos un elemento a la solicitud",
-                        closeButton: false,
-                        buttons: {
-                            ok: {
-                                label: "Cerrar",
-                                className: 'btn-light'
-                            }
-                        }
-                    });
+                    bootbox.alert("Debe agregar al menos un elemento a la solicitud");
                     return false;
                 };
                 $.each(vm.selected,function(index,campo){
@@ -510,17 +490,7 @@
                     if (element) {
                         var value = element.value;
                         if (value == "") {
-                            bootbox.alert({
-                                title: "Advertencia",
-                                message: "Debe ingresar la cantidad solicitada para cada insumo seleccionado",
-                                closeButton: false,
-                                buttons: {
-                                    ok: {
-                                        label: "Cerrar",
-                                        className: 'btn-light'
-                                    }
-                                }
-                            });
+                            bootbox.alert("Debe ingresar la cantidad solicitada para cada insumo seleccionado");
                             return false;
                         }
                         vm.record.warehouse_inventory_products.push({

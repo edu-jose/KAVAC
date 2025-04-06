@@ -87,7 +87,6 @@ class AccountingAccountController extends Controller
             'type' => ['nullable'],
             'active' => ['required'],
             'original' => ['nullable'],
-            'accounting_type_activity_id' => ['required'],
         ]);
 
         DB::transaction(function () use ($request) {
@@ -184,7 +183,6 @@ class AccountingAccountController extends Controller
                     'inactivity_date' => (!$request->active) ? date('Y-m-d') : null,
                     'parent_id' => ($parent) ? $parent->id : null,
                     'original' => $request->original ?? false,
-                    'accounting_type_activity_id' => $request->accounting_type_activity_id
                 ]);
             } else {
                 //caso tipo de cuenta 1.1.1.01.02.01.001 -> no tiene padre
@@ -1014,7 +1012,6 @@ class AccountingAccountController extends Controller
                 'denomination' => $record->denomination,
                 'active' => $record->active,
                 'original' => $record->original,
-                'accounting_type_activity_id' => $record->accounting_type_activity_id,
                 'type' => (isset($record->resource) && isset($record->egress))
                 ? (($record->resource == true) ? 'resource' : 'egress')
                 : '',

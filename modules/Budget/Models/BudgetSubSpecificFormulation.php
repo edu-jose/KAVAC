@@ -6,7 +6,6 @@ use App\Traits\ModelsTrait;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Database\Eloquent\Model;
 use OwenIt\Auditing\Contracts\Auditable;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use OwenIt\Auditing\Auditable as AuditableTrait;
@@ -53,7 +52,6 @@ class BudgetSubSpecificFormulation extends Model implements Auditable
         'year',
         'total_formulated',
         'assigned',
-        'confirmed',
         'budget_specific_action_id',
         'currency_id',
         'institution_id',
@@ -62,42 +60,6 @@ class BudgetSubSpecificFormulation extends Model implements Auditable
         'budget_financement_source_id',
         'financement_amount'
     ];
-
-    public function getDefaultCurrencyAmountAttribute()
-    {
-        return $this->attributes['default_currency_amount'] ?? null;
-    }
-
-    /**
-     * Scope para buscar y filtrar datos
-     *
-     * @author     Ing. Juan Rosas <jrosas@cenditel.gob.ve> | <juan.rosasr01@gmail.com>
-     *
-     * @param  \Illuminate\Database\Eloquent\Builder
-     * @param  array         $params    Parametros de busqueda
-     *
-     * @return \Illuminate\Database\Eloquent\Builder
-     */
-    public function scopeSearch($query, $params)
-    {
-        if (empty($params)) {
-            return $query;
-        }
-
-        if ($params["date"]) {
-            $query->whereDate($params["date"]);
-        }
-
-        if ($params["code"]) {
-            $query->where(DB::raw('upper(code)'), 'LIKE', '%' . strtoupper($params["code"]) . '%');
-        }
-
-        if ($params["assigned"]) {
-            $query->whereAssigned($params["assigned"]);
-        }
-
-        return $query;
-    }
 
     /**
      * Las formulaciones de presupuesto tienen un tipo de financiamiento.
@@ -244,7 +206,7 @@ class BudgetSubSpecificFormulation extends Model implements Auditable
 
         return $query->where('budget_specific_action_id', $specific_action_id)
                      ->where('document_status_id', $documentStatus->id)
-                     ->where('confirmed', true)
+                     ->where('assigned', true)
                      ->orderBy('year', 'desc')->first();
     }
 

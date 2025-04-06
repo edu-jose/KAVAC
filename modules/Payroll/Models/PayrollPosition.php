@@ -43,8 +43,7 @@ class PayrollPosition extends Model implements Auditable
         'name',
         'description',
         'number_positions_assigned',
-        'responsible',
-        'process_type'
+        'responsible'
     ];
 
     /**
@@ -116,17 +115,5 @@ class PayrollPosition extends Model implements Auditable
     public function payrollConceptAssignOptions()
     {
         return $this->morphMany(PayrollConceptAssignOption::class, 'assignable');
-    }
-
-    /**
-     * Obtiene información de las cargas horarias asociadas a un cargo
-     *
-     * @author    Daniel Contreras <dcontreras@cenditel.gob.ve>
-     *
-     * @return    \Illuminate\Database\Eloquent\Relations\HasMany
-     */
-    public function payrollWorkloadPositions()
-    {
-        return $this->hasMany(PayrollWorkloadPosition::class);
     }
 }

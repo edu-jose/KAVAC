@@ -252,8 +252,10 @@ export default {
             const vm = this;
             if (vm.end_date) {
                 $('#auditStartDate').attr('max', vm.end_date);
-            } else if (!$('#auditStartDate').hasClass('no-restrict')) {
-                $('#auditStartDate').attr('max', vm.getCurrentDate());
+            } else {
+                if (!$('#auditStartDate').hasClass('no-restrict')) {
+                    $('#auditStartDate').attr('max', vm.getCurrentDate());
+                }
             }
         }
     },
@@ -298,7 +300,7 @@ export default {
         async details(id) {
             const vm = this;
             vm.loading = true;
-            await axios.post(window.app_url.replace(/\/$/, "") + '/app/audit-details', {
+            await axios.post('/app/audit-details', {
                 id: id
             }).then(response => {
                 if (response.data.result) {
@@ -394,7 +396,7 @@ export default {
             'id': 'col-md-1'
         };
         vm.table_options.requestFunction = function(data) {
-            return axios.post(window.app_url.replace(/\/$/, "") + '/app/audit-records', {
+            return axios.post('/app/audit-records', {
                 query: {
                     start_date: vm.start_date,
                     end_date: vm.end_date,
@@ -406,18 +408,6 @@ export default {
                 page: data.page,
                 orderBy: data.orderBy
             }).catch(error => {
-                if (
-                    !error.response.data.result &&
-                    error.response.status == 422
-                ) {
-                    vm.showMessage(
-                        "custom",
-                        "Error",
-                        "danger",
-                        "screen-error",
-                        error.response.data.message
-                    );
-                }
                 console.error(error);
             });
         };

@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Rules\Rif;
 use App\Models\Headquarter;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -20,9 +19,6 @@ use Illuminate\Http\JsonResponse;
  */
 class HeadquarterController extends Controller
 {
-    protected $rules;
-    protected $ruleMessages;
-
     /**
      * Define la configuración de la clase
      *
@@ -37,22 +33,6 @@ class HeadquarterController extends Controller
         $this->middleware('permission:headquarter.edit', ['only' => ['edit', 'update']]);
         $this->middleware('permission:headquarter.delete', ['only' => 'destroy']);
         $this->middleware('permission:headquarter.list', ['only' => 'index']);
-
-        $this->rules = [
-            'name' => ['required'],
-            'rif'  => ['nullable', 'string', 'size:10', 'regex:/^[E, G, J, P, V, 0-9 ]+$/', new Rif()],
-            'address' => ['nullable', 'string'],
-            'city_id' => ['nullable', 'exists:cities,id'],
-            'municipality_id' => ['nullable', 'exists:municipalities,id'],
-            'region_id' => ['nullable', 'exists:regions,id'],
-        ];
-
-        $this->ruleMessages = [
-            'name.required' => 'El campo nombre es obligatorio.',
-            'rif.required' => 'El campo R.I.F. es obligatorio.',
-            'rif.size' => 'El campo R.I.F. debe tener 10 carácteres.',
-            'rif.regex' => 'El campo R.I.F. es inválido.',
-        ];
     }
 
     /**
@@ -64,9 +44,7 @@ class HeadquarterController extends Controller
      */
     public function index()
     {
-        $headquarters = Headquarter::with(['city', 'municipality', 'region'])->get();
-
-        return response()->json(['records' => $headquarters], 200);
+        return response()->json(['records' => Headquarter::all()], 200);
     }
 
     /**
@@ -80,10 +58,14 @@ class HeadquarterController extends Controller
      */
     public function store(Request $request)
     {
-        $this->validate($request, $this->rules, $this->ruleMessages);
+        $this->validate($request, [
+            'name' => ['required'],
+        ]);
 
         // Objeto con información de la sede
-        $headquarter = Headquarter::create($request->all());
+        $headquarter = Headquarter::create([
+            'name' => $request->name
+        ]);
 
         return response()->json(['record' => $headquarter, 'message' => 'success'], 200);
     }
@@ -100,12 +82,15 @@ class HeadquarterController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $this->validate($request, $this->rules, $this->ruleMessages);
+        $this->validate($request, [
+            'name' => ['required'],
+        ]);
 
         $headquarter = Headquarter::find($id);
 
         if (isset($headquarter)) {
-            $headquarter->update($request->all());
+            $headquarter->name = $request->name;
+            $headquarter->save();
         }
 
         return response()->json(['message' => 'update'], 200);

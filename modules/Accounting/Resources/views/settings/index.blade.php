@@ -116,7 +116,7 @@
     </div>
 @stop
 @section('extra-js')
-    <script type="text/javascript" nonce="{{ session()->get('nonce') }}">
+    <script type="text/javascript">
         let selectElement = document.querySelector('select[name="p_value"]');
         let selectedValue = selectElement.value;
         let options = selectElement.options;

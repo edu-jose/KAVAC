@@ -134,20 +134,6 @@
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <strong>Carga horaria:</strong>
-                                        <div class="row" style="margin: 1px 0">
-                                            <span class="col-md-12">
-                                                {{
-                                                    record.payroll_positions.length > 0
-                                                    ? record.payroll_positions[0].payroll_workload_positions[0].payroll_workload.hours
-                                                    : 'Sin carga horaria asignada'
-                                                }}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="form-group">
                                         <strong>Coordinación:</strong>
                                         <div class="row" style="margin: 1px 0">
                                             <span class="col-md-12">

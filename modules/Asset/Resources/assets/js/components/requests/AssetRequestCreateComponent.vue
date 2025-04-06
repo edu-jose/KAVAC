@@ -508,17 +508,9 @@ export default {
 
             vm.errors = [];
             if (!vm.selected.length > 0) {
-                bootbox.alert({
-                    title: "Advertencia",
-                    message: "Debe agregar al menos un elemento de la tabla a la solicitud",
-                    closeButton: false,
-					buttons: {
-						ok: {
-							label: "Cerrar",
-							className: 'btn-light'
-						}
-					}
-                });
+                bootbox.alert(
+                    "Debe agregar al menos un elemento de la tabla a la solicitud"
+                );
                 return false;
             }
             if (this.record.id) {

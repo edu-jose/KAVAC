@@ -17,13 +17,11 @@
                 >
                     <i class="fa fa-eye"></i>
                 </button>
-                <template v-if="(lastYear && format_date(props.row.to_date, 'YYYY') <= lastYear)">
+                <template v-if="(lastYear && format_date(props.row.from_date, 'YYYY') <= lastYear)">
                     <button
                         class="btn btn-warning btn-xs btn-icon btn-action"
                         type="button"
-                        data-toggle="tooltip"
-                        title="Modificar registro"
-                        @click="editForm(props.row.id)"
+                        disabled
                     >
                         <i class="fa fa-edit"></i>
                     </button>

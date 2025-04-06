@@ -19,7 +19,7 @@
             <small class="text-muted">{{-- Cargo --}}</small>
         </div>
     </div>
-    @if (Auth::user()->hasVerifiedEmail() || env('ACTIVE_DIRECTORY', false))
+    @if (Auth::user()->hasVerifiedEmail())
         @if (!App\Models\Institution::all()->isEmpty())
             <h5 class="navigation-panel-title text-center">{{ __('AÑO FISCAL:') }}
                 <span class="fiscal-year"></span>

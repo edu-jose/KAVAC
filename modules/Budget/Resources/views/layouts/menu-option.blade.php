@@ -89,18 +89,6 @@
                         {{ __('Presupuesto Formulado') }}
                     </a>
                 </li>
-                <li class="{!! set_active_menu(['budget.report.consolidated']) !!}">
-                    <a href="{{ route('budget.report.consolidated') }}" data-toggle="tooltip"
-                        data-placement="right" title="{{ __('Reporte de presupuesto consolidado') }}">
-                        {{ __('Consolidado') }}
-                    </a>
-                </li>
-                <li class="{!! set_active_menu(['budget.report.consolidated']) !!}">
-                    <a href="{{ route('budget.report.compromise') }}" data-toggle="tooltip"
-                        data-placement="right" title="{{ __('Reporte de compromisos') }}">
-                        {{ __('Compromisos') }}
-                    </a>
-                </li>
             </ul>
         </li>
     </ul>

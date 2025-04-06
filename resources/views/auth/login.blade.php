@@ -13,7 +13,7 @@
                     <i class="now-ui-icons users_circle-08"></i>
                 </span>
                 {!! Form::text('username', old('username'), [
-                    'class' => 'form-control username-input', 'placeholder' => __('Usuario'),
+                    'class' => 'form-control', 'placeholder' => __('Usuario'),
                     'title' => __('Indique el nombre del usuario'),
                     'data-toggle' => 'tooltip', 'data-placement' => 'right'
                 ]) !!}
@@ -46,11 +46,9 @@
             <div class="login-captcha-grid">
                 <div class="captcha-addon text-right">{!! Captcha::img() !!}</div>
                 <div class="text-left text-light mb-0">
-                    <i
-                        class="now-ui-icons arrows-1_refresh-69 cursor-pointer captcha-reload vertical-middle my-0 pt-1"
-                        data-toggle="tooltip" data-placement="right"
-                        title="{{ __('Presione este botón para generar una nueva imagen de captcha') }}"
-                    ></i>
+                    <i class="now-ui-icons arrows-1_refresh-69 cursor-pointer captcha-reload vertical-middle my-0 pt-1"
+                       onclick="refresh_captcha()" data-toggle="tooltip" data-placement="right"
+                       title="{{ __('Presione este botón para generar una nueva imagen de captcha') }}"></i>
                 </div>
             </div>
         </div>
@@ -61,7 +59,7 @@
                 </span>
                 {!! Form::text('captcha', old('captcha'), [
                     'class' => 'form-control', 'placeholder' => __('Captcha'),
-                    'id' => 'captcha', 'data-toggle' => 'tooltip',
+                    'id' => 'captcha', 'onfocus' => '$(this).val("")', 'data-toggle' => 'tooltip',
                     'title' => __('Introduzca los carácteres de la imagen'), 'data-placement' => 'right'
                 ]) !!}
             </div>
@@ -75,14 +73,14 @@
             <label class="mb-2">
                 <div class="row">
                     <div class="col-6 text-right">
-                        <label for="remember" class="font-small">{{ __('Recuérdame') }}</label>
+                        <label class="font-small">{{ __('Recuérdame') }}</label>
                     </div>
                     <div class="col-6 text-left">
                         <div class="custom-control custom-switch">
                             <input type="checkbox" class="custom-control-input" name="remember" id="remember" data-toggle="tolltip"
                                    title="{{  __('Seleccione si desea que el sistema recuerde sus datos') }}" value="true"
                                    {{ (old('remember'))?'checked':'' }}>
-                            <label class="custom-control-label" for="remember">&nbsp;</label>
+                            <label class="custom-control-label" for="remember"></label>
                         </div>
                     </div>
                 </div>
@@ -103,16 +101,7 @@
 @endsection
 
 @section('extra-js')
-    <script nonce="{{ session()->get('nonce') }}">
-        $(document).ready(function() {
-            const captchaReloadElement = document.querySelector('.captcha-reload');
-            const usernameInputElement = document.querySelector('.username-input');
-            const captchaInputElement = document.querySelector('#captcha');
-            captchaReloadElement.addEventListener('click', refresh_captcha);
-            usernameInputElement.addEventListener('keypress', validateUsernameInput);
-            captchaInputElement.addEventListener('focus', function() {captchaInputElement.value = ''});
-        });
-
+    <script>
         /**
          * Función que permite cargar una nueva imagen de captcha
          */
@@ -129,15 +118,6 @@
                 var err = textStatus + ", " + error;
                 bootbox.alert( err );
             });
-        }
-
-        function validateUsernameInput(event) {
-            var regex = /^[a-zA-Z0-9\.\-_]+$/;
-            var key = String.fromCharCode(!event.charCode ? event.which : event.charCode);
-            if (!regex.test(key)) {
-                event.preventDefault();
-                return false;
-            }
         }
     </script>
 @endsection

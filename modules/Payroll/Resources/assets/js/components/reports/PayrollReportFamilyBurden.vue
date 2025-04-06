@@ -8,7 +8,7 @@
                     </div>
                     <strong>Cuidado!</strong> Debe verificar los siguientes errores antes de continuar:
                     <button type="button" class="close" data-dismiss="alert" aria-label="Close"
-                        @click.prevent="errors = []">
+                            @click.prevent="errors = []">
                         <span aria-hidden="true">
                             <i class="now-ui-icons ui-1_simple-remove"></i>
                         </span>
@@ -23,15 +23,20 @@
                 <div class="col-md-6">
                     <div class="form-group is-required" style="z-index: unset">
                         <label>Trabajador</label>
-                        <v-multiselect track_by="text" :options="payroll_staffs" v-model="record.payroll_staffs">
+                        <v-multiselect track_by="text"
+                            :options="payroll_staffs"
+                            v-model="record.payroll_staffs">
                         </v-multiselect>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group is-required" style="z-index: unset">
                         <label>Parentesco</label>
-                        <v-multiselect track_by="text" :options="payroll_relationships"
-                            v-model="record.payroll_relationships">
+                        <v-multiselect
+                            track_by="text"
+                            :options="payroll_relationships"
+                            v-model="record.payroll_relationships"
+                        >
                         </v-multiselect>
                     </div>
                 </div>
@@ -39,7 +44,7 @@
         </div>
 
         <div class="card-footer text-right">
-            <button @click.prevent="createReport('family-burden', $event)"
+            <button @click.prevent="createReport('family-burden')"
                 class="btn btn-primary btn-sm" data-toggle="tooltip" title="Generar Reporte"
                 type="button">
                 <span>Generar reporte</span>
@@ -50,32 +55,32 @@
 </template>
 
 <script>
-export default {
-    data() {
-        return {
-            record: {
-                id: '',
-                payroll_staffs: [],
+    export default {
+        data() {
+            return {
+                record: {
+                    id: '',
+                    payroll_staffs: [],
+                    payroll_relationships: [],
+                },
+
+                errors: [],
                 payroll_relationships: [],
+                payroll_staffs: [],
+
+            }
+        },
+        methods: {
+            reset() {
+                this.record = {
+                    id: '',
+                    payroll_concept_types: [],
+                    payroll_payment_types: [],
+                    payroll_concepts: [],
+                };
             },
 
-            errors: [],
-            payroll_relationships: [],
-            payroll_staffs: [],
-
-        }
-    },
-    methods: {
-        reset() {
-            this.record = {
-                id: '',
-                payroll_concept_types: [],
-                payroll_payment_types: [],
-                payroll_concepts: [],
-            };
-        },
-
-            createReport(current, event) {
+            createReport(current) {
                 const vm = this;
 
                 vm.loading = true;
@@ -84,25 +89,11 @@ export default {
                     fields[index] = this.record[index];
                 }
                 fields['current'] = 'family-burden';
-                event.preventDefault();
                 axios.post(`${window.app_url}/payroll/reports/${current}/create`, fields).then(response => {
-                    if (response.data.result == false && response.data.all_data == false)
+                    if (response.data.result == false)
                         location.href = response.data.redirect;
-                    else if (response.data.result == false && response.data.all_data == true) {
-                        location.href = response.data.redirect;
-                        vm.showMessage(
-                            'custom', 'Exito!', 'success', 'screen-success',
-                            'Ha finalizado la generación del reporte de carga familiar. Por favor revisa en las lista de notificaciones'
-                        );
-                    }
                     else if (typeof(response.data.redirect) !== "undefined") {
-                        const a = document.createElement('a');
-                        a.style.display = 'none';
-                        a.href = response.data.redirect;
-                        a.download = "payroll-report"; // the filename you want
-                        document.body.appendChild(a);
-                        a.click();
-                        window.URL.revokeObjectURL(url);
+                        window.open(response.data.redirect, '_blank');
                     } else if (response.data.result == 'empty') {
                         vm.showMessage(
                             'custom', 'Alerta!', 'danger', 'screen-error',
@@ -115,37 +106,32 @@ export default {
                 }).catch(error => {
                     vm.errors = [];
 
-                if (typeof (error.response) != "undefined") {
-                    if (error.response.status == 403) {
-                        vm.showMessage(
-                            'custom', 'Acceso Denegado', 'danger', 'screen-error', error.response.data.message
-                        );
-                    }
-                    for (var index in error.response.data.errors) {
-                        if (error.response.data.errors[index]) {
-                            vm.errors.push(error.response.data.errors[index][0]);
+                    if (typeof(error.response) !="undefined") {
+                        for (var index in error.response.data.errors) {
+                            if (error.response.data.errors[index]) {
+                                vm.errors.push(error.response.data.errors[index][0]);
+                            }
                         }
                     }
-                }
-                vm.loading = false;
-            });
+                    vm.loading = false;
+                });
 
+            },
+
+            addAllToOptions() {
+                const vm = this;
+                vm.payroll_staffs = vm.payroll_staffs.filter(el => el.id != '');
+                vm.payroll_staffs.unshift({'id':'todos', 'text':'Todos'});
+
+                vm.payroll_relationships = vm.payroll_relationships.filter(el => el.id != '');
+                vm.payroll_relationships.unshift({'id':'todos', 'text':'Todos'});
+            },
         },
-
-        addAllToOptions() {
+        async mounted() {
             const vm = this;
-            vm.payroll_staffs = vm.payroll_staffs.filter(el => el.id != '');
-            vm.payroll_staffs.unshift({ 'id': 'todos', 'text': 'Todos' });
-
-            vm.payroll_relationships = vm.payroll_relationships.filter(el => el.id != '');
-            vm.payroll_relationships.unshift({ 'id': 'todos', 'text': 'Todos' });
+            await vm.getPayrollStaffs();
+            await vm.getPayrollRelationships();
+            await vm.addAllToOptions();
         },
-    },
-    async mounted() {
-        const vm = this;
-        await vm.getPayrollStaffs();
-        await vm.getPayrollRelationships();
-        await vm.addAllToOptions();
-    },
-};
+    };
 </script>

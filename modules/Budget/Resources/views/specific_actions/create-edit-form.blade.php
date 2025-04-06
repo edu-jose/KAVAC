@@ -50,7 +50,7 @@
                                                 'class' => 'custom-control-input sel_project_centralized_action'
                                             ]
                                         ) !!}
-                                        <label class="custom-control-label" for="sel_project">&nbsp;</label>
+                                        <label class="custom-control-label" for="sel_project"></label>
                                     </div>
                                 </div>
                                 <div id="project_id_help" class="form-group">
@@ -62,7 +62,8 @@
                                             'id' => 'project_id',
                                             'class' => 'select2', 'data-toggle' => 'tooltip',
                                             'title' => __('Seleccione un proyecto'),
-                                            'disabled' => (!$errors->has('project_id')) ? 'disabled' : false
+                                            'disabled' => (!$errors->has('project_id')) ? 'disabled' : false,
+                                            'onchange' => 'minDateProject()'
                                         ]
                                     ) !!}
                                 </div>
@@ -81,7 +82,7 @@
                                                 'class' => 'custom-control-input sel_project_centralized_action'
                                             ]
                                         ) !!}
-                                        <label class="custom-control-label" for="sel_centralized_action">&nbsp;</label>
+                                        <label class="custom-control-label" for="sel_centralized_action"></label>
                                     </div>
                                 </div>
                                 <div id="centralized_action_id_help" class="form-group">
@@ -93,7 +94,8 @@
                                             'id' => 'centralized_action_id',
                                             'class' => 'select2', 'data-toggle' => 'tooltip',
                                             'title' => __('Seleccione una acción centralizada'),
-                                            'disabled' => (!$errors->has('centralized_action_id')) ? 'disabled' : false
+                                            'disabled' => (!$errors->has('centralized_action_id')) ? 'disabled' : false,
+                                            'onchange' => 'minDateCentralizedAction()'
                                         ]
                                     ) !!}
                                 </div>
@@ -108,12 +110,13 @@
                                         'class' => 'form-control input-sm',
                                         'data-toggle' => 'tooltip',
                                         'placeholder' => 'dd/mm/YYYY',
-                                        'title' => __('Fecha en la que inicia la acción específica')
+                                        'title' => __('Fecha en la que inicia la acción específica'),
+                                        'onchange' => 'maxDate()'
                                     ]) !!}
                                 </div>
                             </div>
                             <div class="col-2">
-                                <div id="to_date_help" class="form-group">
+                                <div id="to_date_help" class="form-group is-required">
                                     {!! Form::label('to_date', __('Fecha de finalización'), ['class' => 'control-label']) !!}
                                     {!! Form::date('to_date', (isset($model))?$model->to_date:old('to_date'), [
                                         'id' => 'to_date',
@@ -156,7 +159,7 @@
                                             'id' => 'active',
                                             'class' => 'custom-control-input'
                                         ]) !!}
-                                        <label class="custom-control-label" for="active">&nbsp;</label>
+                                        <label class="custom-control-label" for="active"></label>
                                     </div>
                                 </div>
                             </div>
@@ -188,10 +191,11 @@
                         @endif
                         @if (!isset($hide_previous) || !$hide_previous)
                         {!! Form::button('<i class="fa fa-ban"></i>', [
-                            'class' => 'btn btn-warning btn-icon btn-round redirect-back',
+                            'class' => 'btn btn-warning btn-icon btn-round',
                             'type' => 'button',
                             'data-toggle' => 'tooltip',
-                            'title' => __('Cancelar y regresar')
+                            'title' => __('Cancelar y regresar'),
+                            'onclick' => 'window.location.href="' . url()->previous() . '"'
                         ]) !!}
                         @endif
                         @if (!isset($hide_save) || !$hide_save)
@@ -211,16 +215,8 @@
 
 @section('extra-js')
     @parent
-    <script nonce="{{ session()->get('nonce') }}">
+    <script>
         $(document).ready(function() {
-            const projectId = document.getElementById('project_id');
-            const centralizedActionId = document.getElementById('centralized_action_id');
-            const fromDate = document.getElementById('from_date');
-
-            projectId.addEventListener('change', minDateProject);
-            centralizedActionId.addEventListener('change', minDateCentralizedAction);
-            fromDate.addEventListener('change', maxDate);
-
             app.ckeditor.editorData = "{!! (isset($model)) ? $model->description : old('description')  !!}";
             $('.sel_project_centralized_action').on('change', function(e) {
                 $('#project_id').attr('disabled', (e.target.id!=="sel_project"));

@@ -40,7 +40,6 @@
 	min-height: 100%;
 	-webkit-box-shadow: 0px 2px 22px 0 $default-shadow, 0px 2px 30px 0 $default-shadow-thin;
 	box-shadow: 0px 0px 20px 0 $default-shadow, 0px 0px 30px 0 $default-shadow-thin;
-    z-index:1005;
 
 	.profile-left {
 		padding: 15px;
@@ -181,8 +180,4 @@
 		margin: 0em 0em 1em 0em;
 		background: $color-white-light;
 	}
-}
-
-.display-submenu {
-    display: block;
 }

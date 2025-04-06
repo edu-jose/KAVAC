@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Modules\Payroll\Http\Resources;
 
-use Carbon\Carbon;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Modules\Payroll\Models\PayrollSupervisedGroup;
 
@@ -35,7 +34,6 @@ class GuardSchemaResource extends JsonResource
             'institution' => $this->resource->institution?->acronym ?? '',
             'document_status' => $this->resource->document_status,
             'confirmed_periods' => $this->resource->confirmed_periods,
-            'date' => Carbon::parse($this->resource->from_date)->format('d/m/Y') . ' - ' . Carbon::parse($this->resource->to_date)->format('d/m/Y'),
             'from_date' => $this->resource->from_date,
             'to_date' => $this->resource->to_date,
             'payroll_supervised_group_id' => $payrollSuperviedGroup->id,

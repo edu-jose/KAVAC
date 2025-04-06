@@ -48,7 +48,7 @@
                                     <th>{{ __('Archivo') }}</th>
                                     <th>{{ __('Tamaño') }}</th>
                                     <th>{{ __('Fecha') }}</th>
-                                    <th class="col-md-2"></th>
+                                    <th width="10%"></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -61,22 +61,23 @@
                                         </td>
                                         <td class="text-center">
                                             {!! Form::button('<i class="fa fa-cloud-download"></i>', [
-                                                'class' => 'btn btn-default btn-xs btn-icon btn-round btn-download-backup',
+                                                'class' => 'btn btn-default btn-xs btn-icon btn-round',
                                                 'data-toggle' => 'tooltip', 'type' => 'button',
-                                                'data-file-name' => $backup['file_name'],
-                                                'title' => __('Descargar respaldo')
+                                                'title' => __('Descargar respaldo'),
+                                                'onclick' => 'location.href="' .
+                                                url('backup/download/' .$backup['file_name'] ) .'"'
                                             ]) !!}
                                             {!! Form::button('<i class="fa fa-cloud-upload"></i>', [
-                                                'class' => 'btn btn-info btn-xs btn-icon btn-round btn-upload-backup',
+                                                'class' => 'btn btn-info btn-xs btn-icon btn-round',
                                                 'data-toggle' => 'tooltip', 'type' => 'button',
-                                                'data-file-name' => $backup['file_name'],
-                                                'title' => __('Restaurar respaldo')
+                                                'title' => __('Restaurar respaldo'),
+                                                'onclick' => 'restore_backup("'.$backup['file_name'].'")'
                                             ]) !!}
                                             {!! Form::button('<i class="fa fa-trash-o"></i>', [
-                                                'class' => 'btn btn-danger btn-xs btn-icon btn-round btn-trash-backup',
+                                                'class' => 'btn btn-danger btn-xs btn-icon btn-round',
                                                 'data-toggle' => 'tooltip', 'type' => 'button',
-                                                'data-file-name' => $backup['file_name'],
-                                                'title' => __('Eliminar respaldo')
+                                                'title' => __('Eliminar respaldo'),
+                                                'onclick' => 'delete_backup("'.$backup['file_name'].'")'
                                             ]) !!}
                                         </td>
                                     </tr>
@@ -91,23 +92,7 @@
 
     @section('extra-js')
         @parent
-        <script nonce="{{ session()->get('nonce') }}">
-            document.addEventListener('click', function() {
-                if (event.target.classList.contains('btn-download-backup') || event.target.classList.contains('fa-cloud-download')) {
-                    const button = event.target.closest('.btn-download-backup');
-                    const fileName = button.dataset.fileName;
-                    location.href="{{ url('backup/download') }}/" + fileName;
-                } else if (event.target.classList.contains('btn-upload-backup') || event.target.classList.contains('fa-cloud-upload')) {
-                    const button = event.target.closest('.btn-upload-backup');
-                    const fileName = button.dataset.fileName;
-                    restore_backup(fileName);
-                } else if (event.target.classList.contains('btn-trash-backup') || event.target.classList.contains('fa-trash-o')) {
-                    const button = event.target.closest('.btn-trash-backup');
-                    const fileName = button.dataset.fileName;
-                    delete_backup(fileName);
-                }
-            });
-
+        <script>
             /**
             * Elimina el archivo de respaldo seleccionado
             *

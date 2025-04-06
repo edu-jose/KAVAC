@@ -44,11 +44,6 @@ class ProjectTrackingActivityStatusController extends Controller
      */
     public function __construct()
     {
-        /** Establece permisos de acceso para cada método del controlador */
-        $this->middleware('permission:project.tracking.status.activity.create', ['only' => ['store']]);
-        $this->middleware('permission:project.tracking.status.activity.edit', ['only' => ['update']]);
-        $this->middleware('permission:project.tracking.status.activity.delete', ['only' => 'destroy']);
-
         /* Define las reglas de validación para el formulario */
         $this->validateRules = [
             'color'               => ['required'],

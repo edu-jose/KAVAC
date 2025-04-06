@@ -4,10 +4,6 @@
         "intro" : "Esta sección permite gestionar la configuración de los reportes de nómina."
     },
     {
-        "element" : "#PayrollTrustCode",
-        "intro" : "Esta sección permite gestionar la configuración del código de fideicomitente."
-    },
-    {
         "element" : "#helpNumberDecimals",
         "intro" : "En este campo, se puede especificar la cantidad de decimales que se mostrarán en los reportes de nómina."
     },

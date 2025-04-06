@@ -4,7 +4,7 @@
 </a>
 @section('extra-js')
     @parent
-    <script nonce="{{ session()->get('nonce') }}">
+    <script>
         $(document).ready(function() {
             @if (isset($helpId) && !empty($helpId) && isset($helpSteps) && count($helpSteps) > 0)
                 $('#btnHelp{{ $helpId }}').on('click', function() {

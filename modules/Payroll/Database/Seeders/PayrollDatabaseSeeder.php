@@ -73,8 +73,5 @@ class PayrollDatabaseSeeder extends Seeder
 
         /* Seeder para la carga de datos estáticos de la planilla de nómina */
         $this->call(PayrollLoadBasicPayrollStaffDataTableSeeder::class);
-
-        /* Seeder para la carga de códigos de procesos */
-        $this->call(PayrollProcessCodeTableSeeder::class);
     }
 }

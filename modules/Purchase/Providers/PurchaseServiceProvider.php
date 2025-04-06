@@ -4,7 +4,6 @@ namespace Modules\Purchase\Providers;
 
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\ServiceProvider;
-use Modules\Purchase\Console\Commands\UpdateDataBudgetaryAvailability;
 use Modules\Purchase\Console\Commands\UpdateStatusBudgetaryAvailability;
 
 /**
@@ -158,7 +157,6 @@ class PurchaseServiceProvider extends ServiceProvider
             // Registrar comandos solo si se está ejecutando en la consola
             $this->commands([
                 UpdateStatusBudgetaryAvailability::class,
-                UpdateDataBudgetaryAvailability::class,
             ]);
         }
     }

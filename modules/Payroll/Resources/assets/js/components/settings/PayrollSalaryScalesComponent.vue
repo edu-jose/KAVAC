@@ -60,9 +60,9 @@
                                         <div class="form-group">
                                             <label for="active">¿Activa?</label>
                                             <div class="col-12">
-                                                <div class="custom-control custom-switch" data-toggle="tooltip"
+                                                <div class="custom-control custom-switch" data-toggle="tooltip" 
                                                      title="Indique si el escalafón está activo">
-                                                    <input type="checkbox" class="custom-control-input" id="salaryScaleActive"
+                                                    <input type="checkbox" class="custom-control-input" id="salaryScaleActive" 
                                                            v-model="record.active" :value="true">
                                                     <label class="custom-control-label" for="salaryScaleActive"></label>
                                                 </div>
@@ -255,7 +255,7 @@
                                                 <input type="number" placeholder="Valor"
                                                        class="form-control input-sm" data-toggle="tooltip"
                                                        title="Indique la cantidad (requerido)"
-                                                       v-model="scale.value" min="0" @focus="selectText">
+                                                       v-model="scale.value" min="0" onfocus="this.select()">
                                             </div>
                                         </div>
                                         <div class="col-12 col-md-12"
@@ -266,7 +266,7 @@
                                                        type="number" placeholder="Valor"
                                                        class="form-control input-sm" data-toggle="tooltip"
                                                        title="Indique la cantidad (requerido)"
-                                                       min="0" step=".01" @focus="selectText">
+                                                       min="0" step=".01" onfocus="this.select()">
                                             </div>
                                             <div class="form-group is-required">
                                                 <label>Hasta</label>
@@ -274,7 +274,7 @@
                                                        type="number" placeholder="Valor"
                                                        class="form-control input-sm" data-toggle="tooltip"
                                                        title="Indique la cantidad (requerido)"
-                                                       min="0" step=".01" @focus="selectText">
+                                                       min="0" step=".01" onfocus="this.select()">
                                             </div>
                                         </div>
                                         <div class="col-12 col-md-12"
@@ -314,15 +314,15 @@
                     </div>
                     <div class="modal-footer">
                         <div class="form-group">
-                            <button type="button" class="btn btn-default btn-sm btn-round btn-modal-close"
+                            <button type="button" class="btn btn-default btn-sm btn-round btn-modal-close" 
 									@click="clearFilters" data-dismiss="modal">
 								Cerrar
 							</button>
-							<button type="button" class="btn btn-warning btn-sm btn-round btn-modal btn-modal-clear"
+							<button type="button" class="btn btn-warning btn-sm btn-round btn-modal btn-modal-clear" 
 									@click="reset()">
 								Cancelar
 							</button>
-							<button type="button" @click="createRecord('payroll/salary-scales')"
+							<button type="button" @click="createRecord('payroll/salary-scales')" 
 									class="btn btn-primary btn-sm btn-round btn-modal-save">
 								Guardar
 							</button>
@@ -670,6 +670,12 @@
                 }
                 if(vm.editIndex == null) {
                     if (vm.record.payroll_scales.length > 0) {
+                        for (let scale of vm.record.payroll_scales) {
+                            if (scale.name === field.name) {
+                                vm.errors.push('El nombre de la escala ya ha sido registrado');
+                                return false;
+                            }
+                        }
                         if (vm.errors.length < 1) {
                             vm.record.payroll_scales.push(field);
                         }

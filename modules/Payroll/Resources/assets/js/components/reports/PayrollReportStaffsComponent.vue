@@ -688,48 +688,18 @@ export default {
             vm.record.report = false;
 
             if (!vm.record.payroll_staffs.length > 0) {
-                bootbox.alert({
-                    title: "Advertencia",
-                    message: "Debe agregar al menos un trabajador a la solicitud",
-                    closeButton: false,
-					buttons: {
-						ok: {
-							label: "Cerrar",
-							className: 'btn-light'
-						}
-					}
-                });
+                bootbox.alert("Debe agregar al menos un trabajador a la solicitud");
                 return false;
             };
             if (vm.record.personal_data && vm.record.max_age) {
                 if (Number(vm.record.max_age) < Number(vm.record.min_age)) {
-                    bootbox.alert({
-                        title: "Advertencia",
-                        message: "El rango minimo de edad del trabajador no debe ser mayor al rango máximo",
-                        closeButton: false,
-                        buttons: {
-                            ok: {
-                                label: "Cerrar",
-                                className: 'btn-light'
-                            }
-                        }
-                    });
+                    bootbox.alert("El rango minimo de edad del trabajador no debe ser mayor al rango máximo");
                     return false;
                 }
             };
             if (vm.record.socioeconomic_data && vm.record.has_childs && vm.record.max_childs_age && vm.record.min_childs_age) {
                 if (Number(vm.record.max_childs_age) < Number(vm.record.min_childs_age)) {
-                    bootbox.alert({
-                        title: "Advertencia",
-                        message: "El rango minimo de edad de los hijos no debe ser mayor al rango máximo",
-                        closeButton: false,
-                        buttons: {
-                            ok: {
-                                label: "Cerrar",
-                                className: 'btn-light'
-                            }
-                        }
-                    });
+                    bootbox.alert("El rango minimo de edad de los hijos no debe ser mayor al rango máximo");
                     return false;
                 }
             };
@@ -739,17 +709,7 @@ export default {
                     vm.record.max_time_worked &&
                     Number(vm.record.max_time_worked) < Number(vm.record.min_time_worked)
                 ) {
-                    bootbox.alert({
-                        title: "Advertencia",
-                        message: "El rango minimo de tiempo laborado no debe ser mayor al rango máximo",
-                        closeButton: false,
-                        buttons: {
-                            ok: {
-                                label: "Cerrar",
-                                className: 'btn-light'
-                            }
-                        }
-                    });
+                    bootbox.alert("El rango minimo de tiempo laborado no debe ser mayor al rango máximo");
                     return false;
                 }
                 if (
@@ -757,17 +717,7 @@ export default {
                     vm.record.max_time_service &&
                     Number(vm.record.max_time_service) < Number(vm.record.min_time_service)
                 ) {
-                    bootbox.alert({
-                        title: "Advertencia",
-                        message: "El rango minimo de tiempo de servicio no debe ser mayor al rango máximo",
-                        closeButton: false,
-                        buttons: {
-                            ok: {
-                                label: "Cerrar",
-                                className: 'btn-light'
-                            }
-                        }
-                    });
+                    bootbox.alert("El rango minimo de tiempo de servicio no debe ser mayor al rango máximo");
                     return false;
                 }
             }

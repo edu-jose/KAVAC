@@ -629,31 +629,11 @@
                 var url = `${window.app_url}/asset/reports`;
 
                 if (vm.record.type_report == 'clasification' && vm.record.type_asset == '') {
-                    bootbox.alert({
-                        title: "Advertencia",
-                        message: "Debe seleccionar un tipo de bien para generar el reporte",
-                        closeButton: false,
-                        buttons: {
-                            ok: {
-                                label: "Cerrar",
-                                className: 'btn-light'
-                            }
-                        }
-                    });
+                    bootbox.alert("Debe seleccionar un tipo de bien para generar el reporte");
                     return false;
                 }
                 if (vm.record.type_report == '') {
-                    bootbox.alert({
-                        title: "Advertencia",
-                        message: "Debe seleccionar el tipo de reporte a generar",
-                        closeButton: false,
-                        buttons: {
-                            ok: {
-                                label: "Cerrar",
-                                className: 'btn-light'
-                            }
-                        }
-                    });
+                    bootbox.alert("Debe seleccionar el tipo de reporte a generar");
                     return false;
                 }
                 if (vm.record.type_report == 'dependence') {

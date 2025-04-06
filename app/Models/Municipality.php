@@ -2,13 +2,11 @@
 
 namespace App\Models;
 
-use App\Traits\ModelsTrait;
 use Illuminate\Database\Eloquent\Model;
-use OwenIt\Auditing\Contracts\Auditable;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use OwenIt\Auditing\Contracts\Auditable;
 use OwenIt\Auditing\Auditable as AuditableTrait;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Traits\ModelsTrait;
 
 /**
  * @class Municipality
@@ -67,7 +65,7 @@ class Municipality extends Model implements Auditable
      *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
-    public function estate(): BelongsTo
+    public function estate()
     {
         return $this->belongsTo(Estate::class);
     }
@@ -79,7 +77,7 @@ class Municipality extends Model implements Auditable
      *
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
-    public function parish(): HasMany
+    public function parish()
     {
         return $this->hasMany(Parish::class);
     }
@@ -89,18 +87,8 @@ class Municipality extends Model implements Auditable
      *
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
-    public function institutions(): HasMany
+    public function institutions()
     {
         return $this->hasMany(Institution::class);
-    }
-
-    /**
-     * Get all of the headquarters for the Municipality
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
-    public function headquarters(): HasMany
-    {
-        return $this->hasMany(Headquarter::class);
     }
 }

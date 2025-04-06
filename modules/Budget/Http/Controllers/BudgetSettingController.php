@@ -5,7 +5,7 @@ namespace Modules\Budget\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Contracts\Support\Renderable;
 use Illuminate\Routing\Controller;
-use Modules\Budget\Models\CodeSetting;
+use App\Models\CodeSetting;
 use App\Rules\CodeSetting as CodeSettingRule;
 use Modules\Budget\Models\BudgetCompromise;
 use Modules\Budget\Models\BudgetProject;
@@ -126,40 +126,7 @@ class BudgetSettingController extends Controller
             'transfers_code' => [new CodeSettingRule()],
             'reductions_code' => [new CodeSettingRule()],
             'credits_code' => [new CodeSettingRule()],
-            'budgetary_availabilities_code' => config('budget.budget_availability.active')
-                ? [
-                    'nullable',
-                    'regex:/^[a-zA-Z0-9\-]+$/',
-                    'max:15',
-                    function ($attribute, $value, $fail) {
-                        $separator = config('budget.budget_availability.separator');
-                        $segments = explode($separator, $value);
-
-                        $segmentNumber = false;
-                        foreach ($segments as $segment) {
-                            if (ctype_digit($segment) && $segment == str_repeat('0', strlen($segment))) {
-                                $segmentNumber = true;
-                                break;
-                            }
-                        }
-
-                        if (!$segmentNumber) {
-                            $fail("El campo :attribute debe contener al menos un segmento de digitos.");
-                        }
-                    }
-                ] : [new CodeSettingRule()],
-        ], [
-            'budgetary_availabilities_code.regex' => 'El formato del campo :attribute es incorrecto.',
-            'budgetary_availabilities_code.max' => 'El campo :attribute no debe ser mayor que 15 caracteres.'
-        ], [
-            'formulations_code' => 'código de formulación',
-            'compromises_code' => 'código de compromiso',
-            'caused_code' => 'código de causado',
-            'payed_code' => 'código de pagado',
-            'transfers_code' => 'código de traspaso',
-            'reductions_code' => 'código de reducción',
-            'credits_code' => 'código de crédito adicional',
-            'budgetary_availabilities_code' => 'código de disponibilidad presupuestaria'
+            'budgetary_availabilities_code' => [new CodeSettingRule()],
         ]);
 
         /* Arreglo con información de los campos de códigos configurados */
@@ -173,7 +140,7 @@ class BudgetSettingController extends Controller
 
             if ($key !== '_token' && !is_null($value)) {
                 list($table, $field) = explode("_", $key);
-                list($prefix, $digits, $sufix) = CodeSetting::divideCode($value, $key);
+                list($prefix, $digits, $sufix) = CodeSetting::divideCode($value);
 
                 if ($table === "formulations") {
                     /* Define el modelo asociado a la formulación de presupuesto */

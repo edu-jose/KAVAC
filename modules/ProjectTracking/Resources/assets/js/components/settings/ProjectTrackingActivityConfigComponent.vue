@@ -34,7 +34,7 @@
                                 <ul>
                                     <li v-for="error in errors" :key="error">{{ error }}</li>
                                 </ul>
-                            </div>
+                            </div>col-6
                         </div>
                         <div class="row">
                             <div class="col-6 col-md-6">
@@ -67,7 +67,7 @@
                                 </div>
                             </div>
                             <div class="col-6 col-md-6">
-			                    <div class="form-group is-required">
+			                    <div class="form-group">
 				                 	<label>Tipo de Producto:</label>
 			                        <select2 :options="type_products"
 					                   	data-toggle="tooltip"

@@ -408,17 +408,17 @@
                                                     <div class="col-12 col-md-12" v-if="days_type == 'value'">
                                                         <div class="form-group is-required">
                                                             <label>Valor</label>
-                                                            <input type="number" placeholder="Valor" class="form-control input-sm" data-toggle="tooltip" title="Indique la cantidad (requerido)" v-model="days_scale.value" min="0" @focus="selectText">
+                                                            <input type="number" placeholder="Valor" class="form-control input-sm" data-toggle="tooltip" title="Indique la cantidad (requerido)" v-model="days_scale.value" min="0" onfocus="this.select()">
                                                         </div>
                                                     </div>
                                                     <div class="col-12 col-md-12" v-if="days_type == 'range'">
                                                         <div class="form-group is-required">
                                                             <label>Desde</label>
-                                                            <input id="days-scale-value-from" days_type="number" placeholder="Valor" class="form-control input-sm" data-toggle="tooltip" title="Indique la cantidad (requerido)" min="0" step=".01" @focus="selectText">
+                                                            <input id="days-scale-value-from" days_type="number" placeholder="Valor" class="form-control input-sm" data-toggle="tooltip" title="Indique la cantidad (requerido)" min="0" step=".01" onfocus="this.select()">
                                                         </div>
                                                         <div class="form-group is-required">
                                                             <label>Hasta</label>
-                                                            <input id="days-scale-value-to" days_type="number" placeholder="Valor" class="form-control input-sm" data-toggle="tooltip" title="Indique la cantidad (requerido)" min="0" step=".01" @focus="selectText">
+                                                            <input id="days-scale-value-to" days_type="number" placeholder="Valor" class="form-control input-sm" data-toggle="tooltip" title="Indique la cantidad (requerido)" min="0" step=".01" onfocus="this.select()">
                                                         </div>
                                                     </div>
                                                     <div class="col-12 col-md-12" v-if="days_type == 'boolean'">
@@ -1597,7 +1597,7 @@ export default {
         async hasAssociated(id){
             const vm = this;
              await axios.get(`${window.app_url}/payroll/get-vacation-policy/verify_assignment/${id}`).then(response => {
-                        vm.record.hasAssociated = vm.record.active && response.data.hasAssociated && vm.record.vacation_type == 'vacation_period'
+                        vm.record.hasAssociated = response.data.hasAssociated && vm.record.vacation_type == 'vacation_period'
                     });
         },
 

@@ -14,9 +14,9 @@ class AddFieldStatusPayroll extends Migration
     public function up()
     {
         if (Schema::hasTable('payrolls')) {
-            Schema::table('payrolls', function (Blueprint $table) {
-                $table->string('status')->nullable()->comment('Estatus de la nomina referente a Disponibilidad');
-            });
+        Schema::table('payrolls', function (Blueprint $table) {
+            $table->string('status')->nullable()->comment('Estatus de la nomina referente a Disponibilidad');
+        });
         }
     }
 

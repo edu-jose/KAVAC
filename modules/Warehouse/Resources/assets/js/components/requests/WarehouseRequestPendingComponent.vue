@@ -5,8 +5,8 @@
 		   @click="initRequest('view_request_pending',$event)">
 			<i class="fa fa-calendar-check-o"></i>
 		</a>
-		<div class="modal fade text-left" tabindex="-1" id="view_request_pending">
-			<div class="modal-dialog modal-xs">
+		<div class="modal fade text-left" tabindex="-1" role="dialog" id="view_request_pending">
+			<div class="modal-dialog modal-xs" role="document">
 				<div class="modal-content">
 					<div class="modal-header">
 						<button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -38,13 +38,11 @@
 						<div class="row">
 							<div class="col-md-12">
 								<div class="form-group">
-									<label for="observations">Observación:</label>
-                                    <ckeditor
-                                        :editor="ckeditor.editor" data-toggle="tooltip"
-                                        title="Indique alguna observación referente a la solicitud de almacén (opcional)"
-                                        :config="ckeditor.editorConfig" class="form-control" tag-name="textarea"
-                                        rows="3" v-model="record.observations" id="observations"
-                                    ></ckeditor>
+									<label>Observación:</label>
+                                    <ckeditor :editor="ckeditor.editor" data-toggle="tooltip"
+                                              title="Indique alguna observación referente a la solicitud de almacén (opcional)"
+                                              :config="ckeditor.editorConfig" class="form-control" tag-name="textarea"
+                                              rows="3" v-model="record.observations"></ckeditor>
 								   <input type="hidden" v-model="record.id" id="id">
 			                    </div>
 							</div>
@@ -107,7 +105,7 @@
 				const vm = this;
 				var id = $(".modal-body #id").val();
 				if(typeof(url) != 'undefined'){
-					axios.patch(url + this.requestid, vm.record).then(response => {
+					axios.patch(url + id, vm.record).then(response => {
 						if (typeof(response.data.redirect) !== "undefined")
 							location.href = response.data.redirect;
 					}).catch(error => {

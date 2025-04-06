@@ -81,7 +81,7 @@
                   </div>
                   <hr>
                 </div>
-                <div class="mb-3" v-if="record.description?.name">
+                <div class="mb-3" v-if="record.description.name">
                   <h6 class="card-title">
                       {{record.description.label}}:
                   </h6>

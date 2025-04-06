@@ -94,7 +94,7 @@
                                     <label for="value">Valor:</label>
                                     <input id="value" class="form-control input-sm" type="text"
                                            data-toggle="tooltip" placeholder="Valor"
-                                           @focus="selectText"
+                                           onfocus="this.select()"
                                            title="Indique el valor del parámetro (requerido)"
                                            v-model="record.value"
                                            v-input-mask data-inputmask="
@@ -228,13 +228,13 @@
                             </div>
                             <!-- ./acrónimo -->
 
-                            <!-- valor máximo permitido -->
+                            <!-- valor máximo -->
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="value_max">Valor máximo permitido:</label>
+                                    <label for="value_max">Valor máximo:</label>
                                     <input id="value_max" class="form-control input-sm" type="text"
-                                           data-toggle="tooltip" placeholder="Valor máximo permitido"
-                                           @focus="selectText"
+                                           data-toggle="tooltip" placeholder="Valor máximo"
+                                           onfocus="this.select()"
                                            title="Indique el valor máximo del parámetro"
                                            v-model="record.value_max"
                                            v-input-mask data-inputmask="
@@ -245,7 +245,7 @@
                                     />
                                 </div>
                             </div>
-                            <!-- ./valor máximo permitido -->
+                            <!-- ./valor máximo -->
 
                             <!-- Categorías de hoja de tiempo -->
                             <div class="col-md-6">
@@ -258,27 +258,6 @@
                                 </div>
                             </div>
                             <!-- ./Categorías de hoja de tiempo -->
-
-                            <!-- Valor máximo permitido en hoja de tiempo -->
-                            <div class="col-md-6">
-                                <div class="form-group is-required">
-                                    <label for="max_value_allowed_per_time_sheet">Valor máximo permitido en hoja de tiempo:</label>
-                                    <input id="max_value_allowed_per_time_sheet" class="form-control input-sm" type="text"
-                                           data-toggle="tooltip" placeholder="valor máximo permitido en hoja de tiempo"
-                                           @focus="selectText"
-                                           :disabled="!record.exception_type"
-                                           title="Indique el valor máximo permitido en hoja de tiempo"
-                                           v-model="record.max_value_allowed_per_time_sheet"
-                                           v-input-mask data-inputmask="
-                                                'alias': 'numeric',
-                                                'allowMinus': 'false',
-                                                'digits': '0'
-                                           "
-                                    />
-                                </div>
-                            </div>
-                            <!-- ./valor máximo permitido en hoja de tiempo -->
-
                         </div>
                         <!-- ./variable reiniciable a cero -->
                     </div>
@@ -335,14 +314,13 @@
         data() {
             return {
                 record: {
-                    id:                        '',
-                    name:                      '',
-                    description:               '',
-                    parameter_type:            '',
-                    percentage:                false,
-                    value:                     '',
-                    formula:                   '',
-                    max_value_per_period:      '',
+                    id:             '',
+                    name:           '',
+                    description:    '',
+                    parameter_type: '',
+                    percentage:     false,
+                    value:          '',
+                    formula:        '',
                 },
                 formula:              '',
                 variable:             '',
@@ -402,12 +380,6 @@
             });
         },
         watch: {
-            'record.exception_type': async function(exception_type) {
-                const vm = this;
-                if (exception_type) {
-                    await vm.getExceptionTypeMaxValue();
-                }
-            },
             /**
              * Método que supervisa los cambios en el campo variable y actualiza el listado de opciones
              *
@@ -466,15 +438,6 @@
             },
         },
         methods: {
-            async getExceptionTypeMaxValue() {
-                const vm = this;
-                vm.record.max_value_per_period = await new Promise((resolve, reject) => {
-                    let max_value = vm.exception_types.find((type) => {
-                        return type.id == vm.record.exception_type;
-                    })
-                    resolve(max_value.value_max);
-                });
-            },
             initUpdate(id, event) {
                 let vm = this;
                 vm.errors = [];

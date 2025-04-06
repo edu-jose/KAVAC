@@ -53,6 +53,7 @@ class UpdateFieldsToProjectTrackingSubProjectsTable extends Migration
      */
     public function down()
     {
-        //
+        Schema::table('project_tracking_sub_projects', function (Blueprint $table) {
+        });
     }
 }

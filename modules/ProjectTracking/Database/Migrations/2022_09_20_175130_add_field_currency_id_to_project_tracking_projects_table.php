@@ -36,6 +36,7 @@ class AddFieldCurrencyIdToProjectTrackingProjectsTable extends Migration
      */
     public function down()
     {
-        //
+        Schema::table('project_tracking_projects', function (Blueprint $table) {
+        });
     }
 }

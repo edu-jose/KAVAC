@@ -37,7 +37,7 @@
                             <h6 class="text-center">
                                 Datos del movimiento bancario
                             </h6>
-                            <h6 v-if="record.document_status" class="text-center text-danger">
+                            <h6 v-if="record.document_status.action == 'AN'" class="text-center text-danger">
                                 {{ record.document_status.name }}
                             </h6>
                             <br>

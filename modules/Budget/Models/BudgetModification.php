@@ -49,8 +49,7 @@ class BudgetModification extends Model implements Auditable
         'budgetModificationAccounts',
         'institution',
         'currency',
-        'documentFile',
-        'documentStatus'
+        'documentFile'
     ];
 
     /**
@@ -58,7 +57,7 @@ class BudgetModification extends Model implements Auditable
      *
      * @var array $dates
      */
-    protected $dates = ['deleted_at', 'approved_at', 'approved_date'];
+    protected $dates = ['deleted_at', 'approved_at'];
 
     /**
      * Lista con campos del modelo
@@ -74,8 +73,7 @@ class BudgetModification extends Model implements Auditable
         'document',
         'institution_id',
         'document_status_id',
-        'status',
-        'approved_date'
+        'status'
     ];
 
     /**

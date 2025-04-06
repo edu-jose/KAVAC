@@ -32,9 +32,10 @@
         <div class="footer text-center">
             <div class="row">
                 <div class="col-6">
-                    <button class="btn btn-primary btn-round btn-block btn-back"
+                    <button class="btn btn-primary btn-round btn-block"
                         data-toggle="tooltip" type="button"
                         title="{{ __('Presione el botón para regresar') }}"
+                        onclick="location.href='{{ env('APP_URL') }}'"
                     >
                         {{ __('Cancelar') }}
                     </button>

@@ -22,7 +22,7 @@
                     type="date"
                     placeholder="Fecha de pago"
                     tabindex="2"
-                    v-model="filterBy.payment_date"
+                    v-model="filterBy.date"
                 />
             </div>
             <div class="row">
@@ -51,9 +51,9 @@
         <!-- Final de filtros de la tabla -->
         <hr>
         <!-- Tabla de registros de Movimientos bancarios -->
-        <v-server-table
+        <v-client-table
             :columns="columns"
-            :url="'finance/movements/vue-list'"
+            :data="records"
             :options="table_options"
             ref="tableResults"
         >
@@ -68,9 +68,18 @@
                 {{ addDecimals(props.row.amount) }}
             </div>
             <div slot="document_status" slot-scope="props">
-                <span :style="props.row.document_status ?'color: ' + props.row.document_status.color : ''">
-                    {{ props.row.document_status.name }}
-                </span>
+                <span class="text-success"
+                        v-if="props.row.document_status.action === 'AP' ">
+                        {{ props.row.document_status.name }}
+                    </span>
+                    <span class="text-warning" title="Este registro puede ser aprobado desde asientos contables"
+                        v-else-if="props.row.document_status.action === 'PR'">
+                        Pendiente
+                    </span>
+                    <span class="text-danger"
+                        v-else-if="props.row.document_status.action === 'AN'">
+                        {{ props.row.document_status.name }}
+                    </span>
             </div>
             <div slot="id" slot-scope="props" class="text-center">
                 <div class="d-inline-flex">
@@ -113,19 +122,6 @@
                     >
                         <i class="fa fa-eye"></i>
                     </button>
-                    <a 
-                        v-show="props.row.document_status.action === 'AP' || props.row.document_status.action === 'AN'"
-                        :href="
-                            setUrl(`finance/movements/pdf/${props.row.id}`)
-                        "
-                        type="button"
-                        target="_blank"
-                        class="btn btn-primary btn-xs btn-icon btn-action"
-                        title="Imprimir registro"
-                        data-toggle="tooltip"
-                    >
-                        <i class="fa fa-print"></i>
-                    </a>
 
                     <template v-if="(lastYear && format_date(props.row.payment_date, 'YYYY') <= lastYear)
                                     || (props.row.is_payment_executed
@@ -182,7 +178,7 @@
                     />
                 </div>
             </div>
-        </v-server-table>
+        </v-client-table>
         <!-- Final de Tabla de registros de Movimientos bancarios -->
         <!-- Modal -->
         <finance-bank-movements-info
@@ -212,9 +208,8 @@
                 ],
                 filterBy: {
                     code: '',
-                    payment_date: '',
+                    date: '',
                 },
-                cancelBankMovementPermission: false,
             }
         },
         created() {
@@ -259,10 +254,12 @@
         },
         async mounted () {
             const vm = this;
-            let url = this.setUrl('finance/movements/vue-list');
-            axios.get(url)
+            axios.get(`${window.app_url}/finance/movements/vue-list`)
                 .then(response => {
+                vm.records = response.data.records;
                 vm.cancelBankMovementPermission = response.data.cancelBankMovementPermission;
+                // Variable usada para el reseteo de los filtros de la tabla.
+                vm.tmpRecords = vm.records;
             });
             await vm.queryLastFiscalYear();
             await vm.getOpenedFiscalYears();
@@ -280,9 +277,9 @@
                 const vm = this;
                 vm.filterBy = {
                     code: '',
-                    payment_date: ''
+                    date: ''
                 };
-                vm.$refs.tableResults.refresh();
+                vm.records = vm.tmpRecords;
             },
 
             /**
@@ -302,21 +299,17 @@
              */
             filterTable() {
                 const vm = this;
-
-                let params = {
-                    query: vm.filterBy.payment_date ? vm.format_date(vm.filterBy.payment_date) : vm.filterBy.code,
-                    limit: vm.table_options.perPage,
-                    ascending: 1,
-                    page: 1,
-                    byColumn: 0
-                }
-
-                let url = this.setUrl('finance/movements/vue-list');
-                axios.get(url, {params: params})
-                .then(response => {
-                    vm.$refs.tableResults.data = response.data.data;
-                    vm.$refs.tableResults.count = response.data.count;
-                });
+                vm.records = vm.tmpRecords.filter((rec) => {
+                    return (vm.filterBy.code)
+                        ? (rec.code
+                        === vm.filterBy.code)
+                        : true;
+                }).filter((rec) => {
+                    return (vm.filterBy.date)
+                        ? (rec.payment_date
+                        === vm.filterBy.date)
+                        : true;
+                })
             },
 
             /**

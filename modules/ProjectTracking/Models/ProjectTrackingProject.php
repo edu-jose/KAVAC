@@ -10,7 +10,6 @@ use App\Traits\ModelsTrait;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Nwidart\Modules\Facades\Module;
-use App\Models\Department;
 
 /**
  * @class ProjectTrackingProject
@@ -120,7 +119,7 @@ class ProjectTrackingProject extends Model implements Auditable
      */
     public function dependency()
     {
-        return $this->belongsTo(Department::class);
+        return $this->belongsTo(ProjectTrackingDependency::class);
     }
 
     /**

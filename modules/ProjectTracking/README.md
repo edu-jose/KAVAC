@@ -8,6 +8,7 @@ Módulo que permite gestionar los proyectos de la organización bajo las siguien
      * Roles
      * Tipos de proyecto
      * Tipos de productos
+     * Dependencias
      * Prioridad
      * Proyectos
      * Subproyectos

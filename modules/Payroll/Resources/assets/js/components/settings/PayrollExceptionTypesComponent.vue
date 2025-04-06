@@ -50,7 +50,7 @@
         	                    </div>
                                 <!-- ./nombre -->
 								<!-- valor máximo -->
-                                <div class="form-group is-required">
+                                <div class="form-group">
                                     <label for="value_max">Valor máximo por período:</label>
                                     <input id="value_max" class="form-control input-sm" type="text"
                                            data-toggle="tooltip" placeholder="Valor máximo"

@@ -35,18 +35,14 @@ class CommonController extends Controller
      */
     public function getSelectData(Request $request, $parent_model, $parent_id, $model, $module_name = null, $fk = null)
     {
-        $modelModule = ((!is_null($module_name)) ? "Modules\\{$module_name}" : 'App') . "\\Models\\{$model}";
         $model_name = ($model == 'User')
                       ? "App\\Models\\{$model}"
-                      : $modelModule;
+                      : ((!is_null($module_name)) ? "Modules\\{$module_name}" : 'App') . "\\Models\\{$model}";
 
-        $parentModel = (
-            (strpos($parent_model, '_id') === false)
-            ? strtolower($parent_model) . '_id'
-            : $parent_model
-        );
         $fk = (is_null($fk))
-              ? $parentModel
+              ? ((strpos($parent_model, '_id') === false)
+              ? strtolower($parent_model) . '_id'
+              : $parent_model)
               : $fk;
 
         return response()->json([
@@ -68,26 +64,16 @@ class CommonController extends Controller
      *
      * @return    JsonResponse     Datos con los registros relacionados
      */
-    public function getSelectDataCustom(
-        Request $request,
-        $parent_model,
-        $parent_id,
-        $model,
-        $module_name = null,
-        $fk = null
-    ) {
-        $modelModule = ((!is_null($module_name)) ? "Modules\\{$module_name}" : 'App') . "\\Models\\{$model}";
+    public function getSelectDataCustom(Request $request, $parent_model, $parent_id, $model, $module_name = null, $fk = null)
+    {
         $model_name = ($model == 'User')
                       ? "App\\Models\\{$model}"
-                      : $modelModule;
+                      : ((!is_null($module_name)) ? "Modules\\{$module_name}" : 'App') . "\\Models\\{$model}";
 
-        $parentModel = (
-            (strpos($parent_model, '_id') === false)
-            ? strtolower($parent_model) . '_id'
-            : $parent_model
-        );
         $fk = (is_null($fk))
-              ? $parentModel
+              ? ((strpos($parent_model, '_id') === false)
+              ? strtolower($parent_model) . '_id'
+              : $parent_model)
               : $fk;
 
         return response()->json([
@@ -109,30 +95,31 @@ class CommonController extends Controller
      *
      * @return    JsonResponse     Datos con los registros relacionados
      */
-    public function getSelectActive(
-        Request $request,
-        $parent_model,
-        $parent_id,
-        $model,
-        $module_name = null,
-        $fk = null
-    ) {
-        $modelModule = ((!is_null($module_name)) ? "Modules\\{$module_name}" : 'App') . "\\Models\\{$model}";
-        $model_name = ($model == 'User') ? "App\\Models\\{$model}" : $modelModule;
+    public function getSelectActive(Request $request, $parent_model, $parent_id, $model, $module_name = null, $fk = null)
+    {
+        $model_name = ($model == 'User')
+                      ? "App\\Models\\{$model}"
+                      : ((!is_null($module_name)) ? "Modules\\{$module_name}" : 'App') . "\\Models\\{$model}";
 
-        $records = $model_name::where([
-            ["active", true],
-            [$parent_model,$parent_id]
-        ]);
 
-        if (!is_null($fk)) {
-            $records = $records->with($fk);
+
+        if (is_null($fk)) {
+            return response()->json([
+                'result' => true,
+                'records' => $model_name::where([
+                    ["active", true],
+                    [$parent_model,$parent_id]
+                ])->get(),
+            ], 200);
+        } else {
+            return response()->json([
+                'result' => true,
+                'records' => $model_name::with([$fk])->where([
+                    ["active", true],
+                    [$parent_model, $parent_id]
+                ])->get(),
+            ], 200);
         }
-
-        return response()->json([
-            'result' => true,
-            'records' => $records->get(),
-        ], 200);
     }
 
     /**
@@ -151,13 +138,10 @@ class CommonController extends Controller
     {
         $model_name = "App\\Models\\Profile";
 
-        $parentModel = (
-            (strpos($parent_model, '_id') === false)
-            ? strtolower($parent_model) . '_id'
-            : $parent_model
-        );
         $fk = (is_null($fk))
-              ? $parentModel
+              ? ((strpos($parent_model, '_id') === false)
+              ? strtolower($parent_model) . '_id'
+              : $parent_model)
               : $fk;
 
         return response()->json([

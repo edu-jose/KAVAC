@@ -1042,9 +1042,9 @@ class PayrollRoleAndPermissionsTableSeeder extends Seeder
                 'slug_alt' => 'solicitud.vacaciones.crear',
             ],
             [
-                'name' => 'Editar o replanificar solicitudes de vacaciones',
+                'name' => 'Editar solicitudes de vacaciones',
                 'slug' => 'payroll.vacation.requests.edit',
-                'description' => 'Acceso para editar o replanificar las solicitudes de vacaciones',
+                'description' => 'Acceso para editar los solicitudes de vacaciones',
                 'model' => 'Modules\Payroll\Models\PayrollVacationRequest', 'model_prefix' => 'Talento Humano',
                 'slug_alt' => 'solicitud.vacaciones.editar',
             ],
@@ -1303,28 +1303,28 @@ class PayrollRoleAndPermissionsTableSeeder extends Seeder
             ],
             /* Payment types */
             [
-                'name' => 'Crear tipos de Nómina',
+                'name' => 'Crear tipos de pago',
                 'slug' => 'payroll.payment.types.create',
-                'description' => 'Acceso para crear tipos de Nómina',
+                'description' => 'Acceso para crear tipos de pago',
                 'model' => 'Modules\Payroll\Models\PayrollPermissionRequest',
                 'model_prefix' => 'Talento Humano',
-                'slug_alt' => 'tipos.nomina.crear',
+                'slug_alt' => 'tipos.pago.crear',
             ],
             [
-                'name' => 'Editar tipos de Nómina',
+                'name' => 'Editar tipos de pago',
                 'slug' => 'payroll.payment.types.edit',
-                'description' => 'Acceso para editar tipos de Nómina',
+                'description' => 'Acceso para editar tipos de pago',
                 'model' => 'Modules\Payroll\Models\PayrollPermissionRequest',
                 'model_prefix' => 'Talento Humano',
-                'slug_alt' => 'tipos.nomina.editar',
+                'slug_alt' => 'tipos.pago.editar',
             ],
             [
-                'name' => 'Eliminar tipos de Nómina',
+                'name' => 'Eliminar tipos de pago',
                 'slug' => 'payroll.payment.types.delete',
-                'description' => 'Acceso para eliminar tipos de Nómina',
+                'description' => 'Acceso para eliminar tipos de pago',
                 'model' => 'Modules\Payroll\Models\PayrollPermissionRequest',
                 'model_prefix' => 'Talento Humano',
-                'slug_alt' => 'tipos.nomina.eliminar',
+                'slug_alt' => 'tipos.pago.eliminar',
             ],
             /* Vacation policies */
             [
@@ -1508,42 +1508,6 @@ class PayrollRoleAndPermissionsTableSeeder extends Seeder
                 'model_prefix' => 'Talento Humano',
                 'slug_alt' => 'reporte.vacationRequests.crear',
             ],
-            /* Payroll workers report */
-            [
-                'name' => 'Crear reporte de trabajadores por nómina',
-                'slug' => 'payroll.workers.report.create',
-                'description' => 'Acceso para crear reporte de trabajadores por nómina',
-                'model' => 'Modules\Payroll\Models\PayrollPaymentType',
-                'model_prefix' => 'Talento Humano',
-                'slug_alt' => 'reporte.trabajadores.nomina.crear',
-            ],
-            /* Time sheets report*/
-            [
-                'name' => 'Crear reporte de hojas de tiempo',
-                'slug' => 'payroll.timesheets.report.create',
-                'description' => 'Acceso para crear reporte de hojas de tiempo',
-                'model' => 'Modules\Payroll\Models\PayrollTimeSheet',
-                'model_prefix' => 'Talento Humano',
-                'slug_alt' => 'reporte.hojas.tiempo.crear',
-            ],
-            /* Family burden report */
-            [
-                'name' => 'Crear reporte de carga familiar',
-                'slug' => 'payroll.family.burden.report.create',
-                'description' => 'Acceso para crear reporte de carga familiar',
-                'model' => 'Modules\Payroll\Models\PayrollSocioeconomic',
-                'model_prefix' => 'Talento Humano',
-                'slug_alt' => 'reporte.carga.familiar.crear',
-            ],
-            /* Historical positions report */
-            [
-                'name' => 'Crear reporte de histórico de cargos',
-                'slug' => 'payroll.historical.positions.report.create',
-                'description' => 'Acceso para crear reporte de histórico de cargos',
-                'model' => 'Modules\Payroll\Models\PayrollHistoricalPosition',
-                'model_prefix' => 'Talento Humano',
-                'slug_alt' => 'reporte.historico.cargo.crear',
-            ],
             /* reporte de los registros de los empleados */
             [
                 'name' => 'Crear reporte detallado de trabajadores',
@@ -1709,25 +1673,25 @@ class PayrollRoleAndPermissionsTableSeeder extends Seeder
             ],
             /* Contract types */
             [
-                'name' => 'Crear datos de categorías de hojas de tiempo',
+                'name' => 'Crear datos de tipos de excepciones',
                 'slug' => 'payroll.exception.types.create',
-                'description' => 'Acceso para crear datos de categorías de hojas de tiempo',
+                'description' => 'Acceso para crear datos de tipos de excepciones',
                 'model' => 'Modules\Payroll\Models\PayrollExceptionType', 'model_prefix' => 'Talento Humano',
-                'slug_alt' => 'categoria.hojas.tiempo.crear',
+                'slug_alt' => 'tipo.excepciones.crear',
             ],
             [
-                'name' => 'Editar datos de categorías de hojas de tiempo',
+                'name' => 'Editar datos de tipos de excepciones',
                 'slug' => 'payroll.exception.types.edit',
-                'description' => 'Acceso para editar datos de categorías de hojas de tiempo',
+                'description' => 'Acceso para editar datos de tipos de excepciones',
                 'model' => 'Modules\Payroll\Models\PayrollExceptionType', 'model_prefix' => 'Talento Humano',
-                'slug_alt' => 'categoria.hojas.tiempo.editar',
+                'slug_alt' => 'tipo.excepciones.editar',
             ],
             [
-                'name' => 'Eliminar datos de categorías de hojas de tiempo',
+                'name' => 'Eliminar datos de tipos de excepciones',
                 'slug' => 'payroll.exception.types.delete',
-                'description' => 'Acceso para eliminar datos de categorías de hojas de tiempo',
+                'description' => 'Acceso para eliminar datos de tipos de excepciones',
                 'model' => 'Modules\Payroll\Models\PayrollExceptionType', 'model_prefix' => 'Talento Humano',
-                'slug_alt' => 'categoria.hojas.tiempo.eliminar',
+                'slug_alt' => 'tipo.excepciones.eliminar',
             ],
             /* Permisos de parámetros de hoja de tiempo */
             [
@@ -2038,70 +2002,7 @@ class PayrollRoleAndPermissionsTableSeeder extends Seeder
                 'model' => '',
                 'model_prefix' => 'Talento Humano',
                 'slug_alt' => 'recibos.enviar',
-            ],
-            /* Permisos de la códigos de procesos */
-            [
-                'name' => 'Crear Códigos de Procesos',
-                'slug' => 'payroll.process.code.create',
-                'description' => 'Acceso para crear Códigos de Procesos',
-                'model' => 'Modules\Payroll\Models\PayrollProcessCode',
-                'model_prefix' => 'Talento Humano',
-                'slug_alt' => 'codigos.de.procesos.crear',
-            ],
-            [
-                'name' => 'Editar Códigos de Procesos',
-                'slug' => 'payroll.process.code.edit',
-                'description' => 'Acceso para editar Códigos de Procesos',
-                'model' => 'Modules\Payroll\Models\PayrollProcessCode',
-                'model_prefix' => 'Talento Humano',
-                'slug_alt' => 'codigos.de.procesos.editar',
-            ],
-            [
-                'name' => 'Eliminar Códigos de Procesos',
-                'slug' => 'payroll.process.code.delete',
-                'description' => 'Acceso para eliminar Códigos de Procesos',
-                'model' => 'Modules\Payroll\Models\PayrollProcessCode',
-                'model_prefix' => 'Talento Humano',
-                'slug_alt' => 'codigos.de.procesos.eliminar',
-            ],
-            /* Permisos de txt de fideicomiso */
-            [
-                'name' => 'Generar txt fideicomiso',
-                'slug' => 'payroll.txt.trust.create',
-                'description' => 'Acceso para generar txt fideicomiso',
-                'model' => 'Modules\Payroll\Models\PayrollTextFile',
-                'model_prefix' => 'Talento Humano',
-                'slug_alt' => 'txt.fideicomiso.eliminar',
-            ],
-            /* Permisos de carga horaria */
-            [
-                'name' => 'Listar carga horaria',
-                'slug' => 'payroll.workload.index',
-                'description' => 'Acceso para listar las cargas horarias',
-                'model' => 'Modules\Payroll\Models\PayrollWorkload', 'model_prefix' => 'Talento Humano',
-                'slug_alt' => 'carga.horaria.listar',
-            ],
-            [
-                'name' => 'Crear carga horaria',
-                'slug' => 'payroll.workload.create',
-                'description' => 'Acceso para crear carga horaria',
-                'model' => 'Modules\Payroll\Models\PayrollWorkload', 'model_prefix' => 'Talento Humano',
-                'slug_alt' => 'carga.horaria.crear',
-            ],
-            [
-                'name' => 'Editar carga horaria',
-                'slug' => 'payroll.workload.edit',
-                'description' => 'Acceso para editar carga horaria',
-                'model' => 'Modules\Payroll\Models\PayrollWorkload', 'model_prefix' => 'Talento Humano',
-                'slug_alt' => 'carga.horaria.editar',
-            ],
-            [
-                'name' => 'Eliminar carga horaria',
-                'slug' => 'payroll.workload.delete',
-                'description' => 'Acceso para eliminar carga horaria',
-                'model' => 'Modules\Payroll\Models\PayrollWorkload', 'model_prefix' => 'Talento Humano',
-                'slug_alt' => 'carga.horaria.eliminar',
-            ],
+            ]
         ];
 
         $additionalPermissions = [
@@ -2238,7 +2139,7 @@ class PayrollRoleAndPermissionsTableSeeder extends Seeder
                 'slug' => 'payroll.settlement.types.delete',
             ],
             [
-                'name' => 'Editar tipos de Nóminas abiertos',
+                'name' => 'Editar tipos de pagos abiertos',
                 'slug' => 'payroll.payment.types.edit.open',
             ],
         ];

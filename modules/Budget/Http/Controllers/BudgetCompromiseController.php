@@ -58,7 +58,7 @@ class BudgetCompromiseController extends Controller
         /* Define las reglas de validación para el formulario */
         $this->validateRules = [
             'institution_id' => ['required'],
-            'compromised_at' => ['required', 'date', 'before_or_equal:today'],
+            'compromised_at' => ['required', 'date'],
             'source_document' => [
                 'required',
                 'max:20',
@@ -69,7 +69,6 @@ class BudgetCompromiseController extends Controller
                 )
             ],
             'description' => ['required'],
-            'accounts' => ['required'],
             'accounts.*.account_id' => ['required'],
             'accounts.*.specific_action_id' => ['required'],
         ];
@@ -82,8 +81,6 @@ class BudgetCompromiseController extends Controller
             'source_document.max' => 'El campo documento origen no debe de tener más de 250 carácteres.',
             'source_document.unique' => 'El campo documento origen ya ha sido registrado.',
             'description.required' => 'El campo descripción es obligatorio.',
-            'accounts.required' => 'Debe agregar al menos una cuenta presupuestaria de gastos.',
-            'compromised_at.before_or_equal' => 'La fecha del compromiso debe ser anterior o igual a la fecha de hoy',
             // 'accounts.*.specific_action_id.required' => 'El campo acción específica es obligatorio',
             // 'accounts.*.account_id.required' => 'El campo cuenta es obligatorio',
         ];
@@ -773,7 +770,6 @@ class BudgetCompromiseController extends Controller
     public function vueList(Request $request)
     {
         $documentStatus = DocumentStatus::where('action', 'AN')->first(); //Estatus del documento Anulado
-
         $records = BudgetCompromise::query()
             ->with(
                 [

@@ -5,7 +5,7 @@
         <h1>401!</h1>
         <h3>{{ __('¡Acceso denegado!') }}</h3>
         <p>{{ __('Se ha denegado el acceso de la petición solicitada.') }}</p>
-        <button type="button" class="btn btn-sm bt-primary btn-back">
+        <button type="button" class="btn btn-sm bt-primary" onclick="window.history.back();">
             {{ __('Regresar') }}
         </button>
     </div>

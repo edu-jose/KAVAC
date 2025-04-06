@@ -1,7 +1,30 @@
 <template>
     <div>
         <v-client-table ref="tableResults" :columns="columns" :data="records" :options="table_options">
-            <div slot="document_status.name" slot-scope="props" class="text-center">
+            <div slot="date" slot-scope="props" class="text-center">
+                {{
+                    format_date(props.row.from_date, 'DD/MM/YYYY') + ' - ' +
+                    format_date(props.row.to_date, 'DD/MM/YYYY')
+                }}
+            </div>
+            <div slot="code" slot-scope="props" class="text-center">
+                {{ props.row.payroll_supervised_group.code }}
+            </div>
+            <div slot="supervisor" slot-scope="props" class="text-center">
+                {{
+                    props.row.payroll_supervised_group.supervisor.id_number + ' - ' +
+                    props.row.payroll_supervised_group.supervisor.first_name + ' ' +
+                    props.row.payroll_supervised_group.supervisor.last_name
+                }}
+            </div>
+            <div slot="approver" slot-scope="props" class="text-center">
+                {{
+                    props.row.payroll_supervised_group.approver.id_number + ' - ' +
+                    props.row.payroll_supervised_group.approver.first_name + ' ' +
+                    props.row.payroll_supervised_group.approver.last_name
+                }}
+            </div>
+            <div slot="status" slot-scope="props" class="text-center">
                 <span v-if="props.row.document_status.action == 'EL'" class="text-warning">
                     {{ props.row.document_status.name }}
                 </span>
@@ -81,48 +104,27 @@ export default {
     data() {
         return {
             records: [],
-            columns: [
-                'date',
-                'payroll_supervised_group.code',
-                'payroll_supervised_group.supervisor',
-                'payroll_supervised_group.approver',
-                'document_status.name',
-                'id'
-            ],
+            columns: ['date', 'code', 'supervisor', 'approver', 'status', 'id'],
         };
     },
     created() {
         const vm = this;
         vm.table_options.headings = {
-            'payroll_supervised_group.supervisor': 'Supervisor',
-            'payroll_supervised_group.approver': 'Aprobador',
-            'payroll_supervised_group.code': 'Código',
-            'document_status.name': 'Estatus',
             'date': 'Periodo',
+            'code': 'Código',
+            'supervisor': 'Supervisor',
+            'approver': 'Aprobador',
+            'status': 'Estatus',
             'id': 'Acción'
         };
-        vm.table_options.sortable       = [
-            'payroll_supervised_group.supervisor',
-            'payroll_supervised_group.approver',
-            'payroll_supervised_group.code',
-            'document_status.name',
-            'institution',
-            'date',
-        ];
-        vm.table_options.filterable     = [
-            'payroll_supervised_group.supervisor',
-            'payroll_supervised_group.approver',
-            'payroll_supervised_group.code',
-            'document_status.name',
-            'institution',
-            'date',
-        ];
+        // vm.table_options.sortable       = ['code'];
+        vm.table_options.filterable     = ['date', 'code', 'supervisor', 'approver', 'status'];
         vm.table_options.columnsClasses = {
-            'payroll_supervised_group.supervisor': 'col-xs-2 text-center',
-            'payroll_supervised_group.approver': 'col-xs-2 text-center',
-            'payroll_supervised_group.code': 'col-xs-2 text-center',
-            'document_status.name': 'col-xs-2 text-center',
-            'date': 'col-xs-2 text-center',
+            'date': 'col-xs-2',
+            'code': 'col-xs-2',
+            'supervisor': 'col-xs-2',
+            'approver': 'col-xs-2',
+            'status': 'col-xs-2',
             'id': 'col-xs-2'
         };
         vm.table_options.orderBy = {

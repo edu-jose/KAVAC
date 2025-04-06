@@ -31,24 +31,11 @@
                             Disponibilidad presupuestaria - INFORMACIÓN DE LA NÓMINA
                         </h6>
                     </div>
-                    <div class="modal-body">
-                        <div class="row">
-                            <div class="col-6 ml-2">
-                                <div class="form-group">
-                                    <strong>Código de Disponibilidad Presupuestaria</strong>
-                                    <div class="row" style="margin: 1px 0">
-                                        <span class="col-md-12" id="code">
-                                            {{ records.payroll.purchase_common_budgetary_availability?.code ? records.payroll.purchase_common_budgetary_availability?.code : 'No definido' }}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <br><br>
                     <!-- inicio tabla -->
                     <div class="row col-12">
                         <table
-                            class="table table-striped table-hover"
+                            class="table table-striped table-hover mt-5"
                             style="margin-left: 2rem;"
                         >
                             <thead>

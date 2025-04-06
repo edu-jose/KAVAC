@@ -60,7 +60,6 @@
                                     class="form-control input-sm"
                                     data-toggle="tooltip"
                                     title="Indique el valor del campo"
-                                    @input="validateInput($event, column)"
                                     v-model="
                                         inputValues[
                                             column.name + '-' + row.staff_id
@@ -141,10 +140,10 @@
                             <span
                                 v-else-if="column.type == 'subtotal'"
                                 :class="
-                                    (column.max &&
+                                    column.max &&
                                     calculate[
                                         column.group + '-' + row.staff_id
-                                    ] > column.max)
+                                    ] > column.max
                                         ? 'form-control text-center align-middle info-danger'
                                         : 'form-control text-center align-middle'
                                 "
@@ -278,7 +277,6 @@ export default {
             page: 1,
             search: "",
             perPage: 10,
-            params: {},
             perPageValues: [
                 {
                     id: 10,
@@ -297,13 +295,6 @@ export default {
         };
     },
     props: {
-        parameters: {
-            type: Object,
-            required: false,
-            default: function () {
-                return {};
-            },
-        },
         /**
          * @brief Estable el formato de las celdas de la tabla
          * @param {string} name Nombre de la columna
@@ -379,9 +370,6 @@ export default {
         },
     },
     watch: {
-        parameters: function (parameters) {
-            this.params = parameters;
-        },
         inputValues: function () {
             this.$emit("input", this.inputValues);
         },
@@ -419,29 +407,6 @@ export default {
         },
     },
     methods: {
-        validateInput(event, column) {
-            const params = Object.keys(this.params).map(key => ({ [key]: this.params[key] }));
-            const flat_params = params.flatMap((groupObject) => {
-                return Object.values(groupObject);
-            });
-            
-            let group = null;
-
-            for (let i = 0; i < flat_params.length; i++) {
-                for (let j = 0; j < flat_params[i].length; j++) {
-                    if (flat_params[i][j].text === column.name) {
-                        group = flat_params[i][j];
-                        break;
-                    }
-                    
-                }
-            }
-            if (group) {
-                if (parseInt(event.target.value) > parseInt(group.max_value_allowed_per_time_sheet)) {
-                    this.$emit('error', [`El valor no debe ser mayor a ${group.max_value_allowed_per_time_sheet}`]);
-                }
-            }
-        },
         handleDragStart(event, index) {
             const vm = this;
             event.dataTransfer.setData("text/plain", index);
@@ -511,9 +476,7 @@ export default {
             }
         },
     },
-    created() {
-        
-    },
+    created() {},
     mounted() {
         const vm = this;
         const intervalId = setInterval(() => {

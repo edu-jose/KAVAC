@@ -19,7 +19,7 @@
         "popper.js": "^1.16.1",
         "resolve-url-loader": "^3.1.2",
         "sass": "^1.32.5",
-        "sass-loader": "^8.0.0",
+        "sass-loader": "^10.0.0",
         "vue": "^2.6.12",
         "webpack-shell-plugin": "^0.5.0"
     },
@@ -39,7 +39,7 @@
         "laravel-echo": "^1.10.0",
         "laravel-mix-merge-manifest": "^0.1.2",
         "moment": "^2.29.1",
-        "node-sass": "^4.14.1",
+        "node-sass": "^9.0.0",
         "pretty-checkbox-vue": "^1.1.9",
         "pusher-js": "^5.1.1",
         "select2": "^4.0.13",

@@ -112,9 +112,7 @@ class FinancePayOrder extends Model implements Auditable
             $receiver = Receiver::where([
                 'receiverable_type' => $this->name_sourceable_type,
                 'receiverable_id' => $this->name_sourceable_id
-            ])
-            ->latest()
-            ->first();
+            ])->first();
         } else {
             $receiver = Receiver::find($this->name_sourceable_id);
         }

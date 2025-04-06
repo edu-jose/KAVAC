@@ -55,24 +55,6 @@ class PayrollStaffPayroll extends Model implements Auditable
         'basic_payroll_staff_data' => 'array',
     ];
 
-    public function getTotalSalaryAttribute()
-    {
-        if (count($this->concept_type) > 0) {
-            $total = 0;
-            foreach ($this->concept_type as $conceptTypes) {
-                foreach ($conceptTypes as $conceptType) {
-                    if ($conceptType['sign'] === '+') {
-                        $total += (float)$conceptType['value'];
-                    } elseif ($conceptType['sign'] === '-') {
-                        $total -= (float)$conceptType['value'];
-                    }
-                }
-            }
-            return $total;
-        }
-        return 0;
-    }
-
     /**
      * Método que obtiene el registro de nómina asociado al registro
      *

@@ -47,8 +47,6 @@ class BudgetSpecificAction extends Model implements Auditable
      */
     protected $fillable = ['from_date', 'to_date', 'code', 'name', 'description', 'active'];
 
-    protected $appends = ['type'];
-
 
     /**
      * Crea un campo para obtener el nombre de la institución
@@ -107,6 +105,6 @@ class BudgetSpecificAction extends Model implements Auditable
      */
     public function getDate()
     {
-        return $this->to_date;
+        return $this->from_date;
     }
 }

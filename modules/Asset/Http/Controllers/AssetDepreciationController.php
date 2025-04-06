@@ -589,129 +589,112 @@ class AssetDepreciationController extends Controller
         $exist_accounting = Module::has('Accounting') && Module::isEnabled('Accounting');
 
         if ($exist_accounting) {
-            try {
-                DB::transaction(function () use ($id) {
-                    $assetDepreciation = AssetDepreciation::query()
-                        ->with('assetDepreciationAssets.asset.assetSubcategory')
-                        ->find($id);
+            DB::transaction(function () use ($id) {
+                $assetDepreciation = AssetDepreciation::query()
+                    ->with('assetDepreciationAssets.asset.assetSubcategory')
+                    ->find($id);
 
-                    $assets = [];
+                $assets = [];
 
-                    $codeSetting = CodeSetting::where('table', 'accounting_entries')
-                        ->first();
+                $codeSetting = CodeSetting::where('table', 'accounting_entries')
+                    ->first();
 
-                    $currentFiscalYear = FiscalYear::select('year')
-                        ->where(['active' => true, 'closed' => false])
-                        ->orderBy('year', 'desc')
-                        ->first();
+                $currentFiscalYear = FiscalYear::select('year')
+                    ->where(['active' => true, 'closed' => false])
+                    ->orderBy('year', 'desc')
+                    ->first();
 
-                    $code  = generate_registration_code(
-                        $codeSetting->format_prefix,
-                        strlen($codeSetting->format_digits),
-                        (strlen($codeSetting->format_year) == 2) ? (isset($currentFiscalYear) ?
-                        substr($currentFiscalYear->year, 2, 2) : date('y')) : (isset($currentFiscalYear) ?
-                        $currentFiscalYear->year : date('Y')),
-                        \Modules\Accounting\Models\AccountingEntry::class,
-                        $codeSetting->field
-                    );
+                $code  = generate_registration_code(
+                    $codeSetting->format_prefix,
+                    strlen($codeSetting->format_digits),
+                    (strlen($codeSetting->format_year) == 2) ? (isset($currentFiscalYear) ?
+                    substr($currentFiscalYear->year, 2, 2) : date('y')) : (isset($currentFiscalYear) ?
+                    $currentFiscalYear->year : date('Y')),
+                    \Modules\Accounting\Models\AccountingEntry::class,
+                    $codeSetting->field
+                );
 
-                    if (isset(auth()->user()->profile) && isset(auth()->user()->profile->institution_id)) {
-                        $institution = Institution::where(['id' => auth()->user()->profile->institution_id])->first();
-                    } else {
-                        $institution = Institution::where(['active' => true, 'default' => true])->first();
+                if (isset(auth()->user()->profile) && isset(auth()->user()->profile->institution_id)) {
+                    $institution = Institution::where(['id' => auth()->user()->profile->institution_id])->first();
+                } else {
+                    $institution = Institution::where(['active' => true, 'default' => true])->first();
+                }
+
+                $currency = Currency::where('default', true)->orderBy('id', 'ASC')->first();
+
+                $entryCategory = \Modules\Accounting\Models\AccountingEntryCategory::updateOrCreate(
+                    [
+                        'acronym' => 'DPR',
+                    ],
+                    [
+                        'name' => 'Depreciación anual',
+                        'institution_id' => $institution->id
+                    ]
+                );
+
+                $accountEntry = \Modules\Accounting\Models\AccountingEntry::create([
+                    'from_date'                      => $currentFiscalYear->year . '-12-31',
+                    'reference'                      => $assetDepreciation->code ?? $code,
+                    'concept'                        => 'Depreciación de bienes',
+                    'observations'                   => null,
+                    'accounting_entry_category_id'   => $entryCategory->id,
+                    'institution_id'                 => $institution->id,
+                    'currency_id'                    => $currency->id,
+                    'tot_debit'                      => $assetDepreciation->amount,
+                    'tot_assets'                     => $assetDepreciation->amount,
+                    'approved'                       => false
+                ]);
+
+                \Modules\Accounting\Models\AccountingEntryable::create([
+                    'accounting_entry_id' => $accountEntry->id,
+                    'accounting_entryable_type' => AssetDepreciation::class,
+                    'accounting_entryable_id' => $id,
+                ]);
+
+                foreach ($assetDepreciation->assetDepreciationAssets as $asset) {
+                    $subcategoryId = $asset->asset->assetSubcategory->id;
+
+                    if (!isset($assets[$subcategoryId])) {
+                        $assets[$subcategoryId] = [];
                     }
 
-                    $currency = Currency::where('default', true)->orderBy('id', 'ASC')->first();
+                    $assets[$subcategoryId][] = $asset;
+                }
 
-                    $entryCategory = \Modules\Accounting\Models\AccountingEntryCategory::updateOrCreate(
-                        [
-                            'acronym' => 'DPR',
-                        ],
-                        [
-                            'name' => 'Depreciación anual',
-                            'institution_id' => $institution->id
-                        ]
-                    );
+                foreach ($assets as $groupedAssets) {
+                    $amountDebit = 0;
+                    $amountAssets = 0;
+                    $debitAccount = '';
+                    $assetAccount = '';
 
-                    $accountEntry = \Modules\Accounting\Models\AccountingEntry::create([
-                        'from_date'                      => $currentFiscalYear->year . '-12-31',
-                        'reference'                      => $assetDepreciation->code ?? $code,
-                        'concept'                        => 'Depreciación de bienes',
-                        'observations'                   => null,
-                        'accounting_entry_category_id'   => $entryCategory->id,
-                        'institution_id'                 => $institution->id,
-                        'currency_id'                    => $currency->id,
-                        'tot_debit'                      => $assetDepreciation->amount,
-                        'tot_assets'                     => $assetDepreciation->amount,
-                        'approved'                       => false
-                    ]);
+                    foreach ($groupedAssets as $asset) {
+                        $debitAccount = $asset->asset->assetSubcategory->accounting_account_debit;
+                        $assetAccount = $asset->asset->assetSubcategory->accounting_account_asset;
+                        $amountDebit += $asset->amount;
+                        $amountAssets += $asset->amount;
+                    }
 
-                    \Modules\Accounting\Models\AccountingEntryable::create([
+                    \Modules\Accounting\Models\AccountingEntryAccount::create([
                         'accounting_entry_id' => $accountEntry->id,
-                        'accounting_entryable_type' => AssetDepreciation::class,
-                        'accounting_entryable_id' => $id,
+                        'accounting_account_id' => $debitAccount,
+                        'debit' => $amountDebit,
+                        'assets' => 0,
                     ]);
 
-                    foreach ($assetDepreciation->assetDepreciationAssets as $asset) {
-                        $subcategoryId = $asset->asset->assetSubcategory->id;
+                    \Modules\Accounting\Models\AccountingEntryAccount::create([
+                        'accounting_entry_id' => $accountEntry->id,
+                        'accounting_account_id' => $assetAccount,
+                        'debit' => 0,
+                        'assets' => $amountAssets,
+                    ]);
+                }
 
-                        if (!isset($assets[$subcategoryId])) {
-                            $assets[$subcategoryId] = [];
-                        }
-
-                        $assets[$subcategoryId][] = $asset;
-                    }
-
-                    foreach ($assets as $groupedAssets) {
-                        $amountDebit = 0;
-                        $amountAssets = 0;
-                        $debitAccount = '';
-                        $assetAccount = '';
-
-                        foreach ($groupedAssets as $asset) {
-                            $debitAccount = $asset->asset->assetSubcategory->accounting_account_debit;
-                            $assetAccount = $asset->asset->assetSubcategory->accounting_account_asset;
-                            $amountDebit += $asset->amount;
-                            $amountAssets += $asset->amount;
-                        }
-
-                        if ($debitAccount == null || $assetAccount == null) {
-                            throw new \Exception(
-                                'Las cuentas contables no están asociadas ' .
-                                    'para este proceso.',
-                                1
-                            );
-                        }
-
-                        \Modules\Accounting\Models\AccountingEntryAccount::create([
-                            'accounting_entry_id' => $accountEntry->id,
-                            'accounting_account_id' => $debitAccount,
-                            'debit' => $amountDebit,
-                            'assets' => 0,
-                        ]);
-
-                        \Modules\Accounting\Models\AccountingEntryAccount::create([
-                            'accounting_entry_id' => $accountEntry->id,
-                            'accounting_account_id' => $assetAccount,
-                            'debit' => 0,
-                            'assets' => $amountAssets,
-                        ]);
-                    }
-
-                    $documentStatus = DocumentStatus::where('action', 'AP')->first();
-                    $assetDepreciation->document_status_id = $documentStatus->id;
-                    $assetDepreciation->save();
-                });
+                $documentStatus = DocumentStatus::where('action', 'AP')->first();
+                $assetDepreciation->document_status_id = $documentStatus->id;
+                $assetDepreciation->save();
 
                 return response()->json(['message' => 'Success'], 200);
-            } catch (\Throwable $th) {
-                Log::error($th);
-                return response()->json([
-                    'error' => true,
-                    'message' => 'Ha ocurrido un error al aprobar la depreciación, ' .
-                    'por favor comuniquese con el administrador'
-                ], 200);
-            }
+            });
         }
 
         return response()->json(['result' => false, 'message' => [

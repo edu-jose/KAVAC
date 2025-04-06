@@ -3,8 +3,7 @@
         <v-client-table :columns="columns" :data="records" :options="table_options">
             <div slot="id" slot-scope="props" class="text-center">
                 <div class="d-inline-flex">
-                    <button @click="exportRegister(props.row.id, props.row.created_at)" class="btn btn-primary btn-xs btn-icon btn-action"
-                        :disabled="props.row.document_status && props.row.document_status.action === 'PR'"
+                    <button @click="exportRegister(props.row.id)" class="btn btn-primary btn-xs btn-icon btn-action"
                         data-toggle="tooltip" title="Generar archivo .xlsx" data-placement="bottom" type="button">
                         <i class="fa fa-file-excel-o"></i>
                     </button>
@@ -13,14 +12,11 @@
                             ? 'javascript:void(0)'
                             : generatePdfReport(props.row.id)" title="Generar reporte presupuestario del registro"
                         data-placement="bottom" type="button"
-                        :disabled="props.row.payroll_payment_period.payroll_payment_type.skip_moments || (props.row.document_status && props.row.document_status.action === 'PR')">
+                        :disabled="props.row.payroll_payment_period.payroll_payment_type.skip_moments">
                         <i class="fa fa-file-pdf-o"></i>
                     </button>
                     <button
-                        v-if="
-                            (lastYear && format_date(props.row.payroll_payment_period.start_date, 'YYYY') <= lastYear)
-                            || (props.row.document_status && props.row.document_status.action != 'EL')
-                        "
+                        v-if="(lastYear && format_date(props.row.payroll_payment_period.start_date, 'YYYY') <= lastYear)"
                         class="btn btn-warning btn-xs btn-icon btn-action" disabled type="button">
                         <i class="fa fa-edit"></i>
                     </button>
@@ -40,22 +36,17 @@
                                 @click="props.row.payroll_payment_period.payroll_payment_type.skip_moments
                                  ? 'javascript:void(0)'
                                  : payrolConceptAccounts(props.row)"
-                                :disabled="
-                                    props.row.payroll_payment_period.payroll_payment_type.skip_moments
-                                    || (props.row.document_status && props.row.document_status.action === 'PR')
-                                    || (props.row.document_status && props.row.document_status.action === 'AP')
-                                    || (props.row.document_status && props.row.document_status.action === 'CE')
-                                ">
+                                :disabled="props.row.payroll_payment_period.payroll_payment_type.skip_moments">
                                 <i class="fa fa-commenting"></i>
                             </button>
                         </span>
                     </div>
                     <div v-else>
-                        <span v-if="((lastYear && format_date(props.row.payroll_payment_period.start_date, 'YYYY') <= lastYear) ||
-                            (props.row.document_status && props.row.document_status.action != 'EL') || (props.row.payroll_payment_period) &&
+                        <span v-if="(lastYear && format_date(props.row.payroll_payment_period.start_date, 'YYYY') <= lastYear) ||
+                            (props.row.status != 'Completado') || (props.row.payroll_payment_period) &&
                                 (props.row.payroll_payment_period.payment_status == 'generated' ||
                                     props.row.payroll_payment_period.payment_status == 'approved') ||
-                                        props.row.payroll_payment_period.payroll_payment_type.skip_moments) || !props.row.document_status"
+                                        props.row.payroll_payment_period.payroll_payment_type.skip_moments "
                         >
                             <button class="btn btn-success btn-xs btn-icon btn-action"
                                 title="Solicitar Disponibilidad Presupuestaria" data-toggle="tooltip" v-has-tooltip disabled>
@@ -70,11 +61,9 @@
                         </span>
                     </div>
                     <button
-                        v-if="(props.row.payroll_payment_period
+                        v-if="props.row.payroll_payment_period
                         && props.row.payroll_payment_period.payment_status == 'pending'
-                        && (props.row.payroll_payment_period.availability_status == 'AP'
-                        || props.row.payroll_payment_period.payroll_payment_type.skip_moments == true))
-                        && props.row.document_status && props.row.document_status.action == 'EL'"
+                        && props.row.payroll_payment_period.availability_status == 'AP'"
                         class="btn btn-success btn-xs btn-icon btn-action"
                         title="Aprobar Registro"
                         data-toggle="tooltip"
@@ -137,27 +126,6 @@
                     : 'No definido'
                 }}
             </div>
-            <div slot="document_status" slot-scope="props" class="text-center">
-                <span class="badge badge-warning"
-                    v-if="props.row.document_status && props.row.document_status.action === 'PR'">
-                    {{ props.row.document_status.name }}
-                </span>
-                <span class="badge badge-info"
-                    v-else-if="props.row.document_status && props.row.document_status.action === 'EL'">
-                    {{ props.row.document_status.name }}
-                </span>
-                <span class="badge badge-success"
-                    v-else-if="props.row.document_status && props.row.document_status.action === 'AP'">
-                    {{ props.row.document_status.name }}
-                </span>
-                <span class="badge badge-default"
-                    v-else-if="props.row.document_status && props.row.document_status.action === 'CE'">
-                    {{ props.row.document_status.name }}
-                </span>
-                <span class="badge badge-danger"
-                    v-else> Error
-                </span>
-            </div>
         </v-client-table>
     </section>
 </template>
@@ -191,7 +159,6 @@ export default {
                 'name',
                 'payroll_payment_period',
                 'payroll_payment_period.payroll_payment_type.name',
-                'document_status',
                 'id'
             ],
         }
@@ -204,7 +171,6 @@ export default {
             'name': 'Nombre',
             'payroll_payment_period': 'Período de pago',
             'payroll_payment_period.payroll_payment_type.name': 'Tipo de nómina',
-            'document_status': 'Estatus',
             'id': 'Acción'
         };
         vm.table_options.sortable = ['code', 'created_at', 'name', 'payroll_payment_period'];
@@ -348,23 +314,9 @@ export default {
             });
         },
 
-        exportRegister(id, created_at) {
+        exportRegister(id) {
             const vm = this;
-            vm.loading = true;
-
-            axios
-                .get(`${window.app_url}/payroll/registers/export/${id}`, { responseType: 'blob' })
-                .then((response) => {
-                    const date = moment(created_at).format('DD-MM-YYYY');
-                    const url = window.URL.createObjectURL(new Blob([response.data]));
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.setAttribute('download', `payroll_register${date}.xlsx`);
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    vm.loading = false;
-                });
+            location.href = `${window.app_url}/payroll/registers/export/${id}`;
         },
 
         payrolConceptAccounts(item) {
@@ -380,7 +332,7 @@ export default {
                             + item.payroll_payment_period.payroll_concepts.map(concept => concept.name) + "."
                 );
 
-                return false;
+                return;
             }
         },
     }

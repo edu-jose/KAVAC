@@ -1,6 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Modules\Budget\Http\Controllers\BudgetFinancementTypesController;
+use Modules\Budget\Http\Controllers\BudgetFinancementSourcesController;
 
 /*
 |--------------------------------------------------------------------------
@@ -332,7 +334,7 @@ Route::group(
                 '/budgetAvailibity',
                 'Reports\BudgetReportsController@budgetAvailability'
             )->name('budget.report.budgetAvailability');
-            Route::post(
+            Route::get(
                 '/budgetAvailibityPdf',
                 'Reports\BudgetReportsController@getPdf'
             )->name('budget.report.budgetAvailabilityPdf');
@@ -352,21 +354,10 @@ Route::group(
                 '/formulated',
                 'Reports\BudgetReportsController@getFormulatedView'
             )->name('budget.report.formulated');
-
-            Route::get(
-                '/compromises',
-                'Reports\BudgetReportsController@getCompromiseView'
-            )->name('budget.report.compromise');
-
             Route::get(
                 '/formulations',
                 'Reports\BudgetReportsController@getFormulations'
             )->name('budget.formulations');
-
-            Route::get(
-                '/specific-actions',
-                'Reports\BudgetReportsController@getSpecificActionsList'
-            )->name('budget.specific_actions.list');
             Route::get(
                 '/formulated-report',
                 'Reports\BudgetReportsController@getFormulatedReportData'
@@ -375,14 +366,6 @@ Route::group(
                 '/formulated-report-pdf',
                 'Reports\BudgetReportsController@getFormulatedReportPdf'
             )->name('budget.report.formulated.pdf');
-            Route::get(
-                '/compromise-report-pdf',
-                'Reports\BudgetReportsController@getCompromiseReportPdf'
-            )->name('budget.report.compromise.pdf');
-            Route::get(
-                '/compromise-report-xlsx',
-                'Reports\BudgetReportsController@exportCompromisesReport'
-            )->name('budget.report.compromise.xlsx');
             Route::get(
                 '/consolidated-pdf',
                 'Reports\BudgetReportsController@consolidatedReportPdf'
@@ -399,30 +382,6 @@ Route::group(
                 '/budgetAnalyticalMajorPdf',
                 'Reports\BudgetReportsController@createbudgetAnalyticalMajorPdf'
             )->name('budget.report.createbudgetAnalyticalMajorPdf');
-            Route::get(
-                '/consolidated',
-                'Reports\BudgetReportsController@createBudgetConsolidated'
-            )->name('budget.report.consolidated');
-            Route::get(
-                '/get-proyects',
-                'Reports\BudgetReportsController@getProyects'
-            );
-            Route::get(
-                '/get-centralized-actions',
-                'Reports\BudgetReportsController@getCentralizedActions'
-            );
-            Route::get(
-                '/get-specific-actions',
-                'Reports\BudgetReportsController@getSpecificActions'
-            );
-            Route::get(
-                '/get-accounts',
-                'Reports\BudgetReportsController@getAccounts'
-            );
-            Route::post(
-                '/consolidated-export',
-                'Reports\BudgetReportsController@budgetConsolidatedExport'
-            );
         });
     }
 );

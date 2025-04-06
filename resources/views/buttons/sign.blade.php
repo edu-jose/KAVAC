@@ -26,7 +26,7 @@
                         <i class="icofont icofont-download-alt"></i>
                         Descargar archivo firmado
                     </a>
-                    <div id="authentication" class="d-none mt-3">
+                    <div id="authentication" class="d-none mt-3"> 
                         <p> Autenticación invalidada </p>
                     </div>
                 </div>
@@ -45,22 +45,10 @@
     </div>
 @else
     {!! Form::button('<i class="fa fa-print"></i>', [
-        'id' => 'btn-sign-print',
-        'class' => 'btn btn-sm btn-primary btn-custom',
-        'data-toggle' => 'tooltip', 'type' => 'button',
-        'title' => __('Firmar registro')
+        'class' => 'btn btn-sm btn-primary btn-custom', 'data-toggle' => 'tooltip', 'type' => 'button',
+        'title' => __('Firmar registro'),
+        'onclick' => (isset($print['action']))
+        ? "print({$print['action']})"
+        : ((isset($print['function']))?$print['function']:'print()')
     ]) !!}
 @endif
-
-@section('extra-js')
-    @parent
-    <script nonce="{{ session()->get('nonce') }}">
-        $(document).ready(function() {
-            $('#btn-sign-print').on('click', function() {
-                {{ (isset($print['action']))
-                ? "print({$print['action']})"
-                : ((isset($print['function']))?$print['function']:'print()') }}
-            })
-        });
-    </script>
-@endsection

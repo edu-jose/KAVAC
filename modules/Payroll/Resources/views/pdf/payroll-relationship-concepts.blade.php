@@ -4,7 +4,7 @@
     @endphp
     @foreach ($record['payroll_concepts'] as $concept)
         @if (count($concept['payroll_staffs']) > 0)
-            <h4 style="font-size: 10rem;">Tipo de nómina: {{ $record['name'] }}</h4>
+            <h4 style="font-size: 10rem;">Tipo de pago: {{ $record['name'] }}</h4>
             <h4 style="font-size: 10rem;">Tipo de concepto: {{ $concept['payroll_concept_type'] ?? '' }} </h4>
             <br>
 

@@ -2,12 +2,11 @@
 
 namespace App\Models;
 
-use App\Traits\ModelsTrait;
 use Illuminate\Database\Eloquent\Model;
-use OwenIt\Auditing\Contracts\Auditable;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use OwenIt\Auditing\Contracts\Auditable;
 use OwenIt\Auditing\Auditable as AuditableTrait;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use App\Traits\ModelsTrait;
 
 /**
  * @class Estate
@@ -19,7 +18,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @property  string  $name
  * @property  string  $code
  * @property  integer $country_id
- * @property  Region  $regions
  *
  * @author Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
  *
@@ -94,15 +92,5 @@ class Estate extends Model implements Auditable
     public function cities()
     {
         return $this->hasMany(City::class);
-    }
-
-    /**
-     * The regions that belong to the Estate
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
-     */
-    public function regions(): BelongsToMany
-    {
-        return $this->belongsToMany(Region::class)->withTimestamps();
     }
 }

@@ -104,21 +104,9 @@
                                 ]) !!}
                             </div>
                         </div>
-                        <div class="col-md-4" id="helpCodeActivityPlan">
-                            <div class="form-group">
-                                {!! Form::label('activities_code', 'Código de las actividades', []) !!}
-                                {!! Form::text('activities_code', $pactCode ? $pactCode->format_code : old('activities'), [
-                                    'class' => 'form-control',
-                                    'data-toggle' => 'tooltip',
-                                    'title' => 'Formato para el código de las actividades',
-                                    'placeholder' => 'Ej. XXX-00000000-YYYY',
-                                    'readonly' => $pactCode ? true : false,
-                                ]) !!}
-                            </div>
-                        </div>
                     </div>
                 </div>
-                @if (!$pjCode || !$spCode || !$pdCode || !$paCode || !$pactCode)
+                @if (!$pjCode || !$spCode || !$pdCode || !$paCode)
                     <div class="card-footer text-right">
                         @include('layouts.form-buttons')
                     </div>
@@ -161,6 +149,8 @@
                         <project-tracking-project-type></project-tracking-project-type>
                         {{-- Configuración de tipos de productos --}}
                         <project-tracking-type-products></project-tracking-type-products>
+                        {{-- Dependencias --}}
+                        <project-tracking-dependencies></project-tracking-dependencies>
                         {{-- Prioridades --}}
                         <project-tracking-priorities></project-tracking-priorities>
                         {{-- Configuración de proyectos --}}
@@ -175,37 +165,9 @@
                         <project-tracking-activity-status></project-tracking-activity-status>
                         {{-- Configuración de Estatus de Entrega --}}
                         <project-tracking-delivery-status></project-tracking-delivery-status>
-                        {{--Configuración de Tipo de Tareas --}}
-				    	<project-tracking-task-types></project-tracking-task-types>
-                        {{--Configuración de Etiquetas --}}
-				    	<project-tracking-tags></project-tracking-tags>
-                        {{--Configuración de Tipos de Dependencias --}}
-				    	<project-tracking-dependencies-type></project-tracking-dependencies-type>
-
-
 
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-12">
-            <div class="card" id="cardProjectTrackingWorkingHours">
-                <div class="card-header">
-                <h6 class="card-title">
-                    {{ __('Jornada Laboral') }}
-                </h6>
-                </div>
-                <div class="card-body">
-                <div class="row">
-                                            {{-- Working Hours Settings --}}
-                                            <project-tracking-working-hours
-                                            back_url="{{ url()->previous() }}">
-                                            </project-tracking-working-hours>
-                </div>
-                </div>
-
             </div>
         </div>
     </div>

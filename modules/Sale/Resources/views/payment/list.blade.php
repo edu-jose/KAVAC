@@ -42,7 +42,7 @@
 
 @section('extra-js')
     @parent
-    <script nonce="{{ session()->get('nonce') }}">
+    <script>
         function exportData() {
             location.href = '/sale/.......';
         };

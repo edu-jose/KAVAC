@@ -4,23 +4,6 @@
             <div slot="number" slot-scope="props" class="text-center">
                 {{ getTaskNumber(props.row.id) }}
             </div>
-            <div slot="activity_status.name" slot-scope="props" class="form-group">
-                <select class="text-center form-control"
-                    id="activity_status"
-                    v-model="props.row.activity_status_id"
-                    @change="changeActivityStatus(props.row.activity_status_id, props.row.id)"
-                    style="padding: 10px;
-                        border: 1px solid #ccc;
-                        border-radius: 30px;
-                        background-color: #f9f9f9;
-                        font-size: 10px;"
-                >
-                    <option v-for="activity_status in activity_statuses_list" :key="activity_status.text"
-                            :value="activity_status.id">
-                        {{activity_status.text}}
-                    </option>
-                </select>
-            </div>
             <div slot="associate_to" slot-scope="props" class="text-center">
                 <div v-if="props.row.project_name && props.row.project">
                     {{ 'Proyecto: ' + props.row.project.name }}
@@ -74,8 +57,6 @@ export default {
     data() {
         return {
             associate_to: '',
-            activity_statuses_list: [],
-            activity_status_id: '',
             records: [],
             record: [],
             columns: ['number', 'name', 'associate_to', 'employers_name', 'end_date', 'activity_status.name', 'priority.name', 'weight', 'id'],
@@ -83,8 +64,6 @@ export default {
     },
 
     created() {
-        this.getActivityStatuses();
-
         this.table_options.headings = {
             'number': 'N°',
             'name': 'Nombre de la Tarea',
@@ -117,35 +96,11 @@ export default {
             let index = vm.records.findIndex(obj => { return obj.id == param })
             return index + 1
         },
-        getActivityStatuses() {
-            const vm = this;
-            axios.get(`${window.app_url}/projecttracking/get-activity-statuses`).then(response => {
-                vm.activity_statuses_list = response.data;
-            });
-        },
-        changeActivityStatus(status_id, task_id) {
-            const vm = this;
-
-            axios.post(`${window.app_url}/projecttracking/tasks/change-activity-status`, {
-                activity_status_id: status_id,
-                id: task_id,
-            })
-            .then(response => {
-                vm.showMessage(
-                    "custom",
-                    "Exito",
-                    "success",
-                    "screen-ok",
-                    "El estatus de la actividad ha sido actualizada."
-                );
-            });
-        },
-
         /**
-         * Método que borra un registro de la tabla
-         *
-         * @author  Pedro Contreras <pdrocont@gmail.com>
-         */
+ * Método que borra un registro de la tabla
+ * 
+ * @author  Pedro Contreras <pdrocont@gmail.com>
+ */
         deleteRecord(id, index) {
             const vm = this;
 

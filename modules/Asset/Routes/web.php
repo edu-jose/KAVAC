@@ -397,6 +397,9 @@ Route::group(
         /* Ruta que obtiene un array con las categorías específicas registrados, de acuerdo a la sub-categoría */
         Route::get('get-specific-categories/{subcategory?}', 'AssetSpecificCategoryController@getSpecificCategories');
 
+        /* Ruta que obtiene un array con los requerimentos registrados, de acuerdo a la categía específica */
+        Route::get('get-required/{specific_category?}', 'AssetSpecificCategoryController@getRequired');
+
         /* Ruta que obtiene un array con los tipos de adquisición registrados */
         Route::get('get-acquisition-types', 'AssetAcquisitionTypeController@getAcquisitionTypes');
 

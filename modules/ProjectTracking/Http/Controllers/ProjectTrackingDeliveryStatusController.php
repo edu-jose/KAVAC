@@ -23,35 +23,6 @@ class ProjectTrackingDeliveryStatusController extends Controller
     use ValidatesRequests;
 
     /**
-     * Arreglo con las reglas de validación sobre los datos de un formulario
-     *
-     * @var array $validateRules
-     */
-    protected $validateRules;
-
-    /**
-     * Arreglo con los mensajes para las reglas de validación
-     *
-     * @var array $messages
-     */
-    protected $messages;
-
-    /**
-     * Define la configuración de la clase
-     *
-     * @author    Natanael Rojo <ndrojo@cenditel.gob.ve> | <rojonatanael99@gmail.com>
-     *
-     * @return    void
-     */
-    public function __construct()
-    {
-        /** Establece permisos de acceso para cada método del controlador */
-        $this->middleware('permission:project.tracking.delivery.status.create', ['only' => ['store']]);
-        $this->middleware('permission:project.tracking.delivery.status.edit', ['only' => ['update']]);
-        $this->middleware('permission:project.tracking.delivery.status.delete', ['only' => 'destroy']);
-    }
-
-    /**
      * Obtiene todos los registros de estatus de entrega
      *
      * @return    \Illuminate\Http\JsonResponse

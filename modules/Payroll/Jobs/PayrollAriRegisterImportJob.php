@@ -25,6 +25,7 @@ class PayrollAriRegisterImportJob implements ShouldQueue
     use Dispatchable;
     use InteractsWithQueue;
     use SerializesModels;
+    use SerializesModels;
 
     /**
      * Ruta del archivo a importar
@@ -34,29 +35,13 @@ class PayrollAriRegisterImportJob implements ShouldQueue
     protected $file;
 
     /**
-     * Ruta del archivo de errores
-     *
-     * @var string $errorsFilePath
-     */
-    protected $errorsFilePath;
-
-    /**
-     * Usuario que realiza la importación
-     *
-     * @var object $user
-     */
-    protected $user;
-
-    /**
      * Crea una nueva instancia de trabajo.
      *
      * @return void
      */
-    public function __construct($data, $user, $errorsFilePath)
+    public function __construct($data)
     {
         $this->file = $data['filePath'];
-        $this->user = $user;
-        $this->errorsFilePath = $errorsFilePath;
     }
 
     /**
@@ -66,7 +51,7 @@ class PayrollAriRegisterImportJob implements ShouldQueue
      */
     public function handle()
     {
-        Excel::import(new AriRegisterImport($this->errorsFilePath, $this->user), $this->file, null, \Maatwebsite\Excel\Excel::XLSX);
+        Excel::import(new AriRegisterImport(), $this->file, null, \Maatwebsite\Excel\Excel::XLSX);
         Storage::delete($this->file);
     }
 }

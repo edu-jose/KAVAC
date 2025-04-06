@@ -157,14 +157,25 @@
                                     v-html="props.row.description"
                                 ></div>
                             </div>
-                            <div slot="color" slot-scope="props" class="text-center">
-                            <span
-                                :style="{ backgroundColor: props.row.color, 
-                                    display: 'inline-block', 
-                                    width: '40px', height: '20px', 
-                                    border: '1px solid #ccc' }"
-                            ></span>
-                           </div>
+                            <div
+                                slot="color"
+                                slot-scope="props"
+                                class="text-center"
+                            >
+                                <input
+                                    type="color"
+                                    id="color"
+                                    class="form-control input-sm"
+                                    v-model="props.row.color"
+                                    data-toggle="tooltip"
+                                    style="
+                                        padding: 5px 12px !important;
+                                        position: relative;
+                                        margin: auto !important;
+                                    "
+                                    disabled
+                                />
+                            </div>
                             <div slot="id" slot-scope="props">
                                 <button
                                     @click="initUpdate(props.row.id, $event)"

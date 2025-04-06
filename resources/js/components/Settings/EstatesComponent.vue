@@ -118,7 +118,6 @@
                     name: '',
                     code: ''
                 };
-                this.errors = [];
             },
         },
         created() {

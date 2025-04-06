@@ -33,18 +33,6 @@
                     </div>
                     <!-- modal-body -->
                     <div class="modal-body">
-                        <div class="row">
-                            <div class="col-6">
-                                <div class="form-group">
-                                    <strong>Código de Disponibilidad Presupuestaria</strong>
-                                    <div class="row" style="margin: 1px 0">
-                                        <span class="col-md-12" id="code">
-                                            {{ records.purchase_common_budgetary_availability?.code ? records.purchase_common_budgetary_availability?.code : 'No definido' }}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
 
                         <div v-if="records?.purchaseBudgetaryAvailabilityDocument && records?.purchaseBudgetaryAvailabilityDocument?.url" class="col-md-12">
                             <div class="form-group">

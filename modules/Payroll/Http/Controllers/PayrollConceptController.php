@@ -264,8 +264,6 @@ class PayrollConceptController extends Controller
             'assign_to' => json_encode($request->assign_to),
             'currency_id' => $request->currency_id,
             'is_strict' => $request->is_strict,
-            'formula_history' => $request->formula_history,
-            'formula_show_history' => $request->formula_show_history,
         ]);
         $existAccounting = Module::has('Accounting') && Module::isEnabled('Accounting');
         if (!empty($request->receiver)) {
@@ -405,8 +403,6 @@ class PayrollConceptController extends Controller
         $payrollConcept->assign_to = json_encode($request->assign_to);
         $payrollConcept->currency_id = $request->currency_id;
         $payrollConcept->is_strict = $request->is_strict;
-        $payrollConcept->formula_history = $request->formula_history;
-        $payrollConcept->formula_show_history = $request->formula_show_history;
         $payrollConcept->save();
 
         $existAccounting = Module::has('Accounting') && Module::isEnabled('Accounting');

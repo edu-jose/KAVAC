@@ -7,9 +7,10 @@
                 <div class="custom-control custom-switch">
                     {!! Form::checkbox('role[]', $role->id, ($user) ? $user->hasRole($role->id) : null, [
                         'class' => 'custom-control-input switch-roles', 'id' => 'role_'.$role->id,
+                        'onchange' => 'relatedPermissions(this)',
                         'data-permissions' => json_encode($role->permissions->pluck('id')->toArray())
                     ]) !!}
-                    <label class="custom-control-label" for="role_{{ $role->id }}">&nbsp;</label>
+                    <label class="custom-control-label" for="role_{{ $role->id }}"></label>
                 </div>
             </div>
         </div>
@@ -20,7 +21,7 @@
     $module = "";
 @endphp
 <div class="row" id="permissions">
-    @foreach (App\Roles\Models\Permission::orderBy('model_prefix')->orderBy('model')->get() as $permission)
+    @foreach (App\Roles\Models\Permission::orderBy('model_prefix')->get() as $permission)
         @if ($module != $permission->model_prefix)
             @php
                 $module = $permission->model_prefix;
@@ -47,7 +48,7 @@
                         'class' => 'custom-control-input switch-permission', 'id' => 'perm_'.$permission->id,
                         'data-roles' => json_encode($permission->roles->pluck('id')->toArray())
                     ]) !!}
-                    <label class="custom-control-label" for="perm_{{ $permission->id }}">&nbsp;</label>
+                    <label class="custom-control-label" for="perm_{{ $permission->id }}"></label>
                 </div>
             </div>
         </div>
@@ -56,16 +57,13 @@
 
 @section('extra-js')
     @parent
-    <script nonce="{{ session()->get('nonce') }}">
+    <script>
         document.addEventListener('DOMContentLoaded', () => {
             const els = document.getElementsByClassName('switch-roles');
             Array.from(els).forEach((el) => {
                 if (el.checked) {
                     relatedPermissions(el);
                 }
-            });
-            $('.switch-roles').on('change', function() {
-                relatedPermissions(this);
             });
         });
         /**

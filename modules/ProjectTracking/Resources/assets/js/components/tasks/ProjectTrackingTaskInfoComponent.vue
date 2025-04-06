@@ -142,44 +142,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="col-md-4" v-if="record.depending_task_id !== null">
-                                        <div class="form-group">
-                                            <strong>Depende de:</strong>
-                                            <div class="row" style="margin: 1px 0">
-                                                <span class="col-md-12">
-                                                    {{ record.depending_task_name }}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
                                 </div>
-                                <hr>
-                                <div>
-                                    <h6 class="text-center">Subtareas</h6><br>
-                                    <div v-for="(subtask, index) in record.subtasks" class="row" :key="index">
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <strong>Nombre:</strong>
-                                                <div class="row" style="margin: 1px 0">
-                                                    <span class="col-md-12">
-                                                        {{ subtask.name }}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <strong>Descripción:</strong>
-                                                <div class="row" style="margin: 1px 0">
-                                                    <span class="col-md-12">
-                                                        {{ subtask.description }}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <hr>
                             </div>
                         </div>
                     </div>
@@ -221,8 +184,7 @@ export default {
                 priority_id: '',
                 start_date: '',
                 end_date: '',
-                weight: '',
-                subtasks: [],
+                weight: ''
             },
             records: []
         };
@@ -242,8 +204,7 @@ export default {
                 priority_id: '',
                 start_date: '',
                 end_date: '',
-                weight: '',
-                subtasks: [],
+                weight: ''
             }
         },
         initRecord(url) {

@@ -35,7 +35,19 @@
                             role="tabpanel"
                         >
                             <div class="row">
-                                <div class="col-md-12">
+                                <div class="col-md-2">
+                                    <div class="form-group">
+                                        <strong>Fecha de creación:</strong>
+                                        <div class="row" style="margin: 1px 0">
+                                            <span class="col-md-12">
+                                                {{
+                                                    format_date(record.approved_at)
+                                                }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-10">
                                     <div class="form-group">
                                         <strong>Institución:</strong>
                                         <div class="row" style="margin: 1px 0">
@@ -45,37 +57,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <strong>Código de Traspaso:</strong>
-                                        <div class="row" style="margin: 1px 0">
-                                            <span class="col-md-12">
-                                                {{ record.code }}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <strong>Fecha de creación:</strong>
-                                        <div class="row" style="margin: 1px 0">
-                                            <span class="col-md-12">
-                                                {{ format_date(record.approved_at) }}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4" v-if="record.status == 'AP'">
-                                    <div class="form-group">
-                                        <strong>Fecha de aprobación:</strong>
-                                        <div class="row" style="margin: 1px 0">
-                                            <span class="col-md-12">
-                                                {{  record.approved_date == null ? format_date(record.approved_at) : format_date(record.approved_date) }}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <div class="form-group">
                                         <strong>Nro. Documento:</strong>
                                         <div class="row" style="margin: 1px 0">
@@ -85,7 +67,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <div class="form-group">
                                         <strong>Ver Documento:</strong>
                                         <div class="row" style="margin: 1px 0">
@@ -124,10 +106,10 @@
                         <thead>
                             <tr>
                                 <th colspan="4" class="border-right">
-                                    CUENTA CEDENTES
+                                    Datos de Origen
                                 </th>
                                 <th colspan="4">
-                                    CUENTA A ACREDITAR
+                                    Datos de Destino
                                 </th>
                             </tr>
                             <tr>
@@ -157,7 +139,7 @@
                                     {{ account.from_description }}
                                 </td>
                                 <td class="text-center border-right">
-                                    {{ formatNumber(parseFloat(account.from_amount)) }}
+                                    {{ account.from_amount }}
                                 </td>
                                 <td class="text-center">
                                     {{ account.to_spac_description }}
@@ -169,29 +151,7 @@
                                     {{ account.to_description }}
                                 </td>
                                 <td class="text-center">
-                                    {{ formatNumber(parseFloat(account.to_amount)) }}
-                                </td>
-                            </tr>
-                            <tr>
-                                <td colspan="3" class="text-right">
-                                    <strong>
-                                        TOTAL {{ record?.currency?.symbol + '.' }}
-                                    </strong>
-                                </td>
-                                <td class="text-center border-right">
-                                    <strong>
-                                        {{ totalFromAmount }}
-                                    </strong>
-                                </td>
-                                <td colspan="3" class="text-right">
-                                    <strong>
-                                        TOTAL {{ record?.currency?.symbol + '.' }}
-                                    </strong>
-                                </td>
-                                <td class="text-center">
-                                    <strong>
-                                        {{ totalToAmount }}
-                                    </strong>
+                                    {{ account.to_amount }}
                                 </td>
                             </tr>
                         </tbody>
@@ -221,8 +181,7 @@
                     specificable_id: '',
                     document: '',
                     documentFile: '',
-                    institution: {},
-                    budget_modification_accounts: [],
+                    institution: {}
                 },
                 errors: [],
             }
@@ -241,24 +200,5 @@
                 return `${window.app_url}/${this.record.document_file.url}`;
             }
         },
-
-        computed: {
-            totalFromAmount() {
-                if (!this.record.budget_modification_accounts.length) {
-                    return 0;
-                }
-
-                const total = this.$parent.modification_accounts.reduce((acc, account) => acc + parseFloat(account.from_amount), 0);
-                return this.formatNumber(total);
-            },
-            totalToAmount() {
-                if (!this.record.budget_modification_accounts.length) {
-                    return 0;
-                }
-
-                const total = this.$parent.modification_accounts.reduce((acc, account) => acc + parseFloat(account.to_amount), 0);
-                return this.formatNumber(total);
-            },
-        }
     }
 </script>

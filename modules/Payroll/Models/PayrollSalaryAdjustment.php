@@ -28,7 +28,7 @@ class PayrollSalaryAdjustment extends Model implements Auditable
      *
      * @var array $dates
      */
-    protected $dates = ['start_increase_date', 'end_increase_date', 'created_at', 'deleted_at'];
+    protected $dates = ['deleted_at'];
 
     /**
      * Lista de atributos que pueden ser asignados masivamente
@@ -36,7 +36,7 @@ class PayrollSalaryAdjustment extends Model implements Auditable
      * @var array $fillable
      */
     protected $fillable = [
-        'value', 'increase_of_type', 'payroll_salary_tabulator_id', 'start_increase_date', 'end_increase_date', 'salary_values',
+        'value', 'increase_of_type', 'payroll_salary_tabulator_id',
     ];
 
     /**
@@ -49,5 +49,17 @@ class PayrollSalaryAdjustment extends Model implements Auditable
     public function payrollSalaryTabulator()
     {
         return $this->belongsTo(PayrollSalaryTabulator::class);
+    }
+
+    /**
+     * Método que obtiene los históricos de los ajustes
+     *
+     * @author  Fabian Palmera <fpalmera@cenditel.gob.ve>
+     *
+     * @return object Objeto con los registros relacionados al modelo PayrollHistorySalaryAdjustments
+     */
+    public function payrollHistorySalaryAdjustments()
+    {
+        return $this->hasMany(PayrollHistorySalaryAdjustment::class);
     }
 }

@@ -46,22 +46,15 @@ class ProjectTrackingPriorityController extends Controller
      */
     public function __construct()
     {
-        /** Establece permisos de acceso para cada método del controlador */
-        $this->middleware('permission:project.tracking.priority.create', ['only' => ['store']]);
-        $this->middleware('permission:project.tracking.priority.edit', ['only' => ['update']]);
-        $this->middleware('permission:project.tracking.priority.delete', ['only' => 'destroy']);
-
         /* Define las reglas de validación para el formulario */
         $this->validateRules = [
-            'name'                                  => ['required', 'max:100', 'unique:project_tracking_priorities,name'],
+            'name'                                  => ['required'],
             'description'                           => ['nullable', 'max:250'],
-            'color'                                 => ['required'],
         ];
 
         /* Define los mensajes de validación para las reglas del formulario */
         $this->messages = [
             'name.required'                                  => 'El campo nombre es obligatorio.',
-            'color.required'                                  => 'El campo color es obligatorio.',
         ];
         /* Establece permisos de acceso para cada método del controlador
         $this->middleware('permission:projecttracking.positions.list', ['only' => 'index']);
@@ -128,12 +121,10 @@ class ProjectTrackingPriorityController extends Controller
      */
     public function store(Request $request)
     {
-        $this->validate($request, $this->validateRules, $this->messages);
-        $projecttrackingPriority = ProjectTrackingPriority::create([
-            'name' => $request->name,
-            'description' => $request->description,
-            'color' => $request -> color
+        $this->validate($request, [
+            'name' => ['required', 'max:100', 'unique:project_tracking_priorities,name']
         ]);
+        $projecttrackingPriority = ProjectTrackingPriority::create(['name' => $request->name, 'description' => $request->description]);
         return response()->json(['record' => $projecttrackingPriority, 'message' => 'Success'], 200);
     }
 
@@ -171,17 +162,11 @@ class ProjectTrackingPriorityController extends Controller
     {
         $projecttrackingPriority = ProjectTrackingPriority::find($id);
         $this->validate($request, [
-            'name' => [
-                'required',
-                'max:100',
-                'unique:project_tracking_priorities,name,' . $projecttrackingPriority->id
-            ],
-            'description' => ['nullable', 'max:200'],
-            'color' => 'required'
+            'name' => ['required', 'max:100', 'unique:project_tracking_priorities,name,' . $projecttrackingPriority->id],
+            'description' => ['nullable', 'max:200']
         ]);
         $projecttrackingPriority->name  = $request->name;
         $projecttrackingPriority->description = $request->description;
-        $projecttrackingPriority->color = $request->color;
         $projecttrackingPriority->save();
         return response()->json(['message' => 'Success'], 200);
     }
@@ -211,8 +196,6 @@ class ProjectTrackingPriorityController extends Controller
      */
     public function getProjectTrackingPriorities()
     {
-        return response()->json(
-            template_choices('Modules\ProjectTracking\Models\ProjectTrackingPriority', 'name', '', true)
-        );
+        return response()->json(template_choices('Modules\ProjectTracking\Models\ProjectTrackingPriority', 'name', '', true));
     }
 }

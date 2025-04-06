@@ -257,7 +257,7 @@
                                     title="Código del bien según catálogo SIGECOF"
                                     disabled="disabled"
                                     class="form-control input-sm"
-                                    v-model="record.code_sigecof = code"
+                                    v-model="record.code_sigecof"
                                     v-input-mask
                                     data-inputmask="'mask': '99999-9999'"
                                 />
@@ -1423,6 +1423,7 @@ export default {
                     })[0];
                 }
                 fieldCode += (fieldSpc) ? fieldSpc['code'] : '';
+                this.record.code_sigecof = fieldCode;
                 return fieldCode;
             }
         }

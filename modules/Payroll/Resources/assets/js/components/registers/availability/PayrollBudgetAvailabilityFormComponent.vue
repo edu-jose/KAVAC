@@ -26,22 +26,12 @@
                 </div>
             </div>
             <div class="row">
-                <div class="col-sm-6 col-md-6 col-lg-3">
-                    <div class="form-group">
-                        <label class="control-label">Código de Disponibilidad Presupuestaria</label>
-                        <input
-                            type="text"
-                            readonly
-                            class="form-control input-sm"
-                            v-model="payroll.purchase_common_budgetary_availability.code"
-                        />
-                    </div>
-                </div>
-                <div class="col-12"><br></div>
                 <!-- inicio tabla -->
-                <div class="col-12">
+                <div class="row col-12">
                     <table
-                        class="table table-striped table-hover">
+                        class="table table-striped table-hover"
+                        style="margin-left: 2rem;"
+                    >
                         <thead>
                             <tr>
                                 <th
@@ -145,67 +135,71 @@
                 <!-- fin tabla -->
                 <div class="col-12 mt-2">
                     <div class="form-horizontal">
-                        <!-- inicio  cuentas presupuestarias -->
                         <div>
-                            <h6 class="text-center card-title">
-                                Cuentas presupuestarias de gastos
-                            </h6>
-                            <div class="row">
-                                <div class="col-md-12 pad-top-20">
-                                    <table
-                                        class="
-                                            table table-hover table-striped
-                                        "
-                                        border="1px"
-                                        cellpadding="0px"
-                                        cellspacing="0px"
-                                    >
-                                        <thead>
-                                            <tr>
-                                                <th class="col-3">
-                                                    Acción Específica
-                                                </th>
-                                                <th class="col-3">
-                                                    Cuenta
-                                                </th>
-                                                <th class="col-2">
-                                                    Monto (Concepto)
-                                                </th>
-                                                <th class="col-2">
-                                                    Monto (Cuenta)
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr
-                                                v-for="(account,
-                                                index) in budgetaccounts"
-                                                :key="index"
+                            <!-- inicio  cuentas presupuestarias -->
+                            <div class="col-12">
+                                <div>
+                                    <h6 class="text-center card-title">
+                                        Cuentas presupuestarias de gastos
+                                    </h6>
+                                    <div class="row">
+                                        <div class="col-md-12 pad-top-20">
+                                            <table
+                                                class="
+                                                    table table-hover table-striped
+                                                "
+                                                border="1px"
+                                                cellpadding="0px"
+                                                cellspacing="0px"
                                             >
-                                                <td class="text-center" v-html="account.budget_specific_action_desc">
-                                                </td>
-                                                <td class="text-center">
-                                                    {{
-                                                        account.budget_account_code
-                                                    }}
-                                                </td>
-                                                <td class="text-center">
-                                                    {{
-                                                        parseFloat(account.value).toFixed(
-                                                            payroll.payroll_payment_period.payroll_payment_type.payroll_concepts[0].currency.decimal_places
-                                                        )
-                                                    }}
-                                                </td>
-                                                <td class="text-center">
-                                                    {{
-                                                        parseFloat(account.budget_account_amount).toFixed(
-                                                            payroll.payroll_payment_period.payroll_payment_type.payroll_concepts[0].currency.decimal_places
-                                                        )
-                                                    }}
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
+                                                <thead>
+                                                    <tr>
+                                                        <th class="col-3">
+                                                            Acción Específica
+                                                        </th>
+                                                        <th class="col-3">
+                                                            Cuenta
+                                                        </th>
+                                                        <th class="col-2">
+                                                            Monto (Concepto)
+                                                        </th>
+                                                        <th class="col-2">
+                                                            Monto (Cuenta)
+                                                        </th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr
+                                                        v-for="(account,
+                                                        index) in budgetaccounts"
+                                                        :key="index"
+                                                    >
+                                                        <td class="text-center" v-html="account.budget_specific_action_desc">
+                                                        </td>
+                                                        <td class="text-center">
+                                                            {{
+                                                                account.budget_account_code
+                                                            }}
+                                                        </td>
+                                                        <td class="text-center">
+                                                            {{
+                                                                parseFloat(account.value).toFixed(
+                                                                    payroll.payroll_payment_period.payroll_payment_type.payroll_concepts[0].currency.decimal_places
+                                                                )
+                                                            }}
+                                                        </td>
+                                                        <td class="text-center">
+                                                            {{
+                                                                parseFloat(account.budget_account_amount).toFixed(
+                                                                    payroll.payroll_payment_period.payroll_payment_type.payroll_concepts[0].currency.decimal_places
+                                                                )
+                                                            }}
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

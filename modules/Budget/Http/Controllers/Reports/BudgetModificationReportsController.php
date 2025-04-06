@@ -57,7 +57,7 @@ class BudgetModificationReportsController extends Controller
         ];
         $pdf->setConfig($config);
 
-        $pdf->setHeader('Reporte de Créditos Adicionales', $records['code']);
+        $pdf->setHeader('Reporte de Créditos Adicionales');
         $pdf->setFooter();
 
         $bodyData = [
@@ -93,7 +93,7 @@ class BudgetModificationReportsController extends Controller
         ];
         $pdf->setConfig($config);
 
-        $pdf->setHeader('Reporte de Reducciones', $records['code']);
+        $pdf->setHeader('Reporte de Reducciones');
         $pdf->setFooter();
 
         $bodyData = [
@@ -204,7 +204,7 @@ class BudgetModificationReportsController extends Controller
         ];
         $pdf->setConfig($config);
 
-        $pdf->setHeader('Reporte de Traspasos', $records['code']);
+        $pdf->setHeader('Reporte de Traspasos');
         $pdf->setFooter();
 
         $bodyData = [

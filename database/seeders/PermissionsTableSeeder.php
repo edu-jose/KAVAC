@@ -6,23 +6,18 @@ use App\Models\Tax;
 use App\Models\City;
 use App\Models\User;
 use App\Models\Estate;
-use App\Models\Gender;
 use App\Models\Parish;
-use App\Models\Region;
 use App\Models\Country;
 use App\Models\Setting;
 use App\Models\TaxUnit;
 use App\Models\Currency;
 use App\Models\Document;
-use App\Models\Locality;
 use App\Models\Deduction;
 use App\Models\Department;
-use App\Models\FiscalYear;
 use App\Models\HistoryTax;
 use App\Models\Profession;
 use App\Roles\Models\Role;
 use App\Models\CodeSetting;
-use App\Models\Headquarter;
 use App\Models\Institution;
 use App\Models\ExchangeRate;
 use App\Models\Municipality;
@@ -34,6 +29,9 @@ use Illuminate\Database\Seeder;
 use App\Models\RequiredDocument;
 use App\Roles\Models\Permission;
 use App\Models\InstitutionSector;
+use App\Models\Headquarter;
+use App\Models\Gender;
+use App\Models\FiscalYear;
 use OwenIt\Auditing\Models\Audit;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Model;
@@ -1025,62 +1023,6 @@ class PermissionsTableSeeder extends Seeder
             ]
         ]);
 
-        /* Permisos para la gestión de localidades */
-        $permissions = array_merge($permissions, [
-            [
-                'name' => 'Registrar localidad', 'slug' => 'locality.create',
-                'description' => 'Acceso al registro de localidad',
-                'model' => Locality::class, 'model_prefix' => '0general',
-                'slug_alt' => 'locality.crear', 'short_description' => 'agregar localidad'
-            ],
-            [
-                'name' => 'Actualizar localidad', 'slug' => 'locality.update',
-                'description' => 'Acceso a la actualización de localidad',
-                'model' => Locality::class, 'model_prefix' => '0general',
-                'slug_alt' => 'locality.actualizar', 'short_description' => 'actualizar localidad'
-            ],
-            [
-                'name' => 'Visualizar localidad', 'slug' => 'locality.list',
-                'description' => 'Acceso para visualizar localidad',
-                'model' => Locality::class, 'model_prefix' => '0general',
-                'slug_alt' => 'locality.ver', 'short_description' => 'ver localidad'
-            ],
-            [
-                'name' => 'Eliminar localidad', 'slug' => 'locality.delete',
-                'description' => 'Acceso para eliminar localidad',
-                'model' => Locality::class, 'model_prefix' => '0general',
-                'slug_alt' => 'locality.eliminar', 'short_description' => 'eliminar localidad'
-            ]
-        ]);
-
-        /* Permisos para la gestión de regiones */
-        $permissions = array_merge($permissions, [
-            [
-                'name' => 'Registrar región', 'slug' => 'region.create',
-                'description' => 'Acceso al registro de región',
-                'model' => Region::class, 'model_prefix' => '0general',
-                'slug_alt' => 'region.crear', 'short_description' => 'agregar región'
-            ],
-            [
-                'name' => 'Actualizar región', 'slug' => 'region.update',
-                'description' => 'Acceso a la actualización de región',
-                'model' => Region::class, 'model_prefix' => '0general',
-                'slug_alt' => 'region.actualizar', 'short_description' => 'actualizar región'
-            ],
-            [
-                'name' => 'Visualizar región', 'slug' => 'region.list',
-                'description' => 'Acceso para visualizar región',
-                'model' => Region::class, 'model_prefix' => '0general',
-                'slug_alt' => 'region.ver', 'short_description' => 'ver región'
-            ],
-            [
-                'name' => 'Eliminar región', 'slug' => 'region.delete',
-                'description' => 'Acceso para eliminar región',
-                'model' => Region::class, 'model_prefix' => '0general',
-                'slug_alt' => 'region.eliminar', 'short_description' => 'eliminar región'
-            ]
-        ]);
-
         $this->command->line("");
         $this->command->info("<fg=yellow>Cargando los Permisos Generalses del Sistema</>");
         $this->command->line("");
@@ -1099,7 +1041,6 @@ class PermissionsTableSeeder extends Seeder
                 if ($adminRole) {
                     $adminRole->attachPermission($per);
                 }
-                $this->count++;
             }
         });
 

@@ -25,5 +25,6 @@ Route::prefix('v1')
         });
 
         Route::prefix('asset')->group(function () {
+            Route::resource('export', ExportController::class, ['only' => ['index', 'show']]);
         });
     });

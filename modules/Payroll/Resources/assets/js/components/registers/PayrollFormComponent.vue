@@ -399,17 +399,7 @@
                                 value:    input.value
                             });
                             if(input.value.trim() == '') {
-                                bootbox.alert({
-                                    title: "Advertencia",
-                                    message: "Debe establecer todos los parámetros de nómina antes de continuar",
-                                    closeButton: false,
-                                    buttons: {
-                                        ok: {
-                                            label: "Cerrar",
-                                            className: 'btn-light'
-                                        }
-                                    }
-                                });
+                                bootbox.alert("Debe establecer todos los parámetros de nómina antes de continuar");
                                 result = false;
                             };
                         };
@@ -419,17 +409,7 @@
                 if(!vm.record.id && vm.record.payroll_payment_type_id !== '' && vm.record.payroll_payment_period_id !== '') {
                     await axios.get(`${window.app_url}/payroll/get-payroll-assigned-period/${vm.record.payroll_payment_period_id}/${vm.record.payroll_payment_type_id}`).then(response => {
                         if(response.data.assigned == true) {
-                            bootbox.alert({
-                                title: "Advertencia",
-                                message: "El periodo de pago ya fue asignado a una registro de nomina, debe cerrar dicho periodo",
-                                closeButton: false,
-                                buttons: {
-                                    ok: {
-                                        label: "Cerrar",
-                                        className: 'btn-light'
-                                    }
-                                }
-                            });
+                            bootbox.alert("El periodo de pago ya fue asignado a una registro de nomina, debe cerrar dicho periodo");
                             result = false;
                         }
                     });

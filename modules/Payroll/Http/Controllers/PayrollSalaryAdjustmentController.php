@@ -2,21 +2,17 @@
 
 namespace Modules\Payroll\Http\Controllers;
 
-use Carbon\Carbon;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Contracts\Support\Renderable;
 use Modules\Payroll\Imports\SalaryAdjustmentImport;
+use Modules\Payroll\Models\PayrollHistorySalaryAdjustment;
 use Modules\Payroll\Models\PayrollSalaryAdjustment;
 use Illuminate\Foundation\Validation\ValidatesRequests;
-use Modules\Payroll\Rules\PayrollCheckSalaryAdjustments;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Modules\Payroll\Exports\PayrollSalaryAdjustmentExport;
-use Modules\Payroll\Exports\PayrollSalaryAdjustmentTabulatorExport;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /**
  * @class PayrollSalaryAdjustmentController
@@ -48,13 +44,6 @@ class PayrollSalaryAdjustmentController extends Controller
     protected $messages;
 
     /**
-     * Arreglo con los nombres de los atributos para las reglas de validación
-     *
-     * @var array $attributes
-     */
-    protected $attributes;
-
-    /**
      * Define la configuración de la clase
      *
      * @author Henry Paredes <hparedes@cenditel.gob.ve>
@@ -73,33 +62,24 @@ class PayrollSalaryAdjustmentController extends Controller
 
         /* Define las reglas de validación para el formulario */
         $this->validateRules = [
-            'created_at'                  => ['required', 'date'],
-            'start_increase_date'            => ['required', 'date', new PayrollCheckSalaryAdjustments()],
+            'created_at'                  => ['required'],
+            'increase_of_date'            => ['required'],
             'end_increase_date'           =>
             [
                 'nullable',
-                'date',
-                'after_or_equal:start_increase_date',
-                new PayrollCheckSalaryAdjustments()
+                'after_or_equal:increase_of_date'
             ],
             'payroll_salary_tabulator_id' => ['required'],
-            'increase_of_type'            => ['required'],
-            'value'                       => ['nullable', 'numeric']
+            'increase_of_type'            => ['required']
         ];
 
         /* Define los mensajes de validación para las reglas del formulario */
         $this->messages = [
             'created_at.required'                  => 'El campo fecha de generación es obligatorio.',
-            'start_increase_date.required'         => 'El campo fecha del aumento es obligatorio.',
+            'increase_of_date.required'            => 'El campo fecha del aumento es obligatorio.',
             'end_increase_date.after_or_equal'     => 'El campo fecha de culminación debe ser igual o después de la fecha de aumento',
             'payroll_salary_tabulator_id.required' => 'El campo tabulador salarial es obligatorio.',
-            'increase_of_type.required'            => 'El campo tipo de aumento es obligatorio.',
-            'value.numeric'                        => 'El campo valor tiene que ser numérico',
-        ];
-
-        $this->attributes = [
-            'start_increase_date' => 'Fecha de aumento',
-            'end_increase_date' => 'Fecha de culminacion'
+            'increase_of_type.required'            => 'El campo tipo de aumento es obligatorio.'
         ];
     }
 
@@ -140,7 +120,10 @@ class PayrollSalaryAdjustmentController extends Controller
     {
         $payrollSalaryAdjustment = PayrollSalaryAdjustment::with(
             [
-            'payrollSalaryTabulator'
+            'payrollSalaryTabulator',
+            'payrollHistorySalaryAdjustments'  => function ($query) {
+                return $query->orderBy('created_at', 'desc');
+            }
             ]
         )->find($id);
         return view('payroll::salary_adjustments.create', compact('payrollSalaryAdjustment'));
@@ -158,21 +141,31 @@ class PayrollSalaryAdjustmentController extends Controller
      */
     public function store(Request $request)
     {
-        $this->validate($request, $this->validateRules, $this->messages, $this->attributes);
+        $this->validate($request, $this->validateRules, $this->messages);
 
-        $value = ($request->increase_of_type == 'different') ? 0.00 : $request->value;
-        $scale_values = ($request->increase_of_type == 'different') ? json_encode($request->scale_values) : null;
+        DB::transaction(
+            function () use ($request) {
+                $value = ($request->increase_of_type == 'different') ? 0.00 : $request->value;
+                $scale_values = ($request->increase_of_type == 'different') ? json_encode($request->scale_values) : null;
 
-        /* Objeto con información del ajuste salarial registrado */
-        $payrollSalaryAdjustment = PayrollSalaryAdjustment::create(
-            [
-            'increase_of_type'                   => $request->input('increase_of_type'),
-            'value'                              => $value,
-            'payroll_salary_tabulator_id'        => $request->input('payroll_salary_tabulator_id'),
-            'start_increase_date'               => $request->input('start_increase_date'),
-            'end_increase_date'              => $request->input('end_increase_date'),
-            'salary_values'                  => $scale_values,
-            ]
+                /* Objeto con información del ajuste salarial registrado */
+                $payrollSalaryAdjustment = PayrollSalaryAdjustment::create(
+                    [
+                    'increase_of_type'                   => $request->input('increase_of_type'),
+                    'value'                              => $value,
+                    'payroll_salary_tabulator_id'        => $request->input('payroll_salary_tabulator_id')
+                    ]
+                );
+
+                PayrollHistorySalaryAdjustment::create(
+                    [
+                    'increase_of_date'               => $request->input('increase_of_date'),
+                    'end_increase_date'              => $request->input('end_increase_date'),
+                    'salary_values'                  => $scale_values,
+                    'payroll_salary_adjustment_id'      => $payrollSalaryAdjustment->id,
+                    ]
+                );
+            }
         );
 
         $request->session()->flash('message', ['type' => 'store']);
@@ -190,23 +183,29 @@ class PayrollSalaryAdjustmentController extends Controller
      */
     public function update(Request $request, $id)
     {
-        if ($request->end_increase_date == 'Invalid date') {
-            $request->merge(['end_increase_date' => null]);
-        }
-        $this->validate($request, $this->validateRules, $this->messages, $this->attributes);
+        $this->validate($request, $this->validateRules, $this->messages);
 
-        $value = ($request->increase_of_type == 'different') ? 0.00 : $request->value;
-        $scale_values = ($request->increase_of_type == 'different') ? json_encode($request->scale_values) : null;
+        DB::transaction(
+            function () use ($request, $id) {
+                $value = ($request->increase_of_type == 'different') ? 0.00 : $request->value;
+                $scale_values = ($request->increase_of_type == 'different') ? json_encode($request->scale_values) : null;
 
-        /* Objeto asociado al modelo PayrollSalaryAdjustment */
-        $payrollSalaryAdjustment = PayrollSalaryAdjustment::find($id);
-        $payrollSalaryAdjustment->increase_of_type            = $request->increase_of_type;
-        $payrollSalaryAdjustment->value                       = $value;
-        $payrollSalaryAdjustment->payroll_salary_tabulator_id = $request->payroll_salary_tabulator_id;
-        $payrollSalaryAdjustment->start_increase_date         = $request->start_increase_date;
-        $payrollSalaryAdjustment->end_increase_date           = $request->end_increase_date;
-        $payrollSalaryAdjustment->salary_values               = $scale_values;
-        $payrollSalaryAdjustment->save();
+                /* Objeto asociado al modelo PayrollSalaryAdjustment */
+                $payrollSalaryAdjustment = PayrollSalaryAdjustment::find($id);
+                $payrollSalaryAdjustment->increase_of_type            = $request->increase_of_type;
+                $payrollSalaryAdjustment->value                       = $value;
+                $payrollSalaryAdjustment->payroll_salary_tabulator_id = $request->payroll_salary_tabulator_id;
+                $payrollSalaryAdjustment->save();
+                $payrollSalaryAdjustment->payrollHistorySalaryAdjustments()->create(
+                    [
+                    'increase_of_date'               => $request->increase_of_date,
+                    'end_increase_date'              => $request->end_increase_date,
+                    'salary_values'                  => $scale_values,
+                    'payroll_salary_adjustment_id'      => $payrollSalaryAdjustment->id,
+                    ]
+                );
+            }
+        );
 
         $request->session()->flash('message', ['type' => 'update']);
         return response()->json(['redirect' => route('payroll.salary-adjustments.index')], 200);
@@ -224,6 +223,7 @@ class PayrollSalaryAdjustmentController extends Controller
     public function destroy($id)
     {
         $salaryAdjustment = PayrollSalaryAdjustment::find($id);
+        $salaryAdjustment->payrollHistorySalaryAdjustments()->delete();
         $salaryAdjustment->delete();
 
         return response()->json(['message' => 'destroy'], 200);
@@ -241,7 +241,10 @@ class PayrollSalaryAdjustmentController extends Controller
         return response()->json(
             ['records' => PayrollSalaryAdjustment::with(
                 [
-                'payrollSalaryTabulator'
+                'payrollSalaryTabulator',
+                'payrollHistorySalaryAdjustments' => function ($query) {
+                    return $query->orderBy('created_at', 'desc');
+                }
                 ]
             )->get()],
             200
@@ -260,10 +263,30 @@ class PayrollSalaryAdjustmentController extends Controller
         return response()->json(
             ['record' => PayrollSalaryAdjustment::with(
                 [
-                'payrollSalaryTabulator'
+                'payrollSalaryTabulator',
+                'payrollHistorySalaryAdjustments' => function ($query) {
+                    return $query->orderBy('created_at', 'desc');
+                }
                 ]
             )->find($id)],
             200
+        );
+    }
+
+    /**
+     * Listado de ajustes salariales registrados para select de vue
+     *
+     * @author Fabian Palmera <fpalmera@cenditel.gob.ve>
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getLastSalaryAdjustment($salary_adjustment_id)
+    {
+        return response()->json(
+            [
+            'record' => PayrollHistorySalaryAdjustment::where('payroll_salary_adjustment_id', $salary_adjustment_id)
+                ->orderBy('created_at', 'DESC')->first()
+            ]
         );
     }
 
@@ -285,26 +308,12 @@ class PayrollSalaryAdjustmentController extends Controller
         );
 
         $data['filePath'] = $request->file('file')->store('/tmp');
-        $user =  User::where('id', auth()->user()->id)->first();
 
-        /** Crea el nombre del archivo de errores para la importación */
-        $errorsFilePath = 'import_' . uniqid() . '_.errors' . '.xlsx';
-
-        /* Crea el archivo de errores en el disco temporal */
-        Storage::disk('temporary')->put($errorsFilePath, '');
-
-        $import = new SalaryAdjustmentImport(
-            $errorsFilePath,
-            $user
-        );
+        $import = new SalaryAdjustmentImport();
         $import->import($data['filePath']);
-        Storage::disk('temporary')->delete($data['filePath']);
-
         if ($import->failures()->isNotEmpty()) {
-            /* Elimina el archivo de Excel temporal */
             return response()->json(['errors' => $import->failures()], 422);
         }
-        return response()->json(['message' => 'success'], 200);
     }
 
     /**
@@ -317,25 +326,5 @@ class PayrollSalaryAdjustmentController extends Controller
     public function export()
     {
         return Excel::download(new PayrollSalaryAdjustmentExport(), 'registros_ajuste_salario.xlsx');
-    }
-
-    /**
-     * Método para realizar exportación del ajuste para el tabulador salarial
-     *
-     * @author Fabián Palmera <fapalmera@cenditel.gob.ve>
-     *
-     * @param $salaryAdjustmentId   Identificador del ajuste en tabla salarial
-     *
-     * @return BinaryFileResponse    Objeto que permite descargar el archivo con la información a ser exportada
-     */
-    public function exportSalaryAdjustmentTabulator($salaryAdjustmentId)
-    {
-        $payrollSalaryAdjustment = PayrollSalaryAdjustment::find($salaryAdjustmentId);
-        if ($payrollSalaryAdjustment) {
-            $export = new PayrollSalaryAdjustmentTabulatorExport(PayrollSalaryAdjustment::class);
-            $export->setSalaryAdjustmentId($salaryAdjustmentId);
-            return Excel::download($export, 'ajuste_tabulador_salarial_' . Carbon::parse($payrollSalaryAdjustment->created_at)->format('d-m-Y') . '.xlsx');
-        }
-        return response()->json(['message' => 'error'], 400);
     }
 }

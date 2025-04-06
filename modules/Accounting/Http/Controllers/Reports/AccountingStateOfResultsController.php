@@ -18,7 +18,6 @@ use Modules\Accounting\Models\AccountingAccount;
 use Modules\Accounting\Models\AccountingReportHistory;
 use Modules\Accounting\Exports\AccountingStateOfResultsExport;
 use Modules\DigitalSignature\Repositories\ReportRepositorySign;
-use Modules\Accounting\Http\Controllers\AccountingBaseController;
 
 /**
  * @class AccountingStateOfResultsController
@@ -32,7 +31,7 @@ use Modules\Accounting\Http\Controllers\AccountingBaseController;
  *     [LICENCIA DE SOFTWARE CENDITEL](http://conocimientolibre.cenditel.gob.ve/licencia-de-software-v-1-3/)
  */
 
-class AccountingStateOfResultsController extends AccountingBaseController
+class AccountingStateOfResultsController extends Controller
 {
     /**
      * Salto de página
@@ -579,9 +578,84 @@ class AccountingStateOfResultsController extends AccountingBaseController
         $institution_id = $institution->id;
         $arr = [];
         $formDate = $date . '-01';
-        $rest = $this->stateofResoultCalculation($formDate, $endDate, $institution_id, $is_admin, $date);
-        $beginnBalances = $rest['beginnBalances'] ?? null;
-        $query = $rest['query'] ?? null;
+        if (count(explode('-', $endDate)) > 1) {
+                $query = AccountingAccount::with([
+                'entryAccount.entries' => function ($query) use ($formDate, $endDate, $institution_id, $is_admin) {
+                    if ($institution_id) {
+                        if (
+                            $query->whereBetween('from_date', [$formDate, $endDate])->where('approved', true)
+                            ->where('institution_id', $institution_id)->where('concept', '<>', 'Cierre de ejercicio')
+                        ) {
+                            $query->whereBetween('from_date', [$formDate, $endDate])->where('approved', true)
+                                ->where('institution_id', $institution_id)->where('currency_id', $this->currency->id)->where('concept', '<>', 'Cierre de ejercicio');
+                        }
+                    } else {
+                        if ($is_admin) {
+                            if ($query->whereBetween('from_date', [$formDate, $endDate])->where('approved', true)) {
+                                $query->whereBetween('from_date', [$formDate, $endDate])->where('approved', true)->where('currency_id', $this->currency->id)->where('concept', '<>', 'Cierre de ejercicio');
+                            }
+                        }
+                    }
+                }
+                ]);
+
+            $beginnBalances = AccountingAccount::with([
+                'entryAccount.entries' => function ($query) use ($formDate, $institution_id, $is_admin) {
+                    if ($institution_id) {
+                        if (
+                            $query->where('from_date', '<', $formDate)->where('approved', true)
+                            ->where('institution_id', $institution_id)->where('concept', '<>', 'Cierre de ejercicio')
+                        ) {
+                            $query->where('from_date', '<', $formDate)->where('approved', true)
+                                ->where('institution_id', $institution_id)->where('currency_id', $this->currency->id)->where('concept', '<>', 'Cierre de ejercicio');
+                        }
+                    } else {
+                        if ($is_admin) {
+                            if ($query->where('from_date', '<', $formDate)->where('approved', true)) {
+                                $query->where('from_date', '<', $formDate)->where('approved', true)->where('currency_id', $this->currency->id)->where('concept', '<>', 'Cierre de ejercicio');
+                            }
+                        }
+                    }
+                }
+            ])->whereIn('group', [5,6])
+                ->orderBy('group', 'ASC')
+                ->orderBy('subgroup', 'ASC')
+                ->orderBy('item', 'ASC')
+                ->orderBy('generic', 'ASC')
+                ->orderBy('specific', 'ASC')
+                ->orderBy('subspecific', 'ASC')
+                ->orderBy('denomination', 'ASC')->get();
+        } else {
+                $query = AccountingAccount::with([
+                'entryAccount.entries' => function ($query) use ($date, $institution_id, $is_admin) {
+                    if ($institution_id) {
+                        if (
+                            $query->whereYear('from_date', $date)->where('approved', true)
+                            ->where('institution_id', $institution_id)->where('concept', '<>', 'Cierre de ejercicio')
+                        ) {
+                            $query->whereYear('from_date', $date)->where('approved', true)
+                                ->where('institution_id', $institution_id)->where('currency_id', $this->currency->id)->where('concept', '<>', 'Cierre de ejercicio');
+                        }
+                    } else {
+                        if ($is_admin) {
+                            if ($query->whereYear('from_date', $date)->where('approved', true)) {
+                                $query->whereYear('from_date', $date)->where('approved', true)->where('currency_id', $this->currency->id)->where('concept', '<>', 'Cierre de ejercicio');
+                            }
+                        }
+                    }
+                }
+                ]);
+
+            $beginnBalances = [];
+        }
+        $query = $query->whereIn('group', [5,6])
+            ->orderBy('group', 'ASC')
+            ->orderBy('subgroup', 'ASC')
+            ->orderBy('item', 'ASC')
+            ->orderBy('generic', 'ASC')
+            ->orderBy('specific', 'ASC')
+            ->orderBy('subspecific', 'ASC')
+            ->orderBy('denomination', 'ASC')->get();
 
         foreach ($query as $account) {
             if (!$account->entryAccount->isEmpty()) {

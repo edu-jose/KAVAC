@@ -62,7 +62,7 @@ class PurchaseBaseBudget extends Model implements Auditable
         'availability',
         'availabilityitem',
         'purchaseBudgetaryAvailabilityDocument',
-        'institution_id',
+
         //Estado auxiliar para determinar en que estatus se encuentra el presupuesto base
         'status_aux'
     ];
@@ -190,16 +190,6 @@ class PurchaseBaseBudget extends Model implements Auditable
     }
 
     /**
-     * Obtiene el id de la institución
-     *
-     * @return int
-     */
-    public function getInstitutionIdAttribute()
-    {
-        return $this->purchaseRequirement->institution_id;
-    }
-
-    /**
      * Establece la relación con el tipo de moneda asociada a un presupuesto base
      *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
@@ -227,16 +217,6 @@ class PurchaseBaseBudget extends Model implements Auditable
     public function purchaseRequirement()
     {
         return $this->hasOne(PurchaseRequirement::class);
-    }
-
-    /**
-     * Establece la relación con los datos comunes de la disponibilidad presupuestaria
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\MorphOne
-     */
-    public function purchaseCommonBudgetaryAvailability()
-    {
-        return $this->morphOne(PurchaseCommonBudgetaryAvailability::class, 'budgetable');
     }
 
     /**

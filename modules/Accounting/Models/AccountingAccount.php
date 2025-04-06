@@ -58,8 +58,7 @@ class AccountingAccount extends Model implements Auditable
         'egress',
         'inactivity_date',
         'parent_id',
-        'original',
-        'accounting_type_activity_id'
+        'original'
     ];
 
     /**
@@ -191,15 +190,5 @@ class AccountingAccount extends Model implements Auditable
     public function pivotAccountable()
     {
         return $this->hasMany(Accountable::class, 'accounting_account_id');
-    }
-
-    /**
-     * Get the accountingTypeActivity that owns the AccountingAccount
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
-     */
-    public function accountingTypeActivity()
-    {
-        return $this->belongsTo(AccountingTypeActivity::class, 'accounting_type_activity_id');
     }
 }

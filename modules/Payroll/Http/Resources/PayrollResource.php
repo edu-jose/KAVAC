@@ -55,7 +55,7 @@ class PayrollResource extends JsonResource
             'code' => $this->resource->code,
             'created_at' => $this->resource->created_at,
             'name' => $this->resource->name,
-            'document_status' => $this->resource->documentStatus,
+            'status' => $this->resource->status,
             'payroll_payment_period' => [
                 'id' => $this->resource->payrollPaymentPeriod->id,
                 'payment_status' => $this->resource->payrollPaymentPeriod?->payment_status ?? '',

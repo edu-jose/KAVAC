@@ -9,7 +9,7 @@
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <button type="button" class="close closeModal" id="close_modal" aria-label="Cerrar"
+                        <button type="button" class="close closeModal" id="close_modal" aria-label="Close"
                             @click="reset()">
                             <span aria-hidden="true">×</span>
                         </button>
@@ -130,7 +130,8 @@
                         </div>
                         <div class="modal-footer">
 
-                            <button type="button" class="btn btn-default btn-sm btn-round btn-modal-close closeModal">
+                            <button type="button" class="btn btn-default btn-sm btn-round btn-modal-close"
+                                data-dismiss="modal">
                                 Cerrar
                             </button>
                         </div>

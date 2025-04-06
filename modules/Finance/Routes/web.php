@@ -102,7 +102,6 @@ Route::group([
     Route::post('movements/change-document-status', [FinanceMovementsController::class, 'changeDocumentStatus']);
     Route::post('movements/cancel-movements', [FinanceMovementsController::class, 'cancelMovements']);
     Route::get('movements/budget-accounting-accounts/{budget_account_id}', [FinanceMovementsController::class, 'getBudgetAccountingAccount']);
-    Route::get('movements/pdf/{id}', [FinanceMovementsController::class, 'pdf']);
     Route::resource('movements', FinanceMovementsController::class, ['as' => 'finance']);
 
     /* Ruta para la gestión de Finanzas > Banco > Conciliación */

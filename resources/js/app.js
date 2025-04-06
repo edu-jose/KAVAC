@@ -529,30 +529,6 @@ Vue.component("parishes", () =>
 );
 
 /**
- * Componente para la gestión de Localidades
- *
- * @author  Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
- */
-Vue.component("localities", () =>
-    import(
-        /* webpackChunkName: "localities" */
-        "./components/Settings/LocalitiesComponent.vue"
-    )
-);
-
-/**
- * Componente para la gestión de Regiones
- *
- * @author  Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
- */
-Vue.component("regions", () =>
-    import(
-        /* webpackChunkName: "regions" */
-        "./components/Settings/RegionsComponent.vue"
-    )
-);
-
-/**
  * Componente para la gestión de estatus de documentos
  *
  * @author  Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>

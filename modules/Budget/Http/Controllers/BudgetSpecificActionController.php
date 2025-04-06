@@ -4,7 +4,6 @@ namespace Modules\Budget\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\DocumentStatus;
-use App\Models\FiscalYear;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Crypt;
@@ -90,7 +89,7 @@ class BudgetSpecificActionController extends Controller
         /* Define las reglas de validación para el formulario */
         $this->validate_rules = [
             'from_date' => ['required', 'date'],
-            'to_date' => ['nullable', 'date', 'after:from_date'],
+            'to_date' => ['required', 'date', 'after:from_date'],
             'code' => ['required', 'unique:budget_specific_actions'],
             'name' => ['required'],
             'description' => ['required'],
@@ -103,6 +102,7 @@ class BudgetSpecificActionController extends Controller
         $this->validate_messages = [
             'from_date.required' => 'El campo fecha de inicio es obligatorio.',
             'from_date.date' => 'El campo fecha de inicio no tiene un formato válido.',
+            'to_date.required' => 'El campo fecha final es obligatorio.',
             'to_date.after' => 'El campo fecha de finalización debe ser una fecha posterior a la fecha de inicio.',
             'to_date.date' => 'El campo fecha final no tiene un formato válido.',
             'code.required' => 'El campo código es obligatorio.',
@@ -266,7 +266,7 @@ class BudgetSpecificActionController extends Controller
             $request,
             [
                 'from_date' => ['required', 'date'],
-                'to_date' => ['date'],
+                'to_date' => ['required', 'date'],
                 'code' => ['required'],
                 'name' => ['required'],
                 'description' => ['required'],
@@ -274,6 +274,7 @@ class BudgetSpecificActionController extends Controller
             [
                 'from_date.required' => 'El campo fecha de inicio es obligatorio.',
                 'from_date.date' => 'El campo fecha de inicio no tiene un formato válido.',
+                'to_date.required' => 'El campo fecha final es obligatorio.',
                 'to_date.date' => 'El campo fecha final no tiene un formato válido.',
                 'code.required' => 'El campo código es obligatorio.',
             ]
@@ -342,21 +343,21 @@ class BudgetSpecificActionController extends Controller
         foreach ($specificActions as $specificAction) {
             if (count($specificAction->subSpecificFormulations) > 0) {
                 foreach ($specificAction->subSpecificFormulations as $formulation) {
-                    if ($formulation->confirmed == true) {
+                    if ($formulation->assigned == true) {
                         $specificAction->disabled = true;
-                        $records[$specificAction->id] = $specificAction;
+                        array_push($records, $specificAction);
                     } else {
                         $specificAction->disabled = false;
-                        $records[$specificAction->id] = $specificAction;
+                        array_push($records, $specificAction);
                     }
                 }
             } else {
                 $specificAction->disabled = false;
-                $records[$specificAction->id] = $specificAction;
+                array_push($records, $specificAction);
             }
         }
 
-        return response()->json(['records' => collect($records)->values()], 200);
+        return response()->json(['records' => $records], 200);
     }
 
     /**
@@ -375,30 +376,20 @@ class BudgetSpecificActionController extends Controller
         /* Arreglo con información de las acciones específicas */
         $data = [['id' => '', 'text' => 'Seleccione...']];
         $specificActions = [];
-        $currentFiscalYear = FiscalYear::select('year')
-            ->where(['active' => true, 'closed' => false])
-            ->orderBy('year', 'desc')->first();
 
         if ($type === "Project") {
             /* Objeto con las acciones específicas asociadas a un proyecto */
-            $specificActions = BudgetProject::find($id)
-                ->specificActions()
-                ->where('active', true)
-                ->get();
+            $specificActions = BudgetProject::find($id)->specificActions()->where('active', true)->get();
         } elseif ($type == "CentralizedAction") {
             /* Objeto con las acciones específicas asociadas a una acción centralizada */
-            $specificActions = BudgetCentralizedAction::find($id)
-                ->specificActions()
-                ->where('active', true)
-                ->get();
+            $specificActions = BudgetCentralizedAction::find($id)->specificActions()->where('active', true)->get();
         }
 
         foreach ($specificActions as $specificAction) {
             /* Objeto que determina si la acción específica ya fue formulada para el último presupuesto */
             $existsFormulation = BudgetSubSpecificFormulation::where([
                 'budget_specific_action_id' => $specificAction->id,
-                'confirmed' => true,
-                'year' => $currentFiscalYear->year
+                'assigned' => true
             ])->orderBy('year', 'desc')->first();
 
             if ($source === 'report') {
@@ -490,7 +481,7 @@ class BudgetSpecificActionController extends Controller
                 [
                     'year' => $formulated_year,
                     'budget_specific_action_id' => $sp_acc->id,
-                    'confirmed' => true
+                    'assigned' => true
                 ]
             )->first() : '';
 
@@ -590,13 +581,8 @@ class BudgetSpecificActionController extends Controller
             }
         }
 
-        $documentStatus = DocumentStatus::getStatus('AP');
         $modificationAccounts = BudgetModificationAccount::query()
             ->with(['budgetAccount', 'budgetSubSpecificFormulation.specificAction'])
-            ->whereHas('budgetModification', function ($query) use ($documentStatus) {
-                $query->where('document_status_id', $documentStatus->id)
-                    ->where('status', 'AP');
-            })
             ->whereHas('budgetSubSpecificFormulation', function ($query) use ($specificActionId, $year) {
                 $query
                     ->where('year', $year)
