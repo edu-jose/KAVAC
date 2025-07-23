@@ -28,6 +28,12 @@
     .text-center {
         text-align: center;
     }
+    .border-top {
+        border-top: .5px solid #000;
+    }
+    .border-bottom {
+        border-bottom: .5px solid #000;
+    }
 </style>
 
 <table class="table-employment-data">
@@ -59,27 +65,32 @@
 <table class="table-work-attendance">
     <thead>
         <tr>
-            <th class="text-center">Día</th>
-            <th class="text-center">Fecha</th>
-            <th class="text-center">Hora de Entrada</th>
-            <th class="text-center">Hora de Salida</th>
-            <th class="text-center">Total Asistencia</th>
-            <th class="text-center">% Asistencia</th>
-            <th class="text-center">% Inasistencia</th>
+            <th class="text-center border-top border-bottom">Día</th>
+            <th class="text-center border-top border-bottom">Fecha</th>
+            <th class="text-center border-top border-bottom">Hora de Entrada</th>
+            <th class="text-center border-top border-bottom">Hora de Salida</th>
+            <th class="text-center border-top border-bottom">Total Asistencia</th>
+            <th class="text-center border-top border-bottom">% Asistencia</th>
+            <th class="text-center border-top border-bottom">% Inasistencia</th>
         </tr>
     </thead>
     <tbody>
         @php
             $totalAttendance = 0;
             $totalAbsence = 0;
+            $totalWorkedTimeHours = 0;
+            $totalWorkedTimeMinutes = 0;
         @endphp
         @foreach ($workAttendance as $work)
             @php
                 $hours = floor($work->work_time / 60);
+                $printHours = $work->work_time / 60;
                 $minutes = $work->work_time % 60;
                 $workTime = sprintf('%02d:%02d', $hours, $minutes);
                 $totalAttendance += $work->work_percent;
                 $totalAbsence += 100 - $work->work_percent;
+                $totalWorkedTimeHours += $printHours;
+                $totalWorkedTimeMinutes += $minutes;
             @endphp
             <tr>
                 <td>{{ $weekDaysName[\Carbon\Carbon::parse($work->date_at)->format('l')] }}</td>
@@ -92,11 +103,12 @@
             </tr>
         @endforeach
         <tr>
-            <td colspan="5" class="text-right">
-                <b>% de Asistencia / % de Inasistencia</b>
+            <td colspan="4" class="text-right border-top border-bottom">
+                <b>Total Horas Trabajadas / % de Asistencia / % de Inasistencia</b>
             </td>
-            <td class="text-right">{{ number_format($totalAttendance / $workAttendance->count(), 2) }} %</td>
-            <td class="text-right">{{ number_format($totalAbsence / $workAttendance->count(), 2) }} %</td>
+            <td class="text-right border-top border-bottom">{{ sprintf('%02d:%02d', $totalWorkedTimeHours, $totalWorkedTimeMinutes) }}</td>
+            <td class="text-right border-top border-bottom">{{ number_format($totalAttendance / $workAttendance->count(), 2) }} %</td>
+            <td class="text-right border-top border-bottom">{{ number_format($totalAbsence / $workAttendance->count(), 2) }} %</td>
         </tr>
     </tbody>
 </table>

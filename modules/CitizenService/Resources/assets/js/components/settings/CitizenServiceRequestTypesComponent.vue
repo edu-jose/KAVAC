@@ -130,6 +130,7 @@
 					name: '',
                     description: ''
 				};
+                this.errors = [];
 			},
 
 		},

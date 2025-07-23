@@ -2,9 +2,9 @@
 
 namespace Modules\Payroll\Jobs;
 
+use App\Events\SystemNotification as EventSystemNotification;
 use App\Models\User;
 use App\Notifications\SystemNotification;
-use DateTime;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -50,6 +50,14 @@ class PayrollUpdatePaymentRelationship implements ShouldQueue
      */
     public $timeout = 0; //300; /** 5min */
 
+    private array $payrollConceptsArray = [];
+    private float $totalAsignationsByPayrollStaff = 0;
+    private float $totalDeductionsByPayrollStaff = 0;
+    private float $totalPaidByPayrollStaff = 0;
+    private float $totalAsignations = 0;
+    private float $totalDeductions = 0;
+
+
     /**
      * Crea una nueva instancia de trabajo.
      *
@@ -75,6 +83,9 @@ class PayrollUpdatePaymentRelationship implements ShouldQueue
     public function handle()
     {
         try {
+            $user = User::without(['roles', 'permissions'])->where('id', $this->data['user_id'])->first();
+            $user->notify(new SystemNotification('Alerta', 'Se está ejecutando la nómina, por favor espere...'));
+
             $payrollParameters = new PayrollAssociatedParametersRepository();
             /* Objeto asociado al modelo Payroll */
             $payroll = Payroll::query()->find($this->data['id']);
@@ -97,11 +108,38 @@ class PayrollUpdatePaymentRelationship implements ShouldQueue
                     return $item;
                 }, $this->data['pending_concepts'] ?? []),
             );
-            foreach ($fullConcepts as $concept) {
+
+            $fullConceptsIds = array_column($fullConcepts, 'id');
+            $payrollConcepts = PayrollConcept::query()
+            ->with(['payrollConceptAssignOptions', 'payrollConceptType', 'budgetAccount', 'accountingAccount'])
+            ->whereIn('id', $fullConceptsIds)
+            ->get();
+            $this->payrollConceptsArray = $payrollConcepts->toArray();
+
+            [$withTotalsConcepts, $withoutTotalsConcepts] = $payrollConcepts->partition(
+                function (PayrollConcept $concept): bool {
+                    $currentIndex = $this->getIndex(
+                        $this->payrollConceptsArray,
+                        'id',
+                        $concept->id
+                    );
+
+                    if ($this->verifyIfConceptContainsTotalParameters($concept)) {
+                        $this->payrollConceptsArray[$currentIndex]['marked'] = true;
+                        return true;
+                    } else {
+                        $this->payrollConceptsArray[$currentIndex]['marked'] = false;
+                        return false;
+                    }
+                }
+            );
+
+            $payrollConcepts = $withoutTotalsConcepts->concat($withTotalsConcepts);
+
+            foreach ($payrollConcepts as $payrollConcept) {
+                $currentIndex = $this->getIndex($fullConcepts, 'id', $payrollConcept->id);
+                $concept = $fullConcepts[$currentIndex];
                 $formula = null;
-                $payrollConcept = PayrollConcept::query()
-                    ->with('payrollConceptAssignOptions')
-                    ->find($concept['id']);
                 $formula = $this->translateFormConcept($payrollConcept->formula);
                 $exploded = multiexplode(
                     [
@@ -189,8 +227,19 @@ class PayrollUpdatePaymentRelationship implements ShouldQueue
 
             /* Se obtienen todos los trabajadores asociados a la institución y se evalua si aplica cada uno de los conceptos */
             $payrollStaffs = PayrollStaff::query()
+                ->without(
+                    'payrollNationality',
+                    'payrollFinancial',
+                    'payrollGender',
+                    'payrollBloodType',
+                    'payrollDisability',
+                    'payrollLicenseDegree',
+                    'payrollStaffUniformSize',
+                    'payrollSocioeconomic',
+                    'payrollProfessional',
+                    'payrollResponsibility'
+                )->with('payrollEmployment')
                 ->whereHas('payrollEmployment', function ($q) use ($institution, $period_end) {
-
                     $q->whereHas('department', function ($qq) use ($institution) {
                         $qq->where('institution_id', $institution->id);
                     })
@@ -201,16 +250,24 @@ class PayrollUpdatePaymentRelationship implements ShouldQueue
             $payrollStaffs = $payrollStaffs->orderBy('first_name')->get();
             $assignTo = $payrollParameters->loadData('assignTo');
 
-
+            /* Se definen los arreglos de asignaciones y deducciones para clasificar los conceptos */
+            $conceptTypes = PayrollConceptType::query()
+                ->get('name');
             $types = [];
-            foreach ($payrollStaffs as $payrollStaff) {
-                /* Se definen los arreglos de asignaciones y deducciones para clasificar los conceptos */
-                $conceptTypes = PayrollConceptType::query()
-                    ->get('name');
+
+            $totalStaff = $payrollStaffs->count();
+            $progreso = [25, 50, 75];
+            $notificados = [];
+
+            foreach ($payrollStaffs as $keyStaff => $payrollStaff) {
+                $this->totalAsignationsByPayrollStaff = 0;
+                $this->totalDeductionsByPayrollStaff = 0;
+                $this->totalPaidByPayrollStaff = 0;
 
                 foreach ($conceptTypes as $conceptType) {
                     $types[$conceptType->name] = [];
                 }
+
                 foreach ($concepts as $concept) {
                     $conceptAssignTo = json_decode($concept['field']['assign_to']);
                     if ($concept['field']['is_strict'] ?? false) {
@@ -297,6 +354,10 @@ class PayrollUpdatePaymentRelationship implements ShouldQueue
                         ]);
                     }
                 }
+
+                $this->totalAsignationsByPayrollStaff = 0;
+                $this->totalDeductionsByPayrollStaff = 0;
+                $this->totalPaidByPayrollStaff = 0;
                 $add = false;
                 foreach ($types as $type) {
                     foreach ($type as $t) {
@@ -317,14 +378,41 @@ class PayrollUpdatePaymentRelationship implements ShouldQueue
                         ]
                     );
                 }
+
+                $porcentaje = (int) ((($keyStaff + 1) / $totalStaff) * 100);
+                if (100 != $porcentaje) {
+                    event(new EventSystemNotification([
+                        'user_id' => $user->id,
+                        'payroll_id' => $payroll->id,
+                        'payroll_code' => $payroll->code,
+                        'porcentaje' => $porcentaje,
+                        'procesados' => $keyStaff + 1,
+                        'total' => $totalStaff
+                    ]));
+                    foreach ($progreso as $p) {
+                        if ($porcentaje >= $p && !in_array($p, $notificados)) {
+                            $notificados[] = $p;
+                            Log::info('Se ha alcanzado el ' . $p . '% de la nómina ' . $payroll->code);
+                            $user->notify(new SystemNotification('Información', $p . '% de la nómina ' . $payroll->code . ' completado.'));
+                        }
+                    }
+                }
             }
             /* Se capturan los conceptos de la nomina */
             $payroll->concept_types = $types;
             $payroll->document_status_id = DocumentStatus::query()->where('action', 'EL')->value('id');
             $payroll->save();
 
-            $user = User::without(['roles', 'permissions'])->where('id', $this->data['user_id'])->first();
+            Log::info('Se ha alcanzado el 100% de la nómina ' . $payroll->code);
             $user->notify(new SystemNotification('Exito', 'Nomina ejecutada con exito'));
+            event(new EventSystemNotification([
+                'user_id' => $user->id,
+                'payroll_id' => $payroll->id,
+                'payroll_code' => $payroll->code,
+                'porcentaje' => 100,
+                'procesados' => $totalStaff,
+                'total' => $totalStaff
+            ]));
         } catch (\Exception $e) {
             $payroll = Payroll::where('id', $this->data['id'])->update(['document_status_id' => null]);
 
@@ -1555,6 +1643,46 @@ class PayrollUpdatePaymentRelationship implements ShouldQueue
 
         /* Se carga la propiedad payrollConceptType para determinar como clasificar el concepto */
         $concept['field']->load('payrollConceptType');
+        $currentConceptIndex = $this->getIndex($this->payrollConceptsArray, 'id', $concept['field']->id);
+        $conceptWithMark = $this->payrollConceptsArray [$currentConceptIndex];
+
+        if ($concept['field']->payrollConceptType['sign'] == '+' && !$conceptWithMark['marked']) {
+            $this->totalAsignations += str_eval($formula);
+            $this->totalAsignationsByPayrollStaff += str_eval($formula);
+        } elseif ($concept['field']->payrollConceptType['sign'] == '-' && !$conceptWithMark['marked']) {
+            $this->totalDeductions += str_eval($formula);
+            $this->totalDeductionsByPayrollStaff += str_eval($formula);
+        } elseif ($concept['field']->payrollConceptType['sign'] == '+' && $conceptWithMark['marked']) {
+            $formula = $concept['field']->translateFormula;
+            $formula = str_replace(
+                'TOTAL_ASSIGNMENTS',
+                $this->totalAsignationsByPayrollStaff,
+                $formula ?? $concept['formula']
+            );
+            $formula = str_replace(
+                'TOTAL_PAID',
+                $this->totalAsignationsByPayrollStaff - $this->totalDeductionsByPayrollStaff,
+                $formula ?? $concept['formula']
+            );
+            $this->totalAsignations += str_eval($formula ?? $concept['formula']);
+            $this->totalAsignationsByPayrollStaff += str_eval($formula ?? $concept['formula']);
+        } elseif ($concept['field']->payrollConceptType['sign'] == '-' && $conceptWithMark['marked']) {
+            $totalPaidValueByPayrollStaff = $this->totalAsignationsByPayrollStaff - $this->totalDeductionsByPayrollStaff;
+            $formula = $concept['field']->translateFormula;
+            $formula = str_replace(
+                'TOTAL_ASSIGNMENTS',
+                $this->totalAsignationsByPayrollStaff,
+                $formula ?? $concept['formula']
+            );
+            $formula = str_replace(
+                'TOTAL_PAID',
+                $totalPaidValueByPayrollStaff,
+                $formula ?? $concept['formula']
+            );
+            $this->totalDeductions += str_eval($formula ?? $concept['formula']);
+            $this->totalDeductionsByPayrollStaff += str_eval($formula ?? $concept['formula']);
+        }
+
         $formula = expression_format($formula ?? $concept['formula']);
         array_push($types[$concept['field']->payrollConceptType->name], [
             'id' => $concept['field']->id ?? '',
@@ -1572,5 +1700,42 @@ class PayrollUpdatePaymentRelationship implements ShouldQueue
         ]);
 
         return $types;
+    }
+
+    /**
+     * Obtiene el indice de un arreglo en base a un parámetro y un valor
+     * @author Natanael Rojo <ndrojo@cenditel.gob.ve> | <rojonatanael99@gmail.com>
+     * @param array $array
+     * @param string $key
+     * @param mixed $value
+     * @return int|null
+     */
+    private function getIndex(array $array, string $key, $value): int|null
+    {
+        $index = 0;
+        $valueFound = false;
+
+        foreach ($array as $item) {
+            if ($item[$key] == $value) {
+                $valueFound = true;
+                break;
+            }
+            $index++;
+        }
+
+        return $valueFound ? $index : null;
+    }
+
+    /**
+     * Verifica si el concepto contiene los parámetros TOTAL_ASSIGNMENTS y TOTAL_PAID
+     *
+     * @param \Modules\Payroll\Models\PayrollConcept $concept
+     * @return bool
+     */
+    private function verifyIfConceptContainsTotalParameters(PayrollConcept $concept): bool
+    {
+        $currentConceptFormula = $concept->translate_formula;
+        return Str::contains($currentConceptFormula, 'TOTAL_ASSIGNMENTS') ||
+            Str::contains($currentConceptFormula, 'TOTAL_PAID');
     }
 }

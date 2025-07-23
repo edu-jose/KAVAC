@@ -3,6 +3,7 @@
 namespace Modules\Payroll\Http\Controllers;
 
 use DateTime;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Maatwebsite\Excel\Facades\Excel;
@@ -174,14 +175,19 @@ class PayrollAriRegisterController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      **/
-    public function getAriRegisters()
+    public function getAriRegisters(): JsonResponse
     {
         return response()->json([
             'records' => PayrollStaff::query()
                 ->whereHas('payrollAriRegisters')
-                ->with('payrollAriRegisters')
-                ->get()
-        ], 200);
+                ->whereHas('payrollNationality')
+                ->with([
+                    'payrollAriRegisters',
+                    'payrollNationality' => function ($query): void {
+                        $query->select('id', 'name');
+                    },
+                    ])->get()
+        ], JsonResponse::HTTP_OK);
     }
 
     /**

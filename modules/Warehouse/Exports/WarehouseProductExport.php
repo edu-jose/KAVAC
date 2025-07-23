@@ -27,7 +27,8 @@ class WarehouseProductExport extends \App\Exports\DataExport implements
      */
     public function collection()
     {
-        return WarehouseProduct::all();
+        // Cargar la relación measurementUnit con los productos
+        return WarehouseProduct::with('measurementUnit')->get();
     }
 
     /**
@@ -46,7 +47,7 @@ class WarehouseProductExport extends \App\Exports\DataExport implements
      * @author    Henry Paredes <hparedes@cenditel.gob.ve>
      * @author    Yennifer Ramirez <yramirez@cenditel.gob.ve>
      *
-     * @return    array    Arreglo con las cabeceras de los datos a exportar
+     * @return array Arreglo con las cabeceras de los datos a exportar
      */
     public function headings(): array
     {
@@ -54,27 +55,25 @@ class WarehouseProductExport extends \App\Exports\DataExport implements
             'Nombre del insumo',
             'Descripción del insumo',
             'Nombre de la unidad de medida',
-            'Porcentaje del impuesto aplicado al insumo'
         ];
     }
 
     /**
      * Establece las columnas que van a ser exportadas
      *
-     * @author    Henry Paredes <hparedes@cenditel.gob.ve>
-     * @author    Yennifer Ramirez <yramirez@cenditel.gob.ve>
+     * @param object $warehouseProduct Objeto con las propiedades del modelo a exportar
      *
      * @param     object    $warehouseProduct    Objeto con las propiedades del modelo a exportar
+     * @param object $warehouseProduct Objeto con las propiedades del modelo a exportar
      *
-     * @return    array     Arreglo con los campos estrictamente a ser exportados
+     * @return array Arreglo con los campos estrictamente a ser exportados
      */
     public function map($warehouseProduct): array
     {
         return [
             $warehouseProduct->name,
             htmlspecialchars_decode(strip_tags($warehouseProduct->description)),
-            $warehouseProduct->measurementUnit->name,
-            $warehouseProduct->tax_id ? $warehouseProduct->tax->histories[0]->percentage . ' %' : ''
+            $warehouseProduct->measurementUnit ? $warehouseProduct->measurementUnit->name : 'N/A',
         ];
     }
 
@@ -85,12 +84,11 @@ class WarehouseProductExport extends \App\Exports\DataExport implements
      */
     public function registerEvents(): array
     {
-        $events = [
+        return [
             AfterSheet::class => function (AfterSheet $event) {
-                // Obtener la hoja de cálculo
                 $sheet = $event->sheet;
 
-                // Establecer opciones de selección
+                // Configuración de validación para unidades de medida
                 $validation = new DataValidation();
                 $validation->setType(DataValidation::TYPE_LIST);
                 $validation->setErrorStyle(DataValidation::STYLE_INFORMATION);
@@ -101,20 +99,15 @@ class WarehouseProductExport extends \App\Exports\DataExport implements
                 $validation->setErrorTitle('Error en datos');
                 $validation->setError('Debe seleccionar un dato de la lista');
                 $validation->setPrompt('Seleccione un elemento de la lista');
+
                 $records = $this->getArraysSelect();
 
-                /* Identificador de la unidad de medida */
-                $validation->setPromptTitle('Identificador de la unidad de medida');
+                // Validación para unidad de medida (columna C)
+                $validation->setPromptTitle('Unidad de medida');
                 $validation->setFormula1(json_encode($records['measurementUnit'], JSON_UNESCAPED_UNICODE));
                 $sheet->setDataValidation('C2:C100000', clone $validation);
 
-                /* Porcentaje del impuesto aplicado al insumo */
-                $validation->setPromptTitle('Porcentaje del impuesto aplicado al insumo');
-                $validation->setFormula1(json_encode($records['tax'], JSON_UNESCAPED_UNICODE));
-                $sheet->setDataValidation('D2:D100000', clone $validation);
-
-
-                /* Definicion de estilos de la cabecera */
+                // Estilos para la cabecera
                 $styleArray = [
                     'font' => [
                         'bold' => true,
@@ -124,10 +117,9 @@ class WarehouseProductExport extends \App\Exports\DataExport implements
                     ],
                 ];
 
-                $sheet->getDelegate()->getStyle('A1:G1')->applyFromArray($styleArray);
+                $sheet->getDelegate()->getStyle('A1:D1')->applyFromArray($styleArray);
             },
         ];
-        return $events;
     }
 
     /**
@@ -137,26 +129,18 @@ class WarehouseProductExport extends \App\Exports\DataExport implements
      */
     public function getArraysSelect(): array
     {
-        $measurementUnit = template_choices(MeasurementUnit::class, ['name'], '', false);
-        $measurementUnit = array_map(function ($field) {
-            if ($field != 'Seleccione...') {
-                return str_replace(array(' ', '__'), '_', str_replace(array(',', '.', '-'), '', $field));
-            }
-        }, $measurementUnit);
-        $measurementUnitFormated = implode(',', $measurementUnit);
-        $hTax = HistoryTax::query()->get()->map(function ($history) {
-            return [
-                'id' => $history->id,
-                'name' => $history->tax->name . ' ' . $history->percentage,
-            ];
-        })->pluck('name', 'id')->toArray();
+        // Obtener todas las unidades de medida con sus nombres y acrónimos
+        $measurementUnits = MeasurementUnit::all();
 
+        $measurementUnitNames = $measurementUnits->pluck('name')->toArray();
 
-        $hTax = array_merge(['' => null], $hTax);
-        $taxFormated = implode(',', $hTax);
+        // Formatear para Excel (sin comas ni caracteres especiales)
+        $measurementUnitFormated = implode(',', array_map(function ($item) {
+            return str_replace([',', '.', '-'], '', $item);
+        }, $measurementUnitNames));
+
         return [
             'measurementUnit' => $measurementUnitFormated,
-            'tax' => $taxFormated,
         ];
     }
 }

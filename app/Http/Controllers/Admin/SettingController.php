@@ -92,7 +92,7 @@ class SettingController extends Controller
         // Arreglo con atributos del formulario para la configuración de organismos
         $header_institution = [
             'route' => 'institutions.store', 'method' => 'POST', 'role' => 'form', 'class' => 'form',
-            'enctype' => 'multipart/form-data',
+            'enctype' => 'multipart/form-data', 'id' => 'form_institution',
         ];
 
         // Arreglo con información de los organismos de adscripción
@@ -111,19 +111,28 @@ class SettingController extends Controller
         $countries = template_choices(Country::class);
         // Objeto con información de los Estados registrados
         $estates = template_choices(
-            ($model_institution) ? Estate::class : collect()
+            ($model_institution || old('country_id')) ? Estate::class : collect(),
+            'name',
+            old('country_id') ? ['country_id' => old('country_id')] : [],
         );
+
         // Objeto con información de los Municipios registrados
         $municipalities = template_choices(
-            ($model_institution) ? Municipality::class : collect()
+            ($model_institution || old('estate_id')) ? Municipality::class : collect(),
+            'name',
+            old('estate_id') ? ['estate_id' => old('estate_id')] : [],
         );
         // Objeto con información de las Parroquias registradas
         $parishes = template_choices(
-            ($model_institution) ? Parish::class : collect()
+            ($model_institution || old('municipality_id')) ? Parish::class : collect(),
+            'name',
+            old('municipality_id') ? ['municipality_id' => old('municipality_id')] : [],
         );
         // Objeto con información de las Ciudades registradas
         $cities = template_choices(
-            ($model_institution) ? City::class : collect()
+            ($model_institution || old('estate_id')) ? City::class : collect(),
+            'name',
+            old('estate_id') ? ['estate_id' => old('estate_id')] : [],
         );
         // Objeto con información de los sectores de organismos
         $sectors = template_choices(InstitutionSector::class);
@@ -231,13 +240,30 @@ class SettingController extends Controller
         // Objeto con información de los Países registrados
         $countries = template_choices(Country::class);
         // Objeto con información de los Estados registrados
-        $estates = template_choices(Estate::class);
+        $estates = template_choices(
+            Estate::class,
+            'name',
+            old('country_id') ? ['country_id' => old('country_id')] : [],
+        );
         // Objeto con información de los Municipios registrados
-        $municipalities = template_choices(Municipality::class);
+        $municipalities = template_choices(
+            Municipality::class,
+            'name',
+            old('estate_id') ? ['estate_id' => old('estate_id')] : [],
+        );
         // Objeto con información de las Parroquias registradas
-        $parishes = template_choices(Parish::class);
+        $parishes = template_choices(
+            Parish::class,
+            'name',
+            old('municipality_id') ? ['municipality_id' => old('municipality_id')] : [],
+        );
         // Objeto con información de las Ciudades registradas
-        $cities = template_choices(City::class);
+        $cities = template_choices(
+            City::class,
+            'name',
+            old('estate_id') ? ['estate_id' => old('estate_id')] : [],
+        );
+
         // Objeto con información de los sectores de organismos
         $sectors = template_choices(InstitutionSector::class);
         // Objeto con información de los tipos de organismos

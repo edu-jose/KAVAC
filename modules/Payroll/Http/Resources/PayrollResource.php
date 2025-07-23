@@ -33,22 +33,11 @@ class PayrollResource extends JsonResource
                     'name' => $payrollConcept?->name ?? '',
                     'accounting_account_id' => $payrollConcept?->accounting_account_id ?? '',
                     'budget_account_id' => $payrollConcept?->budget_account_id ?? '',
-                    'concept_account' => false,
                 ];
 
                 $payrollConceptAccount = true;
-            } else {
-                $payrollConcepts[] = [
-                    'accounting_account_id' => $payrollConcept?->accounting_account_id ?? '',
-                    'budget_account_id' => $payrollConcept?->budget_account_id ?? '',
-                    'concept_account' => true,
-                ];
             }
         }
-
-        $result = array_values(array_filter($payrollConcepts, function ($item) {
-            return $item['concept_account'] === false;
-        }));
 
         return [
             'id' => $this->resource->id,
@@ -70,7 +59,7 @@ class PayrollResource extends JsonResource
                         'receipt' => $this->resource->payrollPaymentPeriod->payrollPaymentType->receipt,
                     ]
                     : null,
-                'payroll_concepts' => $payrollConceptAccount == false ? $payrollConcepts : $result,
+                'payroll_concepts' => $payrollConcepts,
                 'payroll_concept_account' => $payrollConceptAccount,
             ],
         ];

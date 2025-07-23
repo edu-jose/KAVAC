@@ -4,16 +4,11 @@
             <accounting-show-errors ref="errorsAnalyticalMajor" />
             <div class="row">
                 <div class="col-3" id="helpAnaliticalMajorInitDate">
-                    <label class="control-label"
-                        ><strong>Fecha Inicial</strong></label
-                    >
+                    <label class="control-label"><strong>Fecha Inicial</strong></label>
                     <br />
                     <div class="is-required">
                         <label>Mes</label>
-                        <select2
-                            :options="months"
-                            v-model="month_init"
-                        ></select2>
+                        <select2 :options="months" v-model="month_init"></select2>
                     </div>
                     <br />
                     <div class="is-required">
@@ -22,16 +17,11 @@
                     </div>
                 </div>
                 <div class="col-3" id="helpAnaliticalMajorEndDate">
-                    <label class="control-label"
-                        ><strong>Fecha Final</strong></label
-                    >
+                    <label class="control-label"><strong>Fecha Final</strong></label>
                     <br />
                     <div class="is-required">
                         <label>Mes</label>
-                        <select2
-                            :options="months"
-                            v-model="month_end"
-                        ></select2>
+                        <select2 :options="months" v-model="month_end"></select2>
                     </div>
                     <br />
                     <div class="is-required">
@@ -42,96 +32,46 @@
                 <div class="col-3" id="helpAnaliticalMajorRangeAccount">
                     <br />
                     <div class="col-12 is-required">
-                        <label class="control-label"
-                            ><strong>Cuenta inicial</strong></label
-                        >
-                        <div
-                            title="Seleccione un registro de la lista"
-                            data-toggle="tooltip"
-                            v-has-tooltip
-                        >
-                            <select2
-                                :options="OptionsAcc"
-                                v-model="InitAcc"
-                                :disabled="disabledSelect"
-                            ></select2>
+                        <label class="control-label"><strong>Cuenta inicial</strong></label>
+                        <div title="Seleccione un registro de la lista" data-toggle="tooltip" v-has-tooltip>
+                            <select2 :options="OptionsAcc" v-model="InitAcc" :disabled="disabledSelect"></select2>
                         </div>
                     </div>
                     <br />
                     <div class="col-12 is-required">
-                        <label class="control-label"
-                            ><strong>Cuenta final</strong></label
-                        >
-                        <div
-                            title="Seleccione un registro de la lista"
-                            data-toggle="tooltip"
-                            v-has-tooltip
-                        >
-                            <select2
-                                :options="OptionsAcc"
-                                v-model="EndAcc"
-                                :disabled="disabledSelect"
-                            ></select2>
+                        <label class="control-label"><strong>Cuenta final</strong></label>
+                        <div title="Seleccione un registro de la lista" data-toggle="tooltip" v-has-tooltip>
+                            <select2 :options="OptionsAcc" v-model="EndAcc" :disabled="disabledSelect"></select2>
                         </div>
                     </div>
                 </div>
                 <div class="col-3">
                     <br />
-                    <div
-                        class="col-12 is-required"
-                        id="helpAnaliticalMajorCurrency"
-                    >
+                    <div class="col-12 is-required" id="helpAnaliticalMajorCurrency">
                         <label class="control-label">Tipo de moneda</label>
-                        <select2
-                            :options="currencies"
-                            v-model="currency_id"
-                        ></select2>
+                        <select2 :options="currencies" v-model="currency_id"></select2>
                     </div>
                     <div id="helpAnaliticalMajorAllAccount">
-                        <label for="" class="control-label mt-4"
-                            >Seleccionar todas</label
-                        >
-                        <div
-                            class="custom-control custom-switch"
-                            data-toggle="tooltip"
-                            title="Seleccionar todas las cuentas de mayor analítico"
-                        >
-                            <input
-                                type="checkbox"
-                                class="custom-control-input"
-                                id="analyticalReportCheckAll"
-                                @click="checkAll()"
-                                v-model="check_sel_all"
-                            />
-                            <label
-                                class="custom-control-label"
-                                for="analyticalReportCheckAll"
-                            ></label>
+                        <label for="" class="control-label mt-4">Seleccionar todas</label>
+                        <div class="custom-control custom-switch" data-toggle="tooltip"
+                            title="Seleccionar todas las cuentas de mayor analítico">
+                            <input type="checkbox" class="custom-control-input" id="analyticalReportCheckAll"
+                                @click="checkAll()" v-model="check_sel_all" />
+                            <label class="custom-control-label" for="analyticalReportCheckAll"></label>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
         <div class="card-footer text-right">
-            <button
-                class="btn btn-primary btn-sm"
-                title="Generar Reporte"
-                data-toggle="tooltip"
-                v-has-tooltip
-                v-on:click="OpenPdf(getUrlReport(), '_blank')"
-                id="helpAnaliticalMajorGenerateReport"
-            >
+            <button class="btn btn-primary btn-sm" title="Generar Reporte" data-toggle="tooltip" v-has-tooltip
+                v-on:click="OpenPdf(getUrlReport(), '_blank')" id="helpAnaliticalMajorGenerateReport">
                 <span>Generar reporte</span>
                 <i class="fa fa-print"></i>
             </button>
-            <button
-                class="btn btn-primary btn-sm"
-                @click="OpenPdf(getUrlReport(), '_blank', true)"
-                :id="'help' + this.type_report + 'GenerateReport'"
-                data-toggle="tooltip"
-                v-has-tooltip
-                title="Exportar Reporte"
-            >
+            <button class="btn btn-primary btn-sm" @click="OpenPdf(getUrlReport(), '_blank', true)"
+                :id="'help' + this.type_report + 'GenerateReport'" data-toggle="tooltip" v-has-tooltip
+                title="Exportar Reporte">
                 Exportar Reporte
                 <i class="fa fa-file-excel-o"></i>
             </button>
@@ -141,6 +81,10 @@
 <script>
 export default {
     props: {
+        type_report: {
+            type: String,
+            default: "",
+        },
         year_old: {
             type: String,
             default: "",
@@ -291,6 +235,21 @@ export default {
                         url += "/" + response.data.id;
                     }
                     window.open(url, type);
+                }
+                vm.loading = false;
+            }).catch((error) => {
+                if (error.response && error.response.status === 403) {
+                    vm.showMessage(
+                        "custom",
+                        "Acceso Denegado",
+                        "danger",
+                        "screen-error",
+                        "No dispone de permisos para acceder a esta funcionalidad."
+                    );
+                } else {
+                    // Puedes agregar un mensaje de error genérico aquí
+                    vm.showMessage("error", "Ocurrió un error", "danger");
+                    console.error(error); // para debuggear
                 }
                 vm.loading = false;
             });

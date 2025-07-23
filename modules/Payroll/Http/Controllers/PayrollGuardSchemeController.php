@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Payroll\Http\Controllers;
 
 use App\Models\DocumentStatus;
+use App\Models\Profile;
 use App\Models\User;
 use App\Notifications\System;
 use App\Notifications\SystemNotification;
@@ -14,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Modules\Payroll\Actions\GetPayrollConfirmedGuardPeriodsAction;
 use Modules\Payroll\Http\Resources\GuardSchemaResource;
+use Modules\Payroll\Models\PayrollEmployment;
 use Modules\Payroll\Models\PayrollGuardScheme;
 use Modules\Payroll\Models\PayrollGuardSchemePeriod;
 use Modules\Payroll\Models\PayrollStaff;
@@ -315,6 +317,7 @@ final class PayrollGuardSchemeController extends Controller
             ? (($group->approver->payrollEmployment?->worksheet_code ?? $group->approver->id_number ?? $group->approver->passport) .
             ' - ' . $group->approver->first_name . ' ' . $group->approver->last_name)
             : '';
+        $profile = Profile::where('user_id', auth()->user()->id)->first();
         $pdf->setHeader('Turnos de Guardias');
         $pdf->setFooter();
         $pdf->setBody('payroll::pdf.payroll-guard-scheme', true, [
@@ -329,6 +332,7 @@ final class PayrollGuardSchemeController extends Controller
             'totalDays' => $totalDays,
             'from_date' => $payrollGuardScheme->from_date,
             'to_date' => $payrollGuardScheme->to_date,
+            'profile_name' => $profile ? $profile?->first_name . ' ' . $profile?->last_name : ''
         ]);
 
         $url = route('payroll.reports.show', [$filename]);
@@ -384,11 +388,12 @@ final class PayrollGuardSchemeController extends Controller
                 200
             );
         } else {
+            $employment = PayrollEmployment::find($profileUser->employee_id);
             $guardSchemes = PayrollGuardScheme::query()
-                ->whereHas('payrollSupervisedGroup', function ($query) use ($profileUser) {
+                ->whereHas('payrollSupervisedGroup', function ($query) use ($employment) {
                     $query
-                        ->where('supervisor_id', $profileUser->employee_id)
-                        ->orWhere('approver_id', $profileUser->employee_id);
+                        ->where('supervisor_id', $employment->payroll_staff_id)
+                        ->orWhere('approver_id', $employment->payroll_staff_id);
                 })
                 ->get();
 

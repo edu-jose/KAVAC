@@ -5,6 +5,8 @@ use Modules\WorkAttendance\Http\Controllers\WorkAttendanceController;
 use Modules\WorkAttendance\Http\Controllers\WorkAttendanceHistoryController;
 use Modules\WorkAttendance\Http\Controllers\WorkAttendanceSettingController;
 use Modules\WorkAttendance\Http\Controllers\WorkAttendanceScheduleController;
+use Modules\WorkAttendance\Http\Controllers\WorkAttendanceCustomScheduleController;
+use Modules\WorkAttendance\Http\Controllers\WorkAttendanceExternalActivityController;
 use Modules\WorkAttendance\Http\Controllers\WorkAttendanceSettingNotificationController;
 
 /*
@@ -93,4 +95,24 @@ Route::group([
         'save-graph/by-department',
         [WorkAttendanceHistoryController::class, 'saveGraphByDepartment']
     )->name('workattendance.history.save-graph-by-department');
+    Route::resource(
+        'external-activities',
+        WorkAttendanceExternalActivityController::class
+    )->names('workattendance.external.activity');
+    Route::get(
+        'external-activities/list/all',
+        [WorkAttendanceExternalActivityController::class, 'getList']
+    )->name('workattendance.external.activity.list');
+    Route::get(
+        'get-staffs',
+        [WorkAttendanceExternalActivityController::class, 'getStaffs']
+    )->name('workattendance.external.activity.staffs');
+    Route::resource(
+        'custom-schedules',
+        WorkAttendanceCustomScheduleController::class
+    )->names('workattendance.custom.schedule');
+    Route::get(
+        'custom-schedules/list/all',
+        [WorkAttendanceCustomScheduleController::class, 'getList']
+    )->name('workattendance.custom.schedule.list');
 });

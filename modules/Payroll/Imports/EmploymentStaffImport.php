@@ -7,30 +7,33 @@
 namespace Modules\Payroll\Imports;
 
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
 use App\Models\Department;
-use Maatwebsite\Excel\Validators\Failure;
-use Maatwebsite\Excel\Concerns\Importable;
-use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
-use Maatwebsite\Excel\Concerns\SkipsErrors;
-use Maatwebsite\Excel\Concerns\SkipsFailures;
-use Maatwebsite\Excel\Concerns\SkipsOnFailure;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Modules\Payroll\Models\Profile;
 use Maatwebsite\Excel\Concerns\ToModel;
+use Modules\Payroll\Models\PayrollStaff;
+use Maatwebsite\Excel\Validators\Failure;
+use PhpOffice\PhpSpreadsheet\Shared\Date;
+use Maatwebsite\Excel\Concerns\Importable;
+use Modules\Accounting\Models\Institution;
+use Maatwebsite\Excel\Concerns\SkipsErrors;
+use Modules\Payroll\Models\PayrollPosition;
+use Modules\Payroll\Models\PayrollStaffType;
+use Maatwebsite\Excel\Concerns\SkipsFailures;
+use Modules\Payroll\Models\PayrollEmployment;
+use Modules\Payroll\Models\PayrollSectorType;
+use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
+use Maatwebsite\Excel\Concerns\SkipsOnFailure;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
-use PhpOffice\PhpSpreadsheet\Shared\Date;
-use Modules\Accounting\Models\Institution;
+use Modules\Payroll\Models\PayrollPaymentType;
+use Modules\Payroll\Models\PayrollPreviousJob;
 use Modules\Payroll\Models\PayrollContractType;
-use Modules\Payroll\Models\PayrollEmployment;
-use Modules\Payroll\Models\PayrollPosition;
 use Modules\Payroll\Models\PayrollCoordination;
 use Modules\Payroll\Models\PayrollPositionType;
-use Modules\Payroll\Models\PayrollStaff;
-use Modules\Payroll\Models\PayrollStaffType;
-use Modules\Payroll\Models\PayrollPreviousJob;
-use Modules\Payroll\Models\PayrollSectorType;
 use Modules\Payroll\Models\PayrollInactivityType;
-use Modules\Payroll\Models\Profile;
+use Modules\Payroll\Models\PayrollSalaryTabulator;
 use Modules\Payroll\Rules\PayrollPositionRestriction;
 
 /**
@@ -151,6 +154,8 @@ class EmploymentStaffImport implements
                         'payroll_staff_type_id' => $row["tipo_de_personal"],
                         'department_id' => $row["departamento"],
                         'payroll_contract_type_id' => $row["tipo_de_contrato"],
+                        'payroll_salary_tabulator_id' => $row["tabulador_salario_basico"],
+                        'payroll_payment_type_id' => $row["tipo_de_nomina"],
                         'worksheet_code' => $row["ficha_expediente"],
                     ]
                 );
@@ -268,7 +273,7 @@ class EmploymentStaffImport implements
             trim($data['fecha_de_ingreso_a_la_institucion']) != ''
         ) {
             if (is_numeric($data['fecha_de_ingreso_a_la_institucion'])) {
-                $data['fecha_de_ingreso_a_la_institucion'] = Date::excelToDateTimeObject($data['fecha_de_ingreso_a_la_institucion']);
+                $data['fecha_de_ingreso_a_la_institucion'] = Date::excelToDateTimeObject($data['fecha_de_ingreso_a_la_institucion'])->format('Y-m-d');
             } elseif (is_string($data['fecha_de_ingreso_a_la_institucion'])) {
                 $data['fecha_de_ingreso_a_la_institucion'] = Carbon::parse($data['fecha_de_ingreso_a_la_institucion'])->format('Y-m-d');
             }
@@ -280,7 +285,7 @@ class EmploymentStaffImport implements
             trim($data['fecha_de_egreso_de_la_institucion']) != ''
         ) {
             if (is_numeric($data['fecha_de_egreso_de_la_institucion'])) {
-                $data['fecha_de_egreso_de_la_institucion'] = Date::excelToDateTimeObject($data['fecha_de_egreso_de_la_institucion']);
+                $data['fecha_de_egreso_de_la_institucion'] = Date::excelToDateTimeObject($data['fecha_de_egreso_de_la_institucion'])->format('Y-m-d');
             } elseif (is_string($data['fecha_de_egreso_de_la_institucion'])) {
                 $data['fecha_de_egreso_de_la_institucion'] = Carbon::parse($data['fecha_de_egreso_de_la_institucion'])->format('Y-m-d');
             }
@@ -298,6 +303,36 @@ class EmploymentStaffImport implements
             if ($modelID) {
                 $data['tipo_de_cargo'] = $modelID->id;
                 $data['tipo_de_cargo_value'] = false;
+            }
+        }
+
+        if (isset($data['tabulador_salario_basico']) && $data['tabulador_salario_basico'] && !is_null($data['tabulador_salario_basico']) && trim($data['tabulador_salario_basico']) != '') {
+            $modelID = false;
+            $data['tabulador_salario_basico_value'] = $data['tabulador_salario_basico'];
+            if (is_int($data['tabulador_salario_basico']) && $data['tabulador_salario_basico'] > 0) {
+                $modelID = PayrollSalaryTabulator::where(['id' => $data['tabulador_salario_basico'],])->first();
+            }
+            if (!$modelID && trim($data['tabulador_salario_basico']) != '') {
+                $modelID = PayrollSalaryTabulator::where(['name' => $data['tabulador_salario_basico'],])->first();
+            }
+            if ($modelID) {
+                $data['tabulador_salario_basico'] = $modelID->id;
+                $data['tabulador_salario_basico_value'] = false;
+            }
+        }
+
+        if (isset($data['tipo_de_nomina']) && $data['tipo_de_nomina'] && !is_null($data['tipo_de_nomina']) && trim($data['tipo_de_nomina']) != '') {
+            $modelID = false;
+            $data['tipo_de_nomina_value'] = $data['tipo_de_nomina'];
+            if (is_int($data['tipo_de_nomina']) && $data['tipo_de_nomina'] > 0) {
+                $modelID = PayrollPaymentType::where(['id' => $data['tipo_de_nomina'],])->first();
+            }
+            if (!$modelID && trim($data['tipo_de_nomina']) != '') {
+                $modelID = PayrollPaymentType::where(['name' => $data['tipo_de_nomina'],])->first();
+            }
+            if ($modelID) {
+                $data['tipo_de_nomina'] = $modelID->id;
+                $data['tipo_de_nomina_value'] = false;
             }
         }
 
@@ -343,7 +378,7 @@ class EmploymentStaffImport implements
                 $data['departamento_value'] = false;
             }
         }
-        if ((isset($data['ficha_expediente']) && is_int($data['ficha_expediente']) && ($data['ficha_expediente'] > 0) && (mb_strlen($data['ficha_expediente']) == 5)) || is_null($data['ficha_expediente'])) {
+        if ((isset($data['ficha_expediente']) && is_int($data['ficha_expediente']) && ($data['ficha_expediente'] > 0) && (mb_strlen($data['ficha_expediente']) >= 1) && (mb_strlen($data['ficha_expediente']) <= 10)) || is_null($data['ficha_expediente'])) {
             if (!is_null($data['ficha_expediente'])) {
                 $results = PayrollEmployment::where('worksheet_code', $data['ficha_expediente'])->first();
                 if (!isset($results)) {
@@ -481,6 +516,8 @@ class EmploymentStaffImport implements
             'tipo_de_inactividad' => ['required_if:esta_activo,FALSE', 'nullable'],
             'correo_institucional' => ['nullable', 'email'],
             'tipo_de_cargo' => ['required'],
+            // 'tabulador_salario_basico' => ['required'],
+            // 'tipo_de_nomina' => ['required'],
             'cargo' => ['required', (new PayrollPositionRestriction())],
             'tipo_de_personal' => ['required'],
             'tipo_de_contrato' => ['required'],
@@ -571,7 +608,7 @@ class EmploymentStaffImport implements
                 'nullable',
                 'numeric',
                 'min:0',
-                'digits:5',
+                'digits_between:1,10',
             ],
             'id' => ['required',],
             'tipo_de_cargo_value' => function ($attribute, $value, $onFailure) {
@@ -586,6 +623,22 @@ class EmploymentStaffImport implements
                 if ($value) {
                     $onFailure(
                         'El nombre del cargo ingresado (' . strip_tags($value) .
+                            ') no coincide con la lista disponible en la base de datos del sistema'
+                    );
+                }
+            },
+            'tabulador_salario_basico_value' => function ($attribute, $value, $onFailure) {
+                if ($value) {
+                    $onFailure(
+                        'El nombre del tabulador de salario ingresado (' . strip_tags($value) .
+                            ') no coincide con la lista disponible en la base de datos del sistema'
+                    );
+                }
+            },
+            'tipo_de_nomina_value' => function ($attribute, $value, $onFailure) {
+                if ($value) {
+                    $onFailure(
+                        'El nombre del tipo de nomina ingresado (' . strip_tags($value) .
                             ') no coincide con la lista disponible en la base de datos del sistema'
                     );
                 }

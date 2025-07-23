@@ -33,7 +33,7 @@
                     <div class="tab-content">
                         <div class="tab-pane active" id="general" role="tabpanel">
                             <div class="row">
-                                <h6 class="col-md-12" align="center"><br>Iformación general</h6>
+                                <h6 class="col-md-12" align="center"><br>Información general</h6>
                                 <div class="col-md-4">
                                     <div class="form-group">
                                         <strong>Código:</strong>

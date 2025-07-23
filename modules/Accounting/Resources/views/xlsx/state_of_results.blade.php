@@ -147,13 +147,13 @@
                                     TOTAL INGRESOS
                                 </td>
                                 <td align="right">
-                                    {{ number_format($records['5.0.0.00.00.00.000']['beginningBalance'], (int) $currency->decimal_places, ',', '.') }}
+                                    {{ str_replace(',', '', number_format($records['5.0.0.00.00.00.000']['beginningBalance'], (int) $currency->decimal_places, '.', '')) }}
                                 </td>
                                 <td align="right">
-                                    {{ number_format($records['5.0.0.00.00.00.000']['balance'], (int) $currency->decimal_places, ',', '.') }}
+                                    {{ str_replace(',', '', number_format($records['5.0.0.00.00.00.000']['balance'], (int) $currency->decimal_places, '.', '')) }}
                                 </td>
                                 <td align="right">
-                                    {{ number_format($records['5.0.0.00.00.00.000']['beginningBalance'] + $records['5.0.0.00.00.00.000']['balance'], (int) $currency->decimal_places, ',', '.') }}
+                                    {{ str_replace(',', '', number_format($records['5.0.0.00.00.00.000']['beginningBalance'] + $records['5.0.0.00.00.00.000']['balance'], (int) $currency->decimal_places, '.', '')) }}
                                 </td>
                             </tr>
                             <br>
@@ -167,13 +167,13 @@
                                 TOTAL INGRESOS
                             </td>
                             <td align="right">
-                                {{ number_format($records['5.0.0.00.00.00.000']['beginningBalance'], (int) $currency->decimal_places, ',', '.') }}
+                                {{ str_replace(',', '', number_format($records['5.0.0.00.00.00.000']['beginningBalance'], (int) $currency->decimal_places, '.', '')) }}
                             </td>
                             <td align="right">
-                                {{ number_format($records['5.0.0.00.00.00.000']['balance'], (int) $currency->decimal_places, ',', '.') }}
+                                {{ str_replace(',', '', number_format($records['5.0.0.00.00.00.000']['balance'], (int) $currency->decimal_places, '.', '')) }}
                             </td>
                             <td align="right">
-                                {{ number_format($records['5.0.0.00.00.00.000']['beginningBalance'] + $records['5.0.0.00.00.00.000']['balance'], (int) $currency->decimal_places, ',', '.') }}
+                                {{ str_replace(',', '', number_format($records['5.0.0.00.00.00.000']['beginningBalance'] + $records['5.0.0.00.00.00.000']['balance'], (int) $currency->decimal_places, '.', '')) }}
                             </td>
                         </tr>
                         <br>
@@ -183,11 +183,11 @@
                     <td>&nbsp;{{ $parent['code'] }}</td>
                     <td>&nbsp;{{ $parent['denomination'] }}</td>
                     <td align="right">
-                        {{ number_format($parent['beginningBalance'], (int) $currency->decimal_places, ',', '.') }}</td>
+                        {{ str_replace(',', '', number_format($parent['beginningBalance'], (int) $currency->decimal_places, '.', '')) }}</td>
                     <td align="right">
-                        {{ number_format($parent['balance'], (int) $currency->decimal_places, ',', '.') }}</td>
+                        {{ str_replace(',', '', number_format($parent['balance'], (int) $currency->decimal_places, '.', '')) }}</td>
                     <td align="right">
-                        {{ number_format($parent['beginningBalance'] + $parent['balance'], (int) $currency->decimal_places, ',', '.') }}
+                        {{ str_replace(',', '', number_format($parent['beginningBalance'] + $parent['balance'], (int) $currency->decimal_places, '.', '')) }}
                     </td>
                 </tr>
                 @if ($parent['code'][0] == 6 && !$next)
@@ -198,13 +198,13 @@
                                 TOTAL GASTOS
                             </td>
                             <td align="right">
-                                {{ number_format($records['6.0.0.00.00.00.000']['beginningBalance'], (int) $currency->decimal_places, ',', '.') }}
+                                {{ str_replace(',', '', number_format($records['6.0.0.00.00.00.000']['beginningBalance'], (int) $currency->decimal_places, '.', '')) }}
                             </td>
                             <td align="right">
-                                {{ number_format($records['6.0.0.00.00.00.000']['balance'], (int) $currency->decimal_places, ',', '.') }}
+                                {{ str_replace(',', '', number_format($records['6.0.0.00.00.00.000']['balance'], (int) $currency->decimal_places, '.', '')) }}
                             </td>
                             <td align="right">
-                                {{ number_format($records['6.0.0.00.00.00.000']['beginningBalance'] + $records['6.0.0.00.00.00.000']['balance'], (int) $currency->decimal_places, ',', '.') }}
+                                {{ str_replace(',', '', number_format($records['6.0.0.00.00.00.000']['beginningBalance'] + $records['6.0.0.00.00.00.000']['balance'], (int) $currency->decimal_places, '.', '')) }}
                             </td>
                         </tr>
                     @endif
@@ -216,7 +216,7 @@
                         <td align="right"></td>
 
                         <td align="right">
-                            {{ number_format($result_of_the_excersice, (int) $currency->decimal_places, ',', '.') }}
+                            {{ str_replace(',', '', number_format($result_of_the_excersice, (int) $currency->decimal_places, '.', '')) }}
                         </td>
                     </tr>
                 @endif

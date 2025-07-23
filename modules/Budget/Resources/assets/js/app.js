@@ -26,6 +26,7 @@ import BudgetCompromiseReport from './components/reports/BudgetCompromiseReportC
 import BudgetAnalyticalMajor from './components/BudgetAnalyticalMajorComponent.vue';
 import BudgetCancelCompromise from './components/BudgetCancelCompromiseComponent.vue'
 import BudgetConsolidated from './components/reports/BudgetConsolidatedComponent.vue';
+import BudgetModifications from './components/reports/BudgetModificationsReportComponent.vue';
 import BudgetButtonPrintWithModal from './components/buttons/BudgetButtonPrintWithModalComponent.vue';
 import BudgetButtonExportWithModal from './components/buttons/BudgetButtonExportWithModalComponent.vue';
 
@@ -221,6 +222,13 @@ Vue.component('budget-cancel-compromise', BudgetCancelCompromise);
  * @author Daniel Contreras <dcontreras@cenditel.gob.ve> | <exodiadaniel@gmail.com>
  */
 Vue.component('budget-consolidated', BudgetConsolidated);
+
+/**
+ * Componente para mostrar el formulario del reporte de modificaciones
+ *
+ * @author Pedro Contreras <pmcontreras@cenditel.gob.ve>
+ */
+Vue.component('budget-modifications', BudgetModifications);
 
 /**
  * Componente para mostrar modal e imprimir reportes de formulación

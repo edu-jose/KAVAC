@@ -40,12 +40,23 @@
 						</div>
 						<div class="col-md-3" id="helpCodeRequest">
 							<div class="form-group">
-								{!! Form::label('request_code', 'Código de las solicitudes de almacén', []) !!}
+								{!! Form::label('request_code', 'Código de las solicitudes por departamento', []) !!}
 								{!! Form::text('requests_code', ($rqCode) ? $rqCode->format_code : old('requests_code'), [
 									'class' => 'form-control input-sm', 'data-toggle' => 'tooltip',
-									'title' => 'Formato para el código de las solicitudes',
+									'title' => 'Formato para el código de las solicitudes por departamento',
 									'placeholder' => 'Ej. XXX-00000000-YYYY',
 									'readonly' => ($rqCode) ? true : false
+								]) !!}
+							</div>
+						</div>
+						<div class="col-md-3" id="helpCodeRequest">
+							<div class="form-group">
+								{!! Form::label('requestStaff_code', 'Código de las solicitudes por usuario', []) !!}
+								{!! Form::text('requestStaffs_code', ($rqStaffCode) ? $rqStaffCode->format_code : old('requestStaffs_code'), [
+									'class' => 'form-control input-sm', 'data-toggle' => 'tooltip',
+									'title' => 'Formato para el código de las solicitudes por usuario',
+									'placeholder' => 'Ej. XXX-00000000-YYYY',
+									'readonly' => ($rqStaffCode) ? true : false
 								]) !!}
 							</div>
 						</div>
@@ -73,7 +84,7 @@
 						</div-->
 					</div>
 				</div>
-				@if (!$pdCode || !$mvCode || !$rqCode || !$rpCode)
+				@if (!$pdCode || !$mvCode || !$rqCode || !$rqStaffCode || !$rpCode)
 					<div class="card-footer text-right">
 						@include('layouts.form-buttons')
 					</div>

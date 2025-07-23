@@ -6,8 +6,8 @@
 		   	<i class="icofont icofont-ui-copy ico-3x"></i>
 			<span>Estatus<br>Documentos</span>
 		</a>
-		<div class="modal fade text-left" tabindex="-1" role="dialog" id="add_doc_status">
-			<div class="modal-dialog vue-crud" role="document">
+		<div class="modal fade text-left" tabindex="-1" id="add_doc_status">
+			<div class="modal-dialog vue-crud">
 				<div class="modal-content">
 					<div class="modal-header">
 						<button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -24,93 +24,128 @@
 							<div class="row">
 								<div class="col-12 col-md-2">
 									<div class="form-group is-required">
-										<label>Color:</label>
-										<input type="color" placeholder="Color" data-toggle="tooltip"
+										<label for="documentStatusColor">Color:</label>
+										<input
+                                            id="documentStatusColor" type="color" placeholder="Color" data-toggle="tooltip"
 											title="Seleccione un color para identificar el estatus de documento (requerido)"
-											class="form-control input-sm" v-model="record.color">
+											class="form-control input-sm" v-model="record.color"
+                                        >
 									</div>
 								</div>
 								<div class="col-12 col-md-4">
 									<div class="form-group is-required">
-										<label>Nombre:</label>
-										<input type="text" placeholder="Nombre" data-toggle="tooltip"
+										<label for="documentStatusName">Nombre:</label>
+										<input
+                                            id="documentStatusName"
+                                            type="text" placeholder="Nombre" data-toggle="tooltip"
 											title="Indique el nombre del estatus de documento (requerido)"
-											class="form-control input-sm" v-model="record.name" v-is-text>
-										<input type="hidden" v-model="record.id">
+											class="form-control input-sm" v-model="record.name" v-is-text
+                                        >
 									</div>
 								</div>
 								<div class="col-12 col-md-6">
 									<div class="form-group is-required">
-										<label>Descripción:</label>
-										<input type="text" placeholder="Descripción" data-toggle="tooltip"
+										<label for="documentStatusDescription">Descripción:</label>
+										<input
+                                            id="documentStatusDescription"
+                                            type="text" placeholder="Descripción" data-toggle="tooltip"
 											title="Indique una descripción breve sobre el estatus de documento (requerido)"
-											class="form-control input-sm" v-model="record.description" v-is-text>
+											class="form-control input-sm" v-model="record.description" v-is-text
+                                        >
 									</div>
 								</div>
 							</div>
 							<div class="row">
 								<div class="col-12">
 									<div class="form-group is-required">
-										<label>Acción a ejecutar:</label>
+										<label for="documentStatusAction">Acción a ejecutar:</label>
 									</div>
 									<div class="form-group">
 										<div class="row">
 											<div class="col-md-4 mb-2">
-												<div class="custom-control custom-switch" data-toggle="tooltip"
-													 title="Indica si el estatus del documento aprueba procesos">
-													<input type="radio" class="custom-control-input"
-															name="action" id="docStatusAP"
-															v-model="record.action" value="AP" disabled>
+												<div
+                                                    class="custom-control custom-switch" data-toggle="tooltip"
+													title="Indica si el estatus del documento aprueba procesos"
+                                                >
+													<input
+                                                        type="radio" class="custom-control-input"
+														name="action" id="docStatusAP"
+														v-model="record.action" value="AP" disabled
+                                                    >
 													<label class="custom-control-label" for="docStatusAP">
 														Aprueba procesos
 													</label>
 												</div>
 											</div>
 											<div class="col-md-4 mb-2">
-												<div class="custom-control custom-switch" data-toggle="tooltip"
-													 title="Indica si el estatus del documento rechaza procesos">
-													<input type="radio" class="custom-control-input"
-															name="action" id="docStatusRE" v-model="record.action" value="RE" disabled>
+												<div
+                                                    class="custom-control custom-switch" data-toggle="tooltip"
+													title="Indica si el estatus del documento rechaza procesos"
+                                                >
+													<input
+                                                        type="radio" class="custom-control-input"
+														name="action" id="docStatusRE" v-model="record.action" value="RE" disabled
+                                                    >
 													<label class="custom-control-label" for="docStatusRE">
 														Rechaza procesos
 													</label>
 												</div>
 											</div>
 											<div class="col-md-4 mb-2">
-												<div class="custom-control custom-switch" data-toggle="tooltip"
-													 title="Indica si el estatus del documento elimina procesos">
-													<input type="radio" class="custom-control-input"
-															name="action" id="docStatusEL" v-model="record.action" value="EL" disabled>
+												<div
+                                                    class="custom-control custom-switch" data-toggle="tooltip"
+													title="Indica si el estatus del documento elimina procesos"
+                                                >
+													<input
+                                                        type="radio" class="custom-control-input"
+														name="action" id="docStatusEL" v-model="record.action"
+                                                        value="EL" disabled
+                                                    >
 													<label class="custom-control-label" for="docStatusEL">
 														Elimina procesos
 													</label>
 												</div>
 											</div>
 											<div class="col-md-4 mb-2">
-												<div class="custom-control custom-switch" data-toggle="tooltip"
-													 title="Indica si el estatus del documento inicia procesos">
-													<input type="radio" class="custom-control-input"
-															name="action" id="docStatusPR" v-model="record.action" value="PR" disabled>
+												<div
+                                                    class="custom-control custom-switch" data-toggle="tooltip"
+													title="Indica si el estatus del documento inicia procesos"
+                                                >
+													<input
+                                                        type="radio" class="custom-control-input"
+														name="action" id="docStatusPR" v-model="record.action"
+                                                        value="PR" disabled
+                                                    >
 													<label class="custom-control-label" for="docStatusPR">
 														Inicia procesos
 													</label>
 												</div>
 											</div>
 											<div class="col-md-4 mb-2">
-												<div class="custom-control custom-switch" data-toggle="tooltip"
-													 title="Indica si el estatus del documento anula procesos">
-													<input type="radio" class="custom-control-input"
-															name="action" id="docStatusAN" v-model="record.action" value="AN" disabled>
+												<div
+                                                    class="custom-control custom-switch" data-toggle="tooltip"
+													title="Indica si el estatus del documento anula procesos"
+                                                >
+													<input
+                                                        type="radio" class="custom-control-input"
+														name="action" id="docStatusAN" v-model="record.action"
+                                                        value="AN" disabled
+                                                    >
 													<label class="custom-control-label" for="docStatusAN">
 														Anula procesos
 													</label>
 												</div>
 											</div>
 											<div class="col-md-4 mb-2">
-												<div class="custom-control custom-switch" data-toggle="tooltip"
-													 title="Indica si el estatus del documento cierra procesos">
-													<input type="radio" class="custom-control-input"
-															name="action" id="docStatusCE" v-model="record.action" value="CE" disabled>
+												<div
+                                                    class="custom-control custom-switch" data-toggle="tooltip"
+													title="Indica si el estatus del documento cierra procesos"
+                                                >
+													<input
+                                                        type="radio" class="custom-control-input"
+														name="action" id="docStatusCE" v-model="record.action"
+                                                        value="CE" disabled
+                                                    >
 													<label class="custom-control-label" for="docStatusCE">
 														Cierra procesos
 													</label>
@@ -123,16 +158,22 @@
 						</div>
 						<div class="modal-footer">
 							<div class="form-group">
-								<button type="button" class="btn btn-default btn-sm btn-round btn-modal-close"
-										@click="clearFilters" data-dismiss="modal">
+								<button
+                                    type="button" class="btn btn-default btn-sm btn-round btn-modal-close"
+									@click="clearFilters" data-dismiss="modal"
+                                >
 									Cerrar
 								</button>
-								<button type="button" class="btn btn-warning btn-sm btn-round btn-modal btn-modal-clear"
-										@click="reset()">
+								<button
+                                    type="button" class="btn btn-warning btn-sm btn-round btn-modal btn-modal-clear"
+									@click="reset()"
+                                >
 									Cancelar
 								</button>
-								<button type="button" @click="createRecord('document-status')"
-										class="btn btn-primary btn-sm btn-round btn-modal-save">
+								<button
+                                    type="button" @click="createRecord('document-status')"
+									class="btn btn-primary btn-sm btn-round btn-modal-save"
+                                >
 									Guardar
 								</button>
 							</div>
@@ -141,8 +182,11 @@
 	                <div class="modal-body modal-table">
 	                	<v-client-table :columns="columns" :data="records" :options="table_options">
 	                		<div slot="color" slot-scope="props" class="text-center">
-								<i class="ion-android-checkbox-blank" :style="'color:' + props.row.color"
-                                   :title="'Código de color: '+props.row.color"></i>
+								<i
+                                    class="ion-android-checkbox-blank"
+                                    :style="'color:' + props.row.color"
+                                    :title="'Código de color: '+props.row.color"
+                                ></i>
 							</div>
 							<div slot="action" slot-scope="props" class="text-left">
 								<span v-if="props.row.action === 'AP'">Aprobación de procesos</span>
@@ -152,9 +196,11 @@
 								<span v-if="props.row.action === 'AN'">Anulación de procesos</span>
 							</div>
 	                		<div slot="id" slot-scope="props" class="text-center">
-	                			<button @click="initUpdate(props.row.id, $event)"
-		                				class="btn btn-warning btn-xs btn-icon btn-action"
-		                				title="Modificar registro" data-toggle="tooltip" type="button" v-has-tooltip>
+	                			<button
+                                    @click="initUpdate(props.row.id, $event)"
+		                			class="btn btn-warning btn-xs btn-icon btn-action"
+		                			title="Modificar registro" data-toggle="tooltip" type="button" v-has-tooltip
+                                >
 		                			<i class="fa fa-edit"></i>
 		                		</button>
 	                		</div>

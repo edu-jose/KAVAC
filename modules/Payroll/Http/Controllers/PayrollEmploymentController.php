@@ -101,7 +101,7 @@ class PayrollEmploymentController extends Controller
                 'nullable',
                 'numeric',
                 'min:0',
-                'digits:5',
+                'digits_between:1,10',
                 'unique:payroll_employments,worksheet_code'
             ],
         ];
@@ -266,6 +266,18 @@ class PayrollEmploymentController extends Controller
             'payroll_contract_type_id' => $request->payroll_contract_type_id,
             'worksheet_code' => (!is_null($request->worksheet_code))
                 ? $request->worksheet_code : null,
+            'workers_union' => !empty($request->workers_union) ? $request->workers_union : false,
+            'savings_fund' => !empty($request->savings_fund) ? $request->savings_fund : false,
+            'payroll_salary_tabulator_id' => $request->payroll_salary_tabulator_id,
+            'payroll_basic_salary' => $request->payroll_basic_salary,
+            'payroll_payment_type_id' => $request->payroll_payment_type_id,
+            'payroll_seniority_id' => $request->payroll_seniority_id,
+            'workers_union' => !empty($request->workers_union) ? $request->workers_union : false,
+            'payroll_basic_salary' => $request->payroll_basic_salary,
+            'savings_fund' => !empty($request->savings_fund) ? $request->savings_fund : false,
+            'payroll_salary_tabulator_id' => $request->payroll_salary_tabulator_id,
+            'payroll_payment_type_id' => $request->payroll_payment_type_id,
+            'payroll_seniority_id' => $request->payroll_seniority_id,
         ]);
 
         /* Crear el registro del cargo del trabajador en la tabla intermedia.
@@ -338,7 +350,10 @@ class PayrollEmploymentController extends Controller
             'payrollCoordination',
             'payrollStaffType',
             'department',
-            'payrollContractType'
+            'payrollContractType',
+            'payrollSeniority',
+            'payrollPaymentType',
+            'payrollSalaryTabulator'
         ])->first();
 
         return response()->json([
@@ -440,7 +455,7 @@ class PayrollEmploymentController extends Controller
                     'nullable',
                     'numeric',
                     'min:0',
-                    'digits:5',
+                    'digits_between:1,10',
                     Rule::unique('payroll_employments')->ignore($id)
                 ];
         }
@@ -555,6 +570,12 @@ class PayrollEmploymentController extends Controller
         $payrollEmployment->department_id = $request->department_id;
         $payrollEmployment->payroll_contract_type_id = $request->payroll_contract_type_id;
         $payrollEmployment->worksheet_code = $request->worksheet_code;
+        $payrollEmployment->workers_union = !empty($request->workers_union) ? $request->workers_union : false;
+        $payrollEmployment->savings_fund = !empty($request->savings_fund) ? $request->savings_fund : false;
+        $payrollEmployment->payroll_salary_tabulator_id = $request->payroll_salary_tabulator_id;
+        $payrollEmployment->payroll_basic_salary = $request->payroll_basic_salary;
+        $payrollEmployment->payroll_payment_type_id = $request->payroll_payment_type_id;
+        $payrollEmployment->payroll_seniority_id = $request->payroll_seniority_id;
 
         /* Actualiza el registro del cargo y el active del trabajador en la
         tabla intermedia. */
@@ -647,7 +668,8 @@ class PayrollEmploymentController extends Controller
         );
 
         request()->session()->flash('message', [
-            'type' => 'other', 'title' => '¡Éxito!',
+            'type' => 'other',
+            'title' => '¡Éxito!',
             'text' => 'Su solicitud esta en proceso, esto puede tardar unos ' .
                 'minutos. Se le notificara al terminar la operación',
             'icon' => 'screen-ok',
@@ -720,6 +742,15 @@ class PayrollEmploymentController extends Controller
                         );
                 },
                 'payrollInactivityType',
+                'payrollSalaryTabulator' => function ($query) {
+                    $query->select('id', 'name');
+                },
+                'payrollPaymentType' => function ($query) {
+                    $query->select('id', 'name', 'payment_periodicity');
+                },
+                'payrollSeniority' => function ($query) {
+                    $query->select('id', 'name');
+                },
                 'payrollPositionType' => function ($query) {
                     $query->select('id', 'name', 'description');
                 },

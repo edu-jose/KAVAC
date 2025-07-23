@@ -7,8 +7,6 @@
     function convertCurrency($conversion_history, $amount, $date, $decimal_places, $separator, $decimal_separator) {
         return number_format(($conversion_history[$date] * $amount), $decimal_places, $decimal_separator, $separator);
     }
-
-    $currencyConverterTotalFormulations = \Modules\Budget\Facades\CurrencyConverter::convert($totalFormulations, $formulations[0]->date, $formulations[0]->currency, $currency);
 @endphp
 <table>
 	<thead>
@@ -60,7 +58,7 @@
         <tr>
             <td width="25%" style="font-weight: bold;">Total Formulado:</td>
             <td width="75%">{{ $currency->symbol }}
-                {{ number_format($currencyConverterTotalFormulations, $currency->decimal_places, ',', '.') }}
+                {{ number_format($totalFormulations, $currency->decimal_places, ',', '.') }}
             </td>
         </tr>
         <tr>
@@ -107,32 +105,32 @@
                     <td width="12%" align="left" style="border: solid 1px #808080;">
                         {{ $accountOpen->budgetAccount->denomination }}</td>
                     <td width="6%" style="border: solid 1px #808080;">
-                        {{ convertCurrency($exchangeRates, $accountOpen->total_year_amount, $formulation->date, $currency->decimal_places, ',', '.') }}
+                        {{ convertCurrency($exchangeRates, $accountOpen->total_year_amount, $formulation->date, $currency->decimal_places, '.', ',') }}
                     </td>
                     <td width="5.95%" style="border: solid 1px #808080;">
-                        {{ convertCurrency($exchangeRates, $accountOpen->jan_amount, $formulation->date, $currency->decimal_places, ',', '.') }}</td>
+                        {{ convertCurrency($exchangeRates, $accountOpen->jan_amount, $formulation->date, $currency->decimal_places, '.', ',') }}</td>
                     <td width="5.95%" style="border: solid 1px #808080;">
-                        {{ convertCurrency($exchangeRates, $accountOpen->feb_amount, $formulation->date, $currency->decimal_places, ',', '.') }}</td>
+                        {{ convertCurrency($exchangeRates, $accountOpen->feb_amount, $formulation->date, $currency->decimal_places, '.', ',') }}</td>
                     <td width="5.95%" style="border: solid 1px #808080;">
-                        {{ convertCurrency($exchangeRates, $accountOpen->mar_amount, $formulation->date, $currency->decimal_places, ',', '.') }}</td>
+                        {{ convertCurrency($exchangeRates, $accountOpen->mar_amount, $formulation->date, $currency->decimal_places, '.', ',') }}</td>
                     <td width="5.95%" style="border: solid 1px #808080;">
-                        {{ convertCurrency($exchangeRates, $accountOpen->apr_amount, $formulation->date, $currency->decimal_places, ',', '.') }}</td>
+                        {{ convertCurrency($exchangeRates, $accountOpen->apr_amount, $formulation->date, $currency->decimal_places, '.', ',') }}</td>
                     <td width="5.95%" style="border: solid 1px #808080;">
-                        {{ convertCurrency($exchangeRates, $accountOpen->may_amount, $formulation->date, $currency->decimal_places, ',', '.') }}</td>
+                        {{ convertCurrency($exchangeRates, $accountOpen->may_amount, $formulation->date, $currency->decimal_places, '.', ',') }}</td>
                     <td width="5.95%" style="border: solid 1px #808080;">
-                        {{ convertCurrency($exchangeRates, $accountOpen->jun_amount, $formulation->date, $currency->decimal_places, ',', '.') }}</td>
+                        {{ convertCurrency($exchangeRates, $accountOpen->jun_amount, $formulation->date, $currency->decimal_places, '.', ',') }}</td>
                     <td width="5.95%" style="border: solid 1px #808080;">
-                        {{ convertCurrency($exchangeRates, $accountOpen->jul_amount, $formulation->date, $currency->decimal_places, ',', '.') }}</td>
+                        {{ convertCurrency($exchangeRates, $accountOpen->jul_amount, $formulation->date, $currency->decimal_places, '.', ',') }}</td>
                     <td width="5.95%" style="border: solid 1px #808080;">
-                        {{ convertCurrency($exchangeRates, $accountOpen->aug_amount, $formulation->date, $currency->decimal_places, ',', '.') }}</td>
+                        {{ convertCurrency($exchangeRates, $accountOpen->aug_amount, $formulation->date, $currency->decimal_places, '.', ',') }}</td>
                     <td width="5.95%" style="border: solid 1px #808080;">
-                        {{ convertCurrency($exchangeRates, $accountOpen->sep_amount, $formulation->date, $currency->decimal_places, ',', '.') }}</td>
+                        {{ convertCurrency($exchangeRates, $accountOpen->sep_amount, $formulation->date, $currency->decimal_places, '.', ',') }}</td>
                     <td width="5.95%" style="border: solid 1px #808080;">
-                        {{ convertCurrency($exchangeRates, $accountOpen->oct_amount, $formulation->date, $currency->decimal_places, ',', '.') }}</td>
+                        {{ convertCurrency($exchangeRates, $accountOpen->oct_amount, $formulation->date, $currency->decimal_places, '.', ',') }}</td>
                     <td width="5.95%" style="border: solid 1px #808080;">
-                        {{ convertCurrency($exchangeRates, $accountOpen->nov_amount, $formulation->date, $currency->decimal_places, ',', '.') }}</td>
+                        {{ convertCurrency($exchangeRates, $accountOpen->nov_amount, $formulation->date, $currency->decimal_places, '.', ',') }}</td>
                     <td width="5.95%" style="border: solid 1px #808080;">
-                        {{ convertCurrency($exchangeRates, $accountOpen->dec_amount, $formulation->date, $currency->decimal_places, ',', '.') }}</td>
+                        {{ convertCurrency($exchangeRates, $accountOpen->dec_amount, $formulation->date, $currency->decimal_places, '.', ',') }}</td>
                 </tr>
             @endforeach
             @foreach ($formulation->accountOpens as $accountOpen)
@@ -145,32 +143,32 @@
                     <th width="22%" style="border: solid 1px #000;" bgcolor="#D3D3D3">Total {{ $currency->symbol }}</th>
                     <td style="border: solid 1px #808080;" bgcolor="#D3D3D3"></td>
                     <td width="6%" style="border: solid 1px #808080;" bgcolor="#D3D3D3">
-                        {{ convertCurrency($exchangeRates, $accountOpen->total_year_amount, $formulation->date, $currency->decimal_places, ',', '.') }}
+                        {{ convertCurrency($exchangeRates, $accountOpen->total_year_amount, $formulation->date, $currency->decimal_places, '.', ',') }}
                     </td>
                     <td width="5.95%" style="border: solid 1px #808080;" bgcolor="#D3D3D3">
-                        {{ convertCurrency($exchangeRates, $accountOpen->jan_amount, $formulation->date, $currency->decimal_places, ',', '.') }}</td>
+                        {{ convertCurrency($exchangeRates, $accountOpen->jan_amount, $formulation->date, $currency->decimal_places, '.', ',') }}</td>
                     <td width="5.95%" style="border: solid 1px #808080;" bgcolor="#D3D3D3">
-                        {{ convertCurrency($exchangeRates, $accountOpen->feb_amount, $formulation->date, $currency->decimal_places, ',', '.') }}</td>
+                        {{ convertCurrency($exchangeRates, $accountOpen->feb_amount, $formulation->date, $currency->decimal_places, '.', ',') }}</td>
                     <td width="5.95%" style="border: solid 1px #808080;" bgcolor="#D3D3D3">
-                        {{ convertCurrency($exchangeRates, $accountOpen->mar_amount, $formulation->date, $currency->decimal_places, ',', '.') }}</td>
+                        {{ convertCurrency($exchangeRates, $accountOpen->mar_amount, $formulation->date, $currency->decimal_places, '.', ',') }}</td>
                     <td width="5.95%" style="border: solid 1px #808080;" bgcolor="#D3D3D3">
-                        {{ convertCurrency($exchangeRates, $accountOpen->apr_amount, $formulation->date, $currency->decimal_places, ',', '.') }}</td>
+                        {{ convertCurrency($exchangeRates, $accountOpen->apr_amount, $formulation->date, $currency->decimal_places, '.', ',') }}</td>
                     <td width="5.95%" style="border: solid 1px #808080;" bgcolor="#D3D3D3">
-                        {{ convertCurrency($exchangeRates, $accountOpen->may_amount, $formulation->date, $currency->decimal_places, ',', '.') }}</td>
+                        {{ convertCurrency($exchangeRates, $accountOpen->may_amount, $formulation->date, $currency->decimal_places, '.', ',') }}</td>
                     <td width="5.95%" style="border: solid 1px #808080;" bgcolor="#D3D3D3">
-                        {{ convertCurrency($exchangeRates, $accountOpen->jun_amount, $formulation->date, $currency->decimal_places, ',', '.') }}</td>
+                        {{ convertCurrency($exchangeRates, $accountOpen->jun_amount, $formulation->date, $currency->decimal_places, '.', ',') }}</td>
                     <td width="5.95%" style="border: solid 1px #808080;" bgcolor="#D3D3D3">
-                        {{ convertCurrency($exchangeRates, $accountOpen->jul_amount, $formulation->date, $currency->decimal_places, ',', '.') }}</td>
+                        {{ convertCurrency($exchangeRates, $accountOpen->jul_amount, $formulation->date, $currency->decimal_places, '.', ',') }}</td>
                     <td width="5.95%" style="border: solid 1px #808080;" bgcolor="#D3D3D3">
-                        {{ convertCurrency($exchangeRates, $accountOpen->aug_amount, $formulation->date, $currency->decimal_places, ',', '.') }}</td>
+                        {{ convertCurrency($exchangeRates, $accountOpen->aug_amount, $formulation->date, $currency->decimal_places, '.', ',') }}</td>
                     <td width="5.95%" style="border: solid 1px #808080;" bgcolor="#D3D3D3">
-                        {{ convertCurrency($exchangeRates, $accountOpen->sep_amount, $formulation->date, $currency->decimal_places, ',', '.') }}</td>
+                        {{ convertCurrency($exchangeRates, $accountOpen->sep_amount, $formulation->date, $currency->decimal_places, '.', ',') }}</td>
                     <td width="5.95%" style="border: solid 1px #808080;" bgcolor="#D3D3D3">
-                        {{ convertCurrency($exchangeRates, $accountOpen->oct_amount, $formulation->date, $currency->decimal_places, ',', '.') }}</td>
+                        {{ convertCurrency($exchangeRates, $accountOpen->oct_amount, $formulation->date, $currency->decimal_places, '.', ',') }}</td>
                     <td width="5.95%" style="border: solid 1px #808080;" bgcolor="#D3D3D3">
-                        {{ convertCurrency($exchangeRates, $accountOpen->nov_amount, $formulation->date, $currency->decimal_places, ',', '.') }}</td>
+                        {{ convertCurrency($exchangeRates, $accountOpen->nov_amount, $formulation->date, $currency->decimal_places, '.', ',') }}</td>
                     <td width="5.95%" style="border: solid 1px #808080;" bgcolor="#D3D3D3">
-                        {{ convertCurrency($exchangeRates, $accountOpen->dec_amount, $formulation->date, $currency->decimal_places, ',', '.') }}</td>
+                        {{ convertCurrency($exchangeRates, $accountOpen->dec_amount, $formulation->date, $currency->decimal_places, '.', ',') }}</td>
                 </tr>
                 @endif
             @endforeach

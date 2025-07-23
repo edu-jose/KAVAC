@@ -13,6 +13,7 @@ use Illuminate\Validation\Rule;
 use Modules\ProjectTracking\Models\ProjectTrackingProject;
 use Modules\ProjectTracking\Models\ProjectTrackingSubProject;
 use Nwidart\Modules\Facades\Module;
+use App\Models\Department;
 
 /**
  * @class ProjectTrackingSubProject
@@ -67,6 +68,7 @@ class ProjectTrackingSubProjectController extends Controller
             'product_types'      => ['required', 'array', 'min:1'],
             'start_date'         => ['required'],
             'end_date'           => ['required'],
+            'dependency_id'      => ['required'],
             'financement_amount' => ['required', 'max:500'],
             'currency_id'        => ['required'],
         ];
@@ -84,6 +86,7 @@ class ProjectTrackingSubProjectController extends Controller
             'start_date.before_or_equal'  => 'La fecha de inicio no puede ser posterior a la fecha Fin.',
             'end_date.required'           => 'El campo Fecha Fin es obligatorio.',
             'end_date.after_or_equal'     => 'La fecha Fin no puede ser anterior a la fecha de inicio.',
+            'dependency_id.required'      => 'El campo dependencia es obligatorio.',
             'currency_id.required'        => 'El campo Moneda es obligatorio.',
             'financement_amount.required' => 'El campo Monto de Financiamiento es obligatorio.',
             'product_types.required'      => 'El campo Tipos de producto es obligatorio.',
@@ -134,7 +137,8 @@ class ProjectTrackingSubProjectController extends Controller
                 // 'product_type_id' => $subproject->project->type_product_id,
                 'responsable_id' => $subproject->responsable,
                 'start_date' => $subproject->start_date,
-                'end_date' => $subproject->end_date
+                'end_date' => $subproject->end_date,
+                'dependency_id' => $subproject->dependency
             ]);
         }
         return response()->json($subprojects);
@@ -213,6 +217,7 @@ class ProjectTrackingSubProjectController extends Controller
             'responsable_id' => $request->responsable_id,
             'start_date' => $request->start_date,
             'end_date' => $request->end_date,
+            'dependency_id' => $request->dependency_id,
             'financement_amount' => $request->financement_amount,
             'currency_id' => $request->currency_id
         ]);
@@ -298,6 +303,7 @@ class ProjectTrackingSubProjectController extends Controller
         $projecttrackingSubProject->responsable_id  = $request->responsable_id;
         $projecttrackingSubProject->start_date  = $request->start_date;
         $projecttrackingSubProject->end_date  = $request->end_date;
+        $projecttrackingSubProject->dependency_id = $request->dependency_id;
         $projecttrackingSubProject->financement_amount  = $request->financement_amount;
         $projecttrackingSubProject->currency_id = $request->currency_id;
         foreach ($request->product_types as $product_type) {
@@ -352,10 +358,17 @@ class ProjectTrackingSubProjectController extends Controller
                 'text' => $productType->name
             ]);
         }
+        //consulta dependencia
+        if ($subProject->dependency_id) {
+            $departament = Department::find($subProject->dependency_id);
+        } else {
+            $departament = null;
+        }
         return response()->json([
             'result' => true,
             'records' => $subProject,
             'selected_product_types' => $selectedProductTypes,
+            'department' => $departament,
         ], 200);
     }
 }

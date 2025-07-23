@@ -11,7 +11,7 @@
                         </div>
                         <strong>Cuidado!</strong> Debe verificar los siguientes errores antes de continuar:
                         <button type="button" class="close" data-dismiss="alert" aria-label="Close"
-                                @click.prevent="errors = []">
+                            @click.prevent="errors = []">
                             <span aria-hidden="true">
                                 <i class="now-ui-icons ui-1_simple-remove"></i>
                             </span>
@@ -35,8 +35,7 @@
                     <div class="col-md-4">
                         <div class="form-group is-required">
                             <label>Código del grupo de supervisados:</label>
-                            <select2 :options="payroll_supervised_groups"
-                                @input="getDatasupervisedGroup()"
+                            <select2 :options="payroll_supervised_groups" @input="getDatasupervisedGroup()"
                                 :disabled="(record.confirmed_periods && record.confirmed_periods.length > 0) ? true : false"
                                 v-model="record.payroll_supervised_group_id"></select2>
                         </div>
@@ -46,23 +45,21 @@
                     <div class="col-md-4">
                         <div class="form-group is-required">
                             <label>Desde:</label>
-                            <input type="date" id="from_date" placeholder="Desde"
-                                    data-toggle="tooltip" title="Indique la fecha inicial del período a planificar"
-                                    :min="minFromDateScheme"
-                                    :max="(record.to_date == '') ? '' : record.to_date"
-                                    class="form-control input-sm no-restrict" v-model="record.from_date">
+                            <input type="date" id="from_date" placeholder="Desde" data-toggle="tooltip"
+                                title="Indique la fecha inicial del período a planificar" :min="minFromDateScheme"
+                                :max="(record.to_date == '') ? '' : record.to_date"
+                                class="form-control input-sm no-restrict" v-model="record.from_date">
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="form-group is-required">
                             <label>Hasta:</label>
-                            <input type="date" id="to_date" placeholder="Hasta"
-                                    data-toggle="tooltip" title="Indique la fecha final período a planificar"
-                                    @input="generateData"
-                                    :min="record.from_date"
-                                    :max="add_period(add_period(record.from_date, 1, 'years', 'YYYY-MM-DD'), -1, 'days', 'YYYY-MM-DD')"
-                                    :disabled="(record.from_date == '')"
-                                    class="form-control input-sm no-restrict" v-model="record.to_date">
+                            <input type="date" id="to_date" placeholder="Hasta" data-toggle="tooltip"
+                                title="Indique la fecha final período a planificar" @input="generateData"
+                                :min="record.from_date"
+                                :max="add_period(add_period(record.from_date, 1, 'years', 'YYYY-MM-DD'), -1, 'days', 'YYYY-MM-DD')"
+                                :disabled="(record.from_date == '')" class="form-control input-sm no-restrict"
+                                v-model="record.to_date">
                         </div>
                     </div>
                     <!-- ./período a planificar -->
@@ -92,7 +89,8 @@
                 <!-- Tabla para la planificación de esquemas de guardias -->
                 <div style="border-top: 1px solid #eeeeee !important;"
                     v-if="'' !== record.from_date && '' !== record.to_date">
-                    <h6 class="text-center" style="text-transform: uppercase; color: #0073b7; padding-top: 24px;">Registros</h6>
+                    <h6 class="text-center" style="text-transform: uppercase; color: #0073b7; padding-top: 24px;">
+                        Registros</h6>
                     <div class="row col-md-12 justify-content-between d-flex">
                         <div class="form-group form-inline">
                             <div class="VueTables__search-field">
@@ -111,39 +109,38 @@
                         <div class="form-group">
                             <button @click="resetAll($event)"
                                 :disabled="selected.length == 0 && totalDays.every(item => item.view === false)"
-                                class="btn btn-default btn-sm"
-                                data-toggle="tooltip" title="Limpiar parámetros seleccionados de hoja de tiempo" type="button">
+                                class="btn btn-default btn-sm" data-toggle="tooltip"
+                                title="Limpiar parámetros seleccionados de hoja de tiempo" type="button">
                                 <i class="fa fa-eraser"></i>
                                 <span>Limpiar parámetros</span>
                             </button>
                             <button @click="showModal('payroll-parameter-guard-scheme', $event)"
                                 :disabled="selected.length == 0 || totalDays.every(item => item.view === false)"
-                                class="btn btn-primary btn-sm"
-                                data-toggle="tooltip" title="Seleccionar parámetros de hoja de tiempo" type="button">
+                                class="btn btn-primary btn-sm" data-toggle="tooltip"
+                                title="Seleccionar parámetros de hoja de tiempo" type="button">
                                 <i class="icofont icofont-abacus-alt"></i>
                                 <span>Seleccionar parámetros</span>
                             </button>
                         </div>
                     </div>
-                    <div style="overflow-y: auto; overflow-x: auto; max-height: 768px;">
-                        <table class="table table-hover table-striped table-bordered table-responsive" style="display: table; height: 100%;">
+                    <div style="overflow-y: auto; overflow-x: auto; max-height: 768px;" v-if="showTable">
+                        <table class="table table-hover table-striped table-bordered table-responsive"
+                            style="display: table; height: 100%;">
                             <thead style="top: -2px">
                                 <tr>
                                     <th width="35px" class="text-center diagonal-checkbox" rowspan="3">
                                         <div class="checkbox-container">
                                             <!-- Checkbox para las filas -->
                                             <label class="row-checkbox">
-                                                <input type="checkbox" class="cursor-pointer" @click="selectRows()" v-model="selectAllRows"
-                                                    v-has-tooltip
-                                                    data-toggle="tooltip"
+                                                <input type="checkbox" class="cursor-pointer" @click="selectRows()"
+                                                    v-model="selectAllRows" v-has-tooltip data-toggle="tooltip"
                                                     title="Seleccionar todos los trabajadores">
                                             </label>
                                             <!-- Checkbox para las columnas -->
                                             <label class="column-checkbox">
-                                                <input type="checkbox" class="cursor-pointer" @change="selectColumns(selectAllColumns)"
-                                                    v-has-tooltip
-                                                    data-toggle="tooltip"
-                                                    title="Seleccionar todos los días">
+                                                <input type="checkbox" class="cursor-pointer"
+                                                    @change="selectColumns(selectAllColumns)" v-has-tooltip
+                                                    data-toggle="tooltip" title="Seleccionar todos los días">
                                             </label>
                                         </div>
                                     </th>
@@ -158,8 +155,7 @@
                                 </tr>
                                 <tr>
                                     <th v-for="(field, index) in totalDays" :key="index"
-                                        class="text-capitalize cursor-pointer"
-                                        :style="(field.view)
+                                        class="text-capitalize cursor-pointer" :style="(field.view)
                                             ? 'min-width: 50px; background-color: white;'
                                             : 'min-width: 50px; background-color: darkgray;'"
                                         @click="getConfirmedDays(field) ? 'javascript:void(0)' : setEditColumns(index)">
@@ -168,8 +164,7 @@
                                 </tr>
                                 <tr>
                                     <th v-for="(field, index) in totalDays" :key="index"
-                                        class="text-capitalize cursor-pointer"
-                                        :style="(field.view)
+                                        class="text-capitalize cursor-pointer" :style="(field.view)
                                             ? 'min-width: 50px; background-color: white;'
                                             : (field.style)
                                                 ? 'min-width: 50px; background-color: darkgray;'
@@ -183,29 +178,30 @@
                                 <tr v-for="staff in visibleRows" :key="staff.id">
                                     <td class="text-center">
                                         <label class="form-checkbox">
-                                            <input type="checkbox"
-                                                class="cursor-pointer"
-                                                :value="staff.id"
-                                                :id="'checkbox_' + staff.id"
-                                                v-model="selected">
+                                            <input type="checkbox" class="cursor-pointer" :value="staff.id"
+                                                :id="'checkbox_' + staff.id" v-model="selected">
                                         </label>
                                     </td>
                                     <td>{{ staff.index }}</td>
                                     <td>{{ staff.worksheet_code }}</td>
                                     <td>{{ staff.name }}</td>
-                                    <td v-for="(field, fIndex) in totalDays" :key="fIndex"
-                                        class="td-with-border"
+                                    <td v-for="(field, fIndex) in totalDays" :key="fIndex" class="td-with-border"
                                         :style="field.view ? 'cursor: auto;' : 'cursor: not-allowed;'">
                                         <div class="custom-multiselect" style="display: grid;"
                                             v-if="!field.view &&
                                                 record.data_source[staff.id + '-' + field['month'] + '-' + field['day']] &&
                                                 record.data_source[staff.id + '-' + field['month'] + '-' + field['day']].length > 0">
-                                            <div class="btn-group" style="background-color: white; color: darkgray; white-space: nowrap;">
-                                                <button id="custom-multiselect_button" type="button" class="btn btn-secondary dropdown-toggle text-left" data-toggle="dropdown" data-display="static" aria-expanded="false"
-                                                        style="background-color: white; color: darkgray;">
-                                                    <div class="multiselect__tags" style="display: flex; flex-wrap: wrap;">
+                                            <div class="btn-group"
+                                                style="background-color: white; color: darkgray; white-space: nowrap;">
+                                                <button id="custom-multiselect_button" type="button"
+                                                    class="btn btn-secondary dropdown-toggle text-left"
+                                                    data-toggle="dropdown" data-display="static" aria-expanded="false"
+                                                    style="background-color: white; color: darkgray;">
+                                                    <div class="multiselect__tags"
+                                                        style="display: flex; flex-wrap: wrap;">
                                                         <div class="multiselect__tags-wrap" style="inline-grid"
-                                                            v-for="(selection, index) in record.data_source[staff.id + '-' + field['month'] + '-' + field['day']]" :key="index">
+                                                            v-for="(selection, index) in record.data_source[staff.id + '-' + field['month'] + '-' + field['day']]"
+                                                            :key="index">
                                                             <span class="multiselect__tag" :style="multiselectTag">
                                                                 {{ selection.acronym }}
                                                                 <span class="badge badge-light" :style="'left: 1rem;'"
@@ -218,9 +214,7 @@
                                                 </button>
                                             </div>
                                         </div>
-                                        <v-custom-multiselect
-                                            v-else-if="field.view"
-                                            track_by="text"
+                                        <v-custom-multiselect v-else-if="field.view" track_by="text"
                                             :options="payroll_time_parameters"
                                             v-model="record.data_source[staff.id + '-' + field['month'] + '-' + field['day']]">
                                             <template v-slot:customOptionLabel="{ option }">
@@ -235,29 +229,35 @@
                     <div class="VuePagination-2 row col-md-12 " v-if="lastPage > 1">
                         <nav class="text-center">
                             <ul class="pagination VuePagination__pagination" style="">
-                                <li class="VuePagination__pagination-item page-item  VuePagination__pagination-item-prev-chunk" v-if="page != 1">
+                                <li class="VuePagination__pagination-item page-item  VuePagination__pagination-item-prev-chunk"
+                                    v-if="page != 1">
                                     <a class="page-link" @click="changePage(1)">PRIMERO</a>
                                 </li>
-                                <li class="VuePagination__pagination-item page-item  VuePagination__pagination-item-prev-chunk disabled">
+                                <li
+                                    class="VuePagination__pagination-item page-item  VuePagination__pagination-item-prev-chunk disabled">
                                     <a class="page-link">&lt;&lt;</a>
                                 </li>
-                                <li class="VuePagination__pagination-item page-item  VuePagination__pagination-item-prev-page" v-if="page > 1">
+                                <li class="VuePagination__pagination-item page-item  VuePagination__pagination-item-prev-page"
+                                    v-if="page > 1">
                                     <a class="page-link" @click="changePage(page - 1)">&lt;</a>
                                 </li>
                                 <li :class="(page == number)
                                     ? 'VuePagination__pagination-item page-item active'
-                                    : 'VuePagination__pagination-item page-item'"
-                                    :key="index"
+                                    : 'VuePagination__pagination-item page-item'" :key="index"
                                     v-for="(number, index) in filteredPageValues">
-                                    <a class="page-link active" role="button" @click="changePage(number)">{{number}}</a>
+                                    <a class="page-link active" role="button" @click="changePage(number)">{{ number
+                                        }}</a>
                                 </li>
-                                <li class="VuePagination__pagination-item page-item  VuePagination__pagination-item-next-page" v-if="page < lastPage">
+                                <li class="VuePagination__pagination-item page-item  VuePagination__pagination-item-next-page"
+                                    v-if="page < lastPage">
                                     <a class="page-link" @click="changePage(page + 1)">&gt;</a>
                                 </li>
-                                <li class="VuePagination__pagination-item page-item  VuePagination__pagination-item-next-chunk disabled">
+                                <li
+                                    class="VuePagination__pagination-item page-item  VuePagination__pagination-item-next-chunk disabled">
                                     <a class="page-link">&gt;&gt;</a>
                                 </li>
-                                <li class="VuePagination__pagination-item page-item  VuePagination__pagination-item-prev-chunk" v-if="lastPage != page">
+                                <li class="VuePagination__pagination-item page-item  VuePagination__pagination-item-prev-chunk"
+                                    v-if="lastPage != page">
                                     <a class="page-link" @click="changePage(lastPage)">ÚLTIMO</a>
                                 </li>
                             </ul>
@@ -271,27 +271,15 @@
 
             <!-- card-footer -->
             <div class="card-footer text-right" id="helpParamButtons">
-                <button
-                    class="btn btn-default btn-icon btn-round"
-                    data-toggle="tooltip"
-                    type="button"
-                    title="Borrar datos del formulario"
-                    @click="reset()">
+                <button class="btn btn-default btn-icon btn-round" data-toggle="tooltip" type="button"
+                    title="Borrar datos del formulario" @click="reset()">
                     <i class="fa fa-eraser"></i>
                 </button>
-                <button
-                    type="button"
-                    class="btn btn-warning btn-icon btn-round"
-                    data-toggle="tooltip"
-                    title="Cancelar y regresar"
-                    @click="redirect_back(route_list)">
+                <button type="button" class="btn btn-warning btn-icon btn-round" data-toggle="tooltip"
+                    title="Cancelar y regresar" @click="redirect_back(route_list)">
                     <i class="fa fa-ban"></i>
                 </button>
-                <button
-                    type="button"
-                    @click="createScheme()"
-                    data-toggle="tooltip"
-                    title="Guardar registro"
+                <button type="button" @click="createScheme()" data-toggle="tooltip" title="Guardar registro"
                     class="btn btn-success btn-icon btn-round">
                     <i class="fa fa-save"></i>
                 </button>
@@ -309,26 +297,24 @@
                             <h6>Parámetros para el esquema de guardias</h6>
                         </div>
                         <div class="modal-body">
-                            <v-custom-multiselect
-                                track_by="text"
-                                :options="payroll_time_parameters"
+                            <v-custom-multiselect track_by="text" :options="payroll_time_parameters"
                                 v-model="recordAllSelected">
                                 <template v-slot:customOptionLabel="{ option }">
                                     <span>{{ option.text }}</span>
                                 </template>
                             </v-custom-multiselect>
-                        <hr>
-                        <strong>Nota: </strong>
-                        Estos parámetros se aplicaran en todos los trabajadores y días seleccionados.
+                            <hr>
+                            <strong>Nota: </strong>
+                            Estos parámetros se aplicaran en todos los trabajadores y días seleccionados.
                         </div>
                         <div class="modal-footer">
                             <div class="form-group">
                                 <button type="button" class="btn btn-default btn-sm btn-round btn-modal-close"
-                                        data-dismiss="modal">
+                                    data-dismiss="modal">
                                     Cerrar
                                 </button>
                                 <button type="button" @click="saveRecord('payroll-parameter-guard-scheme', $event)"
-                                        class="btn btn-primary btn-sm btn-round btn-modal-save">
+                                    class="btn btn-primary btn-sm btn-round btn-modal-save">
                                     Guardar
                                 </button>
                             </div>
@@ -341,384 +327,404 @@
 </template>
 
 <script>
-    import moment from 'moment';
-    import 'moment/locale/es';
-    export default {
-        props: {
-            id: {
-                type: Number,
-                required: false,
-                default: null
-            },
+import moment from 'moment';
+import 'moment/locale/es';
+export default {
+    props: {
+        id: {
+            type: Number,
+            required: false,
+            default: null
         },
-        data() {
-            return {
-                record: {
-					id:                          '',
-                    institution_id:              '',
-                    from_date:                   '',
-                    to_date:                     '',
-                    payroll_supervised_group_id: '',
-                    payroll_supervised_group:    null,
-                    data_source:                 {},
-				},
-                payroll_supervised_groups: [],
-                institutions: [],
-				errors:  [],
-                payroll_time_parameters: [],
-                supervised_groups: {},
-                months: [],
-                editColumns: {},
-                daysPerMonth: [],
-                totalDays: [],
-                pageValues: [1,2,3,4,5,6,7,8,9,10],
-                lastPage: '',
-                search: '',
-                page: 1,
-                perPage: 5,
-                perPageValues: [
-                    {
-                        'id': 5,
-                        'text': '5'
-                    },
-                    {
-                        'id': 10,
-                        'text': '10'
-                    },
-                    {
-                        'id': 25,
-                        'text': '25'
-                    },
-                    {
-                        'id': 50,
-                        'text': '50'
-                    }
-                ],
-                multiselectTag: "white-space: nowrap; overflow: hidden; text-overflow: ellipsis;",
-                selected: [],
-                recordAllSelected: [],
-                selectAllRows: false,
-                selectAllColumns: false,
-            }
-        },
-        methods: {
-            /**
-			 * Método que borra todos los datos del formulario
-			 *
-			 * @author  Henry Paredes <hparedes@cenditel.gob.ve>
-			 */
-			reset() {
-				const vm = this;
-				vm.errors = [];
-				vm.record = {
-					id:                          '',
-                    institution_id:              '',
-                    from_date:                   '',
-                    to_date:                     '',
-                    payroll_supervised_group_id: '',
-                    payroll_supervised_group:    null,
-                    data_source:                 {},
-				};
-			},
-            resetAll(event) {
-                const vm = this;
-                event.preventDefault();
-                vm.loading = true;
-                const selectedDays = vm.totalDays.filter(item => item.view === true);
-
-                if (vm.selected.length > 0 && selectedDays.length > 0) {
-                    vm.selected.forEach(staffId => {
-                        selectedDays.forEach(item => {
-                            vm.record.data_source[staffId + '-' + item['month'] + '-' + item['day']] = [];
-                        });
-                    });
-                } else if (vm.selected.length > 0 && selectedDays.length == 0) {
-                    vm.selected.forEach(staffId => {
-                        vm.totalDays.filter(item => !vm.getConfirmedDays(item)).forEach(item => {
-                            vm.record.data_source[staffId + '-' + item['month'] + '-' + item['day']] = [];
-                        });
-                    });
-                } else if (vm.selected.length == 0 && selectedDays.length > 0) {
-                    selectedDays.forEach(item => {
-                        vm.visibleRows.forEach(staff => {
-                            vm.record.data_source[staff.id + '-' + item['month'] + '-' + item['day']] = [];
-                        });
-                    });
+    },
+    data() {
+        return {
+            record: {
+                id: '',
+                institution_id: '',
+                from_date: '',
+                to_date: '',
+                payroll_supervised_group_id: '',
+                payroll_supervised_group: null,
+                data_source: {},
+            },
+            payroll_supervised_groups: [],
+            institutions: [],
+            errors: [],
+            payroll_time_parameters: [],
+            supervised_groups: {},
+            months: [],
+            editColumns: {},
+            daysPerMonth: [],
+            totalDays: [],
+            pageValues: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+            lastPage: '',
+            search: '',
+            page: 1,
+            perPage: 5,
+            showTable:false,
+            perPageValues: [
+                {
+                    'id': 5,
+                    'text': '5'
+                },
+                {
+                    'id': 10,
+                    'text': '10'
+                },
+                {
+                    'id': 25,
+                    'text': '25'
+                },
+                {
+                    'id': 50,
+                    'text': '50'
                 }
-                vm.loading = false;
-            },
-            showModal(modal_id, event) {
-                const vm = this;
-                event.preventDefault();
-                vm.loading = true;
-                if (modal_id) {
-                    $(`#${modal_id}`).modal('show');
-                }
-                vm.loading = false;
-            },
-            saveRecord(modal_id, event) {
-                const vm = this;
-                event.preventDefault();
-                vm.loading = true;
-                vm.selected.forEach(staffId => {
-                    vm.totalDays.filter(item => item.view === true).forEach(item => {
-                        const key = staffId + '-' + item['month'] + '-' + item['day'];
-                        if (!vm.record.data_source[key]) {
-                            vm.record.data_source[key] = [...vm.recordAllSelected];
-                        } else {
-                            vm.recordAllSelected.forEach(newItem => {
-                                const existingItem = vm.record.data_source[key].find(existingItem => existingItem.id === newItem.id);
-                                if (existingItem) {
-                                    existingItem.count += newItem.count;
-                                } else {
-                                    vm.record.data_source[key].push(newItem);
-                                }
-                            });
-                        }
-                    });
-                });
-                if (modal_id) {
-                    vm.recordAllSelected = [];
-                    $(`#${modal_id}`).modal('hide');
-                }
-                vm.loading = false;
-            },
-            async getDatasupervisedGroup() {
-                const vm = this;
-                if ('' !== vm.record.payroll_supervised_group_id) {
-                    vm.record.payroll_supervised_group = vm.payroll_supervised_groups.find(function ($group) {
-                        return vm.record.payroll_supervised_group_id == $group['id'];
-                    });
-                } else {
-                    vm.record.payroll_supervised_group = null;
-                }
-                await vm.generateData();
-            },
-            async generateData() {
-                const vm = this;
-                vm.months = [];
-                vm.daysPerMonth = [];
-                vm.totalDays = [];
-
-                if (
-                    '' === vm.record.from_date &&
-                    '' === vm.record.to_date &&
-                    vm.record.payroll_supervised_group
-                ) {
-                    return false;
-                };
-
-                vm.loading = true;
-                let start_date = moment(vm.record.from_date);
-                let end_date = moment(vm.record.to_date);
-
-                while (start_date.isBefore(end_date) || start_date.isSame(end_date)) {
-                    let str_date = start_date.format("MMMM").charAt(0).toUpperCase() + start_date.format("MMMM").slice(1);
-                    if (!vm.months.includes(str_date)) {
-                        vm.months.push(str_date);
-                        vm.daysPerMonth[str_date] = [];
-                    }
-                    vm.daysPerMonth[str_date].push(start_date.format("D"));
-                    const inicioMes = start_date.clone().startOf('month');
-                    const numeroSemanaMes = Math.ceil((start_date.date() + inicioMes.day()) / 7);
-                    vm.totalDays.push({
-                        'month': str_date,
-                        'day': start_date.format("D"),
-                        'style': numeroSemanaMes % 2 === 0,
-                        'day_code': start_date.format("dd"),
-                        'day_name': start_date.format("dddd"),
-                        'view': false
-                    });
-                    start_date.add(1, 'day');
-                }
-                if (vm.record.payroll_supervised_group && vm.record.payroll_supervised_group.payroll_staffs) {
-                    vm.page = 1;
-                    vm.lastPage = Math.ceil(vm.record.payroll_supervised_group.payroll_staffs.length / vm.perPage);
-                }
-                vm.loading = false;
-            },
-            /**
-             * Obtiene los datos de los trabajadores registrados agrupados por departamento
-             *
-             * @author Daniel Contreras <dcontreras@cenditel.gob.ve>
-             *
-             */
-            async getPayrollTimeParameters() {
-                const vm = this;
-                vm.payroll_time_parameters = [];
-                await axios.get(`${window.app_url}/payroll/get-time-parameters?group=false`).then(response => {
-                    vm.payroll_time_parameters = Object.values(response.data);
-                });
-            },
-            changePage(page) {
-                const vm = this;
-                vm.page = page;
-                var pag = 0;
-                while(1) {
-                    if (pag + 5 >= vm.page) {
-                        pag += 1;
-                        break;
-                    } else {
-                        pag += 5;
-                    }
-                }
-                vm.pageValues = [];
-                for (var i = 0; i < 5; i++) {
-                    vm.pageValues.push(pag + i);
-                }
-            },
-            setEditColumns(index) {
-                const vm = this;
-                vm.totalDays[index].view = !vm.totalDays[index].view;
-            },
-            selectColumns(value) {
-                const vm = this;
-
-                vm.selectAllColumns = !value;
-
-                vm.totalDays.forEach((staff, index) => {
-                    setTimeout(() => {
-                        vm.totalDays[index].view = vm.selectAllColumns;
-                        vm.$forceUpdate();
-                    }, 20);
-                });
-            },
-            /**
-             * Método que carga el formulario con los datos a modificar
-             *
-             * @author  Henry Paredes <hparedes@cenditel.gob.ve>
-             *
-             * @param  {integer} id Identificador del registro a ser modificado
-             */
-            async loadForm(id) {
-                let vm = this;
-                vm.errors = [];
-                vm.getPayrollSupervisedGroups(id, 'scheme');
-                let recordEdit = await axios.get(`${window.app_url}/payroll/guard-schemes/show/${id}`).then(response => {
-                    return response.data.record;
-                });
-
-                vm.record = recordEdit;
-                await vm.getDatasupervisedGroup();
-            },
-            createScheme() {
-                const vm = this;
-                if(!Object.values(vm.record.data_source).some(arr => Array.isArray(arr) && arr.length > 0)){
-                    bootbox.alert({
-                        title: "Advertencia",
-                        message: "Debe agregar al menos un parámetro de tiempo a la solicitud",
-                        closeButton: false,
-                        buttons: {
-                            ok: {
-                                label: "Cerrar",
-                                className: 'btn-light'
-                            }
-                        }
-                    });
-					return false;
-				};
-                vm.createRecord('payroll/guard-schemes');
-            },
-            getConfirmedDays(field) {
-                const vm = this;
-                if (vm.record.confirmed_periods && vm.record.confirmed_periods.length > 0) {
-                    return vm.record.confirmed_periods.includes(field['month']+'-'+field['day']);
-                } else {
-                    return false;
-                }
-            },
-            selectRows() {
-                const vm = this;
-                vm.selected = [];
-                $.each(vm.visibleRows, function (index, staff) {
-                    var checkbox = document.getElementById('checkbox_' + staff.id);
-
-                    if (!vm.selectAllRows) {
-                        vm.selected.push(staff.id);
-                    }
-                    else if (checkbox && checkbox.checked) {
-                        checkbox.click();
-                    }
-                });
-            },
-        },
-        created() {
+            ],
+            multiselectTag: "white-space: nowrap; overflow: hidden; text-overflow: ellipsis;",
+            selected: [],
+            recordAllSelected: [],
+            selectAllRows: false,
+            selectAllColumns: false,
+        }
+    },
+    methods: {
+        /**
+         * Método que borra todos los datos del formulario
+         *
+         * @author  Henry Paredes <hparedes@cenditel.gob.ve>
+         */
+        reset() {
             const vm = this;
-            vm.reset();
-            vm.getPayrollTimeParameters();
-            vm.getInstitutions();
-            if (vm.id) {
-                vm.loadForm(vm.id);
+            vm.errors = [];
+            vm.record = {
+                id: '',
+                institution_id: '',
+                from_date: '',
+                to_date: '',
+                payroll_supervised_group_id: '',
+                payroll_supervised_group: null,
+                data_source: {},
+            };
+        },
+        resetAll(event) {
+            const vm = this;
+            event.preventDefault();
+            vm.loading = true;
+            const selectedDays = vm.totalDays.filter(item => item.view === true);
+
+            if (vm.selected.length > 0 && selectedDays.length > 0) {
+                vm.selected.forEach(staffId => {
+                    selectedDays.forEach(item => {
+                        vm.record.data_source[staffId + '-' + item['month'] + '-' + item['day']] = [];
+                    });
+                });
+            } else if (vm.selected.length > 0 && selectedDays.length == 0) {
+                vm.selected.forEach(staffId => {
+                    vm.totalDays.filter(item => !vm.getConfirmedDays(item)).forEach(item => {
+                        vm.record.data_source[staffId + '-' + item['month'] + '-' + item['day']] = [];
+                    });
+                });
+            } else if (vm.selected.length == 0 && selectedDays.length > 0) {
+                selectedDays.forEach(item => {
+                    vm.visibleRows.forEach(staff => {
+                        vm.record.data_source[staff.id + '-' + item['month'] + '-' + item['day']] = [];
+                    });
+                });
+            }
+            vm.loading = false;
+        },
+        showModal(modal_id, event) {
+            const vm = this;
+            event.preventDefault();
+            vm.loading = true;
+            if (modal_id) {
+                $(`#${modal_id}`).modal('show');
+            }
+            vm.loading = false;
+        },
+        saveRecord(modal_id, event) {
+            const vm = this;
+            event.preventDefault();
+            vm.loading = true;
+            vm.selected.forEach(staffId => {
+                vm.totalDays.filter(item => item.view === true).forEach(item => {
+                    const key = staffId + '-' + item['month'] + '-' + item['day'];
+                    if (!vm.record.data_source[key]) {
+                        vm.record.data_source[key] = [...vm.recordAllSelected];
+                    } else {
+                        vm.recordAllSelected.forEach(newItem => {
+                            const existingItem = vm.record.data_source[key].find(existingItem => existingItem.id === newItem.id);
+                            if (existingItem) {
+                                existingItem.count += newItem.count;
+                            } else {
+                                vm.record.data_source[key].push(newItem);
+                            }
+                        });
+                    }
+                });
+            });
+            if (modal_id) {
+                vm.recordAllSelected = [];
+                $(`#${modal_id}`).modal('hide');
+            }
+            vm.loading = false;
+        },
+        /**
+        * Obtiene los datos de los grupos de supervisados
+        *
+        * @author Henry Paredes <hparedes@cenditel.gob.ve>
+        *
+        */
+        async getPayrollSupervisedGroups(id = null, type = null) {
+            const vm = this;
+            vm.payroll_supervised_groups = [];
+            await axios.get(`${window.app_url}/payroll/get-supervised-groups-options`, { params: { id, type } }).then(response => {
+                vm.payroll_supervised_groups = response.data;
+            });
+        },
+        async getDatasupervisedGroup() {
+            const vm = this;
+            let id = vm.record.payroll_supervised_group_id;
+            vm.showTable = false ;
+            if ('' !== vm.record.payroll_supervised_group_id) {
+                vm.record.payroll_supervised_group = vm.payroll_supervised_groups.find(function ($group) {
+                    return vm.record.payroll_supervised_group_id == $group['id'];
+                });
+                await axios.get(`${window.app_url}/payroll/get-supervised-groups-staff`, { params: { id } }).then(response => {
+                vm.record.payroll_supervised_group.payroll_staffs = response.data;
+            });
             } else {
-                vm.getPayrollSupervisedGroups();
+                vm.record.payroll_supervised_group = null;
             }
+            await vm.generateData();
         },
-        watch: {
-            perPage(res) {
-                const vm = this;
-                let records = (vm.record.payroll_supervised_group)
-                    ? vm.record.payroll_supervised_group.payroll_staffs
-                        ? vm.record.payroll_supervised_group.payroll_staffs
-                        : []
-                    : [];
+        async generateData() {
+            const vm = this;
+            vm.months = [];
+            vm.daysPerMonth = [];
+            vm.totalDays = [];
 
-                this.lastPage = Math.ceil(records.length / this.perPage)
-            },
-            page(res) {
-                this.changePage(res);
+            if (
+                '' === vm.record.from_date &&
+                '' === vm.record.to_date &&
+                vm.record.payroll_supervised_group
+            ) {
+                return false;
+            };
+
+            vm.loading = true;
+            let start_date = moment(vm.record.from_date);
+            let end_date = moment(vm.record.to_date);
+
+            while (start_date.isBefore(end_date) || start_date.isSame(end_date)) {
+                let str_date = start_date.format("MMMM").charAt(0).toUpperCase() + start_date.format("MMMM").slice(1);
+                if (!vm.months.includes(str_date)) {
+                    vm.months.push(str_date);
+                    vm.daysPerMonth[str_date] = [];
+                }
+                vm.daysPerMonth[str_date].push(start_date.format("D"));
+                const inicioMes = start_date.clone().startOf('month');
+                const numeroSemanaMes = Math.ceil((start_date.date() + inicioMes.day()) / 7);
+                vm.totalDays.push({
+                    'month': str_date,
+                    'day': start_date.format("D"),
+                    'style': numeroSemanaMes % 2 === 0,
+                    'day_code': start_date.format("dd"),
+                    'day_name': start_date.format("dddd"),
+                    'view': false
+                });
+                start_date.add(1, 'day');
             }
+            if (vm.record.payroll_supervised_group && vm.record.payroll_supervised_group.payroll_staffs) {
+                vm.page = 1;
+                vm.lastPage = Math.ceil(vm.record.payroll_supervised_group.payroll_staffs.length / vm.perPage);
+                vm.showTable = true ;
+            }
+            vm.loading = false;
         },
-        computed: {
-            filteredPageValues() {
-                return this.pageValues.filter(number => number <= this.lastPage);
-            },
-            visibleRows() {
-                const vm = this;
-                let records = (vm.record.payroll_supervised_group)
-                    ? vm.record.payroll_supervised_group.payroll_staffs
-                        ? vm.record.payroll_supervised_group.payroll_staffs
-                        : []
-                    : [];
-                if (''!= vm.search) {
-                    vm.page = 1;
-                    records = records.filter(function (staff) {
-                        return (
-                            staff.name.toLowerCase().includes(vm.search.toLowerCase()) ||
-                            staff.worksheet_code.toLowerCase().includes(vm.search.toLowerCase())
-                        );
-                    })
-                }
-
-                const startIndex = (vm.page - 1) * vm.perPage;
-                const endIndex = startIndex + parseInt(vm.perPage);
-                vm.lastPage = Math.ceil(records.length / vm.perPage);
-
-                return records.slice(startIndex, endIndex).map((staff, index) => ({
-                    ...staff,
-                    index: startIndex + index + 1
-                }));
-            },
-            start_operations_date() {
-                const vm = this;
-                if ('' !== vm.record.institution_id) {
-                    return vm.institutions.find(function ($inst) {
-                        return vm.record.institution_id == $inst['id'];
-                    })?.start_operations_date;
-                }
-                return '';
-            },
-            minFromDateScheme() {
-                const vm = this;
-                if (
-                    '' !== vm.record.payroll_supervised_group &&
-                    vm.record.payroll_supervised_group &&
-                    vm.record.payroll_supervised_group.last_date_guard_scheme
-                ) {
-                    return vm.add_period(vm.record.payroll_supervised_group.last_date_guard_scheme, 1, 'days', 'YYYY-MM-DD');
+        /**
+         * Obtiene los datos de los trabajadores registrados agrupados por departamento
+         *
+         * @author Daniel Contreras <dcontreras@cenditel.gob.ve>
+         *
+         */
+        async getPayrollTimeParameters() {
+            const vm = this;
+            vm.payroll_time_parameters = [];
+            await axios.get(`${window.app_url}/payroll/get-time-parameters?group=false`).then(response => {
+                vm.payroll_time_parameters = Object.values(response.data);
+            });
+        },
+        changePage(page) {
+            const vm = this;
+            vm.page = page;
+            var pag = 0;
+            while (1) {
+                if (pag + 5 >= vm.page) {
+                    pag += 1;
+                    break;
                 } else {
-                    return vm.start_operations_date;
+                    pag += 5;
                 }
             }
+            vm.pageValues = [];
+            for (var i = 0; i < 5; i++) {
+                vm.pageValues.push(pag + i);
+            }
         },
-    };
+        setEditColumns(index) {
+            const vm = this;
+            vm.totalDays[index].view = !vm.totalDays[index].view;
+        },
+        selectColumns(value) {
+            const vm = this;
+
+            vm.selectAllColumns = !value;
+
+            vm.totalDays.forEach((staff, index) => {
+                setTimeout(() => {
+                    vm.totalDays[index].view = vm.selectAllColumns;
+                    vm.$forceUpdate();
+                }, 20);
+            });
+        },
+        /**
+         * Método que carga el formulario con los datos a modificar
+         *
+         * @author  Henry Paredes <hparedes@cenditel.gob.ve>
+         *
+         * @param  {integer} id Identificador del registro a ser modificado
+         */
+        async loadForm(id) {
+            let vm = this;
+            vm.errors = [];
+            await vm.getPayrollSupervisedGroups(id, 'scheme');
+            let recordEdit = await axios.get(`${window.app_url}/payroll/guard-schemes/show/${id}`).then(response => {
+                return response.data.record;
+            });
+
+            vm.record = recordEdit;
+            await vm.getDatasupervisedGroup();
+        },
+        createScheme() {
+            const vm = this;
+            if (!Object.values(vm.record.data_source).some(arr => Array.isArray(arr) && arr.length > 0)) {
+                bootbox.alert({
+                    title: "Advertencia",
+                    message: "Debe agregar al menos un parámetro de tiempo a la solicitud",
+                    closeButton: false,
+                    buttons: {
+                        ok: {
+                            label: "Cerrar",
+                            className: 'btn-light'
+                        }
+                    }
+                });
+                return false;
+            };
+            vm.createRecord('payroll/guard-schemes');
+        },
+        getConfirmedDays(field) {
+            const vm = this;
+            if (vm.record.confirmed_periods && vm.record.confirmed_periods.length > 0) {
+                return vm.record.confirmed_periods.includes(field['month'] + '-' + field['day']);
+            } else {
+                return false;
+            }
+        },
+        selectRows() {
+            const vm = this;
+            vm.selected = [];
+            $.each(vm.visibleRows, function (index, staff) {
+                var checkbox = document.getElementById('checkbox_' + staff.id);
+
+                if (!vm.selectAllRows) {
+                    vm.selected.push(staff.id);
+                }
+                else if (checkbox && checkbox.checked) {
+                    checkbox.click();
+                }
+            });
+        },
+    },
+    created() {
+        const vm = this;
+        vm.reset();
+        vm.getPayrollTimeParameters();
+        vm.getInstitutions();
+        if (vm.id) {
+            vm.loadForm(vm.id);
+        } else {
+            vm.getPayrollSupervisedGroups();
+        }
+    },
+    watch: {
+        perPage(res) {
+            const vm = this;
+            let records = (vm.record.payroll_supervised_group)
+                ? vm.record.payroll_supervised_group.payroll_staffs
+                    ? vm.record.payroll_supervised_group.payroll_staffs
+                    : []
+                : [];
+
+            this.lastPage = Math.ceil(records.length / this.perPage)
+        },
+        page(res) {
+            this.changePage(res);
+        }
+    },
+    computed: {
+        filteredPageValues() {
+            return this.pageValues.filter(number => number <= this.lastPage);
+        },
+        visibleRows() {
+            const vm = this;
+            let records = (vm.record.payroll_supervised_group)
+                ? vm.record.payroll_supervised_group.payroll_staffs
+                    ? vm.record.payroll_supervised_group.payroll_staffs
+                    : []
+                : [];
+            if ('' != vm.search) {
+                vm.page = 1;
+                records = records.filter(function (staff) {
+                    return (
+                        staff.name.toLowerCase().includes(vm.search.toLowerCase()) ||
+                        staff.worksheet_code.toLowerCase().includes(vm.search.toLowerCase())
+                    );
+                })
+            }
+
+            const startIndex = (vm.page - 1) * vm.perPage;
+            const endIndex = startIndex + parseInt(vm.perPage);
+            vm.lastPage = Math.ceil(records.length / vm.perPage);
+
+            return records.slice(startIndex, endIndex).map((staff, index) => ({
+                ...staff,
+                index: startIndex + index + 1
+            }));
+        },
+        start_operations_date() {
+            const vm = this;
+            if ('' !== vm.record.institution_id) {
+                return vm.institutions.find(function ($inst) {
+                    return vm.record.institution_id == $inst['id'];
+                })?.start_operations_date;
+            }
+            return '';
+        },
+        minFromDateScheme() {
+            const vm = this;
+            if (
+                '' !== vm.record.payroll_supervised_group &&
+                vm.record.payroll_supervised_group &&
+                vm.record.payroll_supervised_group.last_date_guard_scheme
+            ) {
+                return vm.add_period(vm.record.payroll_supervised_group.last_date_guard_scheme, 1, 'days', 'YYYY-MM-DD');
+            } else {
+                return vm.start_operations_date;
+            }
+        }
+    },
+};
 </script>

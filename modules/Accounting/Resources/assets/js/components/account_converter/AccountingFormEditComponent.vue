@@ -154,6 +154,15 @@ export default {
                                     );
                                 }
                             }
+                            if (error.response && error.response.status === 403) {
+                                vm.showMessage(
+                                    "custom",
+                                    "Acceso Denegado",
+                                    "danger",
+                                    "screen-error",
+                                    "No dispone de permisos para acceder a esta funcionalidad."
+                                );
+                            }
                         }
                         vm.loading = false;
                     });
@@ -200,6 +209,15 @@ export default {
                                         error.response.data.message
                                     );
                                 }
+                            }
+                            if (error.response && error.response.status === 403) {
+                                vm.showMessage(
+                                    "custom",
+                                    "Acceso Denegado",
+                                    "danger",
+                                    "screen-error",
+                                    "No dispone de permisos para acceder a esta funcionalidad."
+                                );
                             }
                         }
                         vm.loading = false;

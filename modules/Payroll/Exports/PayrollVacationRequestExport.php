@@ -122,12 +122,7 @@ class PayrollVacationRequestExport implements
     {
         $vacationYears = '';
 
-        collect(
-            json_decode(
-                $row->vacation_period_year,
-                true
-            )
-        )->pluck('id')->each(function (&$year) use (&$vacationYears) {
+        collect($row->vacation_period_year)->pluck('id')->each(function (&$year) use (&$vacationYears) {
             $vacationYears .= $year . ",";
         });
 

@@ -3,8 +3,11 @@
 namespace Modules\CitizenService\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Contracts\Support\Renderable;
 use Illuminate\Routing\Controller;
+use Modules\Payroll\Models\PayrollStaff;
+use Illuminate\Contracts\Support\Renderable;
+use Modules\Payroll\Models\Payroll;
+use Modules\Payroll\Models\PayrollEmployment;
 
 /**
  * @class CitizenServiceController
@@ -91,5 +94,32 @@ class CitizenServiceController extends Controller
     public function destroy()
     {
         //
+    }
+
+    public function getPayrollStaffs()
+    {
+        return response()->json(
+            PayrollStaff::query()
+                ->select('id', 'id_number', 'first_name', 'last_name')
+                ->toBase()
+                ->get()
+                ->map(function ($staff) {
+                    $employee = PayrollEmployment::where('payroll_staff_id', $staff->id)->first();
+                    $position = $employee && $employee->payrollPosition ? $employee->payrollPosition->name : '';
+                    return [
+                        'id' => $staff->id,
+                        'text' => $staff->id_number . ' - ' . $staff->first_name . ' ' . $staff->last_name,
+                        'payroll_staff' => [
+                            'first_name' => $staff->first_name,
+                            'last_name' => $staff->last_name
+                        ],
+                        'payrollPosition' => ['name' => $position],
+                        'payroll_employee_id' => $employee ? $employee->id : null
+                    ];
+                })->prepend([
+                    'id' => '',
+                    'text' => 'Seleccione...'
+                ])
+        );
     }
 }

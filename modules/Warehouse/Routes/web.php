@@ -70,6 +70,10 @@ Route::group(['middleware' => ['web', 'auth', 'verified'], 'prefix' => 'warehous
         'receptions/edit/{reception}',
         'WarehouseReceptionController@edit'
     )->name('warehouse.reception.edit');
+    Route::get(
+        'receptions/directhire/supplier/{id}',
+        'WarehouseReceptionController@getPurchaseDirectHireSupplier'
+    )->name('warehouse.reception.');
     Route::delete(
         'receptions/delete/{reception}',
         'WarehouseReceptionController@destroy'
@@ -172,6 +176,22 @@ Route::group(['middleware' => ['web', 'auth', 'verified'], 'prefix' => 'warehous
     Route::get('pdf/warehouse-products', 'WarehousePDFController@createWarehouseProducts');
     Route::get('pdf/product/{product}', 'WarehousePDFController@createForProduct');
     Route::get('pdf/warehouse/{warehouse}', 'WarehousePDFController@createForWarehouse');
+    Route::get(
+        'receptions/pdf/{id}',
+        'WarehousePDFController@receptionsPdf'
+    )->name('warehouse.receptions.pdf');
+    Route::get(
+        'requests/pdf/{id}',
+        'WarehousePDFController@requestsPdf'
+    )->name('warehouse.requests.pdf');
+    Route::get(
+        'request/staffs/pdf/{id}',
+        'WarehousePDFController@requestStaffsPdf'
+    )->name('warehouse.request.staffs.pdf');
+    Route::get(
+        'movements/pdf/{id}',
+        'WarehousePDFController@warehouseMovementsPdf'
+    )->name('warehouse.movements.pdf');
 
 
     /*

@@ -7,6 +7,7 @@ use App\Models\FiscalYear;
 use App\Imports\DataImport;
 use App\Models\CodeSetting;
 use Illuminate\Http\Request;
+use Composer\Util\Http\Response;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -22,6 +23,7 @@ use Illuminate\Foundation\Validation\ValidatesRequests;
 use Modules\Budget\Models\BudgetSubSpecificFormulation;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Modules\Budget\Exports\BudgetSubSpecificFormulationExport;
+use Modules\Budget\Exports\BudgetSubSpecificFormulationXlsExport;
 
 /**
  * @class BudgetSubSpecificFormulationController
@@ -564,6 +566,23 @@ class BudgetSubSpecificFormulationController extends Controller
         $pdf->setBody('budget::reports.formulation', true, compact('formulation', 'currency', 'conversion_history'));
         $file = storage_path() . '/reports/' . $filename;
         return response()->download($file, $filename, [], 'inline');
+    }
+
+    /**
+     * Genera el reporte de presupuesto formulado como archivo .xlsx
+     *
+     * @method    export
+     *
+     * @author     fjescala <fjescala@cenditel.gob.ve>
+     *
+     * @param     integer            $id    Identificador del presupuesto formulado a imprimir
+     *
+     * @return    BinaryFileResponse|\Illuminate\Http\RedirectResponse
+     */
+    public function exportFormulation(Request $request)
+    {
+            $export = new BudgetSubSpecificFormulationXlsExport($request->all());
+            return Excel::download($export, 'budget_formulation.xlsx');
     }
 
     /**

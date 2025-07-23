@@ -72,7 +72,7 @@ class SendPayrollPaymentTypeReceiptsController extends Controller
         SendReceiptJob::dispatch(
             $payroll_id,
             $institution->id
-        );
+        )->onQueue('bulk');
 
         return response()->json(['result' => true], 200);
     }

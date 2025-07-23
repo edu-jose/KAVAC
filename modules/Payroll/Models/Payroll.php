@@ -40,7 +40,8 @@ class Payroll extends Model implements Auditable
      */
     protected $fillable = [
         'code', 'name', 'payroll_parameters', 'payroll_payment_period_id',
-        'salary_tabulators', 'concept_types', 'created_at', 'document_status_id'
+        'salary_tabulators', 'concept_types', 'created_at', 'document_status_id',
+        'is_vacation_payroll'
     ];
 
     /**
@@ -112,6 +113,18 @@ class Payroll extends Model implements Auditable
     public function payrollStaffPayrolls()
     {
         return $this->hasMany(PayrollStaffPayroll::class);
+    }
+
+    /**
+     * Método que obtiene la información de los parámetros reiniciables a cero asociados a la nómina
+     *
+     * @author    Daniel Contreras <dcontreras@cenditel.gob.ve>
+     *
+     * @return    \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function payrollResetParameters()
+    {
+        return $this->hasMany(PayrollResetParameter::class);
     }
 
     /**

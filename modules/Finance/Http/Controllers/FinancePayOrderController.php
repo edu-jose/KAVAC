@@ -1720,8 +1720,11 @@ class FinancePayOrderController extends Controller
                 $financePayOrder = FinancePayOrder::find($request->id);
 
                 if (isset($financePayOrder)) {
-                    $documentStatusAN = DocumentStatus::where('action', 'AN')->first(); //Status del documento ANulado
-                    $documentStatusPR = DocumentStatus::where('action', 'PR')->first(); //Status del documento En Proceso
+                    list($documentStatusAN, $documentStatusPR) = DocumentStatus::query()
+                        ->whereIn('action', ['AN', 'PR'])
+                        ->orderBy('action', 'asc')
+                        ->get();
+
                     $financePayOrder->status = 'AN';
                     $financePayOrder->observations = 'ANULADO: ' . $request->description;
                     $financePayOrder->document_status_id = $documentStatusAN->id;
@@ -1773,19 +1776,23 @@ class FinancePayOrderController extends Controller
                     /* Anulación sin remisión */
                     if ($request->cancel_pay_order_option_id == 1) {
                         /*
-                         | Anulación sin remisión, se anula el compromiso y se cambia su estatus a ANulado
-                         | Se liberra el Documento de origen (Nómina u orden de compra)
+                         * Anulación sin remisión, se anula el compromiso y se cambia su estatus a ANulado
+                         * Se liberra el Documento de origen (Nómina u orden de compra)
                          */
-                        if ($isBudget && $financePayOrder->document_sourceable_type == \Modules\Budget\Models\BudgetCompromise::class) {
-                            //se busca el compromiso asociado a la orden de pago
-                            $compromise = $isBudget ? \Modules\Budget\Models\BudgetCompromise::query()
-                            ->find($financePayOrder->document_sourceable_id) : null;
+
+                        //se busca el compromiso asociado a la orden de pago
+                        $compromise = $financePayOrder->documentSourceable()?->first();
+
+                        if ($isBudget) {
                             /*
-                             | Se buscan todas las BudgetStage (etapas presupuestarias)
-                             | pertenecintes al compromiso relacionado con la orden de pago
-                             | para ser eliminadas
+                             * Se buscan todas las BudgetStage (etapas presupuestarias)
+                             * pertenecintes al compromiso relacionado con la orden de pago
+                             * para ser eliminadas
                              */
-                            if (isset($compromise)) {
+                            if (
+                                isset($compromise)
+                                && $compromise instanceof \Modules\Budget\Models\BudgetCompromise
+                            ) {
                                 $compromisedYear = explode("-", $compromise->compromised_at)[0];
 
                                 \Modules\Budget\Models\BudgetStage::query()
@@ -1798,11 +1805,10 @@ class FinancePayOrderController extends Controller
 
                                 //Se cambia el status del documento del compromiso a En Proceso
                                 $compromise->document_status_id = $documentStatusPR->id;
-                                $compromise->save();
                                 /*
-                                 | Se verifica que el compromiso no sea un aporte de nómina
-                                 | de lo contrario solo se anularán la etapa presuspuestaria
-                                 | CAUsado y se mantiene COMprometido
+                                 * Se verifica que el compromiso no sea un aporte o dedución de nómina
+                                 * de lo contrario solo se anularán la etapa presuspuestaria
+                                 * CAUsado y se mantiene COMprometido
                                  */
                                 $CodePayroll = $isPayroll
                                 ? CodeSetting::where(
@@ -1811,7 +1817,7 @@ class FinancePayOrderController extends Controller
                                 )->first()
                                 : null;
 
-                                $regexPattern = '/^AP - \\d+' . $CodePayroll?->format_prefix . '/';
+                                $regexPattern = '/^(AP|DE) - \\d+' . $CodePayroll?->format_prefix . '/';
 
                                 if (!preg_match($regexPattern, $compromise->document_number)) {
                                     \Modules\Budget\Models\BudgetStage::query()
@@ -1866,19 +1872,21 @@ class FinancePayOrderController extends Controller
                                     $compromise->description = "Proceso Anulado: "
                                     . $compromise->description . ". "
                                     . "(" . $request->description . ")";
-                                    $compromise->save();
                                 }
+                                // Se guardan los cambios en el compromiso
+                                $compromise->save();
+
+                                // Se busca el modelo de donde se creó el compromiso
+                                $fromProcessModel = $compromise->sourceable
+                                    ? $compromise->sourceable()->where('code', $compromise->document_number)->first()
+                                    : null;
 
                                 //Se Cambia el estatus de la orden de compra sí existe
-                                if (Module::has('Purchase') && Module::isEnabled('Purchase')) {
-                                    $purchaseOrder = (isset($compromise->sourceable_type)
-                                    && $compromise->sourceable_type
-                                    == \Modules\Purchase\Models\PurchaseDirectHire::class)
-                                    ? \Modules\Purchase\Models\PurchaseDirectHire::query()
-                                    ->where([
-                                        'id' => $compromise->sourceable_id,
-                                        'code' => $compromise->document_number
-                                    ])->first() : null;
+                                if (
+                                    Module::has('Purchase') && Module::isEnabled('Purchase')
+                                    && ($fromProcessModel instanceof \Modules\Purchase\Models\PurchaseDirectHire)
+                                ) {
+                                    $purchaseOrder = $fromProcessModel ?? null;
 
                                     if ($purchaseOrder) {
                                         $purchaseOrder->status = 'WAIT';
@@ -1887,17 +1895,20 @@ class FinancePayOrderController extends Controller
                                 }
 
                                 //Se Cambia el estatus de la Nómina sí existe
-                                if (isset($isPayroll)) {
-                                    $payroll = \Modules\Payroll\Models\Payroll::query()
-                                    ->where([
-                                        'id' => $compromise->sourceable_id,
-                                        'code' => $compromise->document_number
-                                    ])->first() ?? null;
+                                if (
+                                    $isPayroll
+                                    && ($fromProcessModel instanceof \Modules\Payroll\Models\Payroll)
+                                ) {
+                                    $payroll = $fromProcessModel ?? null;
 
-                                    if (isset($payroll)) {
+                                    if ($payroll) {
+                                        $payroll->document_status_id = DocumentStatus::query()->getStatus('EL')->id ?? null;
+                                        $payroll->save();
+
                                         $payrollPaymentPeriod = $payroll->payrollPaymentPeriod;
                                         $payrollPaymentPeriod->payment_status = 'pending';
                                         $payrollPaymentPeriod->availability_status = 'AN';
+
                                         $payrollPaymentPeriod->save();
 
                                         // Se procede a realizar todo el proceso de anulación
@@ -1914,7 +1925,6 @@ class FinancePayOrderController extends Controller
                         }
                     } elseif ($request->cancel_pay_order_option_id == 2) {
                         /* Anulación Con remisión, se libera el compromiso y se camnbia su estatus a ELaborado y queda COMprometido */
-                        $documentStatusPR = DocumentStatus::where('action', 'PR')->first();
                         //se busca el compromiso asociado a la orden de pago
                         $compromise = $isBudget ? \Modules\Budget\Models\BudgetCompromise::query()
                         ->find($financePayOrder->document_sourceable_id) : null;
@@ -1938,9 +1948,9 @@ class FinancePayOrderController extends Controller
 
                                 if (isset($payroll)) {
                                     /*
-                                     | Se procede a realizar todo el proceso de anulación
-                                     | de los aportes de nómina hasta la etapa presupuestaria
-                                     | Comprometido.
+                                     * Se procede a realizar todo el proceso de anulación
+                                     * de los aportes de nómina hasta la etapa presupuestaria
+                                     * Comprometido.
                                      */
                                     $this->cancelContribution(
                                         $payroll->code,
@@ -1973,7 +1983,7 @@ class FinancePayOrderController extends Controller
                     'title' => 'Alerta',
                     'icon' => 'screen-error',
                     'class' => 'growl-danger',
-                    'text' => 'No se pudo completar la operación. ' . ucfirst($errorMessage)
+                    'text' => 'No se pudo completar la operación. Contacte al administrador del sistema.',
                 ]],
                 500
             );
@@ -1997,18 +2007,13 @@ class FinancePayOrderController extends Controller
     {
         /* Se buscan todas las ordenes de pago asociadas a este compromiso */
         // Patrón de la expresión regular relacionada con el código de nómina
-        $documentStatusAN = DocumentStatus::where('action', 'AN')->first(); //Status del documento ANulado
-        $regexPattern = "AP - \\d+$code";
+        $documentStatusAN = DocumentStatus::getStatus('AN'); //Status del documento ANulado
+        $regexPattern = "^(AP|DE) - \\d+$code";
+
         $compromiseContribution = \Modules\Budget\Models\BudgetCompromise::query()
-        ->where(
-            'document_number',
-            '~',
-            $regexPattern
-        )->where(
-            'document_status_id',
-            '!=',
-            $documentStatusAN->id
-        )->get() ?? null;
+            ->where('document_number', '~', $regexPattern)
+            ->where('document_status_id', '!=', $documentStatusAN->id)
+            ->get() ?? null;
 
         $isAccounting = Module::has('Accounting') && Module::isEnabled('Accounting');
 
@@ -2029,10 +2034,12 @@ class FinancePayOrderController extends Controller
                 //Se realiza todo el proceso de anulación para las emisiones de pago si existen
                 if (isset($paymentExecuteBugetStages)) {
                     foreach ($paymentExecuteBugetStages as $paymentExecuteBugetStage) {
-                        $financePaymentExecute = FinancePaymentExecute::query()
-                        ->find($paymentExecuteBugetStage->stageable_id);
+                        $financePaymentExecute = $paymentExecuteBugetStage->stageable()->first();
 
-                        if (isset($financePaymentExecute)) {
+                        if (
+                            isset($financePaymentExecute)
+                            && ($financePaymentExecute instanceof FinancePaymentExecute)
+                        ) {
                             $financePaymentExecute->status = 'AN';
                             $financePaymentExecute->description = $description;
                             $financePaymentExecute->document_status_id = $documentStatusAN->id;
@@ -2124,7 +2131,6 @@ class FinancePayOrderController extends Controller
                 ->where([
                     'budget_compromise_id'  => $compContribution->id,
                     'stageable_type'        => FinancePayOrder::class,
-                    // 'stageable_id'          => $pay_order->id
                     ])
                 ->where('type', 'CAU')->get();
 
@@ -2132,10 +2138,12 @@ class FinancePayOrderController extends Controller
                 if (isset($payOrderBugetStages)) {
                     foreach ($payOrderBugetStages as $payOrderBugetStage) {
                         // Se buscan todas las órdenes de pago asociadas a este compromiso
-                        $financePayOrder = FinancePayOrder::query()
-                        ->find($payOrderBugetStage->stageable_id);
+                        $financePayOrder = $payOrderBugetStage->stageable()->first();
 
-                        if (isset($financePayOrder)) {
+                        if (
+                            isset($financePayOrder)
+                            && ($financePayOrder instanceof FinancePayOrder)
+                        ) {
                             $financePayOrder->status = 'PE';
                             $financePayOrder->document_status_id = $documentStatusAN->id;
                             $financePayOrder->observations = 'ANULADO: '
@@ -2253,7 +2261,7 @@ class FinancePayOrderController extends Controller
                 } else {
                     //Se cambia el status del documento del compromiso a En PRoceso
                     //quedando en la etapa presupuestaria 'COM'prometido
-                    $compContribution['document_status_id'] = DocumentStatus::where('action', 'PR')->first()->id;
+                    $compContribution['document_status_id'] = DocumentStatus::getStatus('PR')->id;
                     $compContribution->save();
                 }
             }

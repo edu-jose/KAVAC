@@ -87,7 +87,7 @@
                                 </div>
                             </div>
                             @endif
-                            <!--<div class="col-md-4">
+                            {{-- <div class="col-md-4">
                                 <div class="form-group">
                                     {!! Form::label('minutes_code', 'Código de Acta', []) !!}
                                     {!! Form::text(
@@ -101,7 +101,7 @@
                                         ]
                                     ) !!}
                                 </div>
-                            </div>-->
+                            </div> --}}
                             <div class="col-md-4">
                                 <div class="form-group">
                                     {!! Form::label(
@@ -136,7 +136,7 @@
                                     ) !!}
                                 </div>
                             </div>
-                            <!--<div class="col-md-4">
+                            {{-- <div class="col-md-4">
                                 <div class="form-group">
                                     {!! Form::label('refunds_code', 'Código de Reintegro', []) !!}
                                     {!! Form::text(
@@ -150,7 +150,7 @@
                                         ]
                                     ) !!}
                                 </div>
-                            </div>-->
+                            </div> --}}
                         </div>
                     </div>
                     @if (!(Module::has('Budget') || !Module::isEnabled('Budget')))
@@ -199,13 +199,16 @@
                             typedoc= "true"
                         >
                         </required-documents>
-                        <!-- <purchase-processes id="purchase_processes"></purchase-processes> -->
+                        {{-- <purchase-processes id="purchase_processes"></purchase-processes> --}}
                         <purchase-type id="purchase_type"></purchase-type>
                         <purchase-services></purchase-services>
                         <purchase-products></purchase-products>
-                        <purchase-general-conditions/>
-                        <!-- <purchase-type-operations id="purchase_type_operations"></purchase-type-operations> -->
-                        <!-- <purchase-type-hiring id="purchase_type_hiring"></purchase-type-hiring> -->
+                        <purchase-general-conditions></purchase-general-conditions>
+                        <purchase-activity-types></purchase-activity-types>
+                        <purchase-priority-orders></purchase-priority-orders>
+                        <purchase-priorities></purchase-priorities>
+                        {{-- <purchase-type-operations id="purchase_type_operations"></purchase-type-operations> --}}
+                        {{-- <purchase-type-hiring id="purchase_type_hiring"></purchase-type-hiring> --}}
                     </div>
                 </div>
             </div>

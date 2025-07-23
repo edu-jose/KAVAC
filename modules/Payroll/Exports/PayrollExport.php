@@ -2,7 +2,6 @@
 
 namespace Modules\Payroll\Exports;
 
-use App\Models\User;
 use App\Models\Profile;
 use App\Models\Parameter;
 use Modules\Payroll\Models\Payroll;
@@ -17,7 +16,6 @@ use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Modules\Payroll\Models\PayrollConceptType;
 use Modules\Payroll\Models\PayrollStaffPayroll;
-use Modules\Payroll\Models\PayrollPaymentPeriod;
 use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 use Maatwebsite\Excel\Concerns\WithCustomStartCell;
 use Modules\Payroll\Exports\Sheets\PayrollConceptsSheet;
@@ -94,6 +92,13 @@ class PayrollExport implements
     protected $zero_concept;
 
     /**
+     * Listado de tipos de conceptos de nómina
+     *
+     * @var object $payrollConceptTypes
+     */
+    protected $payrollConceptTypes;
+
+    /**
      * Título del archivo
      *
      * @var string $title
@@ -117,8 +122,6 @@ class PayrollExport implements
      */
     public function sheets(): array
     {
-        $payrollPaymentPeriod = PayrollPaymentPeriod::find($this->payroll->payroll_payment_period_id);
-
         $sheets = [
             'Payroll' => $this,
             'Concepts' => new PayrollConceptsSheet($this->payroll->concept_types)
@@ -126,7 +129,7 @@ class PayrollExport implements
 
         foreach ($this->payroll->salary_tabulators as $key => $payrollSalaryTabulator) {
             $sheets['Tabulator' . $key] = new PayrollSalaryTabulatorsSheet($payrollSalaryTabulator);
-            $sheets['Tabulator' . $key]->setPayrollPaymentPeriod($payrollPaymentPeriod->end_date);
+            $sheets['Tabulator' . $key]->setPayrollPaymentPeriod($this->payroll->payrollPaymentPeriod->end_date);
         }
 
         return $sheets;
@@ -141,7 +144,14 @@ class PayrollExport implements
      */
     public function setPayrollId(int $payrollId)
     {
-        $this->payroll = Payroll::findOrFail($payrollId);
+        $this->payroll = Payroll::with([
+            'payrollStaffPayrolls' => function ($query) {
+                $query->with(['payrollStaff' => function ($query) {
+                    $query->withOnly('payrollSurvivor');
+                }]);
+            },
+            'payrollPaymentPeriod.payrollPaymentType'
+        ])->findOrFail($payrollId);
         $this->title = 'Nómina - ' . $this->payroll->name;
         $this->payrollId = $payrollId;
         $this->model = $this->payroll->payrollStaffPayrolls;
@@ -149,6 +159,19 @@ class PayrollExport implements
         $this->number_decimals = Parameter::where('p_key', 'number_decimals')->where('required_by', 'payroll')->first();
         $this->round = Parameter::where('p_key', 'round')->where('required_by', 'payroll')->first();
         $this->zero_concept = Parameter::where('p_key', 'zero_concept')->where('required_by', 'payroll')->first();
+
+        $conceptTypes = $this->payroll->concept_types;
+        $conceptNames = collect($conceptTypes)
+            ->flatMap(function ($record) {
+                return array_column($record, 'name');
+            })
+            ->unique()
+            ->values()
+            ->all();
+
+            $this->payrollConceptTypes = PayrollConceptType::query()->whereHas('payrollConcepts', function ($query) use ($conceptNames) {
+                $query->whereIn('name', $conceptNames);
+            })->select('id', 'name', 'sign')->get()->keyBy('name');
     }
 
     /**
@@ -168,11 +191,7 @@ class PayrollExport implements
     */
     public function collection()
     {
-        $payrollRegister = Payroll::query()
-            ->with('payrollStaffPayrolls.payrollStaff')
-            ->find($this->payrollId);
-
-        $filteredRecords = $payrollRegister->payrollStaffPayrolls
+        $filteredRecords = $this->payroll->payrollStaffPayrolls
             ->filter(function ($record) {
                 return isset($record->payrollStaff);
             })
@@ -216,7 +235,7 @@ class PayrollExport implements
 
         while (1) {
             foreach ($concepTypes as $key => $concepType) {
-                $payrollConceptType = PayrollConceptType::where('name', $key)->first();
+                $payrollConceptType = $this->payrollConceptTypes->get($key);
 
                 if (isset($payrollConceptType)) {
                     if ($payrollConceptType->sign == $signsOrder[$signIndex]) {
@@ -236,9 +255,17 @@ class PayrollExport implements
         }
 
         $concepTypes = $data;
+        $headings = [' ', 'Trabajadores', 'C.I.'];
+        $subHeadings = [' ', ' ', ' '];
+        if (!$this->payroll?->payrollPaymentPeriod?->payrollPaymentType?->is_survivor) {
+            $headings[] = 'Grado de instrucción';
+            $headings[] = 'Cargo';
+            $headings[] = 'Fecha de ingreso';
+            $headings[] = 'Total años de servicio';
+            $subHeadings = [' ', ' ', ' ', ' ', ' ', ' ', ' '];
+        }
 
-        $headings = [' ', 'Trabajadores', 'C.I.', 'Grado de instrucción', 'Cargo', 'Fecha de ingreso', 'Total años de servicio'];
-        $subHeadings = [' ',' ',' ',' ',' ',' ',' '];
+
         $flagSign = '';
 
         foreach ($concepTypes as $key => $conceptType) {
@@ -298,7 +325,7 @@ class PayrollExport implements
 
         while (1) {
             foreach ($largestConcepType as $key => $concepType) {
-                $payrollConceptType = PayrollConceptType::where('name', $key)->first();
+                $payrollConceptType = $this->payrollConceptTypes->get($key);
 
                 if (isset($payrollConceptType)) {
                     if ($payrollConceptType->sign == $signsOrder[$signIndex]) {
@@ -320,17 +347,22 @@ class PayrollExport implements
         $largestConcepType = $sortedData;
 
         $concepTypes = $payroll->concept_type;
-
+        if ($this->payroll->payrollPaymentPeriod?->payrollPaymentType?->is_survivor) {
+            $payroll_staff = $this->model->first(function ($record) use ($payroll) {
+                return $record->payrollStaff->id_number == $payroll->basic_payroll_staff_data['id_number'];
+            })?->payrollStaff;
+        }
         $data = [
             $payroll->index,
-            $payroll->basic_payroll_staff_data['full_name'],
-            $payroll->basic_payroll_staff_data['id_number'],
-            $payroll->basic_payroll_staff_data['instruction_degree'],
-            $payroll->basic_payroll_staff_data['position'],
-            date("d-m-Y", strtotime($payroll->basic_payroll_staff_data['start_date'])),
-            $payroll->basic_payroll_staff_data['institution_years'],
+            $this->payroll->payrollPaymentPeriod?->payrollPaymentType?->is_survivor ? ($payroll_staff->payrollSurvivor->first_name ? $payroll_staff->payrollSurvivor->first_name : $payroll->basic_payroll_staff_data['full_name']) : $payroll->basic_payroll_staff_data['full_name'],
+            $this->payroll->payrollPaymentPeriod?->payrollPaymentType?->is_survivor ? ($payroll_staff->payrollSurvivor->id_number ? $payroll_staff->payrollSurvivor->id_number : $payroll->basic_payroll_staff_data['id_number'] ) : $payroll->basic_payroll_staff_data['id_number'],
         ];
-
+        if (!$this->payroll->payrollPaymentPeriod?->payrollPaymentType?->is_survivor) {
+            $data[] = $payroll->basic_payroll_staff_data['instruction_degree'];
+            $data[] = $payroll->basic_payroll_staff_data['position'];
+            $data[] = date("d-m-Y", strtotime($payroll->basic_payroll_staff_data['start_date']));
+            $data[] = $payroll->basic_payroll_staff_data['institution_years'];
+        }
         $total = 0;
         $flagSign = '';
 
@@ -410,7 +442,9 @@ class PayrollExport implements
         }
 
         foreach ($data as $dataKey => $dataValue) {
-            if ($dataKey < 6) {
+            $condicion = !$this->payroll->payrollPaymentPeriod?->payrollPaymentType?->is_survivor ? ($dataKey < 6) : ($dataKey < 3) ;
+
+            if ($condicion) {
                 $this->total[$dataKey] = ' ';
             } else {
                 if (!array_key_exists($dataKey, $this->total)) {
@@ -431,12 +465,14 @@ class PayrollExport implements
      */
     public function registerEvents(): array
     {
-        $user = User::where('id', auth()->user()->id)->toBase()->get()->first();
-        $profileUser = Profile::where('user_id', $user->id)->first();
+        $profileUser = Profile::where('user_id', auth()->id())->first();
+
         if (($profileUser) && isset($profileUser->institution_id)) {
-            $institution = Institution::find($profileUser->institution_id);
+            $institution = Institution::withOnly('logo')->find($profileUser->institution_id);
         } else {
-            $institution = Institution::where('active', true)->where('default', true)->first();
+            $institution = Institution::withOnly('logo')
+                ->where('active', true)->where('default', true)
+                ->first();
         }
 
         $records = $this->model;
@@ -465,7 +501,7 @@ class PayrollExport implements
 
         while (1) {
             foreach ($concepTypes as $key => $concepType) {
-                $payrollConceptType = PayrollConceptType::where('name', $key)->first();
+                $payrollConceptType = $this->payrollConceptTypes->get($key);
 
                 if (isset($payrollConceptType)) {
                     if ($payrollConceptType->sign == $signsOrder[$signIndex]) {
@@ -485,9 +521,7 @@ class PayrollExport implements
         }
 
         $concepTypes = $sortedData;
-
-        $payroll = $institution->with('logo')->first();
-        $payroll_logo = $payroll->logo->file;
+        $payroll_logo = $institution->logo->file;
 
         $data = [
             AfterSheet::class => function (AfterSheet $event) use ($payroll_logo, $concepTypes, $countRecords, $institution, $payrollName) {
@@ -505,11 +539,12 @@ class PayrollExport implements
                 $sheet = $event->sheet;
 
                 $counts = 0;
-                $letter = 73;
+                $letter = $this->payroll->payrollPaymentPeriod?->payrollPaymentType?->is_survivor ? 69 : 73 ;
                 $flagSign = '';
 
                 foreach ($concepTypes as $key => $conceptType) {
-                    $payrollConceptType = PayrollConceptType::where('name', $key)->first();
+                    $payrollConceptType = $this->payrollConceptTypes->get($key);
+
                     if ($payrollConceptType->sign != 'NA') {
                         if (count($conceptType) > 0) {
                             if ($counts == 0) {
@@ -552,7 +587,7 @@ class PayrollExport implements
                 }
 
                 foreach ($concepTypes as $key => $conceptType) {
-                    $payrollConceptType = PayrollConceptType::where('name', $key)->first();
+                    $payrollConceptType = $this->payrollConceptTypes->get($key);
 
                     if ($payrollConceptType->sign == 'NA') {
                         if (count($conceptType) > 0) {
@@ -572,14 +607,15 @@ class PayrollExport implements
                 $sheet->setCellValue('C' . $countRecords + 8, $countRecords);
                 $sheet->setCellValue('D1', $institution->acronym ?? $institution->name);
                 $sheet->setCellValue('D2', $payrollName);
-                $sheet->setCellValue('D3', date_format(Payroll::find($this->payrollId)->created_at, 'd/m/Y'));
+                $sheet->setCellValue('D3', date_format($this->payroll->created_at, 'd/m/Y'));
 
                 /* Se colocan los totales de cada tipo de concepto en las celdas correspondientes */
 
-                $dLetter = 72;
+                $dLetter = !$this->payroll->payrollPaymentPeriod?->payrollPaymentType?->is_survivor ? 72 : 69;
 
                 foreach ($this->total as $tKey => $total) {
-                    if ($tKey > 5 && is_numeric($dLetter)) {
+                    $condicion = !$this->payroll->payrollPaymentPeriod?->payrollPaymentType?->is_survivor ? ($tKey > 5) : ($tKey > 2) ;
+                    if ($condicion && is_numeric($dLetter)) {
                         $char = '';
                         $count = 65;
                         $countWhile = -1;

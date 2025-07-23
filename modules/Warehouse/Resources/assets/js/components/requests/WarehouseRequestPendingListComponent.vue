@@ -11,8 +11,8 @@
                     ((props.row.department) ? props.row.department.name : '') }}
             </span>
         </div>
-        <div slot="motive" slot-scope="props" class="text-center">
-            <span> {{ prepareText(props.row.motive) }} </span>
+        <div slot="motive" slot-scope="props" class="text-center"
+             v-html="prepareText(props.row.motive)">
         </div>
         <div slot="request_date" slot-scope="props">
             <span>
@@ -36,12 +36,12 @@
                     </button>
                 </template>
                 <template v-else>
-                    <button @click="approvedRequest(props.index)" class="btn btn-success btn-xs btn-icon btn-action"
+                    <button @click="approvedRequest(props.row.id)" class="btn btn-success btn-xs btn-icon btn-action"
                         title="Aceptar solicitud" data-toggle="tooltip" type="button"
                         :disabled="props.row.state != 'Pendiente'">
                         <i class="fa fa-check"></i>
                     </button>
-                    <button @click="rejectedRequest(props.index)" class="btn btn-danger btn-xs btn-icon btn-action"
+                    <button @click="rejectedRequest(props.row.id)" class="btn btn-danger btn-xs btn-icon btn-action"
                         title="Rechazar solicitud" data-toggle="tooltip" type="button"
                         :disabled="props.row.state != 'Pendiente'">
                         <i class="fa fa-ban"></i>

@@ -220,10 +220,10 @@
                             @endif
                         </td>
                         <td align="right">
-                            {{ ' ' . number_format($entryAccount['debit'], (int) $currency->decimal_places, ',', '.') }}
+                            {{ str_replace(',', '', number_format($entryAccount['debit'], (int) $currency->decimal_places, '.', '')) }} 
                         </td>
                         <td align="right">
-                            {{ ' ' . number_format($entryAccount['assets'], (int) $currency->decimal_places, ',', '.') }}
+                            {{ str_replace(',', '', number_format($entryAccount['assets'], (int) $currency->decimal_places, '.', '')) }}
                         </td>
                         @php
                             $totDebit = $totDebit + $entryAccount['debit'];
@@ -248,10 +248,10 @@
                 <td></td>
                 <td></td>
                 <td align="right">
-                    {{ number_format($totDebit, (int) $currency->decimal_places, ',', '.') }}
+                    {{ str_replace(',', '', number_format($totDebit, (int) $currency->decimal_places, '.', '')) }}
                 </td>
                 <td align="right">
-                    {{ number_format($totAssets, (int) $currency->decimal_places, ',', '.') }}
+                    {{ str_replace(',', '', number_format($totAssets, (int) $currency->decimal_places, '.', '')) }}
                 </td>
             </tr>
         </table>

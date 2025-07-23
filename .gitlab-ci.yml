@@ -13,3 +13,5 @@ standar:psr12:
   image: lorisleiva/laravel-docker
   script:
     - phpcs --standard=PSR12 --colors --extensions=php --ignore=*/vendor/*,*/node_modules/*,*/doc/*,*/docs/*,*/resources/*,*/Resources/*,*/public/*,*/storage/*,*/bootstrap/*,*/migrations/*,composer-setup.php --exclude=Generic.Files.LineLength ./
+  only:
+    - master

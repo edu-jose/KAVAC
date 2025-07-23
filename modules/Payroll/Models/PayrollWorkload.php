@@ -28,6 +28,10 @@ class PayrollWorkload extends Model implements Auditable
     use AuditableTrait;
     use ModelsTrait;
 
+    use ModelsTrait {
+        ModelsTrait::boot as bootModelTrait;
+    }
+
     /**
      * Lista de atributos para la gestión de fechas
      *
@@ -43,6 +47,24 @@ class PayrollWorkload extends Model implements Auditable
     protected $fillable = [
         'hours', 'description'
     ];
+
+    /**
+     * The "booting" method of the model.
+     *
+     * @return void
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Inicia los eventos del ModelTrait
+        static::bootModelTrait();
+
+        static::restored(function (PayrollWorkload $payrollWorkload) {
+            // Restaura los cargos asociados a la carga horaria
+            $payrollWorkload->payrollWorkloadPositions()->onlyTrashed()->restore();
+        });
+    }
 
     /**
      * Método que obtiene los trabajadores asociados a la carga horaria

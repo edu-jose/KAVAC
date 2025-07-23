@@ -16,6 +16,26 @@ Vue.component('citizenservice-request-types', () => import(
     './components/settings/CitizenServiceRequestTypesComponent.vue')
 );
 
+Vue.component('citizenservice-procedure-types', () => import(
+    /* webpackChunkName: "citizenservice-procedure-types" */
+    './components/settings/CitizenServiceProcedureTypeComponent.vue')
+);
+
+Vue.component('citizenservice-procedures', () => import(
+    /* webpackChunkName: "citizenservice-procedures" */
+    './components/settings/CitizenServiceProcedureComponent.vue')
+);
+
+Vue.component('citizenservice-communities', () => import(
+    /* webpackChunkName: "citizenservice-communities" */
+    './components/settings/CitizenServiceCommunityComponent.vue')
+);
+
+Vue.component('citizenservice-institutions', () => import(
+    /* webpackChunkName: "citizenservice-institutions" */
+    './components/settings/CitizenServiceServedInstitutionComponent.vue')
+);
+
 Vue.component('citizenservice-request-create', () => import(
     /* webpackChunkName: "citizenservice-request-create" */
     './components/requests/CitizenServiceRequestCreateComponent.vue')
@@ -85,6 +105,42 @@ Vue.component('citizenservice-add-indicators', () => import(
     './components/requests/CitizenServiceRequestAddIndicatorComponent.vue')
 );
 
+Vue.component('citizenservice-request-team-modal', () => import(
+    /* webpackChunkName: "citizenservice-request-team-modal" */
+    './components/requests/CitizenServiceRequestTeamModalComponent.vue')
+);
+
+Vue.component('citizenservice-transaction-type', () => import(
+    /* webpackChunkName: "citizenservice-transaction-type" */
+    './components/settings/CitizenServiceTransactionTypeComponent.vue')
+);
+
+Vue.component('citizenservice-contact-form', () => import(
+    /* webpackChunkName: "citizenservice-contact-form" */
+    './components/contacts/CitizenServiceContactFormComponent.vue')
+);
+
+Vue.component('citizenservice-contact-list', () => import(
+    /* webpackChunkName: "citizenservice-contact-list" */
+    './components/contacts/CitizenServiceContactListComponent.vue')
+);
+
+Vue.component('citizenservice-community-profiling-form', () => import(
+    /* webpackChunkName: "citizenservice-community-profiling-form" */
+    './components/communities/profilings/CitizenServiceCommunityProfilingFormComponent.vue')
+);
+
+Vue.component('citizenservice-community-profiling-list', () => import(
+    /* webpackChunkName: "citizenservice-community-profiling-list" */
+    './components/communities/profilings/CitizenServiceCommunityProfilingListComponent.vue')
+);
+
+Vue.component('citizenservice-community-profiling-info', () => import(
+    /* webpackChunkName: "citizenservice-community-profiling-info" */
+    './components/communities/profilings/CitizenServiceCommunityProfilingInfoComponent.vue')
+);
+
+
 /**
  * Opciones de configuración global del módulo de Atención al Ciudadano
  *
@@ -93,9 +149,9 @@ Vue.component('citizenservice-add-indicators', () => import(
 Vue.mixin({
 	methods: {
 
-		getCitizenServiceRequestTypes() {
+		async getCitizenServiceRequestTypes() {
 			this.citizen_service_request_types = [];
-			axios.get(`${window.app_url}/citizenservice/get-request-types`).then(response => {
+			await axios.get(`${window.app_url}/citizenservice/get-request-types`).then(response => {
 				this.citizen_service_request_types = response.data;
 			});
 		},
@@ -110,9 +166,13 @@ Vue.mixin({
             axios.get(`${window.app_url}/citizenservice/get-indicators`).then(response => {
                 this.citizen_service_indicators = response.data;
             });
-        },
-
-
+        },/*
+        getCitizenServiceTransactionTypes() {
+            this.citizen_service_transaction_types = [];
+            axios.get(`${window.app_url}/citizenservice/get-transaction-types`).then(response => {
+                this.citizen_service_transaction_types  = response.data;
+            });
+        },*/
         /**
          * Obtiene los Estados del Pais seleccionado
          *
@@ -120,7 +180,9 @@ Vue.mixin({
          */
         async getEstates() {
             const vm = this;
-            vm.estates = [];
+            vm.estates = [
+                { id: '', text: 'Seleccione...' }
+            ];
             if (vm.record.country_id) {
                 await axios.get(`${window.app_url}/get-estates/${vm.record.country_id}`).then(response => {
                     vm.estates = response.data;
@@ -138,7 +200,9 @@ Vue.mixin({
          */
         async getCities() {
             const vm = this;
-            vm.cities = [];
+            vm.cities = [
+                { id: '', text: 'Seleccione...' }
+            ];
             if (vm.record.estate_id) {
                 await axios.get(`${window.app_url}/get-cities/${vm.record.estate_id}`).then(response => {
                     vm.cities = response.data;
@@ -153,9 +217,11 @@ Vue.mixin({
          *
          * @author Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
          */
-        async getMunicipalities() {
+        async getMunicipalities(e) {
             const vm = this;
-            vm.municipalities = [];
+            vm.municipalities = [
+                { id: '', text: 'Seleccione...' }
+            ];
             if (vm.record.estate_id) {
                 await axios.get(`${window.app_url}/get-municipalities/${vm.record.estate_id}`).then(response => {
                     vm.municipalities = response.data;
@@ -172,7 +238,9 @@ Vue.mixin({
          */
         async getParishes() {
             const vm = this;
-            vm.parishes = [];
+            vm.parishes = [
+                { id: '', text: 'Seleccione...' }
+            ];
             if (vm.record.municipality_id) {
                 await axios.get(`${window.app_url}/get-parishes/${vm.record.municipality_id}`).then(response => {
                     vm.parishes = response.data;
@@ -199,5 +267,79 @@ Vue.mixin({
             })[0];
         },
 
+        /**
+         * Obtiene los tipos de procedimientos
+         *
+         * @author Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
+         */
+        getProcedureTypes() {
+            this.procedureTypes = [
+                { id: '', text: 'Seleccione...' }
+            ];
+            axios.get(`${window.app_url}/citizenservice/procedure-types`).then(response => {
+                const records = response.data.records.map(procedureType => {
+                    return {
+                        id: procedureType.id,
+                        text: procedureType.name,
+                    };
+                }) || {};
+                this.procedureTypes = [
+                    ...this.procedureTypes,
+                    ...records
+                ];
+            });
+        },
+        /**
+         * Obtiene los procedimientos
+         *
+         * @author Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
+         */
+        async getProcedures(requestTypeId = null) {
+            this.procedures = [
+                { id: '', text: 'Seleccione...' }
+            ];
+            await axios.get(`${window.app_url}/citizenservice/procedures`).then(response => {
+                const records = response.data.records.filter(
+                    procedure => !requestTypeId || procedure.citizen_service_procedure_type_id === requestTypeId
+                ).map(procedure => {
+                    return {
+                        id: procedure.id,
+                        text: procedure.name,
+                    };
+                }) || {};
+
+                this.procedures = [
+                    ...this.procedures,
+                    ...records
+                ];
+            });
+        },
+        async getCommunities() {
+            const _self = this;
+            _self.communities = [
+                { id: '', text: 'Seleccione...' }
+            ];
+            await axios.get(`${window.app_url}/citizenservice/communities`).then(response => {
+                const records = response.data.records.map(community => {
+                    return {
+                        id: community.id,
+                        text: community.name,
+                        population: community.population,
+                        location: {
+                            parish: community.parish.name,
+                            municipality: community.parish.municipality.name,
+                            estate: community.parish.municipality.estate.name,
+                            country: community.parish.municipality.estate.country.name,
+                            city: community.city.name,
+                            additional_location_data: community.location,
+                        }
+                    };
+                }) || {};
+                _self.communities = [
+                    ..._self.communities,
+                    ...records
+                ];
+            });
+        }
 	},
 });

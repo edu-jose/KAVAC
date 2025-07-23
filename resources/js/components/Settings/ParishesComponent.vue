@@ -6,8 +6,8 @@
             <i class="icofont icofont-map-pins ico-3x"></i>
             <span>Parroquias</span>
         </a>
-        <div id="add_parish" class="modal fade text-left" tabindex="-1" role="dialog">
-            <div class="modal-dialog vue-crud" role="document">
+        <div id="add_parish" class="modal fade text-left" tabindex="-1">
+            <div class="modal-dialog vue-crud">
                 <div class="modal-content">
                     <div class="modal-header">
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -23,8 +23,9 @@
                         <div class="row">
                             <div class="col-12 col-md-4">
                                 <div class="form-group">
-                                    <label>País:</label>
+                                    <label for="parishCountry">País:</label>
                                     <select2
+                                        id="parishCountry"
                                         :options="countries" @input="getEstates"
                                         v-model="data.country_id"
                                     ></select2>
@@ -32,69 +33,88 @@
                             </div>
                             <div class="col-12 col-md-4">
                                 <div class="form-group">
-                                    <label>Estados:</label>
+                                    <label for="parishEstate">Estados:</label>
                                     <select2
+                                        id="parishEstate"
                                         :options="estates" v-model="data.estate_id" @input="getMunicipalities"
                                     ></select2>
                                 </div>
                             </div>
                             <div class="col-12 col-md-4">
                                 <div class="form-group">
-                                    <label>Municipio:</label>
+                                    <label for="parishMunicipality">Municipio:</label>
                                     <select2
+                                        id="parishMunicipality"
                                         :options="municipalities" v-model="data.municipality_id"
                                     ></select2>
                                 </div>
                             </div>
                             <div class="col-12 col-md-6">
                                 <div class="form-group is-required">
-                                    <label>Código:</label>
-                                    <input class="form-control input-sm" type="text" data-toggle="tooltip"
-                                           maxlength="10" placeholder="Código de Parroquia"
-                                           title="Indique el código de la Parroquia (requerido)"
-                                           v-is-digits v-model="data.code" />
+                                    <label for="parishCode">Código:</label>
+                                    <input
+                                        id="parishCode"
+                                        class="form-control input-sm" type="text" data-toggle="tooltip"
+                                        maxlength="10" placeholder="Código de Parroquia"
+                                        title="Indique el código de la Parroquia (requerido)"
+                                        v-is-digits v-model="data.code"
+                                    />
                                 </div>
                             </div>
                             <div class="col-12 col-md-6">
                                 <div class="form-group is-required">
-                                    <label>Nombre:</label>
-                                    <input class="form-control input-sm" type="text" data-toggle="tooltip"
-                                           placeholder="Nombre de Parroquia"
-                                           title="Indique el nombre de la Parroquia (requerido)"
-                                           v-is-text v-model="data.name" />
+                                    <label for="parishName">Nombre:</label>
+                                    <input
+                                        class="form-control input-sm" type="text" data-toggle="tooltip"
+                                        placeholder="Nombre de Parroquia"
+                                        title="Indique el nombre de la Parroquia (requerido)"
+                                        v-is-text v-model="data.name"
+                                    />
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="modal-footer">
                         <div class="form-group">
-                            <button type="button" class="btn btn-default btn-sm btn-round btn-modal-close"
-                                    @click="clearFilters" data-dismiss="modal">
+                            <button
+                                type="button" class="btn btn-default btn-sm btn-round btn-modal-close"
+                                @click="clearFilters" data-dismiss="modal"
+                            >
                                 Cerrar
                             </button>
-                            <button type="button" class="btn btn-warning btn-sm btn-round btn-modal btn-modal-clear"
-                                    @click="reset()">
+                            <button
+                                type="button" class="btn btn-warning btn-sm btn-round btn-modal btn-modal-clear"
+                                @click="reset()"
+                            >
                                 Cancelar
                             </button>
-                            <button type="button" @click="createRecord('parishes')"
-                                    class="btn btn-primary btn-sm btn-round btn-modal-save">
+                            <button
+                                type="button" @click="createRecord('parishes')"
+                                class="btn btn-primary btn-sm btn-round btn-modal-save"
+                            >
                                 Guardar
                             </button>
                         </div>
                     </div>
                     <div class="modal-body modal-table">
-                        <v-server-table :url="'parishes'" :columns="columns" :options="table_options"
-                                        ref="tableResults">
+                        <v-server-table
+                            :url="'parishes'" :columns="columns" :options="table_options"
+                            ref="tableResults"
+                        >
                             <div slot="id" slot-scope="props" class="text-center">
-                                <button @click="initUpdate(props.row.id, $event)"
-                                        class="btn btn-warning btn-xs btn-icon btn-action"
-                                        title="Modificar registro" data-toggle="tooltip" type="button">
+                                <button
+                                    @click="initUpdate(props.row.id, $event)"
+                                    class="btn btn-warning btn-xs btn-icon btn-action"
+                                    title="Modificar registro" data-toggle="tooltip" type="button"
+                                >
                                     <i class="fa fa-edit"></i>
                                 </button>
-                                <button @click="deleteRecord(props.row.id, 'parishes')"
-                                        class="btn btn-danger btn-xs btn-icon btn-action"
-                                        title="Eliminar registro" data-toggle="tooltip"
-                                        type="button">
+                                <button
+                                    @click="deleteRecord(props.row.id, 'parishes')"
+                                    class="btn btn-danger btn-xs btn-icon btn-action"
+                                    title="Eliminar registro" data-toggle="tooltip"
+                                    type="button"
+                                >
                                     <i class="fa fa-trash-o"></i>
                                 </button>
                             </div>
@@ -222,9 +242,9 @@
                 }
                 else {
                     vm.loading = true;
-                    var fields = {};
+                    let fields = {};
 
-                    for (var index in vm.data) {
+                    for (let index in vm.data) {
                         fields[index] = vm.data[index];
                     }
                     axios.post(url, fields).then(response => {
@@ -246,7 +266,7 @@
                     }).catch(error => {
                         vm.errors = [];
                         if (typeof(error.response) !="undefined") {
-                            for (var index in error.response.data.errors) {
+                            for (let index in error.response.data.errors) {
                                 if (error.response.data.errors[index]) {
                                     vm.errors.push(error.response.data.errors[index][0]);
                                 }
@@ -266,10 +286,10 @@
             updateRecord(url) {
                 const vm = this;
                 vm.loading = true;
-                var fields = {};
+                let fields = {};
                 url = vm.setUrl(url);
 
-                for (var index in vm.data) {
+                for (let index in vm.data) {
                     fields[index] = vm.data[index];
                 }
                 axios.patch(`${url}${(url.endsWith('/'))?'':'/'}${vm.data.id}`, fields).then(response => {
@@ -286,7 +306,7 @@
                 }).catch(error => {
                     vm.errors = [];
                     if (typeof(error.response) !="undefined") {
-                        for (var index in error.response.data.errors) {
+                        for (let index in error.response.data.errors) {
                             if (error.response.data.errors[index]) {
                                 vm.errors.push(error.response.data.errors[index][0]);
                             }
@@ -305,7 +325,7 @@
              */
             deleteRecord(id, url) {
                 const vm = this;
-                var url = vm.setUrl((url) ? url : vm.route_delete);
+                url = vm.setUrl(url || vm.route_delete);
 
                 bootbox.confirm({
                     title: "¿Eliminar registro?",

@@ -15,7 +15,7 @@ use Illuminate\Contracts\Validation\DataAwareRule;
  * @author Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
  *
  * @license
- *     [LICENCIA DE SOFTWARE CENDITEL](http://conocimientolibre.cenditel.gob.ve/licencia-de-software-v-1-3/)
+ * [LICENCIA DE SOFTWARE CENDITEL](http://conocimientolibre.cenditel.gob.ve/licencia-de-software-v-1-3/)
  */
 class PayrollPositionRestriction implements Rule, DataAwareRule
 {
@@ -57,13 +57,18 @@ class PayrollPositionRestriction implements Rule, DataAwareRule
      */
     public function passes($attribute, $value)
     {
+        // Evalúa si $value NO es un entero o no es numérico
+        if (!is_numeric($value)) {
+            $this->message = "El cargo ingresado no es válido.";
+            return false;
+        }
+
         $position = PayrollPosition::withCount(['payrollEmployments' => function ($query) {
             $query->where('payroll_employment_payroll_position.active', true);
         }])->where('id', $value)->first();
 
         if (!$position) {
             $this->message = 'El cargo no existe.';
-
             return false;
         }
 

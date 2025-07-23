@@ -181,7 +181,7 @@ class CitizenServiceReportController extends Controller
      */
     public function search(Request $request)
     {
-        $citizenservice = CitizenServiceRequest::Search(
+        $citizenservice = CitizenServiceRequest::search(
             $request
         )->with([
             'citizenServiceRequestType'

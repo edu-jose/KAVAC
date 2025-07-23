@@ -24,6 +24,13 @@ class SystemMail extends Mailable implements ShouldQueue
     use SerializesModels;
 
     /**
+     * The number of seconds the job can run before timing out.
+     *
+     * @var int
+     */
+    public $timeout = 300; // 5 minutes
+
+    /**
      * Asunto del mensaje
      *
      * @var string $subjectMsg

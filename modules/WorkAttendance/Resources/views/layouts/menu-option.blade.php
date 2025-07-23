@@ -11,19 +11,39 @@
                     data-toggle="tooltip"
                     data-placement="right"
                 >
-                    Configuración
+                    {{ __('Configuración') }}
                 </a>
             </li>
-            <li class="">
+            <li class="{!! set_active_menu(['workattendance.custom.schedule.index']) !!}">
+                <a
+                    href="{{ route('workattendance.custom.schedule.index') }}"
+                    title="Registro de horarios personalizados"
+                    data-toggle="tooltip"
+                    data-placement="right"
+                >
+                    {{ __('Horarios Personalizados') }}
+                </a>
+            </li>
+            <li class="{!! set_active_menu(['workattendance.external.activity.index']) !!}">
+                <a
+                    href="{{ route('workattendance.external.activity.index') }}"
+                    title="Registro de asistencia a actividades externas"
+                    data-toggle="tooltip"
+                    data-placement="right"
+                >
+                    {{ __('Actividades Externas') }}
+                </a>
+            </li>
+            {{-- <li class="">
                 <a
                     href="javascript:void(0)"
                     title="registrar permisos y/o motivos de inasistencia"
                     data-toggle="tooltip"
                     data-placement="right"
                 >
-                    Permisos
+                    {{ __('Permisos') }}
                 </a>
-            </li>
+            </li> --}}
             <li>
                 <a href="javascript:void(0)" data-toggle="tooltip" data-placement="right" title="Reportes">Reportes</a>
                 <ul
@@ -41,7 +61,7 @@
                             data-toggle="tooltip"
                             data-placement="right"
                         >
-                            Histórico General
+                            {{ __('Histórico General') }}
                         </a>
                     </li>
                     <li class="{!! set_active_menu(['workattendance.history.individual']) !!}">
@@ -51,7 +71,7 @@
                             data-toggle="tooltip"
                             data-placement="right"
                         >
-                            Histórico Individual
+                            {{ __('Histórico Individual') }}
                         </a>
                     </li>
                     <li class="{!! set_active_menu(['workattendance.history.by-department']) !!}">
@@ -61,7 +81,7 @@
                             data-toggle="tooltip"
                             data-placement="right"
                         >
-                            Histórico por Dependencia
+                            {{ __('Histórico por Dependencia') }}
                         </a>
                     </li>
                 </ul>

@@ -49,6 +49,42 @@ class PayrollPaymentPeriod extends Model implements Auditable
     ];
 
     /**
+     * Append de atributos
+     *
+     * @var array $appends
+     */
+
+    protected $appends = [
+        'number_of_days_monday',
+    ];
+
+    /**
+     * Método que obtiene el numero de días Lunes del periodo en cuestión
+     *
+     * @author    Francisco J. P. Ruiz <fpenya@cenditel.gob.ve>
+     *
+     * @return    integer
+     */
+    public function getNumberOfDaysMondayAttribute()
+    {
+        // Convertir start_date y end_date a instancias de Carbon
+        $startDate = \Carbon\Carbon::parse($this->start_date); // Fecha de inicio del período
+        $endDate = \Carbon\Carbon::parse($this->end_date); // Fecha de fin del período
+
+        $mondaysCount = 0;
+
+        // Contar los Lunes dentro del período
+        while ($startDate->lte($endDate)) {
+            if ($startDate->isMonday()) {
+                $mondaysCount++;
+            }
+            $startDate->addDay();
+        }
+
+        return $mondaysCount;
+    }
+
+    /**
      * Método que obtiene la información del tipo de pago asociado al período de pago de nómina
      *
      * @author    Henry Paredes <hparedes@cenditel.gob.ve>

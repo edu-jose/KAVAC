@@ -14,6 +14,7 @@
             <label class="custom-file-label" for="customFile">Adjuntar</label>
         </div>
         <small id="customFileHelp" class="form-text text-muted">Archivos permitidos: {{ acceptFiles }}</small>
+        <small class="form-text text-muted">Tamaño máximo permitido: {{ maxUploadSize }} MB</small>
     </div>
 </template>
 
@@ -58,6 +59,11 @@
                 type: String,
                 required: false,
                 default: '.docx,.doc,.odt,.pdf'
+            },
+            maxUploadSize: {
+                type: Number,
+                required: false,
+                default: 2 // in MB
             }
         },
         methods: {
@@ -66,7 +72,17 @@
                 vm.loading = true;
                 const fileInput = document.getElementById(vm.inputId).files;
                 let files = [];
+                const maxUploadSize = vm.maxUploadSize * 1024 * 1024;
                 for (var i = 0; i < fileInput.length; i++) {
+                    const fileSize = fileInput[i].size; // Tamaño en bytes
+                    if (fileSize > maxUploadSize) {
+                        vm.showMessage(
+                            'custom', 'Advertencia', 'warning', 'screen-warning',
+                            `El tamaño del archivo ${fileInput[i].name} excede el límite de ${vm.maxUploadSize} MB.`
+                        );
+                        vm.loading = false;
+                        return;
+                    }
                     files.push(fileInput[i]);
                 }
 

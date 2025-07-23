@@ -2,6 +2,7 @@
 
 namespace Modules\Payroll\Models;
 
+use Illuminate\Database\Eloquent\Casts\AsArrayObject;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use OwenIt\Auditing\Contracts\Auditable;
@@ -50,6 +51,15 @@ class PayrollVacationRequest extends Model implements Auditable
      * @var    array    $with
      */
     protected $with = ['institution', 'payrollStaff'];
+
+    /**
+     * Lista de atributos para moldear.
+     *
+     * @var array
+     */
+    protected $casts = [
+        'vacation_period_year' => 'array',
+    ];
 
     /**
      * Método que obtiene la información de la institución asociada a la solicitud de vacaciones

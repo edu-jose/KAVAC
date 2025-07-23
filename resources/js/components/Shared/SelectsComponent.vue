@@ -8,7 +8,7 @@
 	export default {
 		props: ['options', 'value'],
 		mounted: function() {
-			var vm = this;
+			const vm = this;
 			this.options.slice(0).unshift({id: '', text: 'Seleccione...'});
 			$(this.$el).select2({data: this.options})
 					   .val(this.value)

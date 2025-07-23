@@ -42,18 +42,17 @@ class UpdateFieldDependencyIdToProjectTrackingProductsTable extends Migration
         }
     }
 
-    /**
+   /**
      * Revierte las migraciones.
      *
      * @return void
      */
     public function down()
     {
-         if (Schema::hasTable('project_tracking_products')) {
+        if (Schema::hasTable('project_tracking_products')) {
             Schema::table('project_tracking_products', function (Blueprint $table) {
-                if (!Schema::hasColumn('project_tracking_products', 'dependency_id')) {
-                    $table->foreignId('dependency_id')->nullable()->references('id')->on('project_tracking_dependencies')->onDelete('cascade')->onUpdate('cascade')->comment('Dependencias');
-                }
+                $table->dropForeign(['dependency_id']);
+                $table->dropColumn('dependency_id');
             });
         }
     }

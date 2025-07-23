@@ -139,10 +139,10 @@
                                             <tbody>
                                                 <tr class="selected-row text-center">
                                                     <th>{{ getGroupBy }}</th>
-                                                    <th v-for="(field,index) in record.payroll_scales" :key="index">
+                                                    <th v-for="(field, index) in record.payroll_scales" :key="index">
                                                         <span v-if="type == 'list'
-                                                                 && options.length > 0">
-                                                            {{ getValueScale(field.value) }}
+                                                                && options.length > 0">
+                                                                {{ getValueScale(field.value) }}
                                                         </span>
                                                         <span v-else-if="type == 'range'">
                                                             <span v-if="typeof(field.value) == 'object'">
@@ -425,28 +425,35 @@
             getGroupBy: function() {
                 const vm = this;
                 let response = '';
-                $.each(vm.payroll_salary_tabulators_groups, function(index, field) {
-                    if (typeof(field['children']) != 'undefined') {
-                        $.each(field['children'], function(index, field) {
-                            if (vm.record.group_by == field['id']) {
-                                response = field['text'];
-                                if (field['type'] == 'list') {
-                                    vm.options = [];
-                                    axios.get(
-                                        `${window.app_url}/payroll/get-parameter-options/${field['id']}`
-                                    ).then(response => {
-                                        vm.options = response.data;
-                                    });
+
+                // Buscar el grupo y sus hijos
+                vm.payroll_salary_tabulators_groups.forEach(async group => {
+                    if (group.children) {
+                        const field = group.children.find(child => vm.record.group_by === child.id);
+                        if (field) {
+                            response = field.text;
+
+                            // Si el tipo es 'list', cargar las opciones
+                            if (field.type === 'list') {
+                                vm.options = [];
+                                try {
+                                    const res = await axios.get(`${window.app_url}/payroll/get-parameter-options/${field.id}`);
+                                    // Verificar si la respuesta es válida
+                                    if (res && res.data) {
+                                        vm.options = res.data;
+                                    }
+                                } catch (error) {
+                                    console.error('Error al cargar las opciones:', error);
                                 }
                             }
-                        });
+                        }
                     }
                 });
                 return response;
-            }
+            },
         },
         methods: {
-             /**
+            /**
              * Método que borra todos los datos del formulario
              *
              * @author    Henry Paredes <hparedes@cenditel.gob.ve>
@@ -538,14 +545,9 @@
              */
             getValueScale(value) {
                 const vm = this;
-                let id = JSON.parse(value);
-                let response = '';
-                $.each(vm.options, function(index, field) {
-                    if (id == field['id']) {
-                        response = field['text'];
-                    }
-                });
-                return response;
+                const id = JSON.parse(value); // Parsear el valor JSON
+                const field = vm.options.find(option => option.id === parseInt(id)); // Buscar el campo con el ID correspondiente
+                return field ? field.text : 'N/A'; // Retornar el texto si se encuentra, de lo contrario, retornar una cadena vacía
             },
             /**
              * Método que obtiene los parámetros de opciones

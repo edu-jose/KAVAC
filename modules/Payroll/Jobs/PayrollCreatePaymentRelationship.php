@@ -2,7 +2,7 @@
 
 namespace Modules\Payroll\Jobs;
 
-use DateTime;
+use App\Events\SystemNotification as EventSystemNotification;
 use App\Models\User;
 use Illuminate\Support\Str;
 use Illuminate\Bus\Queueable;
@@ -14,6 +14,7 @@ use Modules\Payroll\Models\Institution;
 use Illuminate\Queue\InteractsWithQueue;
 use Modules\Payroll\Models\PayrollStaff;
 use App\Notifications\SystemNotification;
+use Doctrine\DBAL\Types\ObjectType;
 use Modules\Payroll\Models\PayrollConcept;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -26,7 +27,6 @@ use Modules\Payroll\Models\PayrollSalaryTabulator;
 use Modules\Payroll\Actions\PayrollPaymentRelationshipAction;
 use Modules\Payroll\Exceptions\FailedPayrollConceptException;
 use Modules\Payroll\Models\DocumentStatus;
-use Modules\Payroll\Transformers\PayrollSalaryTabulatorResource;
 use Modules\Payroll\Repositories\PayrollAssociatedParametersRepository;
 
 /**
@@ -53,6 +53,26 @@ class PayrollCreatePaymentRelationship implements ShouldQueue
      */
     public $timeout = 0; //300; /** 5min */
 
+    private $payrollConceptsArray = [];
+
+    /**
+     * Variable que contendra el total de las asignaciones
+     *
+     * @var float
+     */
+    private float $totalAsignations = 0;
+
+    private float $totalAsignationsByPayrollStaff = 0;
+    private float $totalDeductionsByPayrollStaff = 0;
+    private float $totalPaidByPayrollStaff = 0;
+
+    /**
+     * Variable que contendra el total de las deducciones
+     *
+     * @var float
+     */
+    private float $totalDeductions = 0;
+
     /**
      * Crea una nueva instancia del trabajo
      *
@@ -75,10 +95,16 @@ class PayrollCreatePaymentRelationship implements ShouldQueue
     public function handle()
     {
         try {
+            $user = User::without(['roles', 'permissions'])->where('id', $this->data['user_id'])->first();
+            $user->notify(new SystemNotification('Alerta', 'Se está ejecutando la nómina, por favor espere...'));
+            //$user->notify(new System('', 'Talento Humano', 'Ejecutando', 'Se está ejecutando la nómina, por favor espere'));
             $payrollParameters = new PayrollAssociatedParametersRepository();
             /* Objeto asociado al modelo Payroll */
-            $payroll = Payroll::query()->find($this->data['id']);
-            Log::info($payroll);
+            $payroll = Payroll::query()->findOrFail($this->data['id']);
+
+            $period = $payroll->payrollPaymentPeriod;
+            $period_start = $period?->start_date;
+            $period_end = $period?->end_date;
 
             $this->data['payroll_parameters'] = $this->payrollPaymentAction->getPayrollParameters($payroll->id);
 
@@ -98,11 +124,38 @@ class PayrollCreatePaymentRelationship implements ShouldQueue
                     return $item;
                 }, $this->data['pending_concepts'] ?? []),
             );
-            foreach ($fullConcepts as $concept) {
+
+            $fullConceptsIds = array_column($fullConcepts, 'id');
+            $prueba = PayrollConcept::query()
+                ->with(['payrollConceptAssignOptions', 'payrollConceptType', 'budgetAccount', 'accountingAccount'])
+                ->whereIn('id', $fullConceptsIds)
+                ->get();
+            $this->payrollConceptsArray = $prueba->toArray();
+
+            [$withTotalsConcepts, $withoutTotalsConcepts] = $prueba->partition(
+                function (PayrollConcept $concept): bool {
+                    $currentIndex = $this->getIndex(
+                        $this->payrollConceptsArray,
+                        'id',
+                        $concept->id
+                    );
+
+                    if ($this->verifyIfConceptContainsTotalParameters($concept)) {
+                        $this->payrollConceptsArray[$currentIndex]['marked'] = true;
+                        return true;
+                    } else {
+                        $this->payrollConceptsArray[$currentIndex]['marked'] = false;
+                        return false;
+                    }
+                }
+            );
+
+            $prueba = $withoutTotalsConcepts->concat($withTotalsConcepts);
+
+            foreach ($prueba as $payrollConcept) {
+                $currentIndex = $this->getIndex($fullConcepts, 'id', $payrollConcept->id);
+                $concept = $fullConcepts[$currentIndex];
                 $formula = null;
-                $payrollConcept = PayrollConcept::query()
-                    ->with('payrollConceptAssignOptions')
-                    ->find($concept['id']);
                 $formula = $this->translateFormConcept($payrollConcept->formula);
                 $exploded = multiexplode(
                     [
@@ -165,6 +218,7 @@ class PayrollCreatePaymentRelationship implements ShouldQueue
             $payroll->salary_tabulators = getPayrollSalaryTabulators($concepts);
 
             $extraOptions = [];
+
             foreach ($concepts as $concept) {
                 foreach ($concept['field']->payrollConceptAssignOptions->where('key', 'staff') as $assign_option) {
                     $extraOptions[$concept['field']->id][] = $assign_option['assignable_id'];
@@ -183,78 +237,118 @@ class PayrollCreatePaymentRelationship implements ShouldQueue
                     $query->where('active', true)->where('default', true);
                 })
                 ->first();
-            /* Se obtienen todos los trabajadores asociados a la institución y se evalua si aplica cada uno de los conceptos */
-            $period = PayrollPaymentPeriod::find($this->data['payroll_payment_period_id']);
-            $period_start = $period?->start_date;
-            $period_end = $period?->end_date;
+
+            /**
+             * Se recorren los conceptos establecidos para la generación de la nómina
+             * Se obtienen los trabajadores que aplican para cada concepto.
+            */
+
+            $startTime = microtime(true);
+            $assignToRules = $payrollParameters->loadData('assignTo');
+            $allRelevantStaffIdsForConcept = [];
+
+            foreach ($concepts as $payrollConcept) {
+                $conceptId = $payrollConcept['field']->id;
+                $conceptFilters = json_decode($payrollConcept['field']->assign_to) ?? [];
+                $isStrict = $payrollConcept['field']->is_strict ?? false;
+                $conceptOptions = $payrollConcept['field']->payrollConceptAssignOptions;
+
+                // Llamar a findAssignableStaff para obtener IDs para ESTE concepto
+                $assignableStaffs = findAssignableStaff(
+                    $conceptFilters,
+                    $assignToRules,
+                    $conceptOptions,
+                    $period_start,
+                    $period_end,
+                    $exceptionStaffs,
+                    $isStrict
+                );
+
+                $assignableIds = $assignableStaffs->pluck('id')->filter()->all(); // Filtrar IDs no nulos;
+
+                // Acumular IDs de trabajadores para cada concepto
+                if (!empty($assignableIds)) {
+                    $allRelevantStaffIdsForConcept[$conceptId] = $assignableIds;
+                }
+            }
+
+            /**
+             * TODO: Usar uniqueRelevantStaffIds para filtrar los trabajadores
+             * que se van a procesar en la nómina.
+             */
+            $uniqueRelevantStaffIds = array_unique(array_merge(...array_values($allRelevantStaffIdsForConcept)));
+
+            $endTime = microtime(true);
+            $executionTime = $endTime - $startTime;
+
+            $payrollStaffsTotal = count($uniqueRelevantStaffIds);
+            $concepsTotal = count($concepts);
+
+            Log::info("Tiempo de ejecución para conseguir {$payrollStaffsTotal} trabajadores, en {$concepsTotal} conceptos: {$executionTime} segundos");
+
 
             /* Se obtienen todos los trabajadores asociados a la institución y se evalua si aplica cada uno de los conceptos */
             $payrollStaffs = PayrollStaff::query()
+                ->without(
+                    'payrollNationality',
+                    'payrollFinancial',
+                    'payrollGender',
+                    'payrollBloodType',
+                    'payrollDisability',
+                    'payrollLicenseDegree',
+                    'payrollStaffUniformSize',
+                    'payrollSocioeconomic',
+                    'payrollProfessional',
+                    'payrollResponsibility'
+                )->with('payrollEmployment')
                 ->whereHas('payrollEmployment', function ($q) use ($institution, $period_end) {
-
                     $q->whereHas('department', function ($qq) use ($institution) {
                         $qq->where('institution_id', $institution->id);
                     })
                     ->where('start_date', '<=', $period_end);
                 })
-                ->orWhereIn('id', $exceptionStaffs);
+                ->whereIn('id', $uniqueRelevantStaffIds);
 
-            $payrollStaffs = $payrollStaffs->orderBy('first_name')->get();
-            $assignTo = $payrollParameters->loadData('assignTo');
-
+            /* Se definen los arreglos de asignaciones y deducciones para clasificar los conceptos */
+            $conceptTypes = PayrollConceptType::query()
+                ->get('name');
             $types = [];
-            foreach ($payrollStaffs as $payrollStaff) {
-                /* Se definen los arreglos de asignaciones y deducciones para clasificar los conceptos */
-                $conceptTypes = PayrollConceptType::query()
-                    ->get('name');
+
+            $totalStaff = $payrollStaffs->count();
+            $progreso = [25, 50, 75];
+            $notificados = [];
+
+            $payrollStaffs = $payrollStaffs->orderBy('first_name', 'asc')->get();
+            foreach ($payrollStaffs as $keyStaff => $payrollStaff) {
+                $this->totalAsignationsByPayrollStaff = 0;
+                $this->totalDeductionsByPayrollStaff = 0;
+                $this->totalPaidByPayrollStaff = 0;
 
                 foreach ($conceptTypes as $conceptType) {
                     $types[$conceptType->name] = [];
                 }
-                foreach ($concepts as $concept) {
-                    $conceptAssignTo = json_decode($concept['field']['assign_to']);
-                    if ($concept['field']['is_strict'] ?? false) {
-                        $conceptAssignTo = array_chunk($conceptAssignTo, 1);
-                        $verify = true;
-                        foreach ($conceptAssignTo as $key => $value) {
-                            if (
-                                false == verify_assignment(
-                                    $value,
-                                    $assignTo,
-                                    $concept['field']->payrollConceptAssignOptions,
-                                    $payrollStaff->id,
-                                    $period_start,
-                                    $period_end,
-                                    (in_array($payrollStaff->id, $extraOptions[$concept['field']->id] ?? [])) ? array($payrollStaff->id) : [],
-                                )
-                            ) {
-                                $verify = false;
-                            }
-                        }
-                        $verify = isset($extraOptions[$concept['field']->id])
-                            ? ($verify && in_array($payrollStaff->id, $extraOptions[$concept['field']->id] ?? []))
-                            : $verify;
-                    } else {
-                        $verify = verify_assignment(
-                            $conceptAssignTo,
-                            $assignTo,
-                            $concept['field']->payrollConceptAssignOptions,
-                            $payrollStaff->id,
-                            $period_start,
-                            $period_end,
-                            $exceptionStaffs
-                        );
 
-                        $verify = isset($extraOptions[$concept['field']->id])
-                            ? ($verify || in_array($payrollStaff->id, $extraOptions[$concept['field']->id] ?? []))
-                            : $verify;
-                    }
+                foreach ($concepts as $concept) {
+                    $conceptId = $concept['field']->id;
+
+                    $currentConceptIndex = $this->getIndex(
+                        $this->payrollConceptsArray,
+                        'id',
+                        $conceptId
+                    );
+                    $conceptWithMark = $this->payrollConceptsArray[$currentConceptIndex];
+                    $originalConcept = $concept;
+
+                    // Verificar si el trabajador aplica para el concepto
+                    $verify = isset($allRelevantStaffIdsForConcept[$conceptId])
+                        ? (in_array($payrollStaff->id, $allRelevantStaffIdsForConcept[$conceptId]))
+                        : false;
 
                     if ($verify) {
                         if (($concept['time_sheet'] == 'pending') && !in_array($payrollStaff->id, $concept['staffs'])) {
                             $concept['field']->load('payrollConceptType');
                             array_push($types[$concept['field']->payrollConceptType->name], [
-                                'id' => $concept['field']->id ?? '',
+                                'id' => $conceptId ?? '',
                                 'name' => $concept['field']->name,
                                 'value' => 0,
                                 'time_sheet' => $concept['time_sheet'] ?? '',
@@ -266,7 +360,6 @@ class PayrollCreatePaymentRelationship implements ShouldQueue
                                 'accounting_account_code' => $concept['field']->accountingAccount->code ?? '',
                                 'accounting_account_denomination' => $concept['field']->accountingAccount->denomination ?? '',
                                 'formula' => $concept['field']->translate_formula ?? '',
-
                             ]);
                         } else {
                             $types = $this->setFormula(
@@ -283,7 +376,7 @@ class PayrollCreatePaymentRelationship implements ShouldQueue
                         /* Se carga la propiedad payrollConceptType para determinar como clasificar el concepto */
                         $concept['field']->load('payrollConceptType');
                         array_push($types[$concept['field']->payrollConceptType->name], [
-                            'id' => $concept['field']->id ?? '',
+                            'id' => $conceptId ?? '',
                             'name' => $concept['field']->name,
                             'value' => 0,
                             'time_sheet' => $concept['time_sheet'] ?? '',
@@ -299,7 +392,11 @@ class PayrollCreatePaymentRelationship implements ShouldQueue
                     }
                 }
 
+                $this->totalAsignationsByPayrollStaff = 0;
+                $this->totalDeductionsByPayrollStaff = 0;
+                $this->totalPaidByPayrollStaff = 0;
                 $add = false;
+
                 foreach ($types as $type) {
                     foreach ($type as $t) {
                         if ($t['value'] > 0) {
@@ -319,6 +416,28 @@ class PayrollCreatePaymentRelationship implements ShouldQueue
                         ]
                     );
                 }
+
+                $porcentaje = (int) ((($keyStaff + 1) / $totalStaff) * 100);
+                if (100 != $porcentaje) {
+                    event(new EventSystemNotification([
+                        'user_id' => $user->id,
+                        'payroll_id' => $payroll->id,
+                        'payroll_code' => $payroll->code,
+                        'porcentaje' => $porcentaje,
+                        'procesados' => $keyStaff + 1,
+                        'total' => $totalStaff
+                    ]));
+                    foreach ($progreso as $p) {
+                        if ($porcentaje >= $p && !in_array($p, $notificados)) {
+                            $notificados[] = $p;
+                            $timeOut = (microtime(true) - $startTime);
+                            Log::info('Se ha alcanzado el ' . $p . '% de la nómina ' . $payroll->code . ', en: ' . $timeOut . ' segundos');
+                            $estimatedTime = (100 * $timeOut) / $p;
+                            LOg::info("Tiempo estimado para alcanzar el 100% de la nómina: {$estimatedTime} segundos");
+                            $user->notify(new SystemNotification('Información', $p . '% de la nómina ' . $payroll->code . ' completado.'));
+                        }
+                    }
+                }
             }
 
             /* Se capturan los conceptos de la nómina */
@@ -326,8 +445,16 @@ class PayrollCreatePaymentRelationship implements ShouldQueue
             $payroll->document_status_id = DocumentStatus::query()->where('action', 'EL')->value('id');
             $payroll->save();
 
-            $user = User::without(['roles', 'permissions'])->where('id', $this->data['user_id'])->first();
-            $user->notify(new SystemNotification('Exito', 'Nomina ejecutada con exito'));
+            Log::info('Se ha alcanzado el 100% de la nómina ' . $payroll->code . ', en ' . (microtime(true) - $startTime) . ' segundos');
+            $user->notify(new SystemNotification('Éxito', 'Nomina ejecutada con éxito'));
+            event(new EventSystemNotification([
+                'user_id' => $user->id,
+                'payroll_id' => $payroll->id,
+                'payroll_code' => $payroll->code,
+                'porcentaje' => 100,
+                'procesados' => $totalStaff,
+                'total' => $totalStaff
+            ]));
         } catch (\Exception $e) {
             $payroll = Payroll::where('id', $this->data['id'])->update(['document_status_id' => null]);
 
@@ -1526,6 +1653,46 @@ class PayrollCreatePaymentRelationship implements ShouldQueue
         }
         /* Se carga la propiedad payrollConceptType para determinar como clasificar el concepto */
         $concept['field']->load('payrollConceptType');
+        // Aqui empiezo a hacer mi cambio
+        $currentConceptIndex = $this->getIndex($this->payrollConceptsArray, 'id', $concept['field']->id);
+        $conceptWithMark = $this->payrollConceptsArray [$currentConceptIndex];
+
+        if ($concept['field']->payrollConceptType['sign'] == '+' && !$conceptWithMark['marked']) {
+            $this->totalAsignations += str_eval($formula);
+            $this->totalAsignationsByPayrollStaff += str_eval($formula);
+        } elseif ($concept['field']->payrollConceptType['sign'] == '-' && !$conceptWithMark['marked']) {
+            $this->totalDeductions += str_eval($formula);
+            $this->totalDeductionsByPayrollStaff += str_eval($formula);
+        } elseif ($concept['field']->payrollConceptType['sign'] == '+' && $conceptWithMark['marked']) {
+            $formula = $concept['field']->translateFormula;
+            $formula = str_replace(
+                'TOTAL_ASSIGNMENTS',
+                $this->totalAsignationsByPayrollStaff,
+                $formula ?? $concept['formula']
+            );
+            $formula = str_replace(
+                'TOTAL_PAID',
+                $this->totalAsignationsByPayrollStaff - $this->totalDeductionsByPayrollStaff,
+                $formula ?? $concept['formula']
+            );
+            $this->totalAsignations += str_eval($formula ?? $concept['formula']);
+            $this->totalAsignationsByPayrollStaff += str_eval($formula ?? $concept['formula']);
+        } elseif ($concept['field']->payrollConceptType['sign'] == '-' && $conceptWithMark['marked']) {
+            $totalPaidValueByPayrollStaff = $this->totalAsignationsByPayrollStaff - $this->totalDeductionsByPayrollStaff;
+            $formula = $concept['field']->translateFormula;
+            $formula = str_replace(
+                'TOTAL_ASSIGNMENTS',
+                $this->totalAsignationsByPayrollStaff,
+                $formula ?? $concept['formula']
+            );
+            $formula = str_replace(
+                'TOTAL_PAID',
+                $totalPaidValueByPayrollStaff,
+                $formula ?? $concept['formula']
+            );
+            $this->totalDeductions += str_eval($formula ?? $concept['formula']);
+            $this->totalDeductionsByPayrollStaff += str_eval($formula ?? $concept['formula']);
+        }
         $formula = expression_format($formula ?? $concept['formula']);
         array_push($types[$concept['field']->payrollConceptType->name], [
             'id' => $concept['field']->id ?? '',
@@ -1570,5 +1737,42 @@ class PayrollCreatePaymentRelationship implements ShouldQueue
             );
         }
         Log::error($exception->getMessage());
+    }
+
+    /**
+     * Obtiene el indice de un arreglo en base a un parámetro y un valor
+     * @author Natanael Rojo <ndrojo@cenditel.gob.ve> | <rojonatanael99@gmail.com>
+     * @param array $array
+     * @param string $key
+     * @param mixed $value
+     * @return int|null
+     */
+    private function getIndex(array $array, string $key, $value): int|null
+    {
+        $index = 0;
+        $valueFound = false;
+
+        foreach ($array as $item) {
+            if ($item[$key] == $value) {
+                $valueFound = true;
+                break;
+            }
+            $index++;
+        }
+
+        return $valueFound ? $index : null;
+    }
+
+    /**
+     * Verifica si el concepto contiene los parámetros TOTAL_ASSIGNMENTS y TOTAL_PAID
+     *
+     * @param \Modules\Payroll\Models\PayrollConcept $concept
+     * @return bool
+     */
+    private function verifyIfConceptContainsTotalParameters(PayrollConcept $concept): bool
+    {
+        $currentConceptFormula = $concept->translate_formula;
+        return Str::contains($currentConceptFormula, 'TOTAL_ASSIGNMENTS') ||
+            Str::contains($currentConceptFormula, 'TOTAL_PAID');
     }
 }

@@ -82,7 +82,13 @@ class StaffExportFromButton extends DataExport implements
         $bloodType = PayrollBloodType::find($data['payroll_blood_type_id']);
         $disability = PayrollDisability::find($data['payroll_disability_id']);
         $license = PayrollLicenseDegree::find($data['payroll_license_degree_id']);
-        $parish = Parish::find($data['parish_id']);
+        $parish = Parish::with('municipality.estate')->find($data['parish_id']);
+        $parishName = '';
+        if ($parish) {
+            $parishName = $parish->municipality->estate->name . ' - ' .
+                           $parish->municipality->name . ' - ' .
+                           $parish->name;
+        }
 
         return [
             $data["first_name"],
@@ -103,7 +109,7 @@ class StaffExportFromButton extends DataExport implements
             $data['social_security'],
             $data['has_driver_license'] ? 'Si' : 'No',
             $license?->name ?? '',
-            $parish?->name ?? '',
+            $parishName,
             $data['address'],
             strip_tags($data['medical_history']),
         ];

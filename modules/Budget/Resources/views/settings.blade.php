@@ -191,6 +191,7 @@
     <!-- Final Registros comunes -->
 
     <!-- Proyectos -->
+    @permission('budget.project.list')
     <div class="row">
         <div class="col-12">
             <div class="card">
@@ -205,17 +206,22 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <budget-projectlist route_list="{{ url('budget/projects/vue-list') }}"
-                        route_delete="{{ url('budget/projects') }}" route_edit="{{ url('budget/projects/{id}/edit') }}"
-                        onapre="{{ config('institution.use_onapre') ? 'true' : 'false' }}">
+                    <budget-projectlist
+                        route_list="{{ url('budget/projects/vue-list') }}"
+                        route_delete="{{ url('budget/projects') }}"
+                        route_edit="{{ url('budget/projects/{id}/edit') }}"
+                        onapre="{{ config('institution.use_onapre') ? 'true' : 'false' }}"
+                    >
                     </budget-projectlist>
                 </div>
             </div>
         </div>
     </div>
+    @endpermission
     <!-- Final Proyectos -->
 
     <!-- Acciones centralizadas -->
+    @permission('budget.centralizedaction.list')
     <div class="row">
         <div class="col-12">
             <div class="card">
@@ -230,17 +236,21 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <budget-centralized-actions-list route_list="{{ url('budget/centralized-actions/vue-list') }}"
+                    <budget-centralized-actions-list
+                        route_list="{{ url('budget/centralized-actions/vue-list') }}"
                         route_delete="{{ url('budget/centralized-actions') }}"
-                        route_edit="{{ url('budget/centralized-actions/{id}/edit') }}">
+                        route_edit="{{ url('budget/centralized-actions/{id}/edit') }}"
+                    >
                     </budget-centralized-actions-list>
                 </div>
             </div>
         </div>
     </div>
+    @endpermission
     <!-- Final Acciones centralizadas -->
 
     <!-- Acciones específicas -->
+    @permission('budget.specificaction.list')
     <div class="row">
         <div class="col-12">
             <div class="card">
@@ -263,5 +273,6 @@
             </div>
         </div>
     </div>
+    @endpermission
     <!-- Final Acciones específicas -->
 @stop

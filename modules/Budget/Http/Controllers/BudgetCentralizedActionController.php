@@ -4,6 +4,7 @@ namespace Modules\Budget\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use App\Models\FiscalYear;
 use Nwidart\Modules\Facades\Module;
 use Modules\Budget\Models\Department;
 use Modules\Budget\Models\Institution;
@@ -11,6 +12,7 @@ use Illuminate\Contracts\Support\Renderable;
 use Modules\Budget\Models\BudgetCentralizedAction;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Carbon\Carbon;
+use Modules\Budget\Models\BudgetComponentManagerHistory;
 
 /**
  * @class BudgetCentralizedActionController
@@ -111,9 +113,11 @@ class BudgetCentralizedActionController extends Controller
     }
 
     /**
-     * Registra información de la acción centralizada
+     * Registra información de la acción centralizada y el respectivo
+     * responsable en el historial de responsables.
      *
      * @author Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
+     * @author Ing. Argenis Osorio <aosorio@cenditel.gob.ve>
      *
      * @param  Request $request Datos de la petición
      *
@@ -121,6 +125,7 @@ class BudgetCentralizedActionController extends Controller
      */
     public function store(Request $request)
     {
+        /* Reglas de validación */
         $rules = [
             'institution_id' => ['required'],
             'department_id' => ['required'],
@@ -132,6 +137,7 @@ class BudgetCentralizedActionController extends Controller
             'from_date' => ['required'],
         ];
 
+        /* Mensajes de validación */
         $messages = [
             'institution_id.required'     => 'El campo institucion es obligatorio.',
             'department_id.required'     => 'El campo departamento es obligatorio.',
@@ -144,15 +150,17 @@ class BudgetCentralizedActionController extends Controller
             'from_date.required' => 'El campo fecha de inicio es obligatorio. ',
         ];
 
+        /* Comprobar si está presente y activo el modulo Payroll */
         if (Module::has('Payroll') && Module::isEnabled('Payroll')) {
             $rules['payroll_position_id'] = 'required';
             $rules['payroll_staff_id'] = 'required';
         }
 
+        /* Validar los datos de la petición */
         $this->validate($request, $rules, $messages);
 
-        /* Registra el nuevo proyecto */
-        BudgetCentralizedAction::create([
+        /* Registra la nueva AC */
+        $budgetCentralizedAction = BudgetCentralizedAction::create([
             'name' => $request->name,
             'code' => $request->code,
             'custom_date' => Carbon::now()->format('Y-m-d'),
@@ -169,7 +177,26 @@ class BudgetCentralizedActionController extends Controller
             ) ? $request->payroll_staff_id : null
         ]);
 
+        /* Registrar responsable en la tabla del historial de los responsables */
+        BudgetComponentManagerHistory::create([
+            // Modelo para managerable_type
+            'managerable_type' => \Modules\Payroll\Models\PayrollStaff::class,
+            // ID del responsable
+            'managerable_id' => $request->payroll_staff_id,
+            // Modelo para componentable_type
+            'componentable_type' => \Modules\Budget\Models\BudgetCentralizedAction::class,
+            // ID de la AC recién creada
+            'componentable_id' => $budgetCentralizedAction->id,
+            // Fecha de creación
+            'created_at' => $request->from_date,
+            // Fecha de actualización
+            'updated_at' => $request->from_date,
+        ]);
+
+        /* Mensaje de éxito */
         $request->session()->flash('message', ['type' => 'store']);
+
+        /* Redireccionar a la vista de configuración */
         return redirect()->route('budget.settings.index');
     }
 
@@ -199,6 +226,9 @@ class BudgetCentralizedActionController extends Controller
         /* Objeto con información de la acción centralizada a modificar */
         $budgetCentralizedAction = BudgetCentralizedAction::find($id);
         $budgetCentralizedActionInstitucion = BudgetCentralizedAction::find($id)->department;
+
+        // Obtener el año fiscal activo
+        $activeFiscalYear = FiscalYear::where('active', true)->value('year');
 
         $staffPosition = null;
 
@@ -267,7 +297,8 @@ class BudgetCentralizedActionController extends Controller
             'institutions',
             'departments',
             'positions',
-            'staffs'
+            'staffs',
+            'activeFiscalYear'
         ));
     }
 
@@ -283,6 +314,7 @@ class BudgetCentralizedActionController extends Controller
      */
     public function update(Request $request, $id)
     {
+        /* Reglas de validación */
         $rules = [
             'institution_id' => ['required'],
             'department_id' => ['required'],
@@ -290,19 +322,54 @@ class BudgetCentralizedActionController extends Controller
             'name' => ['required'],
         ];
 
+        /* Comprobar si está presente y activo el modulo Payroll */
         if (Module::has('Payroll') && Module::isEnabled('Payroll')) {
             $rules['payroll_position_id'] = 'required';
             $rules['payroll_staff_id'] = 'required';
         }
 
+        /* Validar los datos de la petición */
         $this->validate($request, $rules);
 
         /* Objeto con información de la acción centralizada a modificar */
         $budgetCentralizedAction = BudgetCentralizedAction::find($id);
+
+        /* Obtener el valor actual de payroll_staff_id antes de actualizar el modelo */
+        $currentPayrollStaffId = $budgetCentralizedAction->payroll_staff_id;
+
+        /* Obtener el nuevo valor de payroll_staff_id desde la solicitud */
+        $newPayrollStaffId = $request->payroll_staff_id;
+
+        /* Verificar si hay un cambio en el Responsable de la AC */
+        if ($currentPayrollStaffId != $newPayrollStaffId) {
+            /* Registrar nuevo responsable en la tabla del historial de los
+            responsables */
+            BudgetComponentManagerHistory::create([
+                // Modelo para managerable_type
+                'managerable_type' => \Modules\Payroll\Models\PayrollStaff::class,
+                // ID del responsable
+                'managerable_id' => $request->payroll_staff_id,
+                // Modelo para componentable_type
+                'componentable_type' => \Modules\Budget\Models\BudgetCentralizedAction::class,
+                // ID de la AC recién creada
+                'componentable_id' => $budgetCentralizedAction->id,
+                // Fecha de creación
+                'created_at' => $request->start_date_responsible,
+                // Fecha de actualización
+                'updated_at' => null,
+            ]);
+        }
+
+        /* Llenar el modelo con los datos de la solicitud */
         $budgetCentralizedAction->fill($request->all());
+
+        /* Guardar la información actualizada */
         $budgetCentralizedAction->save();
 
+        /* Mensaje de éxito */
         $request->session()->flash('message', ['type' => 'update']);
+
+        /* Redireccionar a la vista de configuración */
         return redirect()->route('budget.settings.index');
     }
 
@@ -339,6 +406,9 @@ class BudgetCentralizedActionController extends Controller
      */
     public function vueList($active = null)
     {
+        // Obtener el año fiscal activo
+        $activeFiscalYear = FiscalYear::where('active', true)->value('year');
+
         /* Objeto con información de las acciones centralizadas */
         $centralizedActions = (
             $active !== null
@@ -360,11 +430,15 @@ class BudgetCentralizedActionController extends Controller
                             if ($formulation->confirmed == true) {
                                 $centralizedAction->disabled = true;
                                 if (!in_array($centralizedAction, $records)) {
+                                    // Añadir el año fiscal activo
+                                    $centralizedAction->activeFiscalYear = $activeFiscalYear;
                                     array_push($records, $centralizedAction);
                                 }
                             } else {
                                 $centralizedAction->disabled = false;
                                 if (!in_array($centralizedAction, $records)) {
+                                    // Añadir el año fiscal activo
+                                    $centralizedAction->activeFiscalYear = $activeFiscalYear;
                                     array_push($records, $centralizedAction);
                                 }
                             }
@@ -372,6 +446,8 @@ class BudgetCentralizedActionController extends Controller
                     } else {
                         $centralizedAction->disabled = false;
                         if (!in_array($centralizedAction, $records)) {
+                            // Añadir el año fiscal activo
+                            $centralizedAction->activeFiscalYear = $activeFiscalYear;
                             array_push($records, $centralizedAction);
                         }
                     }
@@ -379,12 +455,14 @@ class BudgetCentralizedActionController extends Controller
             } else {
                 $centralizedAction->disabled = false;
                 if (!in_array($centralizedAction, $records)) {
+                    // Añadir el año fiscal activo
+                    $centralizedAction->activeFiscalYear = $activeFiscalYear;
                     array_push($records, $centralizedAction);
                 }
             }
         }
 
-        return response()->json(['records' => $records], 200);
+        return response()->json(['records' => $records, 'activeFiscalYear' => $activeFiscalYear], 200);
     }
 
     /**
@@ -423,19 +501,45 @@ class BudgetCentralizedActionController extends Controller
      */
     public function getDetailCentralizedActions($id = null)
     {
+        // Obtener la AC por su ID.
         $budget = BudgetCentralizedAction::find($id);
+
         $departments = Department::find($id);
+
         $cargo = [];
 
+        // Obtener el cargo si el módulo Payroll está habilitado
         if (Module::has('Payroll') && Module::isEnabled('Payroll')) {
             $cargo = \Modules\Payroll\Models\PayrollStaff::where("id", $budget->payroll_staff_id)->first();
         }
 
+        // Obtener los registros del historial de responsables relacionados con
+        // la AC.
+        $history = $budget->componentManagerHistory()
+            ->with('managerable') // Cargar la relación managerable (PayrollStaff)
+            ->get()
+            ->map(function ($item) {
+                // Verificar si managerable está cargado y es una instancia de PayrollStaff
+                if ($item->managerable instanceof \Modules\Payroll\Models\PayrollStaff) {
+                    return [
+                        'id' => $item->managerable->id,
+                        'first_name' => $item->managerable->first_name,
+                        'last_name' => $item->managerable->last_name,
+                        'created_at' => $item->created_at,
+                    ];
+                }
+                // Si managerable no es una instancia de PayrollStaff, devolver null.
+                return null;
+            })
+            ->filter();
+
+        // Devolver la respuesta JSON con los datos
         return response()->json([
             'result' => true,
             'budget' =>  $budget,
             'cargo' =>  $cargo,
-            'departments' =>  $departments
+            'departments' =>  $departments,
+            'history' => $history
         ], 200);
     }
 

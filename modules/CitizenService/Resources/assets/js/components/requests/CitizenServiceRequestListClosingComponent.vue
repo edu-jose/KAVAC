@@ -40,14 +40,19 @@
         created() {
             this.readRecords(this.route_list);
             this.table_options.headings = {
-                'requested_by': 'Solicitado por',
-                'state': 'Estado de la solicitud',
-                'date': 'Fecha de la solicitud',
+                'requested_by': 'Trámite solicitado por',
+                'state': 'Estado de la solicitud / trámite',
+                'date': 'Fecha de la solicitud / trámite',
                 'id': 'Acción'
             };
             this.table_options.sortable = ['requested_by', 'state', 'date'];
             this.table_options.filterable = ['requested_by', 'state', 'date'];
-
+            this.table_options.columnsClasses = {
+                'requested_by': 'col-md-6',
+                'state': 'col-md-2 text-center',
+                'date': 'col-md-2 text-center',
+                'id': 'col-md-2'
+            };
         },
         methods: {
 

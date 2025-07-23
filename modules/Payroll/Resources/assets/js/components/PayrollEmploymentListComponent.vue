@@ -56,6 +56,7 @@ export default {
     data() {
         return {
             record: [],
+            payroll_seniorities: [],
             fiscal_year: '',
             fiscal_date: '',
             columns: [
@@ -73,6 +74,7 @@ export default {
 
     created() {
         this.getFiscalYear();
+        this.getPayrollSeniorities();
 
         this.table_options.headings = {
             'payroll_staff.first_name': 'Nombres',
@@ -458,6 +460,7 @@ export default {
                 record.service_years = data_years;
             }
 
+            vm.setSeniorityTime(record);
         },
 
         /**
@@ -495,13 +498,39 @@ export default {
                             }
                         }).catch(error => {
                             vm.logs('mixins.js', 498, error, 'deleteRecord');
-                            vm.showMessage('custom', 'Alerta!', 'warning', 'screen-error', error.response.data.message);
+                            if (error.response.status == 403) {
+                            vm.showMessage(
+                                'custom', 'Acceso Denegado', 'danger', 'screen-error', error.response.data.message
+                            );
+                            }else{
+                                vm.showMessage('custom', 'Alerta!', 'warning', 'screen-error', error.response.data.message);
+                            }
                         });
                         vm.loading = false;
                         vm.$refs.tableResults.refresh();
                     }
                 }
             });
+        },
+
+        /**
+         * Establece el rango de antiguedad de acuerdo a la fecha de ingreso a
+         * la instutición y a los años trabajados en otras instituciones
+         *
+         * @author Daniel Contreras <dcontreras@cenditel.gob.ve> | <exodiadaniel@gmail.com>
+         */
+        setSeniorityTime(record) {
+            const vm = this;
+            let years = record.service_years;
+
+            record.payroll_seniority_id = '';
+            record.payroll_seniority_name = '';
+
+            vm.payroll_seniorities.forEach((seniority) => {
+                if (years >= seniority.minimum && years <= seniority.maximum) {
+                    record.payroll_seniority_name = seniority.text;
+                }
+            })
         },
     },
 };

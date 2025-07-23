@@ -63,7 +63,7 @@
             </a>
             @php
             $submenuReports = '';
-            if (in_array(Route::current()->getName(), ['budget.report.budgetAnalyticalMajor', 'budget.report.budgetAvailability', 'budget.report.projects', 'budget.report.formulated'])) {
+            if (in_array(Route::current()->getName(), ['budget.report.budgetAnalyticalMajor', 'budget.report.budgetAvailability', 'budget.report.projects', 'budget.report.formulated', 'budget.report.budgetModifications'])) {
                 $submenuReports = 'style="display:block"';
             }
             @endphp
@@ -101,6 +101,14 @@
                         {{ __('Compromisos') }}
                     </a>
                 </li>
+                @permission('budget.modification.report.index')
+                <li class="{!! set_active_menu(['budget.report.budgetModifications']) !!}">
+                    <a href="{{ route('budget.report.budgetModifications') }}" data-toggle="tooltip"
+                        data-placement="right" title="{{ __('Reporte de Modificaciones') }}">
+                        {{ __('Modificaciones') }}
+                    </a>
+                </li>
+                @endpermission
             </ul>
         </li>
     </ul>

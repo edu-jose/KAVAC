@@ -128,7 +128,7 @@
 										props.row.warehouse_institution_warehouse.warehouse.name
 										}} <br>
 									<b>Existencia:</b> {{ props.row.exist }}<br>
-									<b>Reservados:</b> {{ (props.row.reserved === null)? '0':props.row.reserved }}
+									<b>Entregados:</b> {{ (props.row.reserved === null) ? '0' : props.row.reserved }}
 								</span>
 							</div>
 							<div slot="rules" slot-scope="props">

@@ -34,6 +34,9 @@ class AssetInventoryController extends Controller
     {
         // Establece permisos de acceso para cada método del controlador
         $this->middleware('permission:asset.inventory.history.index', ['only' => 'index']);
+        $this->middleware('permission:asset.inventory.history.create', ['only' => 'store']);
+        $this->middleware('permission:asset.inventory.history.edit', ['only' => 'update']);
+        $this->middleware('permission:asset.inventory.history.delete', ['only' => 'destroy']);
     }
 
     /**

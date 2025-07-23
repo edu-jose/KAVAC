@@ -57,13 +57,16 @@ class WarehouseSettingController extends Controller
         $codeSettings = CodeSetting::where('module', 'warehouse')->get();
         $pdCode = $codeSettings->where('table', 'warehouse_inventory_products')->first();
         $mvCode = $codeSettings->where('table', 'warehouse_movements')->first();
-        $rqCode = $codeSettings->where('table', 'warehouse_requests')->first();
+        $rqCode = $codeSettings->where('table', 'warehouse_requests')
+            ->where('type', 'warehouse.request')->first();
+        $rqStaffCode = $codeSettings->where('table', 'warehouse_requests')
+            ->where('type', 'warehouse.requestStaff')->first();
         $rpCode = $codeSettings->where('table', 'warehouse_reports')->first();
         $ivCode = $codeSettings->where('table', 'warehouse_inventories')->first();
 
         return view(
             'warehouse::settings',
-            compact('paramMultiWarehouse', 'header', 'pdCode', 'mvCode', 'rqCode', 'rpCode', 'ivCode')
+            compact('paramMultiWarehouse', 'header', 'pdCode', 'mvCode', 'rqCode', 'rqStaffCode', 'rpCode', 'ivCode')
         );
     }
 
@@ -85,16 +88,18 @@ class WarehouseSettingController extends Controller
 
         /* Reglas de validación para la configuración de códigos */
         $this->validate($request, [
-            'products_code'    => [new CodeSettingRule()],
-            'movements_code'   => [new CodeSettingRule()],
-            'requests_code'    => [new CodeSettingRule()],
-            'reports_code'     => [new CodeSettingRule()],
-            'inventories_code' => [new CodeSettingRule()]
+            'products_code'         => [new CodeSettingRule()],
+            'movements_code'        => [new CodeSettingRule()],
+            'requests_code'         => [new CodeSettingRule()],
+            'requestStaffs_code'   => [new CodeSettingRule()],
+            'reports_code'          => [new CodeSettingRule()],
+            'inventories_code'      => [new CodeSettingRule()]
         ]);
 
         foreach ($codes as $key => $value) {
             /* Define el modelo al cual hace referencia el código */
             $model = '';
+            $type = null;
 
             if ($key !== '_token' && !is_null($value)) {
                 list($table, $field) = explode("_", $key);
@@ -109,9 +114,17 @@ class WarehouseSettingController extends Controller
                 } elseif ($table === "movements") {
                     /* Define el modelo para asociado a los movimientos de almacén */
                     $model = \Modules\Warehouse\Models\WarehouseMovement::class;
-                } elseif ($table === "requests") {
-                    /* Define el modelo para asociado a las solicitudes de almacén */
+                } elseif (in_array($key, ['requests_code', 'requestStaffs_code'])) {
+                    /* Define el modelo asociado a las solicitudes de almacén */
                     $model = \Modules\Warehouse\Models\WarehouseRequest::class;
+                    /* Define la tabla asociada a las solicitudes de almacén */
+                    $table = "requests";
+                    /* Define el tipo de código asociado a las solicitudes de almacén */
+                    if ($key === 'requests_code') {
+                        $type = 'warehouse.request';
+                    } elseif ($key === 'requestStaffs_code') {
+                        $type = 'warehouse.requestStaff';
+                    }
                 } elseif ($table === "reports") {
                     /* Define el modelo para asociado a los reportes de almacén */
                     $model = \Modules\Warehouse\Models\WarehouseReport::class;
@@ -124,7 +137,8 @@ class WarehouseSettingController extends Controller
                     $codeSetting = CodeSetting::where([
                         'module' => 'warehouse',
                         'table'  => 'warehouse_' . $table,
-                        'field'  => $field
+                        'field'  => $field,
+                        'type'   => isset($type) ? $type : null
                     ])->first();
 
                     if (!isset($codeSetting)) {
@@ -132,6 +146,7 @@ class WarehouseSettingController extends Controller
                             'module'        => 'warehouse',
                             'table'         => 'warehouse_' . $table,
                             'field'         => $field,
+                            'type'          => (isset($type)) ? $type : null,
                             'format_prefix' => $prefix,
                             'format_digits' => $digits,
                             'format_year'   => $sufix,

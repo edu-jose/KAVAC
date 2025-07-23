@@ -43,8 +43,6 @@
                 </div>
             </div>
         </div>
-
-        @if(@Auth::user()->hasRole('admin') || @Auth::user()->hasRole('account'))
             <div class="col-12">
                 <div class="card" id="helpSearchEntriesApproved">
                     <div class="card-header">
@@ -61,6 +59,5 @@
                     </div>
                 </div>
             </div>
-        @endif
     </div>
 @stop

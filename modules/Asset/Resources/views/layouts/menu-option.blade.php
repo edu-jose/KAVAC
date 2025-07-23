@@ -5,12 +5,12 @@
     </a>
     <ul class="submenu" style="{!! display_submenu('asset') !!}">
 
-        @role(['admin', 'asset'])
+        @permission('asset.setting')
             <li class="{!! set_active_menu('asset.setting.index') !!}">
                 <a href="{{ route('asset.setting.index') }}" data-toggle="tooltip" data-placement="right"
                     title="Configuración de bienes">Configuración</a>
             </li>
-        @endrole
+        @endpermission
         @if (!Module::has('Purchase') || !Module::isEnabled('Purchase'))
             <li class="{!! set_active_menu(['asset.suppliers.index', 'asset.suppliers.create', 'asset.suppliers.edit']) !!}">
                 <a href="{{ route('asset.suppliers.index') }}" title="Gestión de Proveedores" data-toggle="tooltip"

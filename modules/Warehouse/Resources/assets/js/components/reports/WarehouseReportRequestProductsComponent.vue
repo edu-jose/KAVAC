@@ -198,7 +198,13 @@
                             {{ props.row.warehouse_inventory_product.currency
                                     ? props.row.warehouse_inventory_product.currency.acronym
                                     : ''
-                            }}
+                            }} <br>
+                        <b>Fecha de vencimiento:</b>
+                            {{ props.row.warehouse_inventory_product.expiration_date ?
+                                format_date(props.row.warehouse_inventory_product.expiration_date) :
+                                ''
+                            }} <br>
+                        <b>Lote:</b> {{props.row.warehouse_inventory_product.batch_number}}
                     </span>
                 </div>
                 <div slot="inventory" slot-scope="props">
@@ -215,7 +221,7 @@
                             {{
                                 props.row.warehouse_inventory_product.real
                             }} <br>
-                        <b>Reservados:</b> {{ (props.row.warehouse_inventory_product.reserved === null)? '0':props.row.warehouse_inventory_product.reserved }}<br>
+                        <b>Entregados:</b> {{ (props.row.warehouse_inventory_product.reserved === null) ? '0' : props.row.warehouse_inventory_product.reserved }}<br>
                         <b>Solicitados:</b> {{ quantityProductRequests(props.row.warehouse_inventory_product.code) }}
 
                         <br>

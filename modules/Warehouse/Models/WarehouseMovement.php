@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Date;
 use Illuminate\Database\Eloquent\Model;
 use OwenIt\Auditing\Contracts\Auditable;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Nwidart\Modules\Facades\Module;
 use OwenIt\Auditing\Auditable as AuditableTrait;
 
 /**
@@ -41,7 +42,8 @@ class WarehouseMovement extends Model implements Auditable
      */
     protected $fillable = [
         'code', 'type', 'reception_date', 'observations', 'state', 'warehouse_institution_warehouse_initial_id',
-        'warehouse_institution_warehouse_end_id', 'user_id', 'description'
+        'warehouse_institution_warehouse_end_id', 'user_id', 'description', 'direct_hire', 'purchase_direct_hire_id',
+        'supplier', 'purchase_supplier_id', 'general_observations'
     ];
 
     /**
@@ -100,5 +102,31 @@ class WarehouseMovement extends Model implements Auditable
     public function getDate()
     {
         return $this->reception_date;
+    }
+
+    /**
+     * Método que obtiene el código de orden de compra o servicio asociado al movimiento de almacén
+     *
+     * @author Pedro Contreras <pmcontreras@cenditel.gob.ve>
+     *
+     */
+    public function purchaseDirectHire()
+    {
+        return (
+            Module::has('Purchase') && Module::isEnabled('Purchase')
+        ) ? $this->belongsTo(\Modules\Purchase\Models\PurchaseDirectHire::class, 'purchase_direct_hire_id', 'id') : null;
+    }
+
+    /**
+     * Método que obtiene el proveedor asociado al movimiento de almacén
+     *
+     * @author Pedro Contreras <pmcontreras@cenditel.gob.ve>
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function purchaseSupplier()
+    {
+        return (
+            Module::has('Purchase') && Module::isEnabled('Purchase')
+        ) ? $this->belongsTo(\Modules\Purchase\Models\PurchaseSupplier::class, 'purchase_supplier_id', 'id') : null;
     }
 }

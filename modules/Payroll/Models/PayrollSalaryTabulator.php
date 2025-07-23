@@ -137,4 +137,16 @@ class PayrollSalaryTabulator extends Model implements Auditable
     {
         return $this->hasMany(PayrollSalaryAdjustment::class);
     }
+
+    /**
+     * Método que obtiene la información de los datos laborales al tabulador salarial
+     *
+     * @author    Pedro Contreras <pmcontreras@cenditel.gob.ve>
+     *
+     * @return    \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function payrollEmployments()
+    {
+        return $this->hasMany(PayrollEmployment::class);
+    }
 }

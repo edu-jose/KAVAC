@@ -54,10 +54,10 @@
                                         data-toggle="tooltip"
                                         title="Indique los cargos para está carga horaria"
                                         track_by="text"
-                                        :hide_selected="true"
+                                        :hide_selected="false"
+										:limit="5"
 										:close_on_select="false"
                                         :options="payroll_positions"
-                                        :limit="3"
                                         v-model="record.payroll_workload_positions"
                                     >
                                     </v-multiselect>
@@ -146,6 +146,8 @@
 					hours: '',
 					payroll_workload_positions: []
 				};
+
+				this.getPayrollPositions();
 			},
 
 			/**
@@ -154,13 +156,58 @@
 			 * @param {array} ids Arreglo con los identificadores de los cargos a obtener al editar un registro
 			 */
 			 async getPayrollPositions(ids = []) {
-				console.log(ids);
                 this.payroll_positions = [];
-                await axios.get(`${window.app_url}/payroll/get-workload-positions`, {params: {ids: ids}})
+                await axios.post(`${window.app_url}/payroll/get-workload-positions`, {ids})
 				.then(response => {
                     this.payroll_positions = Object.values(response.data);
+					this.sortList("payroll_positions");
                 });
             },
+
+			sortList(key, subkey = null) {
+				let listToSort;
+
+				if (subkey) {
+					listToSort = this[key][subkey];
+				} else {
+					listToSort = this[key];
+				}
+
+				// Asegúrate de que 'listToSort' sea un array válido antes de proceder
+				if (!listToSort || !Array.isArray(listToSort) || listToSort.length === 0) {
+					return;
+				}
+
+				let selectOption = null;
+				// Filtra la opción "Seleccione..." y la guarda si existe
+				const filteredList = listToSort.filter(item => {
+					if (item.text === "Seleccione...") {
+						selectOption = item;
+						return false; // Excluye esta opción de la lista que será ordenada
+					}
+					return true; // Incluye el resto de los elementos
+				});
+
+				// Ordena el resto de los elementos (sin "Seleccione...") alfabéticamente
+				filteredList.sort((a, b) => {
+					const textA = (a.text || '').toUpperCase();
+					const textB = (b.text || '').toUpperCase();
+
+					if (textA < textB) return -1;
+					if (textA > textB) return 1
+					return 0;
+				});
+
+				// Si se encontró la opción "Seleccione...", la añade de nuevo al principio del array ya ordenado
+				if (selectOption) filteredList.unshift(selectOption);
+
+				// Asigna la lista final (ordenada con "Seleccione..." al inicio) de nuevo a la propiedad original
+				if (subkey) {
+					this[key][subkey] = filteredList;
+				} else {
+					this[key] = filteredList;
+				}
+			},
 
 			/**
              * Método que permite crear o actualizar un registro
@@ -301,6 +348,8 @@
                 }
 
                 vm.getPayrollPositions(ids).then(() => {
+					vm.record.payroll_workload_positions = [];
+
 					for (const value of recordEdit.payroll_workload_positions) {
 						vm.record.payroll_workload_positions.push({
 							id: value.payroll_position_id,
@@ -308,6 +357,7 @@
 						})
 					}
 				});
+
 
 				event.preventDefault();
 			},

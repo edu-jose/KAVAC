@@ -425,17 +425,17 @@ export default {
     },
     mounted() {
         const vm = this;
-        $("#add_projecttracking_products-config").on(
+        $("#add_products-config").on(
             "show.bs.modal",
             function () {
                 vm.reset();
+                vm.getPersonal();
+                vm.getProjects();
+                vm.getSubprojects();
+                vm.getProductTypes();
+                vm.getDependencies();
             }
         );
-        vm.getPersonal();
-        vm.getProjects();
-        vm.getSubprojects();
-        vm.getProductTypes();
-        vm.getDependencies();
     },
 };
 </script>

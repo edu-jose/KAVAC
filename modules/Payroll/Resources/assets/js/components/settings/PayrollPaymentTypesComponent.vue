@@ -136,6 +136,21 @@
                                 </div>
                             </div>
                             <!-- ./fideicomiso -->
+                            <!-- sobrevivientes  -->
+                            <div class="col-md-3">
+                                <div class=" form-group">
+                                    <label>Pago de sobrevivientes</label>
+                                    <div class="col-12">
+                                        <div class="custom-control custom-switch" data-toggle="tooltip"
+                                            title="Pago de sobrevivientes">
+                                            <input type="checkbox" class="custom-control-input" id="isSurvivor"
+                                                v-model="record.is_survivor" :value="false">
+                                            <label class="custom-control-label" for="isSurvivor"></label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- ./sobrevivientes  -->
                             <!-- periodicidad de pago -->
                             <div class="col-md-4">
                                 <div class="form-group is-required" v-if="userPermission == false">
@@ -331,6 +346,7 @@ export default {
                 ordinary_payment: false,
                 skip_moments: false,
                 is_trust: false,
+                is_survivor: false,
                 payment_periodicity: '',
                 periods_number: '',
                 start_date: '',
@@ -643,6 +659,7 @@ export default {
                 receipt: false,
                 individual: false,
                 is_trust: false,
+                is_survivor: false,
                 payment_periodicity: '',
                 periods_number: '',
                 finance_bank_account_id: '',
@@ -862,6 +879,7 @@ export default {
             })[0])) || vm.reset();
 
             vm.record = recordEdit;
+            vm.record.is_survivor = recordEdit.is_survivor ? recordEdit.is_survivor : false;
             vm.savedPeriods = this.record.payroll_payment_periods;
             vm.savedpaymentData = {
                 'payment_periodicity': vm.record.payment_periodicity,

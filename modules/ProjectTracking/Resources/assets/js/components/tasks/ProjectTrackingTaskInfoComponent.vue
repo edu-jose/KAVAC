@@ -142,6 +142,17 @@
                                             </div>
                                         </div>
                                     </div>
+                                    <div v-if="record.new_end_date" class="col-md-4">
+                                        <div class="form-group">
+                                            <strong>Nueva fecha de Entrega:</strong>
+                                            <div class="row" style="margin: 1px 0">
+                                                <span class="col-md-12">
+                                                    {{ format_date(record.new_end_date) +
+                                                        ` a la hora: ${record.cut_off_time}` }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
                                     <div class="col-md-4" v-if="record.depending_task_id !== null">
                                         <div class="form-group">
                                             <strong>Depende de:</strong>
@@ -221,6 +232,8 @@ export default {
                 priority_id: '',
                 start_date: '',
                 end_date: '',
+                new_end_date: '',
+                cut_off_time: '',
                 weight: '',
                 subtasks: [],
             },
@@ -242,6 +255,8 @@ export default {
                 priority_id: '',
                 start_date: '',
                 end_date: '',
+                new_end_date: '',
+                cut_off_time: '',
                 weight: '',
                 subtasks: [],
             }

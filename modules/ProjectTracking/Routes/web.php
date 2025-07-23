@@ -42,6 +42,9 @@ Route::group([
     /* Ruta para detallar la configuración de proyectos */
     Route::get('get-project-info/{id}', 'ProjectTrackingProjectController@recordInfo')->name('projecttracking.project.info.get');
 
+    /* Ruta para obtener los proyectos registrados en el modulo Budget */
+    Route::get('get-budget-projects', 'ProjectTrackingProjectController@getBudgetProjects')->name('projecttracking.get_budget_projects');
+
     /* Ruta para gestionar la configuración de productos */
     Route::resource('products-config', 'ProjectTrackingProductController');
 
@@ -62,6 +65,9 @@ Route::group([
 
     /* Ruta para obtener el listado de las Dependencias */
     Route::get('get-dependencies', 'ProjectTrackingDependencyController@getDependencies')->name('projecttracking.dependencies.get');
+
+    /* Ruta para obtener el listado de los Tipos de dependencias */
+    Route::get('get-dependencies-type', 'ProjectTrackingDependenciesTypeController@getDependenciesType')->name('projecttracking.dependencies.type.get');
 
     /* Rutas para gestionar los cargos */
     Route::resource('positions', 'ProjectTrackingPositionController', ['except' => ['show']]);
@@ -98,10 +104,22 @@ Route::group([
 
     /* Ruta para obtener el listado de las actividades */
     Route::get('get-activities', 'ProjectTrackingActivitysController@getActivities')->name('projecttracking.activities.get');
+
     /** Ruta para gestionar Tipo de Tareas*/
     Route::resource('task-types', 'ProjectTrackingTaskTypesController', ['except' => ['show']]);
+
+    /** Ruta para obtener los tipos de tareas */
+    Route::get(
+        'get-task-types',
+        'ProjectTrackingTaskTypesController@getTaskTypes'
+    )->name('projecttracking.task_types.get');
+
     /** Ruta para gestionar etiquetas */
     Route::resource('tags', 'ProjectTrackingTagsController', ['except' => ['show']]);
+
+    /** Ruta para obtener las etiquetas */
+    Route::get('get-tags', 'ProjectTrackingTagsController@getTags')->name('projecttracking.tags.get');
+
     /** Ruta para gestionar tipos de dependencias */
     Route::resource('dependencies-type', 'ProjectTrackingDependenciesTypeController', ['except' => ['show']]);
 
@@ -182,13 +200,19 @@ Route::group([
     Route::get('get-products', 'ProjectTrackingProductController@getProducts')->name('projecttracking.products.get');
 
     /* Rutas para gestionar las tareas */
-    Route::resource('tasks', 'ProjectTrackingTaskController', ['as' => 'projecttracking']);
+    Route::resource('tasks', 'ProjectTrackingTaskController', ['as' => 'projecttracking', 'except' => ['show']]);
+
+    /* Ruta para detallar la información de una tarea */
+    Route::get(
+        'tasks/show/{id}',
+        'ProjectTrackingTaskController@show'
+    )->name('projecttracking.tasks.show');
 
     /* Ruta para detallar la configuración de proyectos */
     Route::get('get-task-info/{id}', 'ProjectTrackingTaskController@recordInfo')->name('projecttracking.task.info.get');
 
     /* Ruta para obtener la ruta de las tareas */
-    Route::get('tasks/show/vue-list', 'ProjectTrackingTaskController@vueList')->name('projecttracking.tasks.vue-list');
+    Route::get('tasks/vue-list', 'ProjectTrackingTaskController@vueList')->name('projecttracking.tasks.vue-list');
 
     /* Ruta para obtener la función de editar las tareas */
     Route::get('/tasks/edit/{id}', 'ProjectTrackingTaskController@edit')->name('projecttracking.task.edit');
@@ -202,12 +226,15 @@ Route::group([
     /** Ruta para obtener las tareas */
     Route::get('get-tasks', 'ProjectTrackingTaskController@getTasks')->name('projecttracking.tasks.get');
 
-    /** Ruta para ejecutar la función de cambiar el estatus de las tareas */
-    Route::post('/tasks/change-activity-status', 'ProjectTrackingTaskController@changeActivityStatus')->name('projecttracking.task.change-activity-status');
-
     /**Ruta para gestionar los estados de entrega */
     Route::resource('delivery-status', 'ProjectTrackingDeliveryStatusController');
 
     /* Ruta para gestionar las jornadas laborales */
     Route::resource('work-days', 'ProjectTrackingWorkDayController');
+
+    /* Rutas para gestionar los comentarios de las tareas */
+    Route::resource('task-comment', 'ProjectTrackingTaskCommentController');
+
+    /** Ruta para obtener los comentarios de las tareas */
+    Route::get('get-task-comments', 'ProjectTrackingTaskCommentController@getTaskComments')->name('projecttracking.task.comment.get');
 });

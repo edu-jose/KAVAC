@@ -55,7 +55,9 @@ class AssetDepreciationMethodController extends Controller
          * Establece permisos de acceso para cada método del controlador
         */
         //$this->middleware('permission:asset.setting.depreciation-method');
-
+        $this->middleware('permission:asset.depreciation.method.create', ['only' => 'store']);
+        $this->middleware('permission:asset.depreciation.method.edit', ['only' => 'update']);
+        $this->middleware('permission:asset.depreciation.method.delete', ['only' => 'destroy']);
         /* Define las reglas de validación para el formulario */
         $this->validateRules = [
             'depreciation_type_id' => ['required'],

@@ -48,7 +48,9 @@ class AssetUseFunctionController extends Controller
     public function __construct()
     {
         // Establece permisos de acceso para cada método del controlador
-        //$this->middleware('permission:asset.setting.use-function');
+        $this->middleware('permission:asset.usefunction.create', ['only' => 'store']);
+        $this->middleware('permission:asset.usefunction.edit', ['only' => 'update']);
+        $this->middleware('permission:asset.usefunction.delete', ['only' => 'destroy']);
         /* Define las reglas de validación para el formulario */
         $this->validateRules = [
             'name'     => ['required', 'regex:/^[a-zA-ZÁ-ÿ\s]*$/u', 'max:100', Rule::unique('asset_use_functions')],

@@ -64,10 +64,14 @@
         <div class="footer text-center">
             <div class="row">
                 <div class="col-6">
-                    <button class="btn btn-primary btn-round btn-block btnn-back" data-toggle="tooltip" type="button"
-                            title="{{ __('Presione el botón para regresar') }}">
+                    <a
+                        href="{{ route('login') }}"
+                        class="btn btn-primary btn-round btn-block"
+                        data-toggle="tooltip" type="button"
+                        title="{{ __('Presione el botón para regresar') }}"
+                    >
                         {{ __('Cancelar') }}
-                    </button>
+                    </a>
                 </div>
                 <div class="col-6">
                     <button class="btn btn-primary btn-round btn-block" data-toggle="tooltip"

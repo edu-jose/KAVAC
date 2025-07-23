@@ -57,6 +57,6 @@ class PayrollTimeSheetPendingConceptsRequired implements Rule
      */
     public function message()
     {
-        return ['Los conceptos de la hoja de tiempo son obligatorios', 'asd'];
+        return ['Los conceptos de la hoja de tiempo son obligatorios'];
     }
 }

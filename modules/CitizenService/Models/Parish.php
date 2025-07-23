@@ -3,6 +3,7 @@
 namespace Modules\CitizenService\Models;
 
 use App\Models\Parish as BaseParish;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @class Parish
@@ -25,5 +26,15 @@ class Parish extends BaseParish
     public function citizenServiceRequests()
     {
         return $this->hasMany(CitizenServiceRequest::class);
+    }
+
+    /**
+     * Get all of the citizenServiceCommunities for the Parish
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function citizenServiceCommunities(): HasMany
+    {
+        return $this->hasMany(CitizenServiceCommunity::class);
     }
 }

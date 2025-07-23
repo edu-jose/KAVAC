@@ -13,6 +13,7 @@ import '@ckeditor/ckeditor5-build-classic/build/translations/es';
 
 /** Import del paquete inputmask para uso de mascara en campos de texto con vue */
 import Inputmask from "inputmask";
+import { get } from 'jquery';
 
 /** Configuración de la directiva input-mask para uso de mascara en campos de texto de los componentes vuejs */
 Vue.directive('input-mask', {
@@ -29,7 +30,40 @@ Vue.directive('is-digits', {
             let tab = (key === 9), spacebar = (key === 32), backspace = (key === 8), alt = (key === 18),
                 numeric = (key >= 48 && key <= 57) || (key >= 96 && key <= 105), supr = (key === 46),
                 ctrl = (key === 17), ctrlA = (key === 65), ini = (key === 36), end = (key === 35);
-            if (numeric || spacebar || tab || ini || end || backspace || alt || supr) {
+            if (numeric || spacebar || tab || ini || end || backspace || alt || supr || ctrl || ctrlA) {
+                return;
+            }
+            else {
+                e.preventDefault();
+            }
+        });
+    }
+});
+
+Vue.directive('is-only-numeric', {
+    bind: (el) => {
+        el.addEventListener('keydown', (e) => {
+            const key = e.keyCode;
+            const keyText = e.key;
+
+            if (e.shiftKey || e.altKey || e.ctrlKey) {
+                $.gritter.add({
+                    title: 'Advertencia',
+                    text: 'La tecla presionada no está permitida en este campo',
+                    class_name: 'growl-warning',
+                    image: `${window.app_url}/images/screen-warning.png`,
+                    sticky: false,
+                    time: 3500
+                });
+                el.blur();
+            }
+            let tab = (key === 9), spacebar = (key === 32), backspace = (key === 8), alt = (key === 18),
+                numeric = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'].includes(keyText),
+                supr = (key === 46), ini = (key === 36), end = (key === 35);
+            if (
+                numeric || spacebar || tab || ini || end || backspace || alt || supr ||
+                keyText == 'ArrowLeft' || keyText == 'ArrowRight'
+            ) {
                 return;
             }
             else {
@@ -63,17 +97,57 @@ Vue.directive('is-numeric', {
 Vue.directive('is-text', {
     bind: (el) => {
         el.addEventListener('keydown', (e) => {
-            let key = e.keyCode;
-            let tab = (key === 9), backspace = (key === 8), alt = (key === 18), spacebar = (key === 32),
-                alphabet = (key >= 65 && key <= 90), supr = (key === 46),
-                ctrl = (key === 17), ctrlA = (key === 65), ini = (key === 36), end = (key === 35),
-                dot = (key === 190), caps = (key === 20), shift = (key === 16), comma = (key === 188),
-                special = (key === 59 || key === 56 || key === 57),
-                hyphen = (key === 109 || key === 173);
+            const key = e.keyCode;
+            const tab = (key === 9);
+            const backspace = (key === 8);
+            const alt = (key === 18);
+            const spacebar = (key === 32);
+            const alphabet = (key >= 65 && key <= 90);
+            const supr = (key === 46);
+            const ini = (key === 36);
+            const end = (key === 35);
+            const dot = (key === 190);
+            const caps = (key === 20);
+            const shift = (key === 16);
+            const comma = (key === 188);
+            const special = (key === 48 || key === 59 || key === 56 || key === 57);
+            const hyphen = (key === 109 || key === 173);
 
             if (
                 alphabet || tab || ini || end || backspace || alt || supr || dot || caps || shift || spacebar ||
                 special || comma || hyphen
+            ) {
+                return;
+            }
+            else {
+                e.preventDefault();
+            }
+        });
+    }
+});
+
+/** Directiva que limita la escritura a solo carácteres alfabéticos, los signos "." y "," */
+Vue.directive('is-only-text', {
+    bind: (el) => {
+        el.addEventListener('keydown', (e) => {
+            const key = e.keyCode;
+            const tab = (key === 9);
+            const backspace = (key === 8);
+            const alt = (key === 18);
+            const spacebar = (key === 32);
+            const alphabet = (key >= 65 && key <= 90);
+            const supr = (key === 46);
+            const ini = (key === 36);
+            const end = (key === 35);
+            const dot = (key === 190);
+            const caps = (key === 20);
+            const shift = (key === 16);
+            const comma = (key === 188);
+            const hyphen = (key === 109 || key === 173);
+
+            if (
+                alphabet || tab || ini || end || backspace || alt || supr || dot || caps || shift || spacebar ||
+                comma || hyphen
             ) {
                 return;
             }
@@ -992,6 +1066,60 @@ Vue.mixin({
             vm.institutions = [];
             await axios.get(url).then(response => {
                 vm.institutions = response.data;
+            }).catch(error => {
+                console.error(error);
+            });
+        },
+        /**
+         * Obtiene un listado de los tipos de institución
+         *
+         * @author Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
+         *
+         * @param   {string}  field              Nombre del campo con el listado obtenido
+         */
+        async getInstitutionTypes(field = 'institution_types') {
+            const vm = this;
+            const url = vm.setUrl(`${window.app_url}/institution-types`);
+            vm[field] = [
+                { id: '', text: 'Seleccione...' }
+            ];
+            await axios.get(url).then(response => {
+                vm[field] = [
+                    ...vm[field],
+                    ...response.data.records.map(item => {
+                        return {
+                            id: item.id,
+                            text: item.name
+                        };
+                    })
+                ];
+            }).catch(error => {
+                console.error(error);
+            });
+        },
+        /**
+         * Obtiene un listado de los sectores económicos
+         *
+         * @author Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
+         *
+         * @param   {string}  field              Nombre del campo con el listado obtenido
+         */
+        async getInstitutionSectors(field = 'institution_sectors') {
+            const vm = this;
+            const url = vm.setUrl(`${window.app_url}/institution-sectors`);
+            vm[field] = [
+                { id: '', text: 'Seleccione...' }
+            ];
+            await axios.get(url).then(response => {
+                vm[field] = [
+                    ...vm[field],
+                    ...response.data.records.map(item => {
+                        return {
+                            id: item.id,
+                            text: item.name
+                        };
+                    })
+                ];
             }).catch(error => {
                 console.error(error);
             });

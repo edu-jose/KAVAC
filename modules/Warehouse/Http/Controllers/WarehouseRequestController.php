@@ -63,7 +63,6 @@ class WarehouseRequestController extends Controller
         /* Define las reglas de validación para el formulario */
         $this->validateRules = [
             'warehouse_products.*'           => ['required'],
-            'budget_specific_action_id'      => ['required'],
             'department_id'                  => ['required'],
             'motive'                         => ['required'],
             'request_date'                   => ['required']
@@ -71,7 +70,6 @@ class WarehouseRequestController extends Controller
 
         /* Define los mensajes de validación para las reglas del formulario */
         $this->messages = [
-            'budget_specific_action_id.required' => 'El campo "Acción específica" es obligatorio',
             'department_id.required'             => 'El campo "Dependencia solicitante" es obligatorio',
             'motive.required'                    => 'El campo "Motivo de la solicitud" es obligatorio',
             'request_date.required'              => 'El campo "Fecha de la solicitud" es obligatorio'
@@ -125,13 +123,19 @@ class WarehouseRequestController extends Controller
 
             $messages = array_merge($messages, [
                 'warehouse_products.' . $i . '.requested.max'
-                => 'El producto "' . $products->warehouseProduct->name . '" no posee suficiente existencia en almacén'
+                => 'El producto "' . $products->warehouseProduct->name . '" no posee suficiente existencia en almacén',
+                'warehouse_products.' . $i . '.requested.required'
+                => 'La cantidad solicitada de "' . $products->warehouseProduct->name . '" es requerida',
             ]);
         }
 
         $this->validate($request, $validateRules, $messages);
 
-        $codeSetting = CodeSetting::where('table', 'warehouse_requests')->first();
+        $codeSetting = CodeSetting::where([
+            'table' => 'warehouse_requests',
+            'type'  => 'warehouse.request'
+        ])->first();
+
         if (is_null($codeSetting)) {
             $request->session()->flash('message', [
                 'type' => 'other', 'title' => 'Alerta', 'icon' => 'screen-error', 'class' => 'growl-danger',
@@ -247,7 +251,8 @@ class WarehouseRequestController extends Controller
 
             $messages = array_merge($messages, [
                 'warehouse_products.' . $i . '.requested.max' =>
-                'El producto "' . $products->warehouseProduct->name . '" no posee suficiente existencia en almacén'
+                'El producto "' . $products->warehouseProduct->name . '" no posee suficiente existencia en almacén',
+                'La cantidad solicitada de "' . $products->warehouseProduct->name . '" es requerida'
             ]);
         }
 
@@ -568,30 +573,33 @@ class WarehouseRequestController extends Controller
     }
 
     /**
-     * Obtiene un listado de las solicitudes de almacén registradas
+     * Obtiene un listado de las solicitudes de almacén registradas, incluyendo los elementos entregados
      *
      * @author Henry Paredes <hparedes@cenditel.gob.ve>
+     * @author Pablo Sulbarán <psulbaran@cenditel.gob.ve>
      *
      * @return \Illuminate\Http\JsonResponse Objeto con los registros a mostrar
      */
     public function vueList()
     {
         $warehouse_requests = WarehouseRequest::with('department')
-            ->whereNotNull('budget_specific_action_id')
+            ->whereNull('payroll_staff_id')
             ->get();
         return response()->json(['records' => $warehouse_requests], 200);
     }
 
     /**
-     * Obtiene un listado de las solicitudes de almacén pendientes
+     * Obtiene un listado de las solicitudes de almacén pendientes excepto las de bienes entregados
      *
      * @author Henry Paredes <hparedes@cenditel.gob.ve>
+     * @author Pablo Sulbarán <psulbaran@cenditel.gob.ve>
      *
      * @return \Illuminate\Http\JsonResponse Objeto con los registros a mostrar
      */
     public function vuePendingList()
     {
         $warehouse_requests = WarehouseRequest::with('department', 'payrollStaff')
+            ->whereIn('state', ['Pendiente', 'Aprobado'])
             ->get();
         return response()->json(['records' => $warehouse_requests], 200);
     }

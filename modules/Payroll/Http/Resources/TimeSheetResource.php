@@ -28,6 +28,14 @@ class TimeSheetResource extends JsonResource
     public function toArray($request)
     {
         $payrollSuperviedGroup = $this->getPayrollSuperviedGroup();
+
+        // Obtiene los nombres de las categorías que inciden en el total
+        $exceptionTypeNames = $this->resource->payrollTimeSheetParameters->payrollExceptionTypeTimeSheetParameters
+                ->map(function ($item) {
+                    return $item->payrollExceptionType?->name;
+                })
+                ->filter()->unique()->values()->all();
+
         return [
             'id' => $this->resource->id,
             'institution_id' => $this->resource->institution_id,
@@ -54,7 +62,8 @@ class TimeSheetResource extends JsonResource
                 ]
                 : null,
             'payroll_time_sheet_parameter_id' => $this->resource->payroll_time_sheet_parameter_id,
-            'payroll_time_sheet_parameter' => $this->resource->payrollTimeSheetParameter,
+            'payroll_time_sheet_parameter' => $this->resource->payrollTimeSheetParameters,
+            'total_groups' => $exceptionTypeNames ?? [],
             'time_sheet_data' => $this->resource->time_sheet_data,
             'time_sheet_columns' => $this->resource->time_sheet_columns,
             'observations' => $this->resource->observations,

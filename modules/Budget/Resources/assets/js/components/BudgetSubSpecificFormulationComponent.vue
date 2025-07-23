@@ -1441,14 +1441,8 @@ export default {
                 inputFile.value = '';
             });
         },
-        /**
-         * Exporta la información de las cuentas formuladas
-         *
-         * @author Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
-         */
-        getExportFormulation() {
+        async getExportFormulation() {
             const vm = this;
-            let csv = 'codigo,total_real,total_estimado,total_anho,ene,feb,mar,abr,may,jun,jul,ago,sep,oct,nov,dic\n';
             let data = vm.records.map(row => {
                 return [
                     row.code,
@@ -1469,16 +1463,19 @@ export default {
                     row.dec_amount
                 ];
             });
-            data.forEach(row => {
-                csv += row.join(',');
-                csv += '\n';
-            });
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.setAttribute('href', url);
-            a.setAttribute('download', 'download.csv');
-            a.click();
+
+            await axios.post(`${window.app_url}/budget/export-subformulation`, data, { responseType: 'blob' })
+                .then(response => {
+                    const url = window.URL.createObjectURL(new Blob([response.data]));
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.setAttribute('download', 'report.xlsx');
+                    document.body.appendChild(link);
+                    link.click();
+                })
+                .catch(error => {
+                    console.log(error)
+                });
         },
         /**
          * Ejecuta la acción para actualizar datos de la formulación

@@ -18,6 +18,7 @@ use Modules\Warehouse\Models\WarehouseProductAttribute;
 use Modules\Warehouse\Models\WarehouseInventoryRule;
 use Modules\Warehouse\Models\WarehouseProductValue;
 use Modules\Warehouse\Models\WarehouseMovement;
+use Nwidart\Modules\Facades\Module;
 
 /**
  * @class WarehouseReceptionController
@@ -75,7 +76,10 @@ class WarehouseReceptionController extends Controller
             'warehouse_inventory_products.*.warehouse_product_id' => ['sometimes', 'required'],
             'warehouse_inventory_products.*.quantity' => ['sometimes', 'required'],
             'warehouse_inventory_products.*.currency_id' => ['sometimes', 'required'],
-            'reception_date' => ['required']
+            'reception_date' => ['required'],
+            'purchase_direct_hire_id' => 'required_without:direct_hire',
+            'direct_hire' => 'required_without:purchase_direct_hire_id',
+
         ];
 
         /* Define los mensajes de validación para las reglas del formulario */
@@ -87,6 +91,8 @@ class WarehouseReceptionController extends Controller
             'warehouse_inventory_products.*.quantity.required' => 'El campo cantidad es obligatorio.',
             'warehouse_inventory_products.*.currency_id.required' => 'El campo moneda es obligatorio.',
             'reception_date.required' => 'El campo "Fecha de ingreso" es obligatorio',
+            'purchase_direct_hire_id.required_without' => 'Si estás trayendo la información de compras, selecciona una orden de compra o servicio.',
+            'direct_hire.required_without' => 'Debe ingresar el código de la orden de compra o servicio.',
         ];
     }
 
@@ -116,7 +122,30 @@ class WarehouseReceptionController extends Controller
         } else {
             $institution = Institution::where(['active' => true, 'default' => true])->first();
         }
-        return view('warehouse::receptions.create', compact('institution'));
+
+        $purchase_existing = Module::has('Purchase') && Module::isEnabled('Purchase');
+
+        if (
+            $purchase_existing
+        ) {
+            $purchase_suppliers = template_choices(
+                'Modules\Purchase\Models\PurchaseSupplier',
+                ['rif', '-', 'name'],
+                [],
+                true
+            );
+            $purchase_direct_hires = template_choices(
+                'Modules\Purchase\Models\PurchaseDirectHire',
+                ['code'],
+                [],
+                true
+            );
+        } else {
+            $purchase_suppliers = [];
+            $purchase_direct_hires = [];
+        }
+
+        return view('warehouse::receptions.create', compact('institution', 'purchase_suppliers', 'purchase_direct_hires', 'purchase_existing'));
     }
 
     /**
@@ -176,6 +205,11 @@ class WarehouseReceptionController extends Controller
                 'description' => 'Registro manual de productos en el inventario del almacén',
                 'warehouse_institution_warehouse_end_id' => $inst_ware->id,
                 'reception_date' => $request->input('reception_date'),
+                'general_observations' => $request->general_observations ?? null,
+                'direct_hire' => $request->direct_hire ?? null,
+                'purchase_direct_hire_id' => $request->purchase_direct_hire_id ?? null,
+                'supplier' => $request->supplier ?? null,
+                'purchase_supplier_id' => $request->purchase_supplier_id ?? null,
                 'user_id' => Auth::id(),
             ]);
             $equal = null;
@@ -187,6 +221,8 @@ class WarehouseReceptionController extends Controller
                 $value = $product['unit_value'];
                 $minimum = $product['minimum'];
                 $maximum = $product['maximum'];
+                $expiration_date = $product['expiration_date'] ?? null;
+                $batch_number = $product['batch_number'] ?? null;
 
                 /* Se busca en el inventario por producto y unidad si existe un registro previo */
 
@@ -233,11 +269,12 @@ class WarehouseReceptionController extends Controller
                                     'user_id' => Auth::id(),
                                 ]);
                             }
-
                             /* Se genera el movimiento, para su posterior aprobación */
                             $inventory_movement = WarehouseInventoryProductMovement::create([
                                 'quantity' => $quantity,
                                 'new_value' => $value,
+                                'batch_number' => $batch_number,
+                                'expiration_date' => $expiration_date,
                                 'warehouse_movement_id' => $movement->id,
                                 'warehouse_inventory_product_id' => $product_inventory->id,
                             ]);
@@ -262,6 +299,8 @@ class WarehouseReceptionController extends Controller
                     $product_inventory = WarehouseInventoryProduct::create([
                         'code' => $codep,
                         'warehouse_product_id' => $product_id,
+                        'batch_number' => $batch_number ?? null,
+                        'expiration_date' => $expiration_date ?? null,
                         'currency_id' => $currency,
                         'unit_value' => $value,
                         'warehouse_institution_warehouse_id' => $inst_ware->id,
@@ -280,6 +319,8 @@ class WarehouseReceptionController extends Controller
                     $inventory_movement = WarehouseInventoryProductMovement::create([
                         'quantity' => $quantity,
                         'new_value' => $value,
+                        'batch_number' => $batch_number,
+                        'expiration_date' => $expiration_date,
                         'warehouse_movement_id' => $movement->id,
                         'warehouse_inventory_product_id' => $product_inventory->id,
                     ]);
@@ -332,7 +373,30 @@ class WarehouseReceptionController extends Controller
     public function edit($id)
     {
         $reception = WarehouseMovement::find($id);
-        return view('warehouse::receptions.create', compact("reception"));
+        $purchase_existing = false;
+
+        if (
+            Module::has('Purchase') && Module::isEnabled('Purchase')
+        ) {
+            $purchase_existing = true;
+
+            $purchase_suppliers = template_choices(
+                'Modules\Purchase\Models\PurchaseSupplier',
+                ['rif', '-', 'name'],
+                [],
+                true
+            );
+            $purchase_direct_hires = template_choices(
+                'Modules\Purchase\Models\PurchaseDirectHire',
+                ['code'],
+                [],
+                true
+            );
+        } else {
+            $purchase_suppliers = [];
+            $purchase_direct_hires = [];
+        }
+        return view('warehouse::receptions.create', compact('reception', 'purchase_suppliers', 'purchase_direct_hires', 'purchase_existing'));
     }
 
     /**
@@ -363,6 +427,11 @@ class WarehouseReceptionController extends Controller
         DB::transaction(function () use ($request, $warehouse_movement, $inst_ware, $product_movements) {
             $warehouse_movement->warehouse_institution_warehouse_end_id = $inst_ware->id;
             $warehouse_movement->reception_date = $request->reception_date;
+            $warehouse_movement->direct_hire = $request->direct_hire ?? null;
+            $warehouse_movement->purchase_direct_hire_id = $request->purchase_direct_hire_id ?? null;
+            $warehouse_movement->supplier = $request->supplier ?? null;
+            $warehouse_movement->purchase_supplier_id = $request->purchase_supplier_id ?? null;
+            $warehouse_movement->general_observations = $request->general_observations ?? null;
             $warehouse_movement->user_id = Auth::id();
             $warehouse_movement->save();
             $equal = null;
@@ -377,12 +446,17 @@ class WarehouseReceptionController extends Controller
                 $value = $product['unit_value'];
                 $minimum = $product['minimum'];
                 $maximum = $product['maximum'];
+                $expiration_date = $product['expiration_date'] ?? null;
+                $batch_number = $product['batch_number'] ?? null;
 
                 /* Se busca en el inventario por producto y unidad si existe un registro previo */
 
                 $inventory = WarehouseInventoryProduct::where('warehouse_product_id', $product_id)
                     ->where('warehouse_institution_warehouse_id', $inst_ware->id)
-                    ->where('unit_value', $value)->get();
+                    ->where('unit_value', $value)
+                    ->where('batch_number', $batch_number)
+                    ->where('expiration_date', $expiration_date)
+                    ->get();
 
                 /* Si existe un registro previo se verifican los atributos del nuevo ingreso */
                 if (count($inventory) > 0) {
@@ -422,6 +496,8 @@ class WarehouseReceptionController extends Controller
                             if ($equal == true) {
                                 $old_inventory->quantity = $quantity;
                                 $old_inventory->new_value = $value;
+                                $old_inventory->batch_number = $batch_number;
+                                $old_inventory->expiration_date = $expiration_date;
                                 $old_inventory->updated_at = $update;
                                 $old_inventory->save();
 
@@ -454,6 +530,8 @@ class WarehouseReceptionController extends Controller
                     $product_inventory = WarehouseInventoryProduct::create([
                         'code' => $codep,
                         'warehouse_product_id' => $product_id,
+                        'expiration_date' => $expiration_date,
+                        'batch_number' => $batch_number,
                         'currency_id' => $currency,
                         'unit_value' => $value,
                         'warehouse_institution_warehouse_id' => $inst_ware->id,
@@ -471,6 +549,8 @@ class WarehouseReceptionController extends Controller
                     $inventory_movement = WarehouseInventoryProductMovement::create([
                         'quantity' => $quantity,
                         'new_value' => $value,
+                        'batch_number' => $batch_number,
+                        'expiration_date' => $expiration_date,
                         'warehouse_movement_id' => $warehouse_movement->id,
                         'warehouse_inventory_product_id' => $product_inventory->id,
                         'updated_at' => $update,
@@ -545,7 +625,8 @@ class WarehouseReceptionController extends Controller
                                 $query->with('warehouseProductAttribute');
                             }, 'currency', 'warehouseInventoryRule']);
                         }]);
-                    }, 'warehouseInstitutionWarehouseInitial', 'warehouseInstitutionWarehouseEnd', 'user'
+                    }, 'warehouseInstitutionWarehouseInitial', 'warehouseInstitutionWarehouseEnd',
+                        'user', 'purchaseDirectHire', 'purchaseSupplier'
                 ]
             )->first()], 200);
     }
@@ -563,7 +644,9 @@ class WarehouseReceptionController extends Controller
             ->with(
                 'warehouseInstitutionWarehouseInitial',
                 'warehouseInstitutionWarehouseEnd',
-                'user'
+                'user',
+                'purchaseDirectHire',
+                'purchaseSupplier'
             )->get();
         if ($warehouseMovement) {
             $records = [];
@@ -631,5 +714,20 @@ class WarehouseReceptionController extends Controller
         }
         $request->session()->flash('message', ['type' => 'update']);
         return response()->json(['result' => true, 'redirect' => route('warehouse.reception.index')], 200);
+    }
+
+    public function getPurchaseDirectHireSupplier($id)
+    {
+        if (
+            Module::has('Purchase') && Module::isEnabled('Purchase')
+        ) {
+            $directHire = \Modules\Purchase\Models\PurchaseDirectHire::find($id);
+
+            return response()->json([
+                'records' => [
+                    'id' => $directHire->purchase_supplier_id,
+                ]
+            ]);
+        }
     }
 }

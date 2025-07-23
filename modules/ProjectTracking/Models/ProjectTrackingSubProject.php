@@ -10,6 +10,7 @@ use App\Traits\ModelsTrait;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Nwidart\Modules\Facades\Module;
+use App\Models\Department;
 
 /**
  * @class Priority
@@ -41,7 +42,7 @@ class ProjectTrackingSubProject extends Model implements Auditable
      * @var array $fillable
      */
     protected $fillable = [
-        'project_id', 'name', 'description', 'code', 'responsable_id', 'start_date', 'end_date', 'financement_amount', 'currency_id'
+        "dependency_id", 'project_id', 'name', 'description', 'code', 'responsable_id', 'start_date', 'end_date', 'financement_amount', 'currency_id'
     ];
 
     /**
@@ -123,5 +124,15 @@ class ProjectTrackingSubProject extends Model implements Auditable
     public function getProductTypeIds(): array
     {
         return $this->productTypes->pluck('id')->toArray();
+    }
+
+    /**
+     * Establece la relación con la dependencia del proyecto
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function dependency()
+    {
+        return $this->belongsTo(Department::class);
     }
 }

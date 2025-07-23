@@ -18,3 +18,17 @@
         .list-group-item {padding:0;}
     }
 }
+
+.accordion {
+    &.accordion-gallery {
+        .accordion-button i {
+            transition: transform 0.3s;
+        }
+        .accordion-button.collapsed i {
+            transform: rotate(0deg);
+        }
+        .accordion-button:not(.collapsed) i {
+            transform: rotate(180deg);
+        }
+    }
+}

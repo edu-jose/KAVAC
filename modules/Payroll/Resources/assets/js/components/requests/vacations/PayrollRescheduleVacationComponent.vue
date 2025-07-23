@@ -149,13 +149,16 @@
                         <!-- ./institution -->
                         <!-- trabajador -->
                         <div class="col-md-4" id="helpPayrollVacationRequestStaff">
-                            <div class="form-group is-required">
+                            <div class="form-group is-required" v-show="false">
                                 <label>Trabajador:</label>
-                                <select2
-                                    :options="payroll_staffs"
-                                    @input="getPayrollStaffInfo(); getPayrollVacationPolicy()"
-                                    v-model="record.payroll_staff_id" disabled
-                                ></select2>
+                                <select2 v-if="id > 0" :options="payroll_staffs" :disabled="'disabled'"
+                                    @input="getPayrollStaffInfo(); getPayrollVacationPolicy(); getPayrollStaffYearPeriods();"
+                                    v-model="record.payroll_staff_id">
+                                </select2>
+                                <select2 v-else :options="payroll_staffs" :disabled="'disabled'"
+                                    @input="getPayrollStaffInfo(); getPayrollVacationPolicy();"
+                                    v-model="record.payroll_staff_id">
+                                </select2>
                             </div>
                         </div>
                         <!-- ./trabajador -->
@@ -165,9 +168,9 @@
                         <div class="col-md-4" id="helpPayrollVacationStartDate">
                             <div class="form-group is-required" style="z-index: unset;">
                                 <label>Fecha de inicio de vacaciones:</label>
-                                <input type="date" id="start_date" data-toggle="tooltip"
-                                title="Fecha de inicio de vacaciones" @input="getcalculate()" :min="getMinDate()"
-                                class="form-control input-sm no-restrict" v-model="record.start_date">
+                                <input type="date" id="start_date" data-toggle="tooltip" title="Fecha de inicio de vacaciones"
+                                    @input="getPayrollStaffYearPeriods(); getPayrollVacationPolicy(); getcalculate();" class="form-control input-sm no-restrict"
+                                    v-model="record.start_date">
                             </div>
                         </div>
                         <!-- ./fecha de inicio de vacaciones -->
@@ -177,7 +180,7 @@
                                 <label>Fecha de culminación de vacaciones:</label>
                                 <input type="date" id="end_date" data-toggle="tooltip"
                                 title="Fecha de culminación de vacaciones" class="form-control input-sm no-restrict"
-                                v-model="record.end_date" :min="getMinDate()" :max="getMaxDate()"
+                                v-model="record.end_date" :max="getMaxDate()"
                                 @input="getcalculate()">
                             </div>
                         </div>
@@ -200,6 +203,7 @@
                             <label>Año del período vacacional:</label>
                             <v-multiselect :options="vacation_period_years" track_by="text" :hide_selected="false"
                                 data-toggle="tooltip" title="Indique los periodos vacacionales"
+                                :value="period_value" :disabled="period_disabled"
                                 @input="getPayrollVacationPeriods()" v-model="record.vacation_period_year">
                             </v-multiselect>
                         </div>
@@ -245,15 +249,19 @@ export default {
 
             errors: [],
             records: [],
+            edited: false,
+            period_disabled: true,
             vacation_period_years: [],
             payroll_staffs: [],
             payroll_vacation_requests: [],
             vacation_request_for_periods: [],
             vacation_days_per_period: [],
+            current_vacation_requests: [],
             suspension_vacation_requests: [],
             institutions: [],
             holidays: [],
             holidaysCount: 0,
+            period_value: [],
             payroll_vacation_policy: {},
             payroll_staff: {
                 id: '',
@@ -355,67 +363,161 @@ export default {
             vm.payroll_vacation_requests = [];
             vm.vacation_request_for_periods = [];
             vm.record.created_at = vm.format_date(new Date(), 'YYYY-MM-DD');
+            vm.period_value = [];
         },
         /**
          * Método que obtiene la información del trabajador
          *
          * @author    Henry Paredes <hparedes@cenditel.gob.ve>
-         * @author Manuel Zambrano <mazambrano@cenditel.gob.ve>
+         * @author    Manuel Zambrano <mazambrano@cenditel.gob.ve>
          */
         getPayrollStaffInfo() {
             const vm = this;
+            if (!vm.edited) {
+                vm.record.vacation_period_year = [];
+            }
+            vm.vacation_period_years = [];
+
             if (vm.record.payroll_staff_id > 0) {
-                vm.record.vacation_period_year = (vm.record.id) ? vm.record.vacation_period_year : [];
-                vm.getSuspensionVacationRequests();
+                // Si ya tiene una solicitud pendiente no se procesa la solicitud
+                axios.get(
+                    `${window.app_url}/payroll/get-vacation-requests/${vm.record.payroll_staff_id}`
+                ).then(response => {
+                        let pending_request = response.data.records.find(element => element.status == "pending");
+                        if (pending_request && !vm.id) {
+                            vm.errors = [];
+                            vm.errors.push('No se puede solicitar las vacaciones a este trabajador ya que tiene una solicitud pendiente.');
+                            vm.errors.push('Debe esperar por la aprobación o el rechazo de la solicitud anterior para realizar una nueva solicitud');
+                            return;
+                        }
+                    
+                });
 
                 axios.get(`${window.app_url}/payroll/staffs/${vm.record.payroll_staff_id}`).then(response => {
                     vm.payroll_staff = response.data.record;
-                    axios.get(
-                        `${window.app_url}/payroll/get-vacation-requests/${vm.record.payroll_staff_id}`
-                    ).then(response => {
-                        /**
-                         * Extraer dias solicitados
-                         * Número de periodos por año
-                         *
-                         * Calcular según politica vacacional:
-                         * periodos validos
-                         * dias pendiente por periodo
-                         * dias acumulados
-                         */
-                        let year_now = new Date().getFullYear();
-                        
-                        vm.payroll_vacation_requests = response.data.records;
-                        vm.current_vacation_requests = [];
+                    
+                    document.getElementById('payroll_staff_first_name').innerText =
+                        vm.payroll_staff['first_name']
+                            ? vm.payroll_staff['first_name']
+                            : 'No definido';
 
-                        if (vm.payroll_vacation_requests.length > 0) {
-                            vm.current_vacation_requests = vm.payroll_vacation_requests.filter(
-                                element => parseInt(element.start_date.split("-")[0]) == year_now
-                            );
-                        }
+                    document.getElementById('payroll_staff_last_name').innerText =
+                        vm.payroll_staff['last_name']
+                            ? vm.payroll_staff['last_name']
+                            : 'No definido';
 
-                        let payroll_staff_date = vm.format_date(
-                            vm.payroll_staff['payroll_employment']['start_date'],
-                            'YYYY-MM-DD'
+                    document.getElementById('payroll_staff_start_date').innerText =
+                        vm.payroll_staff['payroll_employment']
+                            ? vm.payroll_staff['payroll_employment']['start_date']
+                                ? vm.convertDate(vm.payroll_staff['payroll_employment']['start_date'])
+                                : 'No definido'
+                            : 'No definido';
+
+                    document.getElementById('payroll_staff_department').innerText =
+                        vm.payroll_staff['payroll_employment']
+                            ? vm.payroll_staff['payroll_employment']['department']
+                                ? vm.payroll_staff['payroll_employment']['department']['name']
+                                    ? vm.payroll_staff['payroll_employment']['department']['name']
+                                    : 'No definido'
+                                : 'No definido'
+                            : 'No definido';
+
+                    if (vm.payroll_staff['payroll_responsibility']) {
+                        document.getElementById('payroll_staff_position').innerText = vm.payroll_staff['payroll_responsibility']['payroll_position']['name'];
+                    } else if (vm.payroll_staff['payroll_employment']) {
+                        document.getElementById('payroll_staff_position').innerText = vm.payroll_staff['payroll_employment']['payroll_positions'][0]['name'];
+                    } else {
+                        document.getElementById('payroll_staff_position').innerText = 'No definido';
+                    }
+                });
+            }
+            if(!vm.id && vm.record.payroll_staff_id > 0 && vm.record.start_date) {
+                vm.getPayrollStaffYearPeriods();
+            }
+        },
+        /**
+         * Método que obtiene los periodos vacacionales correspondientes del trabajador
+         *
+         * @author    Henry Paredes <hparedes@cenditel.gob.ve>
+         * @author    Fabián Palmera <fapalmera@cenditel.gob.ve>
+         */
+        getPayrollStaffYearPeriods() {
+            const vm = this;
+
+            // Si se esta editando guardar periodo vacacional en record
+            if (vm.record.id > 0) {
+                if (!vm.edited) {
+                    vm.record.vacation_period_year = vm.record.old_vacation_period_year;
+                }
+                if (vm.record.vacation_period_year.length > 0) {
+                    vm.edited = true;
+                }
+            }
+
+            if (vm.record.payroll_staff_id > 0) {
+                // Obtener solicitudes vacacionales suspendidas 
+                vm.getSuspensionVacationRequests();
+                axios.get(
+                    `${window.app_url}/payroll/get-vacation-requests/${vm.record.payroll_staff_id}`
+                ).then(response => {
+                    /**
+                     * Extraer dias solicitados
+                     * Número de periodos por año
+                     *
+                     * Calcular según politica vacacional:
+                     * periodos validos
+                     * dias pendiente por periodo
+                     * dias acumulados
+                     */
+    
+                    let year_now = vm.record.start_date ? new Date(vm.record.start_date).getFullYear() : new Date().getFullYear();
+    
+                    vm.payroll_vacation_requests = response.data.records;
+                    vm.current_vacation_requests = [];
+                    vm.period_disabled = false;
+    
+                    // Obtener solicitudes vacacionales registrados anteriormente por el trabajador
+                    if (vm.payroll_vacation_requests.length > 0) {
+                        vm.current_vacation_requests = vm.payroll_vacation_requests.filter(
+                            element => parseInt(element.start_date.split("-")[0]) == year_now
                         );
-                        let payroll_staff_year = payroll_staff_date.split('-')[0];
-
-
-                        vm.vacation_period_years = [];
-                        vm.vacation_period_years.push({
-                            "id": "",
-                            "text": "Seleccione..."
-                        });
-
-                        let requested_period = [];
-                        let requested_current_period = [];
-
-                        for (let vacation_request of vm.payroll_vacation_requests) {
-                            requested_period.push(JSON.parse(vacation_request.vacation_period_year));
+                    }
+    
+                    let payroll_staff_date = vm.format_date(
+                        vm.payroll_staff['payroll_employment']['start_date'],
+                        'YYYY-MM-DD'
+                    );
+                    let payroll_staff_year = payroll_staff_date.split('-')[0];
+    
+                    vm.vacation_period_years = [];
+                    vm.vacation_period_years.push({
+                        "id": "",
+                        "text": "Seleccione..."
+                    });
+    
+                    let requested_period = [];
+                    let requested_current_period = [];
+    
+                    // Obtener periodos vacacionales registrados por el trabajador
+                    for (let vacation_request of vm.payroll_vacation_requests) {
+                        // Al editar se descarta la solicitud vacacional actual  
+                        if (vacation_request.id !== vm.id) {
+                            if (vacation_request.status == "suspended") {
+                                for (let suspended_period of vacation_request.vacation_period_year) {
+                                    if (suspended_period.pending_days > 0) {
+                                        suspended_period.vacation_days = suspended_period.pending_days; 
+                                    }
+                                }
+                            }
+                            requested_period.push(vacation_request.vacation_period_year);
                         }
-
-                        if (vm.current_vacation_requests.length > 0) {
-                            for (let current_period of vm.current_vacation_requests) {
-                                let current_vacation_year_periods = JSON.parse(current_period.vacation_period_year);
+                    }
+                    // Obtener periodos vacacionales de la fecha seleccionada que han sido registrados anteriormente
+                    if (vm.current_vacation_requests.length > 0) {
+                        for (let current_vacation of vm.current_vacation_requests) {
+                            // Al editar se descarta la solicitud vacacional actual  
+                            if (current_vacation.id !== vm.id) {
+                                let current_vacation_year_periods = current_vacation.vacation_period_year;
                                 if (current_vacation_year_periods.length > 1) {
                                     for (let year_period of current_vacation_year_periods) {
                                         if (year_period.pending_days) {
@@ -433,154 +535,123 @@ export default {
                                 }
                             }
                         }
+                    }
+    
+                    let period = 0;
+                    let periods;
+                    let period_years = [];
+                    let requested_period_years = [];
+                    let current_years = 0;
+                    let staff_year = parseInt(payroll_staff_year); 
+    
+                    // Limitar periodos por año
+                    if (vm.current_vacation_requests.length > 0) {
+                        current_years = requested_current_period.length;
+                    }
+    
+                    // Seleccionar periodos vacacionales disponibles
+                    for (var i = staff_year; i <= year_now; i++) {
+                        let year_id = i - staff_year;
+    
+                        if (i != staff_year) {
+                            period++;
+                            let year = null;
+                            let find = false;
 
-                        let period = 0;
-                        let periods;
-                        let period_years = [];
-                        let requested_period_years = [];
-                        let edit_years = 0;
-                        let current_years = 0;
+                            // Validar año fiscal
+                            if(vm.fiscal_year && i > vm.fiscal_year) {
+                                break;
+                            }
 
-                        if (vm.id > 0) {
-                            edit_years = vm.record.old_vacation_period_year.length;
-                        }
-
-                        if (vm.current_vacation_requests.length > 0) {
-                            current_years = requested_current_period.length;
-                        }
-
-                        for (var i = parseInt(payroll_staff_year); i <= year_now; i++) {
-                            let year_id = i - parseInt(payroll_staff_year);
-
-                            if (i != parseInt(payroll_staff_year)) {
-                                period++
-                                let year = null;
-                                let find = false;
-
-                                if(vm.fiscal_year && i > vm.fiscal_year) {
-                                    break;
-                                }
-
-                                // Si el periodo actual se esta editando.. 
-                                if (edit_years > 0 && vm.id) {
-                                    for (let edit_record of vm.record.old_vacation_period_year) {
-                                        if (i == edit_record.id) {
-                                            // Si el periodo actual esta en la lista de periodos creados este año..
-                                            if (current_years > 0) {
-                                                current_years--;
-                                            }
-                                            period++;
-                                            continue;
-                                        }
-                                    }                    
-                                }
-
-                                if (period <= vm.payroll_vacation_policy.vacation_period_per_year - current_years) {
-                                    if (requested_period.length > 0) {
-                                        for (periods of requested_period) {
-                                            for (let p of periods) {
-                                                
-                                                if ((p.text == i) && (!p.pending_days || p.old)) {
-                                                    requested_period_years.push({
-                                                        "id": i,
-                                                        "text": i,
-                                                        "yearId": year_id
-                                                    });
-                                                    year = requested_period_years[requested_period_years.length - 1].id;
-                                                    find = true;
-                                                    period--;
-                                                } else if ((p.text == i) && (p.pending_days) && (p.pending_days > 0)) {
-                                                    period_years.push({
-                                                        "id": i,
-                                                        "text": i,
-                                                        "yearId": year_id,
-                                                        "pending_days": p.pending_days
-                                                    });
-                                                    find = true;
-                                                }
+                            if (period <= vm.payroll_vacation_policy.vacation_period_per_year - current_years) {
+                                if (requested_period.length > 0) {
+                                    for (periods of requested_period) {
+                                        for (let p of periods) {
+                                            // Descartar periodos vacacionales viejos
+                                            if ((p.text == i) && (!p.pending_days || p.old)) {
+                                                requested_period_years.push({
+                                                    "id": i,
+                                                    "text": i,
+                                                    "yearId": year_id
+                                                });
+                                                year = requested_period_years[requested_period_years.length - 1].id;
+                                                find = true;
+                                                period--;
+                                            // Agregar periodos vacacionales con dias pendientes
+                                            } else if ((p.text == i) && (p.pending_days) && (p.pending_days > 0)) {
+                                                period_years.push({
+                                                    "id": i,
+                                                    "text": i,
+                                                    "yearId": year_id,
+                                                    "pending_days": p.pending_days
+                                                });
+                                                find = true;
                                             }
                                         }
-                                        
-                                        if (find == false && i != year) {
-                                            period_years.push({
-                                                "id": i,
-                                                "text": i,
-                                                "yearId": year_id
-                                            });
+                                    }    
+                                }
+                                // Agregar periodos vacacionales nuevos 
+                                if (find == false && i != year) {
+                                    period_years.push({
+                                        "id": i,
+                                        "text": i,
+                                        "yearId": year_id
+                                    });
+                                }
+                            }
+                        }
+                    };
+
+                    vm.vacation_period_years = period_years;
+                    // Mostrar mensaje si no hay periodos vacaionales disponibles en el año de la fecha seleccionada
+                    if(vm.vacation_period_years.length < 1 && !vm.id > 0) {
+                        vm.errors = [];
+                        vm.errors.push('No existen periodos vacacionales disponibles para este año');
+                        return;
+                    }
+
+                    // Obtener dias vacacionales dado la politica vacacional
+                    vm.vacation_days_per_period = vm.getVacationDays(
+                        vm.vacation_period_years, {
+                            vacationDays: vm.payroll_vacation_policy.vacation_days,
+                            fromYear: vm.payroll_vacation_policy.from_year,
+                            yearsForAdditionalDays: vm.payroll_vacation_policy.years_for_additional_days,
+                            additionalDays: vm.payroll_vacation_policy.additional_days_per_year,
+                            maxAdditionalDays: vm.payroll_vacation_policy.maximum_additional_days_per_year
+                        }
+                    );
+                    let suspended = false;
+                    // Cargar dias vacacionales correspondientes a los periodos
+                    for (let period_year of vm.vacation_period_years) {
+                        suspended = false;
+                        // Si hay periodos vacacionales suspendidos con dias pendientes cargar dias vacacionales de este
+                        if (vm.suspension_vacation_requests.length > 0 && vm.record.id) {
+                            for (let suspension_request of vm.suspension_vacation_requests) {
+                                let suspended_vacation_r = vm.payroll_vacation_requests.find(element => element.id == suspension_request.payroll_vacation_request_id);
+                                for (let suspension_period of suspended_vacation_r.vacation_period_year) {
+                                    if (suspension_period.text == period_year.text && !suspension_period.old) {
+                                        if (suspension_period.pending_days > 0) {
+                                            period_year.vacation_days = suspension_period.pending_days;
+                                            suspended = true;
                                         }
                                     }
                                 }
                             }
-                        };
-
-                        if (vm.id > 0) {
-                            // Se agregan los datos de periodo vacacional a editar con los registros de los periodos actuales
-                            for (let old_period of vm.record.old_vacation_period_year) {
-                                old_period.pending_days = old_period.vacation_days;
-                            }
-                            vm.vacation_period_years = vm.record.old_vacation_period_year.concat(period_years);
+                        }
+                        if (suspended) {
+                            continue;
                         } else {
-                            vm.vacation_period_years = period_years;
-                        }
-
-                        if(vm.vacation_period_years.length < 1) {
-                            vm.errors = [];
-                            vm.errors.push('No existen periodos vacacionales disponibles para este año');
-                            return;
-                        }
-                        //Agregar dias de periodo vacacional
-                        vm.vacation_days_per_period = vm.getVacationDays(
-                            vm.vacation_period_years, {
-                                vacationDays: vm.payroll_vacation_policy.vacation_days,
-                                fromYear: vm.payroll_vacation_policy.from_year,
-                                yearsForAdditionalDays: vm.payroll_vacation_policy.years_for_additional_days,
-                                additionalDays: vm.payroll_vacation_policy.additional_days_per_year,
-                                maxAdditionalDays: vm.payroll_vacation_policy.maximum_additional_days_per_year
-                            }
-                        );
-
-                        for (let period_year of vm.vacation_period_years) {
                             let days_available = vm.vacation_days_per_period.find(
                                 element => element.yearId == period_year.yearId).vacationDays;
                             if (days_available) {
                                 period_year.vacation_days = days_available;
                             }
                         }
+                    }
 
-                        document.getElementById('payroll_staff_first_name').innerText =
-                            vm.payroll_staff['first_name']
-                                ? vm.payroll_staff['first_name']
-                                : 'No definido';
-                        document.getElementById('payroll_staff_last_name').innerText =
-                            vm.payroll_staff['last_name']
-                                ? vm.payroll_staff['last_name']
-                                : 'No definido';
-                        document.getElementById('payroll_staff_start_date').innerText =
-                            vm.payroll_staff['payroll_employment']
-                                ? vm.payroll_staff['payroll_employment']['start_date']
-                                    ? vm.convertDate(vm.payroll_staff['payroll_employment']['start_date'])
-                                    : 'No definido'
-                                : 'No definido';
-                        document.getElementById('payroll_staff_department').innerText =
-                            vm.payroll_staff['payroll_employment']
-                                ? vm.payroll_staff['payroll_employment']['department']
-                                    ? vm.payroll_staff['payroll_employment']['department']['name']
-                                        ? vm.payroll_staff['payroll_employment']['department']['name']
-                                        : 'No definido'
-                                    : 'No definido'
-                                : 'No definido';
-                        if (vm.payroll_staff['payroll_responsibility']) {
-                            document.getElementById('payroll_staff_position').innerText = vm.payroll_staff['payroll_responsibility']['payroll_position']['name'];
-                        } else if (vm.payroll_staff['payroll_employment']) {
-                            document.getElementById('payroll_staff_position').innerText = vm.payroll_staff['payroll_employment']['payroll_positions'][0]['name'];
-                        } else {
-                            document.getElementById('payroll_staff_position').innerText = 'No definido';
-                        }
-
-                        if (vm.record.id) {
-                            vm.getPayrollVacationPeriods();
-                        }
-                    });
+                    if (vm.record.id) {
+                        vm.getPayrollVacationPeriods();
+                    }
                 });
             }
         },
@@ -726,12 +797,13 @@ export default {
          *
          * @param    {integer}    id    Identificador del registro a mostrar
          */
-        async showRecord(id) {
+        showRecord(id) {
             const vm = this;
-            await axios.get(`${window.app_url}/payroll/vacation-requests/show/${id}`).then(response => {
+            axios.get(`${window.app_url}/payroll/vacation-requests/show/${id}`).then(response => {
                 vm.record = response.data.record;
-                vm.record.vacation_period_year = JSON.parse(vm.record.vacation_period_year);
+                vm.record.vacation_period_year = response.data.vacation_period_years;
                 vm.record.created_at = vm.format_date(response.data.record.created_at, 'YYYY-MM-DD');
+                vm.record.old_vacation_period_year = vm.record.vacation_period_year;
             });
         },
 
@@ -872,7 +944,47 @@ export default {
             url = vm.setUrl(url);
             let days_available = 0;
 
+            // Validar los periodos vacacionales con la fecha de ingreso del trabajador
+            let payroll_staff_date = vm.format_date(
+                        vm.payroll_staff['payroll_employment']['start_date'],
+                        'YYYY-MM-DD'
+                    );
+
             let last_period_year = vm.record.vacation_period_year[vm.record.vacation_period_year.length - 1];
+            let payroll_vacation_start_year = vm.record.start_date.split('-')[0];
+            let payroll_vacation_start_month = vm.record.start_date.split('-')[1];
+            let payroll_staff_month = payroll_staff_date.split('-')[1];
+            let start_date_month = new Date(vm.record.start_date).getMonth();
+            let payroll_vacation_start_day = vm.record.start_date.split('-')[2];
+            let payroll_staff_day = payroll_staff_date.split('-')[2];
+            let start_date_day = new Date(vm.record.start_date).getDay();
+            let date_less = false;
+
+            if (parseInt(last_period_year.text) == payroll_vacation_start_year) {
+                if(payroll_vacation_start_month < payroll_staff_month) {
+                    date_less = true;
+                    if (payroll_vacation_start_day < payroll_staff_day) {
+                        date_less = true
+                    }
+                }
+                if (date_less) {
+                    vm.errors = [];
+                    vm.errors.push('El año del periodo vacacional ingresado no le corresponde a la fecha de inicio y culminacion de las vacaciones');
+                    vm.loading = false;
+                    return;
+                }
+            }
+            // Validar año de inicio de vacaciones con años de periodos vacaionales ingresados 
+            let is_start_date_year_less_than_period_year = vm.record.vacation_period_year.filter(
+                element => !(parseInt(element.text) <= parseInt(payroll_vacation_start_year))
+            );
+            if (is_start_date_year_less_than_period_year.length > 0) {
+                vm.errors = [];
+                vm.errors.push('El año del periodo vacacional ingresado no le corresponde a la fecha de inicio y culminacion de las vacaciones');
+                vm.loading = false;
+                return;
+            }
+
             if (last_period_year.pending_days && !vm.id) {
                 days_available = last_period_year.pending_days;
             } else {
@@ -976,27 +1088,6 @@ export default {
 
                     vm.loading = false;
                 });
-            }
-        },
-
-        getMinDate() {
-            const vm = this;
-            let created_time = vm.record.created_at ? new Date(vm.record.created_at).getTime() : '';
-            const toISOString = (timestamp) => {
-                return timestamp ? new Date(timestamp).toISOString() : undefined
-            }
-
-            if (vm.payroll_vacation_policy.min_days_advance && created_time) {
-                let date = created_time - (new Date().getTimezoneOffset() * 60000);
-                date = toISOString(date) ? toISOString(date).split('T')[0] : '';
-                let newDate = vm.add_period(date, vm.payroll_vacation_policy.min_days_advance, 'days', 'YYYY-MM-DD');
-
-                return newDate;
-            } else {
-                let date = created_time - (new Date().getTimezoneOffset() * 60000);
-                date = toISOString(date) ? toISOString(date).split('T')[0] : '';
-
-                return date;
             }
         },
 

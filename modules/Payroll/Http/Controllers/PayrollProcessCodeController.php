@@ -172,6 +172,37 @@ class PayrollProcessCodeController extends Controller
         ], 200);
     }
 
+
+    /**
+     * Obtiene los grupos etarios registrados
+     *
+     * @author    Pedro Contreras <pmcontreras@cenditel.gob.ve>
+     *
+     * @return    array    Listado de los registros a mostrar
+     */
+    public function getPayrollAgeGroups()
+    {
+        $payrollAgeGroups = PayrollAgeGroup::query()
+            ->get()
+            ->map(fn($model) => [
+                'id' => $model->id,
+                'text' => $model->code . ' - ' . $model->name,
+                'minimum' => $model->minimum_age,
+                'maximum' => $model->maximum_age
+            ])->toArray();
+
+            return array_merge(
+                [
+                    [
+                        'id' => '',
+                        'text' => 'Seleccione...',
+                        'payroll_ids' => [],
+                    ]
+                ],
+                $payrollAgeGroups
+            );
+    }
+
     /**
      * [descripción del método]
      *

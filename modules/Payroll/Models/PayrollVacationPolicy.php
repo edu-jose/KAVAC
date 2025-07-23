@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use OwenIt\Auditing\Contracts\Auditable;
 use OwenIt\Auditing\Auditable as AuditableTrait;
 use App\Traits\ModelsTrait;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * @class      PayrollVacationPolicy
@@ -138,5 +139,17 @@ class PayrollVacationPolicy extends Model implements Auditable
     public function payrollDaysScales()
     {
         return $this->morphMany(PayrollScale::class, 'relationable');
+    }
+
+    /**
+     * Obtiene información las condiciones de pago asociadas a una política vacacional
+     *
+     * @author    Daniel Contreras <dcontreras@cenditel.gob.ve>
+     *
+     * @return    \Illuminate\Database\Eloquent\Relations\HasOne
+     */
+    public function payrollVacationPolicyPayment(): HasOne
+    {
+        return $this->hasOne(PayrollVacationPolicyPayment::class);
     }
 }

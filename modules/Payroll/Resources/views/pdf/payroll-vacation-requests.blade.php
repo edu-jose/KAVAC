@@ -63,8 +63,8 @@
             }}
         </td>
         <td width="50%">
-            @foreach (json_decode($field->vacation_period_year) as $period)
-                {{ $period->text }}
+            @foreach ($field->vacation_period_year as $period)
+                {{ $period['text'] }}
             @endforeach
         </td>
     </tr>

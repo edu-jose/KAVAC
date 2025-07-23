@@ -584,7 +584,8 @@ class PayrollConceptController extends Controller
             'parameter',
             'concept',
             'tabulator',
-            'ari_register'
+            'ari_register',
+            'associatedTotals',
         ];
 
         foreach ($typesParameters as $typeParameter) {

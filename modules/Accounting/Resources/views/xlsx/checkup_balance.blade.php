@@ -113,44 +113,44 @@
                 {{-- Saldo inicial --}}
                 <td align="right">
                     @if ($record['beginningBalance'] >= 0)
-                        {{ number_format($record['beginningBalance'], (int) $currency['decimal_places'], ',', '.') }}
+                        {{ str_replace(',', '', number_format($record['beginningBalance'], (int) $currency['decimal_places'], '.', '')) }}
                     @endif
                 </td>
                 <td align="right">
                     @if ($record['beginningBalance'] < 0)
-                        {{ number_format(-$record['beginningBalance'], (int) $currency['decimal_places'], ',', '.') }}
+                        {{ str_replace(',', '', number_format(-$record['beginningBalance'], (int) $currency['decimal_places'], '.', '')) }}
                     @endif
                 </td>
 
                 {{-- Suma de saldos --}}
                 <td align="right">
                     @if ($record['sum_debit'])
-                        {{ number_format($record['sum_debit'], (int) $currency['decimal_places'], ',', '.') }}
+                        {{ str_replace(',', '', number_format($record['sum_debit'], (int) $currency['decimal_places'], '.', '')) }}
                     @elseif(!$record['sum_assets'])
-                        {{ number_format(0, (int) $currency['decimal_places'], ',', '.') }}
+                        {{ str_replace(',', '', number_format(0, (int) $currency['decimal_places'], '.', '')) }}
                     @endif
                 </td>
                 <td align="right">
                     @if ($record['sum_assets'])
-                        {{ number_format(-$record['sum_assets'], (int) $currency['decimal_places'], ',', '.') }}
+                        {{ str_replace(',', '', number_format(-$record['sum_assets'], (int) $currency['decimal_places'], '.', '')) }}
                     @elseif(!$record['sum_debit'])
-                        {{ number_format(0, (int) $currency['decimal_places'], ',', '.') }}
+                        {{ str_replace(',', '', number_format(0, (int) $currency['decimal_places'], '.', '')) }}
                     @endif
                 </td>
 
                 {{-- Saldo final --}}
                 <td align="right">
                     @if ($record['balance_debit'])
-                        {{ number_format($record['balance_debit'], (int) $currency['decimal_places'], ',', '.') }}
+                        {{ str_replace(',', '', number_format($record['balance_debit'], (int) $currency['decimal_places'], '.', '')) }}
                     @elseif(!$record['balance_assets'])
-                        {{ number_format(0, (int) $currency['decimal_places'], ',', '.') }}
+                        {{ str_replace(',', '', number_format(0, (int) $currency['decimal_places'], '.', '')) }}
                     @endif
                 </td>
                 <td align="right">
                     @if ($record['balance_assets'])
-                        {{ number_format(-$record['balance_assets'], (int) $currency['decimal_places'], ',', '.') }}
+                        {{ str_replace(',', '', number_format(-$record['balance_assets'], (int) $currency['decimal_places'], '.', '')) }}
                     @elseif(!$record['balance_debit'])
-                        {{ number_format(0, (int) $currency['decimal_places'], ',', '.') }}
+                        {{ str_replace(',', '', number_format(0, (int) $currency['decimal_places'], '.', '')) }}
                     @endif
                 </td>
                 @php
@@ -170,10 +170,10 @@
             <td></td>
             <td></td>
             <td align="right">
-                {{ number_format($totDebit, (int) $currency['decimal_places'], ',', '.') }}
+                {{ str_replace(',', '', number_format($totDebit, (int) $currency['decimal_places'], '.', '')) }}
             </td>
             <td align="right">
-                {{ number_format(-$totAssets, (int) $currency['decimal_places'], ',', '.') }}
+                {{ str_replace(',', '', number_format(-$totAssets, (int) $currency['decimal_places'], '.', '')) }}
             </td>
             <td align="right">
 

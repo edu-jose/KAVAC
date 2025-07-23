@@ -1,6 +1,6 @@
 <template>
     <div>
-        <v-client-table ref="tableResults" :columns="columns" :data="records" :options="table_options">
+        <v-client-table ref="tableResult" :columns="columns" :data="records" :options="table_options">
             <div slot="document_status.name" slot-scope="props" class="text-center">
                 <span v-if="props.row.document_status.action == 'EL'" class="text-warning">
                     {{ props.row.document_status.name }}
@@ -167,7 +167,7 @@ export default {
                     vm.$refs[ref][i] = var_list[i];
                 }
             }else{
-                vm.$refs[ref].record = vm.$refs.tableResults.data.filter(r => {
+                vm.$refs[ref].record = vm.$refs.tableResult.data.filter(r => {
                     return r.id === id;
                 })[0];
 

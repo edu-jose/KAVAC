@@ -6,8 +6,8 @@
             <i class="icofont icofont-institution ico-3x"></i>
             <span style="font-size: 11px;" class="mx-1">Sedes / Negocios / Filiales</span>
         </a>
-        <div class="modal fade text-left" tabindex="-1" role="dialog" id="add_headquarter">
-            <div class="modal-dialog vue-crud" role="document">
+        <div class="modal fade text-left" tabindex="-1" id="add_headquarter">
+            <div class="modal-dialog vue-crud">
                 <div class="modal-content">
                     <div class="modal-header">
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -23,20 +23,20 @@
                         <div class="row">
                             <div class="col-2">
                                 <div class="form-group">
-                                    <label for="rif">R.I.F.:</label>
+                                    <label for="headquarterRif">R.I.F.:</label>
                                     <input
                                         type="text" placeholder="Número de RIF" data-toggle="tooltip"
-                                        title="Indique el número de RIF" id="rif"
+                                        title="Indique el número de RIF" id="headquarterRif"
                                         class="form-control input-sm" v-model="record.rif"
                                     >
                                 </div>
                             </div>
                             <div class="col-4">
                                 <div class="form-group is-required">
-                                    <label for="name">Nombre:</label>
+                                    <label for="headquarterName">Nombre:</label>
                                     <input
                                         type="text" placeholder="Nombre de la sede" data-toggle="tooltip"
-                                        title="Indique el nombre de la sede (requerido)" id="name"
+                                        title="Indique el nombre de la sede (requerido)" id="headquarterName"
                                         class="form-control input-sm" v-model="record.name"
                                     >
                                     <input type="hidden" v-model="record.id">

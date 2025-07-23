@@ -16,6 +16,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use Modules\Payroll\Exports\PayrollTimeSheetExport;
 use Modules\Payroll\Http\Resources\TimeSheetPendingResource;
 use Modules\Payroll\Imports\PayrollTimeSheetImport;
+use Modules\Payroll\Models\PayrollEmployment;
 use Modules\Payroll\Models\PayrollSupervisedGroup;
 use Modules\Payroll\Models\PayrollTimeSheetPending;
 use Modules\Payroll\Rules\PayrollTimeSheetDataRequired;
@@ -498,14 +499,16 @@ class PayrollTimeSheetPendingController extends Controller
                 ->get())
             ], 200);
         } else {
+            $employment = PayrollEmployment::find($profileUser->employee_id);
+
             return response()->json(['records' => TimeSheetPendingResource::collection(PayrollTimeSheetPending::query()
                 ->with([
                     'payrollTimeSheetParameters.payrollParameterTimeSheetParameters.parameter',
                 ])
-                ->whereHas('payrollSupervisedGroup', function ($query) use ($profileUser) {
+                ->whereHas('payrollSupervisedGroup', function ($query) use ($employment) {
                     $query
-                        ->where('supervisor_id', $profileUser->employee_id)
-                        ->orWhere('approver_id', $profileUser->employee_id);
+                        ->where('supervisor_id', $employment->payroll_staff_id)
+                        ->orWhere('approver_id', $employment->payroll_staff_id);
                 })
                 ->get())
             ], 200);

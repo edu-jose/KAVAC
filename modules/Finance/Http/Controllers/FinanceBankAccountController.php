@@ -90,6 +90,10 @@ class FinanceBankAccountController extends Controller
      */
     public function store(Request $request)
     {
+        $request->merge([
+            'ccc_number' => $request->input('bank_code') . $request->input('ccc_number')
+        ]);
+
         $this->validate($request, [
             'ccc_number' => ['required', 'numeric', 'digits_between:16, 20','unique:finance_bank_accounts,ccc_number'],
             'description' => ['required'],
@@ -103,15 +107,8 @@ class FinanceBankAccountController extends Controller
                                            "incluyendo los 4 dígitos del código del banco.",
         ], $this->customAttributes);
 
-        $ccc_number = $request->bank_code . $request->ccc_number;
-        $ccc_numbers = FinanceBankAccount::where('ccc_number', $ccc_number)->first();
-        if ($ccc_numbers) {
-            $error[0] = "El campo código cuenta cliente ya ha sido registrado.";
-            return response()->json(['result' => true, 'errors' => ["code" => $error]], 422);
-        }
-
         $financeBankAccount = FinanceBankAccount::create([
-            'ccc_number' => $request->bank_code . $request->ccc_number,
+            'ccc_number' => $request->ccc_number,
             'description' => $request->description,
             'opened_at' => $request->opened_at,
             'finance_banking_agency_id' => $request->finance_banking_agency_id,
@@ -155,6 +152,9 @@ class FinanceBankAccountController extends Controller
     {
         /* Datos de la cuenta bancaria */
         $bankAccount = FinanceBankAccount::find($id);
+        $request->merge([
+            'ccc_number' => $request->input('bank_code') . $request->input('ccc_number')
+        ]);
 
         $this->validate($request, [
             'ccc_number' => [
@@ -173,14 +173,7 @@ class FinanceBankAccountController extends Controller
                                            "incluyendo los 4 dígitos del código del banco.",
         ], $this->customAttributes);
 
-        $ccc_number = $request->bank_code . $request->ccc_number;
-        $ccc_numbers = FinanceBankAccount::where(['id' => $id, 'ccc_number' => $ccc_number])->first();
-        if (!$ccc_numbers) {
-            $error[0] = "El campo código cuenta cliente ya existe.";
-            return response()->json(['result' => true, 'errors' => ["code" => $error]], 422);
-        }
-
-        $bankAccount->ccc_number = $request->bank_code . $request->ccc_number;
+        $bankAccount->ccc_number = $request->ccc_number;
         $bankAccount->description = $request->description;
         $bankAccount->opened_at = $request->opened_at;
         $bankAccount->finance_banking_agency_id = $request->finance_banking_agency_id;

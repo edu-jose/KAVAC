@@ -44,10 +44,32 @@ class PayrollAssociatedParametersRepository
     protected $assignTo;
 
     /**
+     * Arreglo con los registros asociados a la configuración de totales
+     *
+     * @var array $associatedTotals
+     */
+    protected $associatedTotals;
+
+    /**
      * Crea una nueva instancia de la clase
      */
     public function __construct()
     {
+        /* Define los campos de la configuración de totales a emplear en el formulario */
+        $this->associatedTotals = [
+            [
+                'id'       => 'TOTAL_ASSIGNMENTS',
+                'name'     => 'Total asignaciones',
+                'model'    => 'Modules\Payroll\Models\Payroll',
+                'required' => [],
+            ],
+            [
+                'id' => 'TOTAL_PAID',
+                'name' => 'Total pagado',
+                'model' => 'Modules\Payroll\Models\Payroll',
+                'required' => [],
+            ],
+        ];
         /* Define los campos de la configuración de vacaciones a emplear en el formulario */
         $this->associatedVacation = [
             [
@@ -310,6 +332,12 @@ class PayrollAssociatedParametersRepository
                 'where'       => null
             ],
             [
+                'id'          => 'all_staff_in_vacations',
+                'name'        => 'Todos los trabajadores que están de vacaciones',
+                'model'       => 'Modules\Payroll\Models\PayrollStaff',
+                'type'        => '',
+            ],
+            [
                 'id'    => 'all_except_disabled_staff',
                 'name'  => 'Todos excepto trabajadores discapacitados',
                 'model' => 'Modules\Payroll\Models\PayrollStaff',
@@ -365,13 +393,40 @@ class PayrollAssociatedParametersRepository
             ],
             [
                 'id'    => 'staff_with_sons_has_scholarships',
-                'name'  => 'Todos los trabajdores con hijos que poseen becas',
+                'name'  => 'Todos los trabajadores con hijos que poseen becas',
                 'model' => 'Modules\Payroll\Models\PayrollStaff',
                 'type'  => 'list',
                 'optionModel'   => 'Modules\Payroll\Models\PayrollScholarshipType',
                 'optionField'   => ['name'],
                 'whereHas' => null,
 
+            ],
+            [
+                'id'    => 'all_survivor_staff',
+                'name'  => 'Todos los sobrevivientes',
+                'model' => 'Modules\Payroll\Models\PayrollStaff',
+                'type'  => '',
+                'whereHas' => null,
+            ],
+            [
+                'id'    => 'all_staff_who_belong_to_a_workers_union',
+                'name'  => 'Todos los trabajadores que pertenecen a sindicato de trabajadores',
+                'model' => 'Modules\Payroll\Models\PayrollStaff',
+                'type'  => '',
+                'whereHas' => [
+                    'field' => 'payrollEmployment',
+                    'where' => ['workers_union', true]
+                ],
+            ],
+            [
+                'id'    => 'all_staff_affiliated_with_the_savings_fund',
+                'name'  => 'Todos los trabajadores afiliados al fondo de ahorro',
+                'model' => 'Modules\Payroll\Models\PayrollStaff',
+                'type'  => '',
+                'whereHas' => [
+                    'field' => 'payrollEmployment',
+                    'where' => ['savings_fund', true],
+                ],
             ],
             [
                 'id'      => 'staff',

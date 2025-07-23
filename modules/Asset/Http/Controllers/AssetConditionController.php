@@ -48,7 +48,9 @@ class AssetConditionController extends Controller
     public function __construct()
     {
         // Establece permisos de acceso para cada método del controlador
-        //$this->middleware('permission:asset.setting.condition');
+          $this->middleware('permission:asset.condition.create', ['only' => 'store']);
+          $this->middleware('permission:asset.condition.edit', ['only' => 'update']);
+          $this->middleware('permission:asset.condition.delete', ['only' => 'destroy']);
         /* Define las reglas de validación para el formulario */
         $this->validateRules = [
             'name'     => ['required', 'regex:/^[a-zA-ZÁ-ÿ\s]*$/u', 'max:100', Rule::unique('asset_conditions')],

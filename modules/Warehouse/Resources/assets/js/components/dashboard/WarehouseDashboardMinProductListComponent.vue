@@ -29,7 +29,7 @@
                         : ''
                     }} <br>
                 <b>Existencia:</b> {{ props.row.real }}<br>
-                <b>Reservados:</b> {{ (props.row.reserved === null)
+                <b>Entregados:</b> {{ (props.row.reserved === null)
                     ? '0'
                     : props.row.reserved }}
                 <br>

@@ -84,6 +84,16 @@ Route::group([
         /* Rutas para la gestión de migración de datos ramas y especialidad a la tabla pivote */
         /*Route::get('supplier-data-migrate-pivote', 'PurchaseSupplierController@DataMigratePivote');*/
 
+        /** Rutas para la configuración de tipos de actividad de compras */
+        Route::resource('activity-types', 'PurchaseActivityTypeController', [
+            'as'     => 'purchase',
+        ]);
+
+        /** Rutas para la configuración de prioridades de compras */
+        Route::resource('priorities', 'PurchasePriorityController', [
+            'as'     => 'purchase',
+        ]);
+
         /* Rutas para la gestión de procesos de compras */
         Route::resource('processes', 'PurchaseProcessController', ['as' => 'purchase']);
         Route::get('get-processes', 'PurchaseProcessController@getProcesses');
@@ -303,4 +313,9 @@ Route::group([
         'get-parameters',
         'PurchaseParameterController@index'
     )->name('purchase.parameters.index');
+
+    /** Rutas para la configuración de orden de prioridades de compras */
+    Route::resource('priority-orders', 'PurchasePriorityOrderController', [
+        'as'     => 'purchase',
+    ]);
 });

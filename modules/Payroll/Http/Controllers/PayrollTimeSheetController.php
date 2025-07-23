@@ -7,6 +7,8 @@ use App\Models\Institution;
 use App\Models\Profile;
 use App\Notifications\System;
 use App\Notifications\SystemNotification;
+use Carbon\Carbon;
+use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Routing\Controller;
@@ -16,8 +18,11 @@ use Maatwebsite\Excel\Facades\Excel;
 use Modules\Payroll\Exports\PayrollTimeSheetExport;
 use Modules\Payroll\Http\Resources\TimeSheetResource;
 use Modules\Payroll\Imports\PayrollTimeSheetImport;
+use Modules\Payroll\Models\PayrollEmployment;
+use Modules\Payroll\Models\PayrollHoliday;
 use Modules\Payroll\Models\PayrollSupervisedGroup;
 use Modules\Payroll\Models\PayrollTimeSheet;
+use Modules\Payroll\Models\PayrollTimeSheetParameter;
 use Modules\Payroll\Rules\PayrollTimeSheetDataRequired;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
@@ -130,6 +135,9 @@ class PayrollTimeSheetController extends Controller
             return $carry;
         }, []);
 
+        $fromDate = Carbon::parse($request->from_date);
+        $toDate = Carbon::parse($request->to_date);
+        $daysInPeriod =  $fromDate->diffInDays($toDate) + 1;
 
         foreach ($request->time_sheet_data as $requestKey => $requestValue) {
             foreach ($turnsArray as $resultKey => $resultValue) {
@@ -139,12 +147,19 @@ class PayrollTimeSheetController extends Controller
                     }
                 }
             }
+
+            if (str_contains($requestKey, 'total-') && intval($requestValue) > intval($daysInPeriod)) {
+                return response()->json(['errors' => ['error' => ['El total no debe ser mayor a ' . $daysInPeriod]]], 422);
+            }
         }
-        foreach ($request->time_sheet_data as $requestKey => $requestValue) {
-            foreach ($categoryGroups as $category => $categoryMaxValue) {
-                if (strpos($requestKey, $category) === 0) {
-                    if (intval($requestValue) > intval($categoryMaxValue)) {
-                        return response()->json(['errors' => ['error' => ['El valor de la categoria ' . $category . ' no debe ser mayor a ' . $categoryMaxValue]]], 422);
+
+        if (!$request->total_for_period) {
+            foreach ($request->time_sheet_data as $requestKey => $requestValue) {
+                foreach ($categoryGroups as $category => $categoryMaxValue) {
+                    if (strpos($requestKey, $category) === 0) {
+                        if (intval($requestValue) > intval($categoryMaxValue)) {
+                            return response()->json(['errors' => ['error' => ['El valor de la categoria ' . $category . ' no debe ser mayor a ' . $categoryMaxValue]]], 422);
+                        }
                     }
                 }
             }
@@ -203,6 +218,7 @@ class PayrollTimeSheetController extends Controller
                 'payroll_time_sheet_parameter_id' => $request->payroll_time_sheet_parameter_id,
                 'document_status_id' => $status->id,
                 'time_sheet_data' => $request->time_sheet_data,
+                'time_sheet_original_data' => $request->time_sheet_original_data,
                 'time_sheet_columns' => $request->time_sheet_columns,
                 'institution_id' => $institution->id
             ]);
@@ -284,6 +300,10 @@ class PayrollTimeSheetController extends Controller
             return $carry;
         }, []);
 
+        $fromDate = Carbon::parse($request->from_date);
+        $toDate = Carbon::parse($request->to_date);
+        $daysInPeriod =  $fromDate->diffInDays($toDate) + 1;
+
         foreach ($request->time_sheet_data as $requestKey => $requestValue) {
             foreach ($turnsArray as $resultKey => $resultValue) {
                 if (strpos($requestKey, $resultKey) === 0) {
@@ -292,7 +312,12 @@ class PayrollTimeSheetController extends Controller
                     }
                 }
             }
+
+            if (str_contains($requestKey, 'total-') && intval($requestValue) > intval($daysInPeriod)) {
+                return response()->json(['errors' => ['error' => ['El total no debe ser mayor a ' . $daysInPeriod]]], 422);
+            }
         }
+
         foreach ($request->time_sheet_data as $requestKey => $requestValue) {
             foreach ($categoryGroups as $category => $categoryMaxValue) {
                 if (strpos($requestKey, $category) === 0) {
@@ -322,6 +347,7 @@ class PayrollTimeSheetController extends Controller
             $payrollTimeSheet->payroll_supervised_group_id = $request->payroll_supervised_group_id;
             $payrollTimeSheet->payroll_time_sheet_parameter_id = $request->payroll_time_sheet_parameter_id;
             $payrollTimeSheet->time_sheet_data = $request->time_sheet_data;
+            $payrollTimeSheet->time_sheet_original_data = $request->time_sheet_original_data;
             $payrollTimeSheet->time_sheet_columns = $request->time_sheet_columns;
             $payrollTimeSheet->save();
         });
@@ -543,33 +569,43 @@ class PayrollTimeSheetController extends Controller
      *
      * @return    \Illuminate\Http\JsonResponse
      */
-    public function vueList()
+    public function vueList(Request $request)
     {
         $user = auth()->user();
         $profileUser = $user->profile;
 
-        if ($user->hasRole('admin, payroll')) {
-            return response()->json([
-                'records' => TimeSheetResource::collection(PayrollTimeSheet::query()
-                    ->with([
-                        'payrollTimeSheetParameters.payrollParameterTimeSheetParameters.parameter',
-                    ])
-                    ->get())
-            ], 200);
-        } else {
-            return response()->json([
-                'records' => TimeSheetResource::collection(PayrollTimeSheet::query()
-                    ->with([
-                        'payrollTimeSheetParameters.payrollParameterTimeSheetParameters.parameter',
-                    ])
-                    ->whereHas('payrollSupervisedGroup', function ($query) use ($profileUser) {
-                        $query
-                            ->where('supervisor_id', $profileUser->employee_id)
-                            ->orWhere('approver_id', $profileUser->employee_id);
-                    })
-                    ->get())
-            ], 200);
+        $query = PayrollTimeSheet::query()
+            ->with([
+                'payrollTimeSheetParameters',
+                'documentStatus',
+                'payrollSupervisedGroup.supervisor',
+                'payrollSupervisedGroup.approver'
+            ]);
+
+        if (!$user->hasRole('admin, payroll')) {
+            $employment = PayrollEmployment::find($profileUser->employee_id);
+            $query->whereHas('payrollSupervisedGroup', function ($q) use ($employment) {
+                $q->where('supervisor_id', $employment->payroll_staff_id)
+                ->orWhere('approver_id', $employment->payroll_staff_id);
+            });
         }
+
+        // Apply sorting and filtering based on v-server-table parameters
+        if ($request->has('orderBy')) {
+            $query = $query->sortBy($request->orderBy, $request->ascending ? 'ASC' : 'DESC');
+        }
+
+        if ($request->has('query')) {
+            $search = $request->query('query');
+            $query = $query->search($search);
+        }
+
+        $records = $query->paginate($request->limit ?? 10);
+
+        return response()->json([
+            'data' => TimeSheetResource::collection($records->items()),
+            'count' => $records->total(),
+        ], 200);
     }
 
     /**
@@ -585,6 +621,7 @@ class PayrollTimeSheetController extends Controller
             'record' => TimeSheetResource::make(PayrollTimeSheet::query()
                 ->with([
                     'payrollTimeSheetParameters.payrollParameterTimeSheetParameters.parameter',
+                    'payrollTimeSheetParameters.payrollExceptionTypeTimeSheetParameters.payrollExceptionType',
                 ])
                 ->find($id))
         ], 200);
@@ -612,5 +649,43 @@ class PayrollTimeSheetController extends Controller
     public function export(Request $request)
     {
         return Excel::download(new PayrollTimeSheetExport($request->all()), 'payroll-time-sheet.xlsx');
+    }
+
+    /**
+     * Obtiene la cantidad de días feriados y domningos dentro de un periodo
+     *
+     * @param     Request    $request         Datos de la petición
+     *
+     * @return    \Illuminate\Http\JsonResponse
+     */
+    public function getTimeSheetHolidaysByPeriod(Request $request)
+    {
+        if (!$request->from_date || !$request->to_date) {
+            return response()->json([
+                'maxHolidays' => [],
+            ], 200);
+        }
+
+        $holidays = PayrollHoliday::query()
+            ->where('date', '>=', $request->from_date)
+            ->where('date', '<=', $request->to_date)
+            ->count();
+
+        // Crear un rango de fechas usando CarbonPeriod
+        $period = CarbonPeriod::create($request->from_date, $request->to_date);
+
+        // Filtrar los días que son domingos
+        $sundays = $period->filter(function (Carbon $date) {
+            return $date->isSunday(); // Verifica si el día es domingo
+        });
+
+        $maxHolidays = [
+            'feriados' => $holidays,
+            'domingos' => $sundays->count(),
+        ];
+
+        return response()->json([
+            'maxHolidays' => $maxHolidays,
+        ], 200);
     }
 }

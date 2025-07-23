@@ -47,7 +47,9 @@ class AssetBuildingController extends Controller
     public function __construct()
     {
         /* Establece permisos de acceso para cada método del controlador */
-        $this->middleware('permission:asset.setting.building');
+        $this->middleware('permission:asset.setting.building.create', ['only' => 'store']);
+        $this->middleware('permission:asset.setting.building.edit', ['only' => 'update']);
+        $this->middleware('permission:asset.setting.building.delete', ['only' => 'destroy']);
         /* Define las reglas de validación para el formulario */
         $this->validateRules = [
             'name' => ['required', 'regex:/^[a-zA-ZÁ-ÿ0-9\s]*$/u', 'max:100'],

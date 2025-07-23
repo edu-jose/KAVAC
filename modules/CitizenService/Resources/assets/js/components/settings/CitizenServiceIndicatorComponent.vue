@@ -6,8 +6,8 @@
            <i class="icofont icofont-stock-search ico-3x"></i>
 		   <span>Indicadores</span>
 		</a>
-		<div class="modal fade text-left" tabindex="-1" role="dialog" id="add_citizenservice-indicators">
-			<div class="modal-dialog vue-crud" role="document">
+		<div class="modal fade text-left" tabindex="-1" id="add_citizenservice-indicators">
+			<div class="modal-dialog vue-crud">
 				<div class="modal-content">
 					<div class="modal-header">
 						<button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -39,8 +39,8 @@
                         <div class="row">
                             <div class="col-md-4">
         						<div class="form-group is-required">
-        							<label for="name">Nombre:</label>
-        							<input type="text" id="name" placeholder="Nombre"
+        							<label for="indicatorName">Nombre:</label>
+        							<input type="text" id="indicatorName" placeholder="Nombre"
 										   v-input-mask data-inputmask-regex="[a-zA-ZÁ-ÿ\s]*"
         								   class="form-control input-sm" v-model="record.name" data-toggle="tooltip"
         								   title="Indique el nombre del indicador">
@@ -49,8 +49,8 @@
                             </div>
 							<div class="col-md-4">
 								<div class="form-group">
-									<label for="description">Descripción:</label>
-									<input type="text" id="description" placeholder="Descripción"
+									<label for="indicatorDescription">Descripción:</label>
+									<input type="text" id="indicatorDescription" placeholder="Descripción"
 										   v-input-mask data-inputmask-regex="[a-zA-ZÁ-ÿ\s]*"
 										   class="form-control input-sm" v-model="record.description" data-toggle="tooltip"
 										   title="Indique la descripción del indicador">
@@ -136,6 +136,7 @@
 					description: '',
 					effect_types_id: ''
 				};
+                this.errors = [];
 			},
 			getEffectType() {
 	            const vm = this;

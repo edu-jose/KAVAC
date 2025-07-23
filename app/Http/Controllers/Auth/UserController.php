@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Hash;
 use App\Notifications\UserRegistered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
+use Nwidart\Modules\Facades\Module;
 
 /**
  * @class UserController
@@ -66,7 +67,7 @@ class UserController extends Controller
         // Listado de los perfiles con datos de empleados
         $allPersons = Profile::whereNotNull('employee_id')
             ->whereNull('user_id')
-            ->get(['id', 'first_name', 'last_name']);
+            ->get(['id', 'first_name', 'last_name', 'employee_id']);
 
         $institutions = template_choices('App\Models\Institution', 'name');
 
@@ -87,7 +88,7 @@ class UserController extends Controller
         $this->validate(
             $request,
             [
-                'first_name' => ['required_without:staff'],
+                'first_name' => ['required_without:employee_id'],
                 'institution_id' => ['required'],
                 'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
                 'username' => ['required', 'string', 'max:25', 'unique:users'],
@@ -108,9 +109,9 @@ class UserController extends Controller
             ]
         );
 
-        if ($request->staff) {
+        if ($request->employee_id) {
             // Objeto con información del perfil del usuario
-            $profile = Profile::find($request->staff);
+            $profile = Profile::find($request->employee_id);
         }
 
         // Hash con una contraseña generada aleatoriamente
@@ -122,12 +123,12 @@ class UserController extends Controller
                     : trim($profile->first_name . ' ' . $profile->last_name ?? ''),
             'email' => $request->email,
             'username' => $request->username,
-            'password' => bcrypt($password),
+            'password' => Hash::make($password),
             'level' => 2,
             'email_verified_at' => (config('active-directory.enabled')) ? Carbon::now() : null,
         ]);
 
-        if (!$request->staff) {
+        if (!$request->employee_id) {
             // Instancia al modelo de perfil de usuario
             $profile = new Profile();
             $profile->first_name = $request->first_name;
@@ -213,7 +214,32 @@ class UserController extends Controller
 
         // Construir la lista de nombres completos
         $allPersons = $allPersons->mapWithKeys(function ($person) {
-            return [$person->employee_id => $person->first_name . ' ' . $person->last_name];
+            $employeeId = $person->employee_id;
+            $employeeFullName = $person->first_name . ' ' . $person->last_name;
+            if (!$employeeId && Module::has('Payroll') && Module::isEnabled('Payroll')) {
+                $staff = \Modules\Payroll\Models\PayrollStaff::without([
+                    'payrollNationality',
+                    'payrollFinancial',
+                    'payrollGender',
+                    'payrollBloodType',
+                    'payrollDisability',
+                    'payrollLicenseDegree',
+                    'payrollStaffUniformSize',
+                    'payrollSocioeconomic',
+                    'payrollProfessional',
+                    'payrollResponsibility'
+                ])->where(function ($query) use ($person) {
+                    $query->whereRaw(
+                        "LOWER(REPLACE(TRIM(first_name), ' ', '')) LIKE ?",
+                        '%' . str_replace(' ', '', trim(strtolower($person->first_name))) . '%'
+                    )->orWhereRaw(
+                        "LOWER(REPLACE(TRIM(last_name), ' ', '')) LIKE ?",
+                        '%' . str_replace(' ', '', trim(strtolower($person->last_name))) . '%'
+                    );
+                })->first();
+                $employeeId = $staff ? $staff?->payrollEmployment->id : null;
+            }
+            return [$employeeId => $employeeFullName];
         });
 
         $institutions = template_choices('App\Models\Institution', 'name');
@@ -238,7 +264,7 @@ class UserController extends Controller
     {
         if (!$request->has('source') || $request->source !== 'profile') {
             $this->validate($request, [
-                'first_name' => ['required_without:staff'],
+                'first_name' => ['required_without:employee_id'],
                 'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id],
                 'username' => ['required', 'string', 'max:25', 'unique:users,username,' . $user->id],
                 'role' => ['required_without:permission', 'array'],
@@ -251,22 +277,19 @@ class UserController extends Controller
 
             $profile = Profile::where('user_id', $user->id)->first();
 
-            if (!$request->staff && !$profile) {
+            if (!$request->employee_id && !$profile) {
                 // Crear un nuevo perfil si no hay un empleado seleccionado y no hay perfil existente
                 $profile = new Profile();
-            } elseif ($request->staff && $profile) {
-                // Desasociar el perfil del usuario anterior
-                $profile->user_id = null;
-                $profile->save();
-
+            } elseif ($request->employee_id && $profile) {
                 // Encontrar o crear el perfil para el nuevo empleado
-                $profile = Profile::where('employee_id', $request->staff)->first() ?? new Profile();
-            } elseif ($request->staff && !$profile) {
+                $profile = Profile::where('user_id', $user->id)->first() ?? new Profile();
+            } elseif ($request->employee_id && !$profile) {
                 // Encontrar el perfil para el nuevo empleado
-                $profile = Profile::where('employee_id', $request->staff)->first();
+                $profile = Profile::where('employee_id', $request->employee_id)->first();
             }
-
-            $user->name = $request->first_name ?? $profile->first_name;
+            $user->name = (
+                $request->first_name && !$profile->first_name
+            ) ? $request->first_name : trim($profile->first_name . ' ' . $profile->last_name) ?? $user->name;
             $user->email = $request->email;
             $user->username = $request->username;
             $user->save();
@@ -274,7 +297,13 @@ class UserController extends Controller
             // Asignar los valores al perfil
             $profile->user_id = $user->id;
             $profile->institution_id = $request->institution_id ?? $profile->institution_id ?? null;
-            $profile->first_name = $request->first_name ?? $profile->first_name;
+            $profile->first_name = (
+                $request->first_name && !$profile->first_name
+            ) ? $request->first_name : $profile->first_name;
+            $profile->employee_id = $request->employee_id ?? $profile->employee_id;
+            $profile->last_name = (
+                $request->last_name && !$profile->last_name
+            ) ? $request->last_name : $profile->last_name;
             $profile->save();
 
             $roleUser = RoleUser::where('user_id', $user->id)->get();
@@ -318,7 +347,7 @@ class UserController extends Controller
                 ),
             ]);
 
-            $user->password = bcrypt($request->input('password'));
+            $user->password = Hash::make($request->password);
             $user->save();
         }
 
@@ -491,7 +520,7 @@ class UserController extends Controller
 
         $request->session()->flash('message', ['type' => 'store']);
 
-        if ($request->ajax() || $request->api == true) {
+        if ($request->ajax() || $request->api) {
             return response()->json(['result' => true], 200);
         }
 

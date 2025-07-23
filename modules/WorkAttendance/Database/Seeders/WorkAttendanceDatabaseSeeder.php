@@ -6,12 +6,10 @@ use Illuminate\Database\Seeder;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * @class $CLASS$
- * @brief [descripción detallada]
+ * @class WorkAttendanceDatabaseSeeder
+ * @brief Gestiona la carga inicial de datos del módulo de asistencia laboral
  *
- * [descripción corta]
- *
- * @author [autor de la clase] [correo del autor]
+ * @author Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
  *
  * @license
  *     [LICENCIA DE SOFTWARE CENDITEL](http://conocimientolibre.cenditel.gob.ve/licencia-de-software-v-1-3/)
@@ -27,6 +25,6 @@ class WorkAttendanceDatabaseSeeder extends Seeder
     {
         Model::unguard();
 
-        // $this->call("OthersTableSeeder");
+        $this->call(WorkAttendanceRolesAndPermissionsTableSeeder::class);
     }
 }

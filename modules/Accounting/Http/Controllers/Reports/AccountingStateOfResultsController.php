@@ -254,18 +254,18 @@ class AccountingStateOfResultsController extends AccountingBaseController
                         return response()->json([
                             'result' => false,
                             'message' => 'Imposible expresar ' . $entryAccount['entries']['currency']['symbol']
-                            . ' en ' . $currency['symbol'] . '(' . $currency['name'] . ')' .
-                            ', verificar tipos de cambio configurados. ',
+                                . ' en ' . $currency['symbol'] . '(' . $currency['name'] . ')' .
+                                ', verificar tipos de cambio configurados. ',
                         ], 200);
                     } elseif (!$inRange) {
                         if ($entryAccount['entries']['currency']['id'] != $currency->id) {
                             return response()->json([
                                 'result' => false,
                                 'message' => 'Imposible expresar ' . $entryAccount['entries']['currency']['symbol']
-                                . ' (' . $entryAccount['entries']['currency']['name'] . ')'
-                                . ' en ' . $currency['symbol'] . '(' . $currency['name'] . ')' .
-                                ', verificar tipos de cambio configurados. Para la fecha de ' .
-                                $entryAccount['entries']['from_date'],
+                                    . ' (' . $entryAccount['entries']['currency']['name'] . ')'
+                                    . ' en ' . $currency['symbol'] . '(' . $currency['name'] . ')' .
+                                    ', verificar tipos de cambio configurados. Para la fecha de ' .
+                                    $entryAccount['entries']['from_date'],
                             ], 200);
                         }
                     }
@@ -324,7 +324,7 @@ class AccountingStateOfResultsController extends AccountingBaseController
             $institution = Institution::where('default', true)->first();
         } else {
             $user_profile = Profile::with('institution')
-            ->where('user_id', auth()->user()->id)->first();
+                ->where('user_id', auth()->user()->id)->first();
             $institution = $user_profile['institution'] ?? null;
         }
 
@@ -365,8 +365,8 @@ class AccountingStateOfResultsController extends AccountingBaseController
         if ($dataInToEndDate == []) {
             return response()->json(
                 [
-                'result' => false,
-                'message' => 'No se ha encontrado ningún registro que cumpla con los parámetros establecidos.',
+                    'result' => false,
+                    'message' => 'No se ha encontrado ningún registro que cumpla con los parámetros establecidos.',
                 ],
                 200
             );
@@ -470,18 +470,18 @@ class AccountingStateOfResultsController extends AccountingBaseController
                         return response()->json([
                             'result' => false,
                             'message' => 'Imposible expresar ' . $entryAccount['entries']['currency']['symbol']
-                            . ' en ' . $currency['symbol'] . '(' . $currency['name'] . ')' .
-                            ', verificar tipos de cambio configurados. ',
+                                . ' en ' . $currency['symbol'] . '(' . $currency['name'] . ')' .
+                                ', verificar tipos de cambio configurados. ',
                         ], 200);
                     } elseif (!$inRange) {
                         if ($entryAccount['entries']['currency']['id'] != $currency->id) {
                             return response()->json([
                                 'result' => false,
                                 'message' => 'Imposible expresar ' . $entryAccount['entries']['currency']['symbol']
-                                . ' (' . $entryAccount['entries']['currency']['name'] . ')'
-                                . ' en ' . $currency['symbol'] . '(' . $currency['name'] . ')' .
-                                ', verificar tipos de cambio configurados. Para la fecha de ' .
-                                $entryAccount['entries']['from_date'],
+                                    . ' (' . $entryAccount['entries']['currency']['name'] . ')'
+                                    . ' en ' . $currency['symbol'] . '(' . $currency['name'] . ')' .
+                                    ', verificar tipos de cambio configurados. Para la fecha de ' .
+                                    $entryAccount['entries']['from_date'],
                             ], 200);
                         }
                     }
@@ -576,11 +576,21 @@ class AccountingStateOfResultsController extends AccountingBaseController
             $user_profile = Profile::with('institution')->where('user_id', auth()->user()->id)->first();
             $institution = $user_profile['institution'] ?? null;
         }
+        if (count(explode('-', $endDate)) > 1) {
+            $lastOfThePreviousMonth = date(
+                'd',
+                (mktime(0, 0, 0, explode('-', $date)[1], 1, explode('-', $date)[0]) - 1)
+            );
+            $last = $lastOfThePreviousMonth . '/' . (explode('-', $date)[1] - 1) . '/' . explode('-', $date)[0];
+        } else {
+            $last = '';
+        }
+
         $institution_id = $institution->id;
         $arr = [];
         $formDate = $date . '-01';
         $rest = $this->stateofResoultCalculation($formDate, $endDate, $institution_id, $is_admin, $date);
-        $beginnBalances = $rest['beginnBalances'] ?? null;
+        $beginnBalances = ((explode('-', $date)[1] - 1)  != 0 && (explode('-', $date)[1] - 1)  != "") ? ($rest['beginnBalances'] ?? null) : null;
         $query = $rest['query'] ?? null;
 
         foreach ($query as $account) {
@@ -622,29 +632,31 @@ class AccountingStateOfResultsController extends AccountingBaseController
             }
         }
 
-        foreach ($beginnBalances as $account) {
-            $balance = 0;
-            if (!$account->entryAccount->isEmpty()) {
-                foreach ($account->entryAccount as $entrie) {
-                    if (!is_null($entrie->entries)) {
-                        $balance = $this->getRealBalaceCalculator(
-                            $account->code[0],
-                            $entrie->debit,
-                            $entrie->assets
-                        );
-                        if (!array_key_exists($account->code, $arr)) {
-                            $data = [
-                                "id" => $account->id,
-                                "code" => $account->code,
-                                "denomination" => $account->denomination,
-                                "balance" => 0,
-                                "beginningBalance" => $balance,
-                                "level" => 6,
-                                "parent" => [],
-                            ];
-                            $arr[$account->code] = $data;
-                        } else {
-                            $arr[$account->code]['beginningBalance'] += $balance;
+        if ($beginnBalances) {
+            foreach ($beginnBalances as $account) {
+                $balance = 0;
+                if (!$account->entryAccount->isEmpty()) {
+                    foreach ($account->entryAccount as $entrie) {
+                        if (!is_null($entrie->entries)) {
+                            $balance = $this->getRealBalaceCalculator(
+                                $account->code[0],
+                                $entrie->debit,
+                                $entrie->assets
+                            );
+                            if (!array_key_exists($account->code, $arr)) {
+                                $data = [
+                                    "id" => $account->id,
+                                    "code" => $account->code,
+                                    "denomination" => $account->denomination,
+                                    "balance" => 0,
+                                    "beginningBalance" => $balance,
+                                    "level" => 6,
+                                    "parent" => [],
+                                ];
+                                $arr[$account->code] = $data;
+                            } else {
+                                $arr[$account->code]['beginningBalance'] += $balance;
+                            }
                         }
                     }
                 }
@@ -763,41 +775,32 @@ class AccountingStateOfResultsController extends AccountingBaseController
         $pdf = new ReportRepository();
 
         /* Definicion de las caracteristicas generales de la página pdf */
-        if (count(explode('-', $endDate)) > 1) {
-            $lastOfThePreviousMonth = date(
-                'd',
-                (mktime(0, 0, 0, explode('-', $date)[1], 1, explode('-', $date)[0]) - 1)
-            );
-            $last = $lastOfThePreviousMonth . '/' . (explode('-', $date)[1] - 1) . '/' . explode('-', $date)[0];
-        } else {
-            $last = '';
-        }
 
         $institution = Institution::find(1);
         if ($xml) {
             return Excel::download(new AccountingStateOfResultsExport([
-            'pdf' => $pdf,
-            'records' => $arr,
-            'currency' => $this->getCurrency(),
-            'level' => $level,
-            'zero' => $zero,
-            'endDate' => $endDate,
-            'monthBefore' => $last,
-            'institution' => $institution,
+                'pdf' => $pdf,
+                'records' => $arr,
+                'currency' => $this->getCurrency(),
+                'level' => $level,
+                'zero' => $zero,
+                'endDate' => $endDate,
+                'monthBefore' => $last,
+                'institution' => $institution,
             ]), now()->format('d-m-Y') . '_ESTADO_DE_RENDIMIENTO_FINANCIERA.xlsx');
         } else {
             $pdf->setConfig(['institution' => $institution, 'urlVerify' => url('report/stateOfResults/' . $report->id)]);
             $pdf->setHeader('Reporte de Contabilidad', 'Reporte de Estado de Rendimiento financiero');
             $pdf->setFooter();
             $pdf->setBody('accounting::pdf.state_of_results', true, [
-            'pdf' => $pdf,
-            'records' => $arr,
-            'currency' => $this->getCurrency(),
-            'level' => $level,
-            'zero' => $zero,
-            'endDate' => $endDate,
-            'monthBefore' => $last,
-            'institution' => $institution,
+                'pdf' => $pdf,
+                'records' => $arr,
+                'currency' => $this->getCurrency(),
+                'level' => $level,
+                'zero' => $zero,
+                'endDate' => $endDate,
+                'monthBefore' => $last,
+                'institution' => $institution,
             ]);
         }
     }
@@ -928,8 +931,10 @@ class AccountingStateOfResultsController extends AccountingBaseController
         $institution = Institution::find(1);
 
         $pdf->setConfig(
-            ['institution' => $institution,
-            'urlVerify' => url('report/StateOfResultsSign/' . $report->id)]
+            [
+                'institution' => $institution,
+                'urlVerify' => url('report/StateOfResultsSign/' . $report->id)
+            ]
         );
         $pdf->setHeader('Reporte de Contabilidad', 'Reporte de Estado de Rendimiento financiero');
         $pdf->setFooter();
@@ -1066,22 +1071,22 @@ class AccountingStateOfResultsController extends AccountingBaseController
                     }
 
                     $debit += ($entryAccount['debit'] != 0) ?
-                    $this->calculateOperation(
-                        $this->getConvertions(),
-                        $entryAccount['entries']['currency']['id'],
-                        $entryAccount['debit'],
-                        $entryAccount['entries']['from_date'],
-                        ($entryAccount['entries']['currency']['id'] == $this->getCurrencyId()) ?? false
-                    ) : 0;
+                        $this->calculateOperation(
+                            $this->getConvertions(),
+                            $entryAccount['entries']['currency']['id'],
+                            $entryAccount['debit'],
+                            $entryAccount['entries']['from_date'],
+                            ($entryAccount['entries']['currency']['id'] == $this->getCurrencyId()) ?? false
+                        ) : 0;
 
                     $assets += ($entryAccount['assets'] != 0) ?
-                    $this->calculateOperation(
-                        $this->getConvertions(),
-                        $entryAccount['entries']['currency']['id'],
-                        $entryAccount['assets'],
-                        $entryAccount['entries']['from_date'],
-                        ($entryAccount['entries']['currency']['id'] == $this->getCurrencyId()) ?? false
-                    ) : 0;
+                        $this->calculateOperation(
+                            $this->getConvertions(),
+                            $entryAccount['entries']['currency']['id'],
+                            $entryAccount['assets'],
+                            $entryAccount['entries']['from_date'],
+                            ($entryAccount['entries']['currency']['id'] == $this->getCurrencyId()) ?? false
+                        ) : 0;
                 }
             }
         }

@@ -113,6 +113,141 @@
                                     </v-multiselect>
                                 </div>
                             </div>
+
+                            <!-- Categorías de hoja de tiempo -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Categorías de hoja de tiempo que inciden en el total</label>
+                                    <v-multiselect
+                                        data-toggle="tooltip"
+                                        title="Indique las categorías en los que aplican estos parámetros"
+                                        track_by="text"
+                                        :hide_selected="false"
+                                        :options="exception_types"
+                                        v-model="record.exception_types"
+                                    >
+                                    </v-multiselect>
+                                </div>
+                            </div>
+
+                            <!-- Validar el total respecto al periodo -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="validate_total_for_period">¿Validar el total respecto al periodo?</label>
+                                    <div class="col-12">
+                                        <div class="custom-control custom-switch" data-toggle="tooltip"
+                                                title="¿Validar el total respecto al periodo?">
+                                            <input type="checkbox" class="custom-control-input" id="validate_total_for_period"
+                                                    v-model="record.validate_total_for_period" :value="true">
+                                            <label class="custom-control-label" for="validate_total_for_period"></label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="breaks_allowed_per_week">Cantidad de descansos permitidos por semana:</label>
+                                    <input id="breaks_allowed_per_week" class="form-control input-sm" type="text"
+                                           data-toggle="tooltip" placeholder="Valor máximo"
+                                           title="Indique el valor máximo del parámetro"
+                                           v-model="record.breaks_allowed_per_week"
+                                           v-input-mask data-inputmask="
+                                                'alias': 'numeric',
+                                                'allowMinus': 'false'
+                                           "
+                                    />
+                                </div>
+                            </div>
+
+                            <div class="col-md-12">
+                                <!-- Orden de evaluación de parámetros -->
+                                 <div>
+                                    <h6 class="card-title">
+                                        Orden de evaluación de parámetros para la resta de excedentes&#160;
+                                        <i
+                                            class="fa fa-plus-circle cursor-pointer" @click="addEvaluationOrder"
+                                            title="Agregar orden de evaluación" data-toggle="tooltip"
+                                        ></i>
+                                    </h6>
+                                    <div class="row">
+                                        <div v-for="(order, index) in record.evaluation_orders" :key="index" class="col-md-12">
+                                            <label><strong>Orden {{ index + 1 }}:</strong></label>
+                                            <div>
+                                                <div class="d-flex form-group">
+                                                    <select
+                                                        v-model="record.evaluation_orders[index]"
+                                                        class="form-control select2"
+                                                        style="padding-bottom: 0px;"
+                                                        data-toggle="tooltip"
+                                                        title="Seleccione las clasificaciones para este orden de evaluación"
+                                                    >
+                                                        <option
+                                                            v-for="option in availableClassificationTypes(index)"
+                                                            :key="option.id"
+                                                            :value="option.id"
+                                                        >
+                                                            {{ option.text }}
+                                                        </option>
+                                                    </select>
+                                                    <button
+                                                        class="btn btn-sm btn-danger btn-action ml-2"
+                                                        type="button"
+                                                        @click="removeRow(index, 'evaluation_orders')"
+                                                        title="Eliminar este dato"
+                                                        data-toggle="tooltip"
+                                                    >
+                                                        <i class="fa fa-minus-circle"></i>
+                                                    </button>
+                                                </div>
+                                                <div class="card-title" v-if="record.evaluation_orders[index] !== ''">
+                                                    Agregar un parametro del orden de evaluación
+                                                    <i
+                                                        class="fa fa-plus-circle cursor-pointer d-inline"
+                                                        @click="addEvaluationOrderParameter(index)"
+                                                        title="Agregar un parametro del orden de evaluación"
+                                                        data-toggle="tooltip"
+                                                    ></i>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div
+                                                    v-for="(param, idx) in record.evaluation_orders_parameters[index]"
+                                                    :key="`order_${index}_${idx}`"
+                                                    class="col-md-4"
+                                                >
+                                                    <div class="d-flex">
+                                                        <select
+                                                            v-model="record.evaluation_orders_parameters[index][idx]"
+                                                            class="form-control select2"
+                                                            data-toggle="tooltip"
+                                                            title="Seleccione las clasificaciones para este orden de evaluación"
+                                                        >
+                                                            <option
+                                                                v-for="option in availableParametersForOrder(index, idx)"
+                                                                :key="option.id"
+                                                                :value="option.id"
+                                                            >
+                                                                {{ option.text }}
+                                                            </option>
+                                                        </select>
+                                                        <button
+                                                            class="btn btn-sm btn-danger btn-action ml-2"
+                                                            type="button"
+                                                            @click="removeRow(idx, 'evaluation_orders_parameters', index)"
+                                                            title="Eliminar este dato"
+                                                            data-toggle="tooltip"
+                                                        >
+                                                            <i class="fa fa-minus-circle"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <hr />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -153,6 +288,15 @@
                                     </span>
                                 </div>
                             </div>
+                            <div slot="exception_types" slot-scope="props">
+                                <div v-for="p_type in props.row.payroll_exception_type_time_sheet_parameters" :key="p_type.payroll_exception_type_id">
+                                    <span>
+                                        {{
+                                            p_type.payroll_exception_type.name
+                                        }}
+                                    </span>
+                                </div>
+                            </div>
                             <div slot="id" slot-scope="props" class="text-center">
                                 <button @click="initUpdate(props.row.id, $event)"
                                         class="btn btn-warning btn-xs btn-icon btn-action"
@@ -184,16 +328,46 @@
                     name: '',
                     description: '',
                     time_parameters: [],
-                    payment_types: []
+                    payment_types: [],
+                    exception_types: [],
+                    validate_total_for_period: false,
+                    breaks_allowed_per_week: 0,
+                    evaluation_orders: [],
+                    evaluation_orders_parameters: [],
                 },
+                classification_types: [],
+                evaluation_orders_parameters: {},
+                classification_types_group: {},
+                time_parameters_ungroup: [],
                 errors:  [],
                 records: [],
                 time_parameters: [],
+                exception_types: [],
+                old_record_exception_types: [],
                 payroll_payment_types: [],
-                columns: ['code', 'name', 'time_parameters', 'payment_types', 'id'],
+                columns: ['code', 'name', 'time_parameters', 'payment_types', 'exception_types', 'id'],
             }
         },
         methods: {
+            /**
+             * Método que elimina un registro de la tabla
+             */
+            removeRow(index, prop, subIndex = null) {
+                console.log(index, prop, subIndex);
+                
+                const vm = this;
+                if (subIndex !== null) {
+                    vm.record[prop][subIndex].splice(index, 1);
+                    console.log(vm.record[prop][subIndex]);
+                }
+                else {
+                    vm.record[prop].splice(index, 1);
+                    console.log(vm.record[prop]);
+                }
+
+                vm.$forceUpdate();
+            },
+
             /**
              * Método que borra todos los datos del formulario
              *
@@ -207,7 +381,12 @@
                     name: '',
                     description: '',
                     time_parameters: [],
-                    payment_types: []
+                    payment_typess: [],
+                    evaluation_orders: [],
+                    evaluation_orders_parameters: [],
+                    exception_types: [],
+                    validate_total_for_period: false,
+                    breaks_allowed_per_week: 0,
                 };
             },
 
@@ -222,6 +401,48 @@
                 await axios.get(`${window.app_url}/payroll/get-time-parameters?setting=true`).then(response => {
                     this.time_parameters = Object.values(response.data);
                 });
+            },
+
+            /**
+             * Obtiene y agrupa los parametros segun su clasificacion
+             *
+             * @author Juan Rosas <jrosasr@cenditel.gob.ve>
+             * 
+             */
+            async getPayrollTimeParametersUnGroup() {
+                this.time_parameters_ungroup = [];
+                await axios.get(`${window.app_url}/payroll/get-time-parameters?setting=true&group=false`).then(response => {
+                    this.time_parameters_ungroup = Object.values(response.data);
+                });
+
+                this.getPayrollParameterByClassification()
+            },
+
+            /**
+             * Obtiene los datos de las categorias de hoja de tiempo registrados
+             * 
+             * @author Juan Rosas <jrosas@cenditel.gob.ve> | <juan.rosasr01@gmail.com>
+             */
+            async getPayrollExceptionTypes() {
+				const vm = this;
+				await axios.get(`${window.app_url}/payroll/get-exception-types`).then(response => {
+					vm.exception_types = response.data;
+				});
+			},
+
+            async getPayrollClassificationTypes() {
+                const vm = this;
+                if (vm.record.exception_types.length > 0) {
+                    await axios.get(`${window.app_url}/payroll/classification-parameters/vue-list`,
+                        {
+                        params: {
+                            exception_type_id: vm.record.exception_types.map(val => val.id)
+                        }
+                    }
+                    ).then(response => {
+                        vm.classification_types = response.data;
+                    });
+                }
             },
 
             /**
@@ -244,6 +465,9 @@
                 event.preventDefault();
                 vm.record.time_parameters = [];
                 vm.record.payment_types = [];
+                vm.record.exception_types = [];
+                vm.record.evaluation_orders = [];
+                vm.record.evaluation_orders_parameters = [];
 
                 for (const value of recordEdit.payroll_parameter_time_sheet_parameters) {
                     let pValue = JSON.parse(value.parameter.p_value);
@@ -260,7 +484,87 @@
                         text: pType.code + ' - ' + pType.name
                     })
                 }
+
+                for (const value of recordEdit.payroll_exception_type_time_sheet_parameters) {
+                    let pType = value.payroll_exception_type;
+                    vm.record.exception_types.push({
+                        id: value.payroll_exception_type_id,
+                        text: pType.name
+                    })
+                }
+
+                for (let key = 0; key < recordEdit.classification_parameters.length; key++) {
+                    const value = recordEdit.classification_parameters[key];
+                    
+                    vm.record.evaluation_orders.push(value.id)
+
+                    if (!vm.record.evaluation_orders_parameters[key]) {
+                        vm.record.evaluation_orders_parameters.push([]);
+                    }
+
+                    let last = vm.record.evaluation_orders_parameters.length - 1
+                    let pivot =  recordEdit.classification_parameter_pivots[last];
+                    
+                    for (let index = 0; index < pivot.parameter_order.length; index++) {
+                        const pivotParam = pivot.parameter_order[index];
+                        vm.record.evaluation_orders_parameters[last].push(pivotParam.parameter_id)
+                    }
+                }
             },
+            /**
+             * Agrega un nuevo parametro al orden de evaluación
+             */
+             addEvaluationOrderParameter(index) {
+                const vm = this;
+                
+                if (!vm.record.evaluation_orders_parameters[index]) {
+                    vm.record.evaluation_orders_parameters.push([])
+                }
+
+                let lastPosition = vm.record.evaluation_orders_parameters[index]?.length || 0;
+
+                vm.errors = [];
+
+                if (!lastPosition || lastPosition == 0) {
+                    vm.record.evaluation_orders_parameters[index].push("");
+                }
+                else if (lastPosition > 0 && vm.record.evaluation_orders_parameters[index][lastPosition - 1] != '') {
+                    vm.record.evaluation_orders_parameters[index].push("");
+                } else {
+                    vm.errors.push('No se pueden agregar más parametros, mientras la última opción este vacia.');
+                }
+            },
+            addEvaluationOrder() {
+                const vm = this;
+                let lastPosition = vm.record.evaluation_orders.length;
+                
+                vm.errors = [];
+
+                if (lastPosition == 0) {
+                    vm.record.evaluation_orders.push("");
+                }
+                else if (lastPosition > 0 && vm.record.evaluation_orders[lastPosition - 1] != '') {
+                    vm.record.evaluation_orders.push("");
+                } else {
+                    vm.errors.push('No se pueden agregar más órdenes de evaluación, mientras la última opción este vacia.');
+                }
+            },
+            getPayrollParameterByClassification() {
+                const vm = this;
+
+                for (let idx = 0; idx < vm.time_parameters_ungroup.length; idx++) {
+                    let tParam = vm.time_parameters_ungroup[idx];
+
+                    if (tParam.classification_type !== null) {
+                        vm.classification_types_group[tParam.classification_type] = vm.classification_types_group[tParam.classification_type] || [];
+
+                        vm.classification_types_group[tParam.classification_type].push({
+                            id: tParam.id,
+                            text: tParam.name
+                        });
+                    }
+                }
+            }
         },
         created() {
             const vm = this;
@@ -269,15 +573,17 @@
                 'name': 'Nombre',
                 'time_parameters': 'Parámetros',
                 'payment_types': 'Tipos de pago',
+                'exception_types': 'Categorías',
                 'id': 'Acción'
             };
-            vm.table_options.sortable       = ['code', 'name', 'time_parameters', 'payment_types'];
-            vm.table_options.filterable     = ['code', 'name', 'time_parameters', 'payment_types'];
+            vm.table_options.sortable       = ['code', 'name', 'time_parameters', 'payment_types', 'exception_types'];
+            vm.table_options.filterable     = ['code', 'name', 'time_parameters', 'payment_types', 'exception_types'];
             vm.table_options.columnsClasses = {
-                'code': 'col-xs-2',
+                'code': 'col-xs-1',
                 'name': 'col-xs-2',
-                'time_parameters': 'col-xs-3',
+                'time_parameters': 'col-xs-2',
                 'payment_types': 'col-xs-3',
+                'exception_types': 'col-xs-2',
                 'id': 'col-xs-2'
             };
         },
@@ -286,7 +592,63 @@
             $("#add_payroll_time_sheet_parameters").on('show.bs.modal', function() {
                 vm.getPayrollPaymentTypes();
                 vm.getPayrollTimeParameters();
+                vm.getPayrollTimeParametersUnGroup();
+                vm.getPayrollExceptionTypes();
+                vm.getPayrollClassificationTypes();
+                $('.select2').select2({});
             });
+        },
+        computed: {
+            classification_types_computed() {
+                const vm = this;
+                return vm.classification_types.map((type) => {
+                    return {
+                        ...type,
+                        disabled: vm.record.evaluation_orders.includes(String(type.id))
+                    };
+                });
+            },
+            availableClassificationTypes() {
+                return (currentIndex) => {
+                    const selectedIds = this.record.evaluation_orders
+                        .filter((item, index) => index !== currentIndex && item !== '')
+                        .map(selectedId => {
+                            const found = this.classification_types.find(item => item.id === selectedId);
+                            return found ? found.id : null;
+                        })
+                        .filter(id => id !== null);
+
+                    return this.classification_types.filter(option => !selectedIds.includes(option.id));
+                };
+            },
+            // Computed property for the second set of select elements (parameters within each order)
+            availableParametersForOrder() {
+                return (orderIndex, paramIndex) => {
+                    const selectedIdsInOrder = (this.record.evaluation_orders_parameters[orderIndex] || [])
+                        .filter((item, index) => index !== paramIndex && item !== '')
+                        .map(selectedId => {
+                            const found = (this.classification_types_group[this.record.evaluation_orders[orderIndex]] || []).find(item => item.id === selectedId);
+                            return found ? found.id : null;
+                        })
+                        .filter(id => id !== null);
+
+                    const groupOptions = this.classification_types_group[this.record.evaluation_orders[orderIndex]] || [];
+                    return groupOptions.filter(option => !selectedIdsInOrder.includes(option.id));
+                };
+            },
+
+        },
+        watch: {
+            record: {
+                handler: function (newValue) {
+                    const vm = this;
+                    if (vm.old_record_exception_types.length !== vm.record.exception_types) {
+                        vm.getPayrollClassificationTypes()
+                        vm.old_record_exception_types = vm.record.exception_types
+                    }
+                },
+                deep: true,
+            },
         },
     };
 </script>

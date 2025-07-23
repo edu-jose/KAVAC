@@ -60,7 +60,11 @@ class AccountingAnalyticalMajorController extends Controller
          */
         $this->middleware(
             'permission:accounting.report.analiticalmajor',
-            ['only' => ['index', 'getAccAccount', 'pdf', 'pdfVue', 'pdfSign', 'pdfVueSign']]
+            ['only' => ['index','pdf', 'pdfVue', 'pdfSign', 'pdfVueSign']]
+        );
+        $this->middleware(
+            'permission:accounting.report.accountingbooks',
+            ['only' => ['getAccAccount']]
         );
     }
 

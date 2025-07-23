@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\ServiceProvider;
 use Modules\Payroll\Console\Commands\UpdateTimeParameters;
 use Modules\Payroll\Console\Commands\LoadBasicPayrollStaffData;
+use Modules\Payroll\Console\Commands\CreateMissingExcedentParameters;
+use Modules\Payroll\Console\Commands\PayrollUpdateConceptFormulaShow;
 
 /**
  * @class PayrollServiceProvider
@@ -158,7 +160,9 @@ class PayrollServiceProvider extends ServiceProvider
             // Registrar comandos solo si se está ejecutando en la consola
             $this->commands([
                 UpdateTimeParameters::class,
-                LoadBasicPayrollStaffData::class
+                LoadBasicPayrollStaffData::class,
+                CreateMissingExcedentParameters::class,
+                PayrollUpdateConceptFormulaShow::class,
             ]);
         }
     }

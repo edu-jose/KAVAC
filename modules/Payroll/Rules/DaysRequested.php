@@ -152,15 +152,15 @@ class DaysRequested implements Rule, DataAwareRule
                 ->where('vacation_period_year', 'not like', '%old%')->first();
 
             if ($payrollVacationRequest) {
-                $old_vacation_period_years = json_decode($payrollVacationRequest->vacation_period_year);
+                $old_vacation_period_years = $payrollVacationRequest->vacation_period_year;
                 foreach (json_decode($this->data["vacation_period_year"], true) as $request_period_year) {
                     foreach ($old_vacation_period_years as $old_year) {
-                        if (stripos($old_year->id, $request_period_year['text']) !== false) {
-                            $old_year->old = 1;
+                        if (stripos($old_year['id'], $request_period_year['text']) !== false) {
+                            $old_year['old'] = 1;
                         }
                     }
                 }
-                $payrollVacationRequest->vacation_period_year = json_encode($old_vacation_period_years);
+                $payrollVacationRequest->vacation_period_year = $old_vacation_period_years;
                 $payrollVacationRequest->save();
 
                 $previousProcessedVacationRequests[] = $payrollVacationRequest;
@@ -173,7 +173,7 @@ class DaysRequested implements Rule, DataAwareRule
             ->where('vacation_period_year', 'like', '%old%')
             ->get()
             ->map(function ($vacationRequest) {
-                return json_decode($vacationRequest->vacation_period_year, true);
+                return $vacationRequest->vacation_period_year;
             });
     }
 
@@ -270,9 +270,15 @@ class DaysRequested implements Rule, DataAwareRule
         $totalVacationDays += $enjoyableDays;
 
         /** Cantidad de dias feriados fijos */
-        $holidaysCount = $this->payrollHolidays
+        $holidaysCount = 0;
+        $holidaysData = $this->payrollHolidays
             ->whereBetween('date', [$this->data['start_date'], $this->data['end_date']])
-            ->count();
+            ->get();
+        foreach ($holidaysData as $holyD) {
+            if (date('N', strtotime($holyD->date)) < 6) {
+                $holidaysCount++;
+            }
+        }
 
         $daysToCalculateFinalVacationsDate = ($totalVacationDays + $holidaysCount ?? 0);
 
@@ -282,18 +288,18 @@ class DaysRequested implements Rule, DataAwareRule
             $daysToCalculateFinalVacationsDate
         );
 
+
         $datesOk = (Carbon::parse($finalVacationsDate) >= Carbon::parse($this->data['end_date']));
 
         $totalDays = $totalVacationDays >= $this->data['days_requested'];
-
         if (!$totalDays) {
-            $this->errorMessage = "La cantidad de dias solicitados excede la cantidad de dias disponible para los periodos solicitados.";
+            $this->errorMessage = "La cantidad de dias solicitados excede la cantidad de dias disponible para los periodos solicitados." . " Dias solicitados: " . $this->data['days_requested'] . " Dias disponibles: " . $totalVacationDays;
 
             return false;
         }
 
-        if (!$datesOk) {
-            $this->errorMessage = "La fecha de final de vacaciones debe ser mayor a la fecha de inicio.";
+        if ($datesOk === false) {
+            $this->errorMessage = "La fecha final de vacaciones calculada segun la politica vacacional, no coincide con la fecha final de la solicitud." . " Fecha fin segun politica vacacional: " . $finalVacationsDate . " Fecha de fin de la solicitud: " . Carbon::parse($this->data['end_date'])->format('d-m-Y');
 
             return false;
         }
@@ -317,8 +323,9 @@ class DaysRequested implements Rule, DataAwareRule
         $day = 0;
 
         if ($yearId >= $vacationPolicy["from_year"]) {
-            if ($yearId % $vacationPolicy["years_for_additional_days"] == 0) {
-                $day = ($yearId - $vacationPolicy["from_year"]) +  $vacationPolicy["additional_days_per_year"];
+            $periodsForAdditionalDays = intval($yearId / $vacationPolicy["years_for_additional_days"]);
+            if ($periodsForAdditionalDays > 0) {
+                $day = $periodsForAdditionalDays *  $vacationPolicy["additional_days_per_year"];
             }
         }
         return $day;

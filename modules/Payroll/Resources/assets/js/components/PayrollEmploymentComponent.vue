@@ -62,8 +62,13 @@
                 <div class="col-md-4" id="helpEmploymentStartDate">
                     <div class="form-group is-required">
                         <label>Fecha de ingreso a la institución:</label>
-                        <input @input="diff_datetimes(record.start_date)" type="date" class="form-control input-sm"
-                            v-model="record.start_date" :max="fiscal_date" />
+                        <input
+                            @input="diff_datetimes(record.start_date);"
+                            type="date"
+                            class="form-control input-sm"
+                            v-model="record.start_date"
+                            :max="fiscal_date"
+                        />
                     </div>
                 </div>
                 <div v-show="record.active == false" class="col-md-4" id="helpEmploymentEndDate">
@@ -128,6 +133,40 @@
                         </select2>
                     </div>
                 </div>
+                <div class="col-md-4" id="helpBasicSalary">
+                    <div class="form-group">
+                        <label>Tabulador salario básico:</label>
+                        <select2 :options="payroll_salary_tabulators" v-model="record.payroll_salary_tabulator_id"
+                            @input="setPayrollBasicSalary()"></select2>
+                    </div>
+                </div>
+                <div class="col-md-4" id="helpTabBasicSalary" v-show="record.payroll_salary_tabulator_id">
+                    <div class="form-group">
+                        <label>Salario básico:</label>
+                        <br>
+                        <span>
+                            {{
+                                record.payroll_basic_salary
+                                    ? currencyFormat(record.payroll_basic_salary)
+                                    : ''
+                            }}
+                        </span>
+                    </div>
+                </div>
+                <div class="col-md-4" id="helpPaymentType">
+                    <div class="form-group">
+                        <label>Tipo de Nómina:</label>
+                        <select2 :options="payroll_payment_types" v-model="record.payroll_payment_type_id"
+                            @input="setPayrollPaymentFrequency()"></select2>
+                    </div>
+                </div>
+                <div v-if="record.payroll_payment_type_id != ''" class="col-md-4" id="helpPaymentType">
+                    <div class="form-group">
+                        <label>Frecuencia de Nómina:</label>
+                        <br>
+                        <span>{{ record.payroll_payment_type_frequency }}</span>
+                    </div>
+                </div>
                 <div class="col-md-4" id="helpEmploymentInstitution">
                     <div class="form-group is-required">
                         <label>Organización:</label>
@@ -144,7 +183,7 @@
                 <div class="col-md-4" id="helpEmploymentWorkSheetCode">
                     <div class="form-group">
                         <label>Ficha:</label>
-                        <input type="text" class="form-control input-sm" v-model="record.worksheet_code" maxlength="5"
+                        <input type="text" class="form-control input-sm" v-model="record.worksheet_code" maxlength="10"
                             oninput="
                                 if (
                                     !/^[0-9]*$/.test(this.value)
@@ -152,6 +191,40 @@
                             " />
                     </div>
                 </div>
+                <div class="col-md-2" id="helpWorkersUnion">
+                    <div class="form-group">
+                        <label>¿Pertenece al Sindicato de trabajadores?</label>
+                        <div class="col-md-12">
+                            <div class="custom-control custom-switch" data-toggle="tooltip"
+                                title="Indique si el trabajador pertenece al sindicato de trabajadores o no">
+                                <input type="checkbox" class="custom-control-input" id="workers_union"
+                                    name="workers_union" v-model="record.workers_union" :value="true">
+                                <label class="custom-control-label" for="workers_union"></label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2" id="helpSavingsFund">
+                    <div class="form-group">
+                        <label>Fondo de Ahorro</label>
+                        <div class="col-md-12">
+                            <div class="custom-control custom-switch" data-toggle="tooltip"
+                                title="Indique si es Fondo de ahorro o no">
+                                <input type="checkbox" class="custom-control-input" id="savings_fund"
+                                    name="savings_fund" v-model="record.savings_fund" :value="true">
+                                <label class="custom-control-label" for="savings_fund"></label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div v-if="record.payroll_seniority_id != ''" class="col-md-4" id="helpSeniority">
+                    <div class="form-group">
+                        <label>Rango de Antigüedad:</label>
+                        <br>
+                        <span>{{ record.payroll_seniority_name }}</span>
+                    </div>
+                </div>
+
                 <div class="col-12" id="helpEmploymentFunction">
                     <div class="form-group">
                         <label>Descripción de Funciones:</label>
@@ -306,6 +379,7 @@ import moment from 'moment';
 export default {
     props: {
         payroll_employment_id: Number,
+        active: String,
     },
     watch: {
         'record.active'() {
@@ -340,6 +414,7 @@ export default {
                 service_years: '',
                 time_worked: '',
                 worksheet_code: '',
+                payroll_basic_salary: 0,
             },
             errors: [],
             payroll_staffs: [],
@@ -352,13 +427,20 @@ export default {
             departments: [],
             payroll_contract_types: [],
             institutions: [],
+            payroll_salary_tabulators: [],
+            payroll_payment_types: [],
+            payroll_seniorities: [],
             fiscal_year: '',
             fiscal_date: '',
             payroll_workload: '',
+            payroll_salary_tabulator_id: '',
+            payroll_payment_type_id: '',
+            payroll_seniority_id: '',
             now: '',
             years_apn: '',
             worksheet_code: '',
             isEditMode: false,
+            isProcessingFlag: false,
         }
     },
     methods: {
@@ -412,8 +494,9 @@ export default {
                     vm.departments = response.data;
                 });
             }
+
             if (vm.record.id) {
-                axios.get(`${window.app_url}/payroll/employments/${vm.payroll_employment_id}`).then(response => {
+                await axios.get(`${window.app_url}/payroll/employments/${vm.payroll_employment_id}`).then(response => {
                     let data = response.data.record;
                     vm.record.department_id = data.department_id;
                 });
@@ -449,6 +532,8 @@ export default {
                     start_date: data.start_date,
                     end_date: data.end_date ? data.end_date : '',
                     active: data.active,
+                    workers_union: data.workers_union,
+                    savings_fund: data.savings_fund,
                     payroll_inactivity_type_id: data.payroll_inactivity_type_id
                         ? data.payroll_inactivity_type_id : '',
                     institution_email: data.institution_email
@@ -459,6 +544,9 @@ export default {
                     payroll_position_id: data.payroll_positions[0].id,
                     payroll_coordination_id: data.payroll_coordination_id,
                     payroll_staff_type_id: data.payroll_staff_type_id,
+                    payroll_salary_tabulator_id: data.payroll_salary_tabulator_id,
+                    payroll_payment_type_id: data.payroll_payment_type_id,
+                    payroll_seniority_id: data.payroll_seniority_id,
                     department_id: data.department.id,
                     payroll_contract_type_id: data.payroll_contract_type_id,
                     previous_jobs: data.payroll_previous_job
@@ -481,8 +569,10 @@ export default {
                     vm.record.release_charge = true;
                 }
 
-                vm.antiquity();
-                vm.diff_datetimes(vm.record.start_date);
+                await vm.antiquity();
+                await vm.diff_datetimes(vm.record.start_date);
+
+                vm.record.institution_id = data.department.institution_id;
             } catch (error) {
                 console.error('Error al cargar los datos del empleado', error);
             }
@@ -521,6 +611,8 @@ export default {
                 start_date: '',
                 end_date: '',
                 active: false,
+                workers_union: false,
+                savings_fund: false,
                 release_charge: false,
                 payroll_inactivity_type_id: '',
                 institution_email: '',
@@ -532,6 +624,12 @@ export default {
                 department_id: '',
                 payroll_contract_type_id: '',
                 worksheet_code: '',
+                payroll_salary_tabulator_id: '',
+                payroll_basic_salary: 0,
+                payroll_payment_type_id: '',
+                payroll_payment_type_frequency: '',
+                payroll_seniority_id: '',
+                payroll_seniority_name: '',
             };
         },
 
@@ -729,7 +827,9 @@ export default {
                 : "0";
 
             vm.record.service_years = years > 0 ? years + vm.years_apn : vm.years_apn;
+            vm.setSeniorityTime();
         },
+
         /**
          * Elimina la fila del elemento indicado
          *
@@ -770,12 +870,90 @@ export default {
          *
          * @author Daniel Contreras <dcontreras@cenditel.gob.ve> | <exodiadaniel@gmail.com>
          */
-        setPayrollWorkload(){
+        setPayrollWorkload() {
             const vm = this;
 
-            axios.post(`${window.app_url}/payroll/get-workload`, {id: vm.record.payroll_position_id})
+            axios.post(`${window.app_url}/payroll/get-workload`, { id: vm.record.payroll_position_id })
                 .then(response => {
                     vm.payroll_workload = response.data.result;
+                });
+        },
+
+        /**
+         * Establece el rango de antiguedad de acuerdo a la fecha de ingreso a
+         * la instutición y a los años trabajados en otras instituciones
+         *
+         * @author Daniel Contreras <dcontreras@cenditel.gob.ve> | <exodiadaniel@gmail.com>
+         */
+            setSeniorityTime() {
+            const vm = this;
+            let years = vm.record.service_years;
+
+            vm.record.payroll_seniority_id = '';
+            vm.record.payroll_seniority_name = '';
+
+            vm.payroll_seniorities.forEach((seniority) => {
+                if (years >= seniority.minimum && years <= seniority.maximum) {
+                    vm.record.payroll_seniority_id = seniority.id;
+                    vm.record.payroll_seniority_name = seniority.text;
+                }
+            })
+        },
+
+        /**
+         * Establece la peridicidad del pago de acuerdo al tipo de nomina seleccionada
+         *
+         * @author Daniel Contreras <dcontreras@cenditel.gob.ve> | <exodiadaniel@gmail.com>
+         */
+        setPayrollPaymentFrequency() {
+            const vm = this;
+
+            vm.record.payroll_payment_type_frequency = '';
+
+            vm.payroll_payment_types.forEach((paymentType) => {
+                if (paymentType.id == vm.record.payroll_payment_type_id) {
+                    vm.record.payroll_payment_type_frequency = paymentType.periodicity;
+                }
+            })
+        },
+
+        /**
+         * Establece el salario base de acuerdo al tabulador seleccionado
+         *
+         * @author Daniel Contreras <dcontreras@cenditel.gob.ve> | <exodiadaniel@gmail.com>
+         */
+        async setPayrollBasicSalary(){
+            const vm = this;
+            if (vm.isProcessingFlag == true) {
+                vm.isProcessingFlag = false;
+                return;
+            }
+
+            await axios.post(`${window.app_url}/payroll/get-base-salary`, vm.record)
+                .then(response => {
+                    if (response.data === 'error') {
+                        vm.showMessage(
+                            'custom',
+                            '¡Advertencia!',
+                            'danger', 'screen-error',
+                            'El trabajador no cumple con lo requerido para realizar el cálculo del salario base'
+                        );
+
+                        Vue.set(
+                            vm.record,
+                            "payroll_basic_salary",
+                            0
+                        );
+                        vm.record.payroll_basic_salary = 0;
+                        vm.isProcessingFlag = true;
+                    } else {
+                        Vue.set(
+                            vm.record,
+                            "payroll_basic_salary",
+                            response.data
+                        );
+                        vm.isProcessingFlag = true;
+                    }
                 });
         },
     },
@@ -783,7 +961,7 @@ export default {
     async created() {
         this.loadingState(true); // Inicio de spinner de carga.
         this.now = moment().format("DD-MM-YYYY");
-        this.record.active = true;
+        this.record.active = this.active;
         await Promise.all([
             this.getFiscalYear(),
             this.getPayrollEmploymentsPositions(),
@@ -795,6 +973,9 @@ export default {
             this.getPayrollContractTypes(),
             this.getInstitutions(),
             this.getPayrollSectorTypes(),
+            this.getPayrollSalaryTabulators(),
+            this.getPayrollPaymentTypes(true),
+            this.getPayrollSeniorities(),
         ]);
 
         if (this.fiscal_year) {

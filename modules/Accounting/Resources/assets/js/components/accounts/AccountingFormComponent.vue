@@ -399,6 +399,15 @@ export default {
                     })
                     .catch((error) => {
                         var errors = [];
+                        if (error.response && error.response.status === 403) {
+                            vm.showMessage(
+                                "custom",
+                                "Acceso Denegado",
+                                "danger",
+                                "screen-error",
+                                "No dispone de permisos para acceder a esta funcionalidad."
+                            );
+                        }
                         if (typeof error.response != "undefined") {
                             for (var index in error.response.data.errors) {
                                 if (error.response.data.errors[index]) {
@@ -411,6 +420,7 @@ export default {
                                 errors
                             );
                         }
+                        vm.loading = false;
                     });
             } else {
                 axios
@@ -431,6 +441,16 @@ export default {
                     })
                     .catch((error) => {
                         var errors = [];
+                        vm.loading = false;
+                        if (error.response && error.response.status === 403) {
+                            vm.showMessage(
+                                "custom",
+                                "Acceso Denegado",
+                                "danger",
+                                "screen-error",
+                                "No dispone de permisos para acceder a esta funcionalidad."
+                            );
+                        }
                         if (typeof error.response != "undefined") {
                             for (var index in error.response.data.errors) {
                                 if (error.response.data.errors[index]) {

@@ -54,7 +54,7 @@ final class PayrollPaymentRelationshipAction
         );
 
         return $allParameters
-            ? array_merge($timeParameter ?? [], json_decode($payroll->payroll_parameters) ?? [])
+            ? array_merge($timeParameter ?? [], json_decode($payroll->payroll_parameters ?? '[]') ?? [])
             : $timeParameter ?? [];
     }
 

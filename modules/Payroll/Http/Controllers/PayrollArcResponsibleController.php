@@ -2,8 +2,6 @@
 
 namespace Modules\Payroll\Http\Controllers;
 
-use App\Rules\DateBeforeFiscalYear;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Foundation\Validation\ValidatesRequests;
@@ -45,14 +43,12 @@ class PayrollArcResponsibleController extends Controller
         /* Define las reglas de validación para el formulario */
         $this->validateRules = [
             'payroll_staff_id' => ['required'],
-            'start_date' => ['required', 'date', new DateBeforeFiscalYear('Desde')],
-            'end_date' => ['nullable', 'date', 'after:start_date', new DateBeforeFiscalYear('Hasta')],
+            'fiscal_year' => ['required', 'integer'],
         ];
 
         /* Define los mensajes de validación para las reglas del formulario */
         $this->messages = [
-            'start_date.required' => 'El campo Desde es requerido',
-            'end_date.after' => 'La fecha Hasta debe ser mayor a la fecha Desde',
+            'fiscal_year.required' => 'El campo Período fiscal es requerido',
             'payroll_staff_id.required' => 'El campo Trabajador es requerido',
         ];
     }
@@ -82,7 +78,7 @@ class PayrollArcResponsibleController extends Controller
                         'payrollResponsibility'
                     ]);
             }])
-            ->orderBy('start_date')->get();
+            ->orderBy('fiscal_year')->get();
 
         return response()->json(['records' => $data], 200);
     }
@@ -99,7 +95,7 @@ class PayrollArcResponsibleController extends Controller
     public function store(Request $request)
     {
         $payrollLastArcResponsible = PayrollArcResponsible::query()
-            ->orderBy('end_date')
+            ->orderBy('fiscal_year')
             ?->get()
             ?->last();
 
@@ -110,46 +106,15 @@ class PayrollArcResponsibleController extends Controller
             $validateRules  = array_replace(
                 $validateRules,
                 [
-                    'start_date' => [
+                    'fiscal_year' => [
                         'required',
-                        'date',
-                        'after:' . (!empty($payrollLastArcResponsible?->end_date) ? $payrollLastArcResponsible->end_date : $payrollLastArcResponsible->start_date),
-                        new DateBeforeFiscalYear('Desde'),
-                        function ($attribute, $value, $fail) use ($request) {
-                            $overlappingRecords = PayrollArcResponsible::query()
-                                ->where('end_date', '>', $value)
-                                ->when(!empty($request->end_date), function ($query) use ($request) {
-                                    $query->where('start_date', '<', $request->end_date);
-                                })
-                                ->exists();
-
-                            if ($overlappingRecords) {
-                                $fail('La fecha Desde se encuentra dentro del período de un registro anterior.');
+                        'integer',
+                        function ($attribute, $value, $fail) use ($payrollLastArcResponsible) {
+                            if ($value <= $payrollLastArcResponsible?->fiscal_year) {
+                                $fail('Ya existe un responsable de ARC para el período seleccionado (' . $payrollLastArcResponsible->fiscal_year . ')');
                             }
                         }
                     ],
-                    'end_date' => [
-                        'nullable',
-                        'date',
-                        'after:start_date',
-                        new DateBeforeFiscalYear('Hasta'),
-                        function ($attribute, $value, $fail) use ($request) {
-                            $overlappingRecords = PayrollArcResponsible::query()
-                                ->where('end_date', '>', $request->start_date)
-                                ->where('start_date', '<', $value)
-                                ->exists();
-
-                            if ($overlappingRecords) {
-                                $fail('La fecha Hasta se encuentra dentro del período de un registro anterior.');
-                            }
-                        }
-                    ],
-                ]
-            );
-            $messages = array_merge(
-                $messages,
-                [
-                    'start_date.after' => 'La fecha Desde debe ser mayor a ' . Carbon::createFromFormat('Y-m-d', (!empty($payrollLastArcResponsible?->end_date) ? $payrollLastArcResponsible->end_date : $payrollLastArcResponsible->start_date))->format('d-m-Y'),
                 ]
             );
         }
@@ -163,8 +128,7 @@ class PayrollArcResponsibleController extends Controller
 
         $payrollArcResponsible = PayrollArcResponsible::create([
             'payroll_staff_id' => $request->payroll_staff_id,
-            'start_date' => $request->start_date,
-            'end_date' => $request->end_date,
+            'fiscal_year' => $request->fiscal_year,
         ]);
 
         return response()->json([
@@ -178,7 +142,7 @@ class PayrollArcResponsibleController extends Controller
      *
      * @author Henry Paredes <hparedes@cenditel.gob.ve>
      *
-     * @param  \Illuminate\Http\Request  $request Solicitud con los datos a actualizar.     *
+     * @param  \Illuminate\Http\Request  $request Solicitud con los datos a actualizar.
      * @param  PayrollArcResponsible $payrollArcResponsible Registro a actualizar.
      *
      * @return \Illuminate\Http\JsonResponse Json con mensaje de confirmación de la operación.
@@ -187,58 +151,48 @@ class PayrollArcResponsibleController extends Controller
     {
         $payrollLastArcResponsible = PayrollArcResponsible::query()
             ->where('id', '<>', $payrollArcResponsible->id)
-            ->orderBy('end_date')
+            ->orderBy('fiscal_year')
             ?->get()
             ?->last();
 
         $validateRules  = $this->validateRules;
         $messages  = $this->messages;
 
+        $validateRules  = array_replace(
+            $validateRules,
+            [
+                'id' => [
+                    'integer',
+                    function ($attribute, $value, $fail) use ($payrollArcResponsible) {
+                        if ($payrollArcResponsible->blocked_at != null) {
+                            $fail('El responsable de ARC no puede ser modificado si ya han sido generadas para el período (' . $payrollArcResponsible->fiscal_year . ')');
+                        }
+                    }
+                ]
+            ]
+        );
+
         if (isset($payrollLastArcResponsible)) {
             $validateRules  = array_replace(
                 $validateRules,
                 [
-                    'start_date' => [
+                    'id' => [
+                        'integer',
+                        function ($attribute, $value, $fail) use ($payrollArcResponsible) {
+                            if ($payrollArcResponsible->blocked_at != null) {
+                                $fail('El responsable de ARC no puede ser modificado si ya han sido generadas para el período (' . $payrollArcResponsible->fiscal_year . ')');
+                            }
+                        }
+                    ],
+                    'fiscal_year' => [
                         'required',
-                        'date',
-                        new DateBeforeFiscalYear('Desde'),
-                        function ($attribute, $value, $fail) use ($request, $payrollArcResponsible) {
-                            $overlappingRecords = PayrollArcResponsible::query()
-                                ->where('id', '<>', $payrollArcResponsible->id)
-                                ->where('end_date', '>', $value)
-                                ->when(!empty($request->end_date), function ($query) use ($request) {
-                                    $query->where('start_date', '<', $request->end_date);
-                                })
-                                ->exists();
-
-                            if ($overlappingRecords) {
-                                $fail('La fecha Desde se encuentra dentro del período de un registro anterior.');
+                        'integer',
+                        function ($attribute, $value, $fail) use ($payrollLastArcResponsible) {
+                            if ($value <= $payrollLastArcResponsible?->fiscal_year) {
+                                $fail('Ya existe un responsable de ARC para el período seleccionado (' . $payrollLastArcResponsible->fiscal_year . ')');
                             }
                         }
                     ],
-                    'end_date' => [
-                        'nullable',
-                        'date',
-                        'after:start_date',
-                        new DateBeforeFiscalYear('Hasta'),
-                        function ($attribute, $value, $fail) use ($request, $payrollArcResponsible) {
-                            $overlappingRecords = PayrollArcResponsible::query()
-                                ->where('id', '<>', $payrollArcResponsible->id)
-                                ->where('end_date', '>', $request->start_date)
-                                ->where('start_date', '<', $value)
-                                ->exists();
-
-                            if ($overlappingRecords) {
-                                $fail('La fecha Hasta se encuentra dentro del período de un registro anterior.');
-                            }
-                        }
-                    ],
-                ]
-            );
-            $messages = array_merge(
-                $messages,
-                [
-                    'end_date.after' => 'La fecha Hasta debe ser mayor a la fecha Desde',
                 ]
             );
         }
@@ -247,8 +201,7 @@ class PayrollArcResponsibleController extends Controller
 
         $payrollArcResponsible->update([
             'payroll_staff_id' => $request->payroll_staff_id,
-            'start_date' => $request->start_date,
-            'end_date' => $request->end_date,
+            'fiscal_year' => $request->fiscal_year,
         ]);
 
         return response()->json([
@@ -267,6 +220,10 @@ class PayrollArcResponsibleController extends Controller
      */
     public function destroy(PayrollArcResponsible $payrollArcResponsible)
     {
+        if ($payrollArcResponsible->blocked_at != null) {
+            return response()->json(['errors' => ['id' => ['El responsable de ARC no puede ser eliminado si ya han sido generadas para el período (' . $payrollArcResponsible->fiscal_year . ')']]], 422);
+        };
+
         $payrollArcResponsible->forceDelete();
 
         return response()->json([

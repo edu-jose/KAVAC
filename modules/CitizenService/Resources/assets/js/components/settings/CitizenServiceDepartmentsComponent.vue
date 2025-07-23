@@ -1,13 +1,15 @@
 <template>
 	<div class="col-xs-2 text-center">
-		<a class="btn-simplex btn-simplex-md btn-simplex-primary" href=""
-		   title="Registros de departamentos" data-toggle="tooltip"
-		   @click="addRecord('add_citizenservice-department', 'citizenservice/departments', $event)">
+		<a
+            class="btn-simplex btn-simplex-md btn-simplex-primary" href="javascript:void(0)"
+            title="Registros de departamentos" data-toggle="tooltip"
+            @click="addRecord('add_citizenservice-department', 'citizenservice/departments', $event)"
+        >
            <i class="icofont icofont-briefcase-alt-1 ico-3x"></i>
 		   <span>Departamentos</span>
 		</a>
-		<div class="modal fade text-left" tabindex="-1" role="dialog" id="add_citizenservice-department">
-			<div class="modal-dialog vue-crud" role="document">
+		<div class="modal fade text-left" tabindex="-1" id="add_citizenservice-department">
+			<div class="modal-dialog vue-crud">
 				<div class="modal-content">
 					<div class="modal-header">
 						<button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -25,8 +27,10 @@
                                     <i class="now-ui-icons objects_support-17"></i>
                                 </div>
                                 <strong>Cuidado!</strong> Debe verificar los siguientes errores antes de continuar:
-                                <button type="button" class="close" data-dismiss="alert" aria-label="Close"
-                                        @click.prevent="errors = []">
+                                <button
+                                    type="button" class="close" data-dismiss="alert" aria-label="Close"
+                                    @click.prevent="errors = []"
+                                >
                                     <span aria-hidden="true">
                                         <i class="now-ui-icons ui-1_simple-remove"></i>
                                     </span>
@@ -39,36 +43,43 @@
                         <div class="row">
                             <div class="col-md-6">
         						<div class="form-group is-required">
-        							<label for="name">Nombre:</label>
-        							<input type="text" id="name" placeholder="Nombre"
-										   v-input-mask data-inputmask-regex="[a-zA-ZÁ-ÿ\s]*"
-        								   class="form-control input-sm" v-model="record.name" data-toggle="tooltip"
-        								   title="Indique el nombre del departamento">
-        							<input type="hidden" name="id" id="id" v-model="record.id">
+        							<label for="departmentName">Nombre:</label>
+        							<input
+                                        type="text" id="departmentName" placeholder="Nombre"
+										v-input-mask data-inputmask-regex="[a-zA-ZÁ-ÿ\s]*"
+        								class="form-control input-sm" v-model="record.name" data-toggle="tooltip"
+        								title="Indique el nombre del departamento"
+                                    >
         	                    </div>
                             </div>
 							<div class="col-md-6">
 								<div class="form-group">
-									<label for="description">Descripción:</label>
-									<input type="text" id="description" placeholder="Descripción"
-										   class="form-control input-sm" v-model="record.description" data-toggle="tooltip"
-										   title="Indique la descripción del departamento">
+									<label for="departmentDescription">Descripción:</label>
+									<input
+                                        type="text" id="departmentDescription" placeholder="Descripción"
+										class="form-control input-sm" v-model="record.description" data-toggle="tooltip"
+										title="Indique la descripción del departamento"
+                                    >
 								</div>
 							</div>
 							<div v-if="isPayrollActive" class="col-md-6">
                 				<div class="form-group is-required" name="category">
-                  					<label>Director:</label>
-                  					<select2 :options="payroll_staffs" id="director" data-toggle="tooltip"
-                    					title="Seleccione el director responsable del Departamento (requerido)" v-model="record.director_id">
-                  					</select2>
+                  					<label for="departmentDirector">Director:</label>
+                  					<select2
+                                        :options="payroll_staffs" id="departmentDirector" data-toggle="tooltip"
+                    					title="Seleccione el director responsable del Departamento (requerido)"
+                                        v-model="record.director_id"
+                                    ></select2>
                 				</div>
               				</div>
 							  <div v-if="isPayrollActive" class="col-md-6">
                 				<div class="form-group" name="category">
-                  					<label>Coordinador:</label>
-                  					<select2 :options="payroll_staffs" id="coordinator" data-toggle="tooltip"
-                    					title="Seleccione el coordinador responsable del Departamento (requerido)" v-model="record.coordinator_id">
-                  					</select2>
+                  					<label for="departmentCoordinator">Coordinador:</label>
+                  					<select2
+                                        id="departmentCoordinator"
+                                        :options="payroll_staffs" data-toggle="tooltip"
+                    					title="Seleccione el coordinador responsable del Departamento (requerido)" v-model="record.coordinator_id"
+                                    ></select2>
                 				</div>
               				</div>
                         </div>
@@ -156,6 +167,7 @@
 					director_id: '',
 					coordinator_id: '',
 				};
+                this.errors = [];
 			},
 			getPayrollStaffs() {
       			const vm = this;
@@ -186,9 +198,9 @@
         	    }
         	    else {
         	        vm.loading = true;
-        	        var fields = {};
+        	        let fields = {};
 
-        	        for (var index in vm.record) {
+        	        for (let index in vm.record) {
         	            fields[index] = vm.record[index];
         	        }
         	        await axios.post(url, fields).then(response => {
@@ -215,7 +227,7 @@
         	                        'custom', 'Acceso Denegado', 'danger', 'screen-error', error.response.data.message
         	                    );
         	                }
-        	                for (var index in error.response.data.errors) {
+        	                for (let index in error.response.data.errors) {
         	                    if (error.response.data.errors[index]) {
         	                        vm.errors.push(error.response.data.errors[index][0]);
         	                    }

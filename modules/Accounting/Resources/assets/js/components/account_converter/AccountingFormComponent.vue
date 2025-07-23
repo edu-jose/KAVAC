@@ -317,7 +317,15 @@ export default {
                         })
                         .catch((error) => {
                             vm.loading = false;
-
+                            if (error.response && error.response.status === 403) {
+                                vm.showMessage(
+                                    "custom",
+                                    "Acceso Denegado",
+                                    "danger",
+                                    "screen-error",
+                                    "No dispone de permisos para acceder a esta funcionalidad."
+                                );
+                            }
                             for (let index in error.response.data.errors) {
                                 if (error.response.data.errors[index]) {
                                     vm.$refs.accountingConverterForm.showAlertMessages(
@@ -354,7 +362,15 @@ export default {
                         })
                         .catch((error) => {
                             vm.loading = false;
-
+                            if (error.response && error.response.status === 403) {
+                                vm.showMessage(
+                                    "custom",
+                                    "Acceso Denegado",
+                                    "danger",
+                                    "screen-error",
+                                    "No dispone de permisos para acceder a esta funcionalidad."
+                                );
+                            }
                             for (let index in error.response.data.errors) {
                                 if (error.response.data.errors[index]) {
                                     vm.$refs.accountingConverterForm.showAlertMessages(

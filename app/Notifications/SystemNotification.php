@@ -53,7 +53,7 @@ class SystemNotification extends Notification implements ShouldQueue
     {
         $this->title = $title;
         $this->details = $details;
-        $this->currentTimestamp = $currentTimestamp ?? \Carbon\Carbon::now()->toDateString();
+        $this->currentTimestamp = $currentTimestamp ?? \Carbon\Carbon::now()->toISOString();
     }
 
     /**

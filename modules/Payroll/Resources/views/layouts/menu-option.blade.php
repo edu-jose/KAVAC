@@ -79,6 +79,16 @@
                 Registro ARI
             </a>
         </li>
+        <li class="{!! set_active_menu(['payroll.wage-garnishments.index']) !!}">
+            <a href="{{ route('payroll.wage-garnishments.index') }}" data-toggle="tooltip" data-placement="right" title="Gestión de registros de la planilla ARI">
+                Registro Embargo de Sueldo
+            </a>
+        </li>
+        <li class="{!! set_active_menu(['payroll.savings-fund.index']) !!}">
+            <a href="{{ route('payroll.savings-fund.index') }}" data-toggle="tooltip" data-placement="right" title="Gestión de registros de la planilla ARI">
+                Registro Fondo de Ahorro
+            </a>
+        </li>
         <li>
             <a href="javascript:void(0)" data-toggle="tooltip" data-placement="right" title="Gestión para la generación de archivos txt">Archivo txt</a>
             <ul class="submenu" style="{!! display_submenu(['text-file', 'text-trust-file']) !!}">
@@ -90,6 +100,11 @@
                 <li class="{!! set_active_menu(['payroll.trust-text-file.create']) !!}">
                     <a href="{{ route('payroll.trust-text-file.create') }}" data-toggle="tooltip" data-placement="right" title="Gestión para la generación de archivos txt de fideicomiso">
                         Fideicomiso
+                    </a>
+                </li>
+                <li class="{!! set_active_menu(['payroll.trust-file-staff.create']) !!}">
+                    <a href="{{ route('payroll.trust-file-staff.create') }}" data-toggle="tooltip" data-placement="right" title="Txt de fideicomiso para agregar nuevo trabajador">
+                        Nuevo registro fideicomiso
                     </a>
                 </li>
             </ul>
@@ -178,6 +193,11 @@
                 <li title="Reporte de recibos de pago" data-toggle="tooltip" data-placement="right" class="{!! set_active_menu('payroll.reports.payment-receipts') !!}">
                     <a href="{{ route('payroll.reports.payment-receipts') }}">
                         Recibos de pago
+                    </a>
+                </li>
+                <li title="Reporte de promedio de conceptos de vacaciones" data-toggle="tooltip" data-placement="right" class="{!! set_active_menu('payroll.reports.average-concepts') !!}">
+                    <a href="{{ route('payroll.reports.average-concepts') }}">
+                        Promedio de conceptos de vacaciones
                     </a>
                 </li>
                 <li title="Reporte de historial de cargos" data-toggle="tooltip" data-placement="right" class="{!! set_active_menu('payroll.reports.payment-receipts') !!}">

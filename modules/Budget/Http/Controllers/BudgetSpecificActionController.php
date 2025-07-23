@@ -395,11 +395,16 @@ class BudgetSpecificActionController extends Controller
 
         foreach ($specificActions as $specificAction) {
             /* Objeto que determina si la acción específica ya fue formulada para el último presupuesto */
-            $existsFormulation = BudgetSubSpecificFormulation::where([
-                'budget_specific_action_id' => $specificAction->id,
-                'confirmed' => true,
-                'year' => $currentFiscalYear->year
-            ])->orderBy('year', 'desc')->first();
+            $existsFormulation = BudgetSubSpecificFormulation::query()
+                ->where([
+                    'budget_specific_action_id' => $specificAction->id,
+                    'confirmed' => true
+                ])
+                ->when($source !== 'report', function ($query) use ($currentFiscalYear) {
+                     $query->where('year', $currentFiscalYear->year);
+                })
+                ->orderBy('year', 'desc')
+                ->first();
 
             if ($source === 'report') {
                 if ($existsFormulation) {

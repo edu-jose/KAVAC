@@ -206,6 +206,10 @@ Luego, en el archivo .env, localizado en la raíz del sistema, se deben establec
     MIX_WEBSOCKETS_PORT
     MIX_PUSHER_APP_TLS
 
+    TELESCOPE_ENABLED
+    TELESCOPE_PATH
+    TELESCOPE_PREFIX
+
 El archivo .env.example contiene el listado de variables de configuración disponibles, así como una breve descripción.
 
 De igual manera se debe instalar los paquetes necesarios para la gestión reactiva de datos, para lo cual se debe ejecutar el siguiente comando (teniendo en cuenta que se debe contar con nodejs y npm previamente instalados):
@@ -280,6 +284,25 @@ MAIL_USERNAME | Es el nombre del usuario con atributos para enviar correo electr
 MAIL_PASSWORD | Es la contraseña del usuario que gestiona el correo saliente.
 
 MAIL_ENCRYPTION | Define el protocolo de cifrado usado por el gestor de correo electrónico. Los valores a establecer pueden ser: **ssl**, **tls** o **null**.
+
+Para probar el funcionamiento de las notificaciones por correo y la correcta configuración en las variables descritas se recomienda ejecutar algunas instrucciones en la consola de tinker para lo cual se debe ejecutar el comando:
+
+    $ php artisan tinker
+
+Una vez ejecutado este comando se debe indicar la siguiente instrucción:
+
+    Mail::raw(
+        'A través de este correo se esta probando las notificaciones del sistema KAVAC',
+        function($msg) {
+            $msg->to('usuario@correo.com')->subject('Correo de prueba');
+        }
+    );
+
+Donde usuario@correo.com se debe sustituir por una dirección de correo electrónico real para verificar que esten llegando las notificaciones y los mensajes por correo.
+
+Al ejecutar esta instrucción la consola de tinker arrojará 2 posibles resultados, el primero un valor null lo cual indica que la comunicación con el servidor de correo electrónico ha sido satisfactoria, y el segundo posible resultado es un mensaje de error el cual dará indicios de las posibles acciones a realizar para corregir esto a nivel de comunicación entre el servidor en el que se encuentra la aplicación y el servidor de correo.
+
+Si en la consola de tinker se muestran algunos mensajes con la etiqueta DEPRECATED se debe omitir esto ya que no afecta el funcionamiento de las notificaciones y por lo general sucede en versiones de PHP >= 8.4
 
 ## Compilar archivos js y css de cada modulo de la aplicación:
 
@@ -552,6 +575,22 @@ La aplicación dispone de una sección de registro o inicio de sesión donde se 
     CAPTCHA_COLOR_ONE=true
 
 En caso de que el valor de este sea false o cualquier otro, el captcha seguirá variando de color.
+
+## Monitoreo del sistema
+
+Para el correcto funcionamiento del monitoreo del sistema mediante telescope, se deben establecer los valores necesarios a utilizar por la aplicación. Estas variables son:
+
+    TELESCOPE_ENABLED
+    TELESCOPE_PATH
+    TELESCOPE_PREFIX
+
+Donde,
+
+TELESCOPE_ENABLED | Indica si esta activo o no el monitoreo del sistema
+
+TELESCOPE_PATH | Establece un path personalizado para acceder al panel de monitoreo
+
+TELESCOPE_PREFIX | Establece un prefijo personalizado para acceder al panel de monitoreo, en el caso de que la aplicacion este bajo un subdirecotrio
 
 ## Websockets
 

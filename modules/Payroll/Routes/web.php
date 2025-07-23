@@ -19,6 +19,9 @@ Route::group([
     'prefix' => 'payroll'
 ], function () {
 
+    /* Ruta que obtiene un listado de los registros de nómina */
+    Route::get('classification-parameters/vue-list', 'PayrollClassificationParameterController@getPayrollClassificationParameters');
+
     /* Ruta para gestionar la importación de carga masiva de vacaciones */
     Route::post('vacations-request/import', 'PayrollVacationRequestController@import')->name('payroll.vacations-request.import');
 
@@ -50,6 +53,24 @@ Route::group([
 
     /* Ruta para mostrar la vista de registro de informacion de la planilla ARI */
     Route::get('ari-register', 'PayrollAriRegisterController@index')->name('payroll.ari-register.index');
+
+    /* Ruta para manejar manipular la informacion del Fondo de Ahorro */
+    /* Ruta para obtener todos los registros de la planilla ARI */
+    Route::get('get-savings-fund', 'PayrollSavingsFundController@getSavingsFund');
+
+    /* Ruta para gestionar la edición de la planilla ARI */
+    Route::get('edit-savings-fund/{id}', 'PayrollSavingsFundController@edit')->name('payroll.savings-fund.edit');
+        /* Ruta para gestionar la eliminación de la planilla ARI */
+    Route::delete('delete-savings-fund/{id}', 'PayrollSavingsFundController@destroy')->name('payroll.savings-fund.destroy');
+    Route::get('/savings-fund/export', 'PayrollSavingsFundController@export')->name('payroll.savings-fund.export');
+    Route::post('/savings-fund/import', 'PayrollSavingsFundController@import')->name('payroll.savings-fund.import');
+    Route::resource(
+        'savings-fund',
+        'PayrollSavingsFundController',
+        ['as' => 'payroll', 'except' => ['edit','destroy']]
+    )->parameters([
+        'savings-fund' => 'payroll-savings-fund',
+    ]);
 
     /* Ruta para gestionar el envio de los recibos de pago */
     Route::post('send-payroll-payment-type-receipt/{id}', 'SendPayrollPaymentTypeReceiptsController@sendReceipts');
@@ -93,6 +114,10 @@ Route::group([
     Route::get('trust-file-generate', 'PayrollTrustTextFileController@store')->name('payroll.trust-text-file.store');
     /* Ruta para validar los datos del formulario del archivo txt de fideicomiso */
     Route::post('validate-trust-txt-data', 'PayrollTrustTextFileController@validateTxtData');
+    /* Ruta que muestra la vista para generar el archivo txt de nuevo trabajador fideicomiso */
+    Route::get('trust-file-staff', 'PayrollTrustFileStaffController@create')->name('payroll.trust-file-staff.create');
+    /* Ruta para generar el archivo txt de fideicomiso */
+    Route::post('trust-file-staff', 'PayrollTrustFileStaffController@store')->name('payroll.trust-file-staff.store');
     Route::post(
         'get-trust-payment-periods',
         'PayrollTrustTextFileController@getPaymentPeriodsByStatus'
@@ -121,7 +146,23 @@ Route::group([
     )->parameters([
         'arc-responsible' => 'payroll-arc-responsible',
     ]);
-    ;
+
+     /* Ruta para manejar manipular la informacion del Embargos de Sueldo*/
+    Route::get('get-wage-garnishments', 'PayrollWageGarnishmentsController@getWageGarnishments');
+
+    /* Ruta para gestionar la edición de Embargos de Sueldo */
+    Route::get('edit-wage-garnishments/{id}', 'PayrollWageGarnishmentsController@edit')->name('payroll.wage-garnishments.edit');
+    /* Ruta para gestionar la eliminación de Embargos de Sueldo */
+    Route::delete('delete-wage-garnishments/{id}', 'PayrollWageGarnishmentsController@destroy')->name('payroll.wage-garnishments.destroy');
+    Route::get('/wage-garnishments/export', 'PayrollWageGarnishmentsController@export')->name('payroll.wage-garnishments.export');
+    Route::post('/wage-garnishments/import', 'PayrollWageGarnishmentsController@import')->name('payroll.wage-garnishments.import');
+    Route::resource(
+        'wage-garnishments',
+        'PayrollWageGarnishmentsController',
+        ['as' => 'payroll', 'except' => ['edit','destroy']]
+    )->parameters([
+        'wage-garnishments' => 'payroll-wage-garnishments',
+    ]);
 
     /* Ruta para manejar manipular la informacion de los niveles de escolaridad */
     Route::resource(
@@ -152,6 +193,8 @@ Route::group([
 
     /* Rutas para gestionar la nómina de trabajadores de la institución */
     Route::resource('registers', 'PayrollController', ['as' => 'payroll', 'except' => ['edit', 'show']]);
+    Route::post('registers/parameters/export', 'PayrollController@exportParameters');
+    Route::post('registers/parameters/import', 'PayrollController@importParameters');
 
     /* Ruta que permite editar la información de un registro de nómina */
     Route::get('registers/edit/{register}', 'PayrollController@edit')->name('payroll.registers.edit');
@@ -360,6 +403,12 @@ Route::group([
         'PayrollConceptController@getPayrollConcepts'
     )->name('payroll.get-payroll-concepts');
 
+    /* Ruta que obtiene un arreglo con los conceptos registrados en la política vacacional */
+    Route::get(
+        'get-vacation-policy-concepts',
+        'PayrollReportController@getPayrollVacationPolicyConcepts'
+    )->name('payroll.get-payroll-vacation-policy-concepts');
+
     /* Ruta que obtiene un arreglo con las opciones a asignar un concepto */
     Route::get(
         'get-concept-assign-to',
@@ -446,6 +495,10 @@ Route::group([
         'get-payment-periods-by-status',
         'PayrollPaymentTypeController@getPaymentPeriodsByStatus'
     )->name('payroll.get-payroll-payment-periods-by-status');
+    Route::post(
+        'get-payment-periods-by-ids',
+        'PayrollPaymentTypeController@getPaymentPeriodsByIds'
+    )->name('payroll.get-payroll-payment-periods-by-ids');
 
     /* Ruta que indica si un periodo ya fue asignado a un registro de nomina */
     Route::get(
@@ -707,11 +760,17 @@ Route::group([
     /* Ruta que obtiene un arreglo con los tabuladores salariales registrados */
     Route::get('get-salary-tabulators', 'PayrollSalaryTabulatorController@getSalaryTabulators');
 
+    /* Ruta que obtiene un arreglo con los tabuladores salariales registrados */
+    Route::post('get-base-salary', 'PayrollSalaryTabulatorController@getBaseSalaryByTabulator');
+
     /* Ruta que obtiene un arreglo con las agrupaciones de los tabuladores salariales registrados */
     Route::get('get-salary-tabulators-groups', 'PayrollParameterController@getSalaryTabulatorsGroups');
 
     /* Ruta que obtiene un arreglo con los registros asociados al expediente del trabajador registrados */
     Route::get('get-associated-records', 'PayrollParameterController@getAssociatedRecords');
+
+    /* Ruta que obtiene un arreglo con los registros asociados a los totales registrados */
+    Route::get('get-totals', 'PayrollParameterController@getTotals');
 
     /* Ruta que obtiene un arreglo con los registros asociados a las vacaciones registrados */
     Route::get('get-vacation-associated-records', 'PayrollParameterController@getVacationAssociatedRecords');
@@ -940,6 +999,14 @@ Route::group([
         'get-supervised-groups',
         'PayrollSupervisedGroupController@getPayrollSupervisedGroups'
     );
+    Route::get(
+        'get-supervised-groups-options',
+        'PayrollSupervisedGroupController@getPayrollSupervisedGroupsoptions'
+    );
+    Route::get(
+        'get-supervised-groups-staff',
+        'PayrollSupervisedGroupController@getPayrollSupervisedGroupStaff'
+    );
 
     Route::post('supervised-group/export', 'PayrollSupervisedGroupController@export');
     Route::post('supervised-group/import', 'PayrollSupervisedGroupController@import');
@@ -1021,6 +1088,36 @@ Route::group([
         'PayrollTimeSheetParameterController',
         ['as' => 'payroll', 'except' => ['show', 'create', 'edit']]
     );
+    /* Rutas para gestionar el grupo etario */
+    Route::resource('age-groups', 'PayrollAgeGroupController', [
+        'as' => 'payroll',
+        'except' => ['create', 'edit', 'show'],
+        'parameters' => ['age-groups' => 'payroll-age-group']
+    ]);
+
+    /* Ruta que obtiene un arreglo con los grupos etarios registrados */
+    Route::get(
+        'get-age-groups',
+        'PayrollAgeGroupController@getPayrollAgeGroups'
+    )->name('payroll.get-payroll-age-groups');
+
+    Route::get(
+        'classification-parameters',
+        'PayrollTimeSheetParameterController@getClassificationParameters'
+    );
+
+    /* Rutas para gestionar la antiguedad */
+    Route::resource('seniorities', 'PayrollSeniorityController', [
+        'as' => 'payroll',
+        'except' => ['create', 'edit', 'show'],
+        'parameters' => ['seniorities' => 'payroll-seniority']
+    ]);
+
+    /* Ruta que obtiene un arreglo con los grupos etarios registrados */
+    Route::get(
+        'get-seniorities',
+        'PayrollSeniorityController@getPayrollSeniorities'
+    )->name('payroll.get-payroll-seniorities');
 
     /* Rutas para gestionar códigos de procesos */
     Route::resource('process-code', 'PayrollProcessCodeController', [
@@ -1055,7 +1152,7 @@ Route::group([
     );
 
     /* Ruta que obtiene los cargos que no han sido registrados en una carga horaria */
-    Route::get(
+    Route::post(
         'get-workload-positions',
         'PayrollWorkloadController@getPayrollPositionsById'
     );
@@ -1090,6 +1187,11 @@ Route::group([
     Route::get(
         'time-sheet/vue-info/{id}',
         'PayrollTimeSheetController@vueInfo'
+    );
+
+    Route::get(
+        'get-time-sheet-holidays',
+        'PayrollTimeSheetController@getTimeSheetHolidaysByPeriod'
     );
 
     Route::put('time-sheet/approve/{id}', 'PayrollTimeSheetController@approve');
@@ -1218,8 +1320,8 @@ Route::group([
         /* Rutas para gestionar el reporte de carga familiar */
         Route::get('family-burden', 'PayrollReportController@familyBurden')
             ->name('payroll.reports.family-burden');
-        Route::post('family-burden/create', 'PayrollReportController@create')
-            ->name('payroll.reports.familiy-burden.create');
+        Route::post('family-burden/create', 'PayrollReportController@reportFamilyBurdenPdf')
+            ->name('payroll.reports.family-burden.create');
         /* Rutas para gestionar el reporte de recibos de pago */
         Route::get('payment-receipts', 'PayrollReportController@paymentReceipt')
             ->name('payroll.reports.payment-receipts');
@@ -1227,6 +1329,14 @@ Route::group([
             'payment-receipts/create',
             [PayrollReportController::class, 'paymentReceiptCreate']
         )->name('payroll.reports.payment-receipts.create');
+
+        /* Rutas para gestionar el reporte de promedio de conceptos de vacaciones */
+        Route::get('average-concepts', 'PayrollReportController@averageConcept')
+            ->name('payroll.reports.average-concepts');
+        Route::get(
+            'average-concepts-export',
+            [PayrollReportController::class, 'averageConceptsCreate']
+        )->name('payroll.reports.average-concepts.create');
 
         /* Rutas para gestionar el reporte de Histórico de cargos */
         Route::get('historical-positions', 'PayrollReportController@historicalPosition')

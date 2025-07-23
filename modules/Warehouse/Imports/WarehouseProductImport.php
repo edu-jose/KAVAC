@@ -36,18 +36,11 @@ class WarehouseProductImport extends \App\Imports\DataImport implements
     {
         $measurementUnit = MeasurementUnit::where("name", $row['nombre_de_la_unidad_de_medida'])->first();
 
-        $taxName = explode(' ', $row['porcentaje_del_impuesto_aplicado_al_insumo']);
-
-        $hTax = HistoryTax::with('tax')->whereHas('tax', function ($query) use ($taxName) {
-            $query->where('name', $taxName[0]);
-        })->first();
-
         /* Datos de los productos a importar */
         $data = [
             'name'                => $row['nombre_del_insumo'],
             'description'         => $row['descripcion_del_insumo'],
             'measurement_unit_id' => $measurementUnit ? $measurementUnit->id : null,
-            'tax_id' => $hTax ? $hTax->id : null
         ];
         return WarehouseProduct::updateOrCreate(
             ['name' => $row['nombre_del_insumo']],

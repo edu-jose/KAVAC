@@ -74,6 +74,13 @@ class PayrollParameterController extends Controller
     protected $associatedBenefit;
 
     /**
+     * Arreglo con los registros de opciones para totales
+     *
+     * @var array $associateTotals
+     */
+    protected $associateTotals;
+
+    /**
      * Define la configuración de la clase
      *
      * @author    Henry Paredes <hparedes@cenditel.gob.ve>
@@ -89,21 +96,37 @@ class PayrollParameterController extends Controller
 
         /* Define las reglas de validación para el formulario */
         $this->validateRules = [
-            'parameter_type' => ['required'],
-            'name'           => ['required', 'regex:/^[a-zA-Z\s]+$/'],
-
+            'parameter_type'      => ['required'],
+            'name'                => ['required', 'regex:/^[a-zA-Z\s]+$/'],
         ];
 
         /* Define los mensajes de validación para las reglas del formulario */
         $this->messages = [
-            'parameter_type.required'   => 'El campo tipo de parámetro es obligatorio.',
-            'value.required'            => 'El campo valor es obligatorio.',
-            'formula.required'          => 'El campo fórmula es obligatorio.',
-            'code.required'             => 'El campo código es obligatorio.',
-            'acronym.required'          => 'El campo acrónimo es obligatorio.',
-            'max_value_per_period.gt'   => 'El valor máximo permitido en hoja de tiempo debe ser menor que ' . request('max_value_per_period'),
-            'exception_type.required'   => 'El campo categorías de hoja de tiempo es obligatorio.'
+            'parameter_type.required'      => 'El campo tipo de parámetro es obligatorio.',
+            'classification_type.required' => 'El campo tipo de clasificación es obligatorio.',
+            'value.required'               => 'El campo valor es obligatorio.',
+            'formula.required'             => 'El campo fórmula es obligatorio.',
+            'code.required'                => 'El campo código es obligatorio.',
+            'acronym.required'             => 'El campo acrónimo es obligatorio.',
+            'max_value_per_period.gt'      => 'El valor máximo permitido en hoja de tiempo debe ser menor que ' . request('max_value_per_period'),
+            'exception_type.required'      => 'El campo categorías de hoja de tiempo es obligatorio.'
         ];
+
+        /* Define los campos de la configuración de totales a emplear en el formulario */
+        $this->associateTotals = [
+            [
+                'id'       => 'TOTAL_ASSIGNMENTS',
+                'name'     => 'Total asignaciones',
+                'model'    => 'Modules\Payroll\Models\Payroll',
+                'required' => [],
+            ],
+            [
+                'id' => 'TOTAL_PAID',
+                'name' => 'Total pagado',
+                'model' => 'Modules\Payroll\Models\Payroll',
+                'required' => [],
+            ],
+            ];
 
         /* Define los tipos de parámetros de nómina a emplear en el formulario */
         $this->parameterTypes = [
@@ -366,24 +389,28 @@ class PayrollParameterController extends Controller
         if (!is_null($parameters)) {
             foreach ($parameters as $parameter) {
                 $param = json_decode($parameter->p_value);
-                array_push($listGlobalParameters, [
-                    'id'             => $param->id,
-                    'name'           => $param->name,
-                    'code'           => $param->code ?? '',
-                    'acronym'        => $param->acronym ?? '',
-                    'exception_type' => $param->exception_type ?? '',
-                    'active'         => $param->active ?? false,
-                    'value_max'      => $param->value_max ?? '',
-                    'max_value_allowed_per_time_sheet' => $param->max_value_allowed_per_time_sheet ?? '',
-                    'list_in_schema' => $param->list_in_schema ?? false,
-                    'description'    => $param->description ?? '',
-                    'parameter_type' => $param->parameter_type,
-                    'parameter_type_value' => $paramTypes[$param->parameter_type],
-                    'percentage'     => $param->percentage ?? '',
-                    'value'          => $param->value ?? '',
-                    'formula'        => $param->formula ?? '',
-                    'translate_formula' => $parameter->translate_formula ?? '',
-                ]);
+                if (!($param->is_excedent ?? false)) {
+                    array_push($listGlobalParameters, [
+                        'id'             => $param->id,
+                        'name'           => $param->name,
+                        'code'           => $param->code ?? '',
+                        'acronym'        => $param->acronym ?? '',
+                        'exception_type' => $param->exception_type ?? '',
+                        'active'         => $param->active ?? false,
+                        'value_max'      => $param->value_max ?? '',
+                        'max_value_allowed_per_time_sheet' => $param->max_value_allowed_per_time_sheet ?? '',
+                        'list_in_schema' => $param->list_in_schema ?? false,
+                        'description'    => $param->description ?? '',
+                        'parameter_type' => $param->parameter_type,
+                        'parameter_type_value' => $paramTypes[$param->parameter_type],
+                        'percentage'     => $param->percentage ?? '',
+                        'value'          => $param->value ?? '',
+                        'formula'        => $param->formula ?? '',
+                        'translate_formula' => $parameter->translate_formula ?? '',
+                        'classification_type' => $param->classification_type ?? '',
+                        'parameter_options' => $parameter->parameter_options ?? '',
+                    ]);
+                }
             }
         }
         return response()->json(['records' => $listGlobalParameters], 200);
@@ -427,7 +454,10 @@ class PayrollParameterController extends Controller
                 'required_by' => 'payroll',
                 'active'      => true,
             ]
-        )->where('p_key', 'like', 'global_parameter_%')->withTrashed()->orderBy('created_at')->get();
+        )->where('p_key', 'like', 'global_parameter_%')
+        ->orderByRaw("substring(p_key from '\d+$')::integer ASC")
+        ->withTrashed()
+        ->get();
 
         if (!is_null($parameters)) {
             foreach ($parameters as $parameter) {
@@ -461,6 +491,7 @@ class PayrollParameterController extends Controller
                     'percentage'     => $param->percentage,
                     'value'          => $param->value,
                     'formula'        => $param->formula,
+                    'classification_type'        => $request->classification_type ?? '',
                 ]);
             }
         }
@@ -481,6 +512,7 @@ class PayrollParameterController extends Controller
                 : false,
             'value'          => $request->value ?? '',
             'formula'        => $request->formula ?? '',
+            'classification_type'        => $request->classification_type ?? '',
         ];
         array_push($listGlobalParameters, $payrollParameter);
 
@@ -491,6 +523,37 @@ class PayrollParameterController extends Controller
             'required_by' => 'payroll',
             'active'      => true
         ]);
+
+        // Implementa excedente del parametro
+        $payrollParameterExcedente = [
+            'id'             => $index + 2,
+            'name'           => "EX-" . $request->name,
+            'code'           => "EX-" . $request->code ?? '',
+            'acronym'        => "EX-" . $request->acronym ?? '',
+            'exception_type' => $request->exception_type ?? '',
+            'active'         => $request->active ?? false,
+            'value_max'      => $request->value_max ?? '',
+            'max_value_allowed_per_time_sheet' => $request->max_value_allowed_per_time_sheet ?? '',
+            'list_in_schema' => $request->list_in_schema ?? false,
+            'description'    => $request->description ?? '',
+            'parameter_type' => $request->parameter_type,
+            'percentage'     => !empty($request->input('percentage'))
+                ? $request->input('percentage')
+                : false,
+            'value'          => $request->value ?? '',
+            'formula'        => "parameter(" . $payrollParameter['id'] . ')-' . $request->max_value_allowed_per_time_sheet,
+            'classification_type'        => $request->classification_type ?? '',
+            'is_excedent' => true,
+        ];
+
+        /* Objeto asociado al modelo Parameter */
+        $parameterExc = Parameter::create([
+            'p_key'       => 'global_parameter_' . $payrollParameterExcedente['id'],
+            'p_value'     => json_encode($payrollParameterExcedente),
+            'required_by' => 'payroll',
+            'active'      => true
+        ]);
+
         return response()->json(['record' => $parameter, 'message' => 'Success'], 200);
     }
 
@@ -569,6 +632,7 @@ class PayrollParameterController extends Controller
                         'percentage'     => $param->percentage ?? '',
                         'value'          => $param->value ?? '',
                         'formula'        => $param->formula ?? '',
+                        'classification_type' => $param->classification_type ?? '',
                     ]);
                 } else {
                     $payrollParameter = [
@@ -588,6 +652,7 @@ class PayrollParameterController extends Controller
                             : $param->percentage,
                         'value'          => $request->value ?? '',
                         'formula'        => $request->formula ?? '',
+                        'classification_type' => $request->classification_type ?? '',
                     ];
                     array_push($listGlobalParameters, $payrollParameter);
                 }
@@ -605,6 +670,70 @@ class PayrollParameterController extends Controller
                 'p_value'     => json_encode($payrollParameter)
             ]
         );
+
+        // Implementa excedente del parametro
+        $searchParameterExcedent = Parameter::where(
+            [
+                'required_by' => 'payroll',
+                'active'      => true,
+            ]
+        )->where('p_key', 'like', 'global_parameter_%')
+            ->whereJsonContains('p_value', ['name' => "EX-" . $payrollParameter["name"]])
+            ->withTrashed()
+            ->first();
+            $payrollParameterExcedente = [];
+
+        if ($searchParameterExcedent) {
+            $param = json_decode($searchParameterExcedent->p_value);
+            $payrollParameterExcedente['id'] = $param->id;
+        } else {
+            $lastParameters = Parameter::where(
+                [
+                    'required_by' => 'payroll',
+                    'active'      => true,
+                ]
+            )->where('p_key', 'like', 'global_parameter_%')
+                ->withTrashed()
+                ->orderByRaw("substring(p_key from '\d+$')::integer DESC")
+                ->first();
+
+            $param = json_decode($lastParameters->p_value);
+
+            $payrollParameterExcedente["id"] = $param->id + 1;
+        }
+
+        $payrollParameterExcedente = [
+            "id"             => $payrollParameterExcedente["id"],
+            'name'           => "EX-" . $request->name,
+            'code'           => "EX-" . $request->code ?? '',
+            'acronym'        => "EX-" . $request->acronym ?? '',
+            'exception_type' => $request->exception_type ?? '',
+            'active'         => $request->active ?? false,
+            'value_max'      => $request->value_max ?? '',
+            'max_value_allowed_per_time_sheet' => $request->max_value_allowed_per_time_sheet ?? '',
+            'list_in_schema' => $request->list_in_schema ?? false,
+            'description'    => $request->description ?? '',
+            'parameter_type' => $request->parameter_type,
+            'percentage'     => !empty($request->input('percentage'))
+                ? $request->input('percentage')
+                : false,
+            'value'          => $request->value ?? '',
+            'formula'        => "parameter(" . $payrollParameter['id'] . ')-' . $request->max_value_allowed_per_time_sheet,
+            'classification_type'        => $request->classification_type ?? '',
+            'is_excedent' => true,
+        ];
+
+        $parameterExc = Parameter::updateOrCreate(
+            [
+                'p_key'       => 'global_parameter_' . $payrollParameterExcedente['id'],
+                'required_by' => 'payroll',
+                'active'      => true
+            ],
+            [
+                'p_value'     => json_encode($payrollParameterExcedente)
+            ]
+        );
+
         return response()->json(['record' => $parameter, 'message' => 'Success'], 200);
     }
 
@@ -722,6 +851,8 @@ class PayrollParameterController extends Controller
      */
     public function getPayrollParameters(Request $request)
     {
+        $withExcedents = $request->withExcedents ?? null;
+
         if (is_null($request->payroll_concepts)) {
             $listGlobalParameters = [['id' => '', 'text' => 'Seleccione...']];
             /* Objeto asociado al modelo Parameter */
@@ -730,7 +861,15 @@ class PayrollParameterController extends Controller
                     'required_by' => 'payroll',
                     'active'      => true,
                 ]
-            )->where('p_key', 'like', 'global_parameter_%')->get();
+            )->where('p_key', 'like', 'global_parameter_%')
+            ->get()
+            ->filter(function ($parameter) use ($withExcedents) {
+                $pValue = json_decode($parameter->p_value);
+                if ($withExcedents) {
+                    return true;
+                }
+                return !isset($pValue->is_excedent);
+            });
 
             if (!is_null($parameters)) {
                 foreach ($parameters as $parameter) {
@@ -869,8 +1008,9 @@ class PayrollParameterController extends Controller
      *
      * @return    array    Listado de los registros a mostrar
      */
-    public function getAssociatedRecords()
+    public function getAssociatedRecords(Request $request)
     {
+        $onlyParams = $request->onlyParams ?? [];
         $list = [['id' => '', 'text' => 'Seleccione...']];
         $childrens = [];
 
@@ -883,17 +1023,33 @@ class PayrollParameterController extends Controller
             } else {
                 $childrens = [];
                 foreach ($record['children'] as $children) {
-                    array_push($childrens, [
-                        'id'   => $children['id'],
-                        'text' => $children['name'],
-                        'type' => $children['type']
+                    if (empty($onlyParams)) {
+                        array_push($childrens, [
+                            'id'   => $children['id'],
+                            'text' => $children['name'],
+                            'type' => $children['type']
+                        ]);
+                    } elseif (in_array($children['id'], $onlyParams)) {
+                        array_push($childrens, [
+                            'id'   => $children['id'],
+                            'text' => $children['name'],
+                            'type' => $children['type']
+                        ]);
+                    }
+                }
+                if (empty($onlyParams)) {
+                    array_push($list, [
+                        'id'       => $record['id'],
+                        'text'     => $record['name'],
+                        'children' => $childrens
+                    ]);
+                } elseif (in_array($children['id'], $onlyParams)) {
+                    array_push($list, [
+                        'id'       => $record['id'],
+                        'text'     => $record['name'],
+                        'children' => $childrens
                     ]);
                 }
-                array_push($list, [
-                    'id'       => $record['id'],
-                    'text'     => $record['name'],
-                    'children' => $childrens
-                ]);
             }
         }
         return $list;
@@ -911,6 +1067,27 @@ class PayrollParameterController extends Controller
         $list = [['id' => '', 'text' => 'Seleccione...']];
 
         foreach ($this->associatedVacation as $record) {
+            array_push($list, [
+                'id'   => $record['id'],
+                'text' => $record['name'],
+                'type' => 'number'
+            ]);
+        }
+        return $list;
+    }
+
+    /**
+     * Obtiene los registros asociados a los campos de la configuración de totales
+     *
+     * @author    Natanael Rojo <ndrojo@cenditel.gob.ve> | <rojonatanael99@gmail.com>
+     *
+     * @return    array    Listado de los registros a mostrar
+     */
+    public function getTotals(): array
+    {
+        $list = [['id' => '', 'text' => 'Seleccione...']];
+
+        foreach ($this->associateTotals as $record) {
             array_push($list, [
                 'id'   => $record['id'],
                 'text' => $record['name'],
@@ -1149,6 +1326,8 @@ class PayrollParameterController extends Controller
      */
     public function getTimeParameters(Request $request)
     {
+        $withExcedents = $request->withExcedents ?? null;
+
         $parameters = Parameter::query()
             ->where([
                 'active' => true,
@@ -1156,9 +1335,16 @@ class PayrollParameterController extends Controller
             ])
             ->where('p_key', 'like', 'global_parameter_%')
             ->where('p_value', 'like', '%time_parameter%')
-            ->when(empty($request->setting), fn($query) => $query->where('p_value', 'like', '%"list_in_schema":true%'))
+            ->when(empty($request->setting), fn ($query) => $query->where('p_value', 'like', '%"list_in_schema":true%'))
             ->toBase()
             ->get()
+            ->filter(function ($parameter) use ($withExcedents) {
+                $pValue = json_decode($parameter->p_value);
+                if ($withExcedents) {
+                    return true;
+                }
+                return !isset($pValue->is_excedent);
+            })
             ->map(function ($parameter) {
                 $pValue = json_decode($parameter->p_value);
 
@@ -1170,7 +1356,8 @@ class PayrollParameterController extends Controller
                     'acronym' => $pValue->acronym,
                     'name' =>  $pValue->name,
                     'exception_type_id' => $pValue->exception_type,
-                    'active' => $pValue->active
+                    'active' => $pValue->active,
+                    'classification_type' => $pValue->classification_type ?? null
                 ];
             });
 
@@ -1188,7 +1375,8 @@ class PayrollParameterController extends Controller
                 'acronym' => $parameter['acronym'],
                 'name' => $parameter['name'],
                 'exception' => $exceptionType ? $exceptionType->name : null,
-                'active' => $parameter['active']
+                'active' => $parameter['active'],
+                'classification_type' => $parameter['classification_type']
             ];
         })->sortBy('name', SORT_REGULAR, false)->values();
 

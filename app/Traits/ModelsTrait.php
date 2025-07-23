@@ -53,11 +53,13 @@ trait ModelsTrait
 
         static::restored(function ($model) {
             $modelClass = get_class($model);
-            $restored = Cache::get('deleted_records');
-            $restored = $restored->filter(function ($res) use ($model, $modelClass) {
-                return ($modelClass === get_class($res) && $res->id !== $model->id) || $modelClass !== get_class($res);
-            });
-            Cache::put('deleted_records', $restored);
+            if (Cache::has('deleted_records')) {
+                $restored = Cache::get('deleted_records');
+                $restored = $restored->filter(function ($res) use ($model, $modelClass) {
+                    return ($modelClass === get_class($res) && $res->id !== $model->id) || $modelClass !== get_class($res);
+                });
+                Cache::put('deleted_records', $restored);
+            }
         });
 
         static::saving(function ($model) {

@@ -1,37 +1,21 @@
 <template>
     <div class="text-center">
-        <a
-            class="btn-simplex btn-simplex-md btn-simplex-primary"
-            href=""
-            title="Registros de categorias de origen de asientos contables"
-            data-toggle="tooltip"
-            v-has-tooltip
-            @click="
+        <a class="btn-simplex btn-simplex-md btn-simplex-primary" href=""
+            title="Registros de categorias de origen de asientos contables" data-toggle="tooltip" v-has-tooltip @click="
                 addRecord(
                     'crud_categories',
                     'accounting/settings/categories',
                     $event
                 )
-            "
-        >
+                ">
             <i class="fa fa-tags ico-3x"></i>
             <span>Categorias de origen</span>
         </a>
-        <div
-            class="modal fade text-left"
-            tabindex="-1"
-            role="dialog"
-            id="crud_categories"
-        >
+        <div class="modal fade text-left" tabindex="-1" role="dialog" id="crud_categories">
             <div class="modal-dialog vue-crud" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <button
-                            type="button"
-                            class="close"
-                            data-dismiss="modal"
-                            aria-label="Close"
-                        >
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">×</span>
                         </button>
                         <h6>
@@ -46,33 +30,18 @@
                                 <div class="row">
                                     <div class="col-6">
                                         <div class="form-group is-required">
-                                            <label class="control-label"
-                                                >Nombre</label
-                                            >
-                                            <input
-                                                type="text"
-                                                class="form-control input-sm"
-                                                v-model="record.name"
-                                                title="Ingrese el nombre de la categoria"
-                                                data-toggle="tooltip"
-                                                v-has-tooltip
-                                            />
+                                            <label class="control-label">Nombre</label>
+                                            <input type="text" class="form-control input-sm" v-model="record.name"
+                                                title="Ingrese el nombre de la categoria" data-toggle="tooltip"
+                                                v-has-tooltip />
                                         </div>
                                     </div>
                                     <div class="col-6">
                                         <div class="form-group is-required">
-                                            <label class="control-label"
-                                                >Acrónimo</label
-                                            >
-                                            <input
-                                                type="text"
-                                                class="form-control input-sm"
-                                                maxlength="4"
-                                                title="Ingrese el acrónimo"
-                                                data-toggle="tooltip"
-                                                v-has-tooltip
-                                                v-model="record.acronym"
-                                            />
+                                            <label class="control-label">Acrónimo</label>
+                                            <input type="text" class="form-control input-sm" maxlength="4"
+                                                title="Ingrese el acrónimo" data-toggle="tooltip" v-has-tooltip
+                                                v-model="record.acronym" />
                                         </div>
                                     </div>
                                 </div>
@@ -81,67 +50,39 @@
                     </div>
                     <div class="modal-footer">
                         <div class="form-group">
-                            <button
-                                type="button"
-                                class="btn btn-default btn-sm btn-round btn-modal-close"
-                                @click="clearFilters"
-                                data-dismiss="modal"
-                            >
+                            <button type="button" class="btn btn-default btn-sm btn-round btn-modal-close"
+                                @click="clearFilters" data-dismiss="modal">
                                 Cerrar
                             </button>
-                            <button
-                                type="button"
-                                class="btn btn-warning btn-sm btn-round btn-modal btn-modal-clear"
-                                @click="reset()"
-                            >
+                            <button type="button" class="btn btn-warning btn-sm btn-round btn-modal btn-modal-clear"
+                                @click="reset()">
                                 Cancelar
                             </button>
-                            <button
-                                type="button"
-                                @click="
-                                    createRecord(
-                                        'accounting/settings/categories'
-                                    )
-                                "
-                                class="btn btn-primary btn-sm btn-round btn-modal-save"
-                            >
+                            <button type="button" @click="
+                                createRecord(
+                                    'accounting/settings/categories'
+                                )
+                                " class="btn btn-primary btn-sm btn-round btn-modal-save">
                                 Guardar
                             </button>
                         </div>
                     </div>
                     <div class="modal-body modal-table">
                         <hr />
-                        <v-client-table
-                            :columns="columns"
-                            :data="records"
-                            :options="table_options"
-                        >
-                            <div
-                                slot="id"
-                                slot-scope="props"
-                                class="text-center"
-                            >
-                                <button
-                                    @click="loadCategory(props.row)"
-                                    class="btn btn-warning btn-xs btn-icon btn-action"
-                                    title="Modificar registro"
-                                    data-toggle="tooltip"
-                                    v-has-tooltip
-                                >
+                        <v-client-table :columns="columns" :data="records" :options="table_options">
+                            <div slot="id" slot-scope="props" class="text-center">
+                                <button @click="loadCategory(props.row)"
+                                    class="btn btn-warning btn-xs btn-icon btn-action" title="Modificar registro"
+                                    data-toggle="tooltip" v-has-tooltip>
                                     <i class="fa fa-edit"></i>
                                 </button>
-                                <button
-                                    @click="
-                                        deleteRecord(
-                                            props.row.id,
-                                            '/accounting/settings/categories'
-                                        )
-                                    "
-                                    class="btn btn-danger btn-xs btn-icon btn-action"
-                                    title="Eliminar registro"
-                                    data-toggle="tooltip"
-                                    v-has-tooltip
-                                >
+                                <button @click="
+                                    deleteRecord(
+                                        props.row.id,
+                                        '/accounting/settings/categories'
+                                    )
+                                    " class="btn btn-danger btn-xs btn-icon btn-action" title="Eliminar registro"
+                                    data-toggle="tooltip" v-has-tooltip>
                                     <i class="fa fa-trash-o"></i>
                                 </button>
                             </div>
@@ -286,15 +227,31 @@ export default {
             if (this.state == "store") {
                 if (!this.validInformation()) return;
 
-                axios.post(url, this.record).then((response) => {
-                    this.records = response.data.records;
-                    this.record = {
-                        name: "",
-                        acronym: "",
-                    };
-                    vm.showMessage("store");
-                    this.$refs.originCategories.reset();
-                });
+                axios.post(url, this.record)
+                    .then((response) => {
+                        this.records = response.data.records;
+                        this.record = {
+                            name: "",
+                            acronym: "",
+                        };
+                        vm.showMessage("store");
+                        this.$refs.originCategories.reset();
+                    })
+                    .catch((error) => {
+                        if (error.response && error.response.status === 403) {
+                            vm.showMessage(
+                                "custom",
+                                "Acceso Denegado",
+                                "danger",
+                                "screen-error",
+                                "No dispone de permisos para acceder a esta funcionalidad."
+                            );
+                        } else {
+                            // Puedes agregar un mensaje de error genérico aquí
+                            vm.showMessage("error", "Ocurrió un error", "danger");
+                            console.error(error); // para debuggear
+                        }
+                    });
             } else {
                 if (!this.validInformation(false)) return;
                 axios
@@ -310,6 +267,21 @@ export default {
                         this.name = "";
                         vm.showMessage("update");
                         this.$refs.originCategories.reset();
+                    })
+                    .catch((error) => {
+                        if (error.response && error.response.status === 403) {
+                            vm.showMessage(
+                                "custom",
+                                "Acceso Denegado",
+                                "danger",
+                                "screen-error",
+                                "No dispone de permisos para acceder a esta funcionalidad."
+                            );
+                        } else {
+                            // Puedes agregar un mensaje de error genérico aquí
+                            vm.showMessage("error", "Ocurrió un error", "danger");
+                            console.error(error); // para debuggear
+                        }
                     });
             }
         },

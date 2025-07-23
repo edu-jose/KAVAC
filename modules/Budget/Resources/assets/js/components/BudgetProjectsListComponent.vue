@@ -19,6 +19,7 @@
                         title="Modificar registro"
                         data-toggle="tooltip"
                         @click="editForm(props.row.id)"
+                        :disabled="format_date(props.row.to_date, 'YYYY') < props.row.activeFiscalYear"
                     >
                         <i class="fa fa-edit"></i>
                     </button>
@@ -33,6 +34,7 @@
                         title="Modificar registro"
                         data-toggle="tooltip"
                         @click="editForm(props.row.id)"
+                        :disabled="format_date(props.row.to_date, 'YYYY') < props.row.activeFiscalYear"
                     >
                         <i class="fa fa-edit"></i>
                     </button>
@@ -118,10 +120,12 @@
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group">
-                                            <strong>Responsable:</strong>
+                                            <strong>
+                                                <span id="responsable-text">Responsable:</span>
+                                            </strong>
                                             <div class="row">
                                                 <span class="col-md-12">
-                                                    <a id="responsable"></a>
+                                                    <ul id="responsables-list"></ul>
                                                 </span>
                                             </div>
                                         </div>
@@ -161,7 +165,7 @@
                                             <strong>Nombre:</strong>
                                             <div class="row">
                                                 <span class="col-md-12">
-                                                    <a    id="name"></a>
+                                                    <a id="name"></a>
                                                 </span>
                                             </div>
                                         </div>
@@ -268,26 +272,56 @@
             await vm.initRecords(vm.route_list, '');
             await vm.queryLastFiscalYear();
         },
+
         methods: {
             /**
              * Método que abre el modal, realiza la consulta y pasa los datos.
              */
             show_info(id) {
                 axios.get(`${window.app_url}/budget/projects/get-detail-project/${id}`)
-                .then(response => {
-                    this.record = response.data;
-                    $('#name').html(this.record.project.name);
-                    $('#institution').html(this.record.cargo.payroll_employment.department.institution.name);
-                    $('#department').html(this.record.cargo.payroll_employment.department.name);
-                    $('#responsable').html(this.record.cargo.first_name + ' ' + this.record.cargo.last_name);
-                    $('#payroll_position').html(this.record.cargo.payroll_employment.payrollPosition.name);
-                    $('#code').html(this.record.project.code);
-                    $('#onapre_code').html(this.record.project.onapre_code);
-                    $('#active').html((this.record.project.active === true) ? 'Sí' : 'No');
-                    $('#from_date').html(this.record.project.from_date ? this.format_date(this.record.project.from_date) : 'No definido');
-                    $('#to_date').html(this.record.project.to_date ? this.format_date(this.record.project.to_date) : 'No definido');
-                    $('#description').html(this.record.project.description ? this.record.project.description : 'No definido');
-                });
+                    .then(response => {
+                        this.record = response.data;
+
+                        // Mostrar datos del proyecto
+                        $('#name').html(this.record.project.name);
+                        $('#institution').html(this.record.cargo.payroll_employment.department.institution.name);
+                        $('#department').html(this.record.cargo.payroll_employment.department.name);
+                        $('#responsable').html(this.record.cargo.first_name + ' ' + this.record.cargo.last_name);
+                        $('#payroll_position').html(this.record.cargo.payroll_employment.payrollPosition.name);
+                        $('#code').html(this.record.project.code);
+                        $('#onapre_code').html(this.record.project.onapre_code);
+                        $('#active').html((this.record.project.active === true) ? 'Sí' : 'No');
+                        $('#from_date').html(this.record.project.from_date ? this.format_date(this.record.project.from_date) : 'No definido');
+                        $('#to_date').html(this.record.project.to_date ? this.format_date(this.record.project.to_date) : 'No definido');
+                        $('#description').html(this.record.project.description ? this.record.project.description : 'No definido');
+
+                        // Mostrar el historial de responsables
+                        const responsablesList = $('#responsables-list');
+                        responsablesList.empty(); // Limpiar el contenedor antes de agregar nuevos elementos
+
+                        if (this.record.history && this.record.history.length > 0) {
+                            this.record.history.forEach(item => {
+                                // Crear un elemento <li> para cada registro del historial
+                                const listItem = $('<li></li>');
+                                listItem.text(`${item.first_name} ${item.last_name}
+                                | Fecha de asignación: ${this.format_date(item.created_at)}`);
+                                responsablesList.append(listItem);
+                            });
+
+                            // Actualizar el texto dinámico
+                            const responsableText = $('#responsable-text');
+                            if (this.record.history.length === 1) {
+                                responsableText.text('Responsable:'); // Singular
+                            } else {
+                                responsableText.text('Responsables:'); // Plural
+                            }
+                        } else {
+                            // Mostrar un mensaje si no hay historial
+                            responsablesList.append('<li>No hay registros en el historial.</li>');
+                            $('#responsable-text').text('Responsable:'); // Por defecto, singular
+                        }
+                    });
+
                 $('#show_employment').modal('show');
             }
         }

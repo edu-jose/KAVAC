@@ -3,6 +3,7 @@
 namespace Modules\Budget\Http\Controllers;
 
 use App\Models\Profile;
+use App\Models\FiscalYear;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Nwidart\Modules\Facades\Module;
@@ -11,6 +12,7 @@ use Modules\Budget\Models\Institution;
 use Modules\Budget\Models\BudgetProject;
 use Illuminate\Contracts\Support\Renderable;
 use Illuminate\Foundation\Validation\ValidatesRequests;
+use Modules\Budget\Models\BudgetComponentManagerHistory;
 
 /**
  * @class BudgetProjectController
@@ -156,9 +158,11 @@ class BudgetProjectController extends Controller
     }
 
     /**
-     * Guarda información del nuevo proyecto
+     * Guarda información del nuevo proyecto y el respectivo responsable en
+     * el historial de responsables.
      *
      * @author Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
+     * @author Ing. Argenis Osorio <aosorio@cenditel.gob.ve>
      *
      * @param  Request $request Datos de la petición
      *
@@ -166,10 +170,11 @@ class BudgetProjectController extends Controller
      */
     public function store(Request $request)
     {
+        /* Validar los datos de la petición */
         $this->validate($request, $this->validate_rules, $this->messages);
 
         /* Registra el nuevo proyecto */
-        BudgetProject::create([
+        $budgetProject = BudgetProject::create([
             'name' => $request->name,
             'code' => $request->code,
             'onapre_code' => $request->onapre_code,
@@ -182,7 +187,26 @@ class BudgetProjectController extends Controller
             'description' => $request->description
         ]);
 
+        /* Registrar responsable en la tabla del historial de los responsables */
+        BudgetComponentManagerHistory::create([
+            // Modelo para managerable_type
+            'managerable_type' => \Modules\Payroll\Models\PayrollStaff::class,
+            // ID del responsable
+            'managerable_id' => $request->payroll_staff_id,
+            // Modelo para componentable_type
+            'componentable_type' => \Modules\Budget\Models\BudgetProject::class,
+            // ID del proyecto recién creado
+            'componentable_id' => $budgetProject->id,
+            // Fecha de creación
+            'created_at' => $request->from_date,
+            // Fecha de actualización
+            'updated_at' => $request->from_date,
+        ]);
+
+        /* Mensaje de éxito */
         $request->session()->flash('message', ['type' => 'store']);
+
+        /* Redireccionar a la vista de configuración */
         return redirect()->route('budget.settings.index');
     }
 
@@ -214,6 +238,9 @@ class BudgetProjectController extends Controller
         /* Objeto con información del proyecto a modificar */
         $budgetProject = BudgetProject::find($id);
         $budgetProjectInstitucion = BudgetProject::find($id)->department;
+
+        // Obtener el año fiscal activo
+        $activeFiscalYear = FiscalYear::where('active', true)->value('year');
 
         $staffPosition = (
             Module::has('Payroll') && Module::isEnabled('Payroll')
@@ -288,14 +315,17 @@ class BudgetProjectController extends Controller
             'institutions',
             'departments',
             'positions',
-            'staffs'
+            'staffs',
+            'activeFiscalYear'
         ));
     }
 
     /**
-     * Actualiza la información de un proyecto
+     * Actualiza la información de un proyecto y el respectivo responsable en
+     * el historial de responsables.
      *
      * @author Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
+     * @author Ing. Argenis Osorio <aosorio@cenditel.gob.ve>
      *
      * @param  Request $request Datos de la petición
      * @param  integer $id Identificador del proyecto a modificar
@@ -304,7 +334,7 @@ class BudgetProjectController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //$this->validate($request, $this->validate_rules, $this->messages);
+        // Validar los datos de la petición
         $this->validate($request, [
             'institution_id'       => ['required'],
             'department_id'        => ['required'],
@@ -324,12 +354,46 @@ class BudgetProjectController extends Controller
 
         /* Objeto con información del proyecto a modificar */
         $budgetProject = BudgetProject::find($id);
+
+        /* Obtener el valor actual de payroll_staff_id antes de actualizar el modelo */
+        $currentPayrollStaffId = $budgetProject->payroll_staff_id;
+
+        /* Obtener el nuevo valor de payroll_staff_id desde la solicitud */
+        $newPayrollStaffId = $request->payroll_staff_id;
+
+        /* Verificar si hay un cambio en el Responsable del Proyecto */
+        if ($currentPayrollStaffId != $newPayrollStaffId) {
+            /* Registrar nuevo responsable en la tabla del historial de los
+            responsables */
+            BudgetComponentManagerHistory::create([
+                // Modelo para managerable_type
+                'managerable_type' => \Modules\Payroll\Models\PayrollStaff::class,
+                // ID del responsable
+                'managerable_id' => $request->payroll_staff_id,
+                // Modelo para componentable_type
+                'componentable_type' => \Modules\Budget\Models\BudgetProject::class,
+                // ID del proyecto recién creado
+                'componentable_id' => $budgetProject->id,
+                // Fecha de creación
+                'created_at' => $request->start_date_responsible,
+                // Fecha de actualización
+                'updated_at' => null,
+            ]);
+        }
+
+        /* Llenar el modelo con los datos de la solicitud */
         $budgetProject->fill($request->all());
+
         /* Establece si el proyecto esta o no activo */
         $budgetProject->active = $request->active ?? false;
+
+        /* Guardar la información actualizada */
         $budgetProject->save();
 
+        /* Mensaje de éxito */
         $request->session()->flash('message', ['type' => 'update']);
+
+        /* Redireccionar a la vista de configuración */
         return redirect()->route('budget.settings.index');
     }
 
@@ -366,6 +430,9 @@ class BudgetProjectController extends Controller
      */
     public function vueList($active = null)
     {
+        // Obtener el año fiscal activo
+        $activeFiscalYear = FiscalYear::where('active', true)->value('year');
+
         /* Objeto con información de los proyectos registrados */
         $budgetProjects = ($active !== null)
             ? BudgetProject::where('active', $active)->with(['payrollStaff', 'specificActions.subSpecificFormulations'])->get()
@@ -381,11 +448,15 @@ class BudgetProjectController extends Controller
                             if ($formulation->confirmed == true) {
                                 $budgetProject->disabled = true;
                                 if (!in_array($budgetProject, $records)) {
+                                     // Añadir el año fiscal activo
+                                    $budgetProject->activeFiscalYear = $activeFiscalYear;
                                     array_push($records, $budgetProject);
                                 }
                             } else {
                                 $budgetProject->disabled = false;
                                 if (!in_array($budgetProject, $records)) {
+                                     // Añadir el año fiscal activo
+                                    $budgetProject->activeFiscalYear = $activeFiscalYear;
                                     array_push($records, $budgetProject);
                                 }
                             }
@@ -393,6 +464,8 @@ class BudgetProjectController extends Controller
                     } else {
                         $budgetProject->disabled = false;
                         if (!in_array($budgetProject, $records)) {
+                             // Añadir el año fiscal activo
+                            $budgetProject->activeFiscalYear = $activeFiscalYear;
                             array_push($records, $budgetProject);
                         }
                     }
@@ -400,12 +473,14 @@ class BudgetProjectController extends Controller
             } else {
                 $budgetProject->disabled = false;
                 if (!in_array($budgetProject, $records)) {
+                     // Añadir el año fiscal activo
+                    $budgetProject->activeFiscalYear = $activeFiscalYear;
                     array_push($records, $budgetProject);
                 }
             }
         }
 
-        return response()->json(['records' => $records], 200);
+        return response()->json(['records' => $records, 'activeFiscalYear' => $activeFiscalYear], 200);
     }
 
     /**
@@ -431,6 +506,7 @@ class BudgetProjectController extends Controller
      * Método que devuelve un proyecto registrado según el id que se le pase
      *
      * @author  Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
+     * @author  Ing. Argenis Osorio <aosorio@cenditel.gob.ve>
      *
      * @param  integer $id Identificador del proyecto a buscar.
      *
@@ -438,15 +514,39 @@ class BudgetProjectController extends Controller
      */
     public function getDetailProject($id)
     {
+        // Obtener el proyecto por su ID
         $project = BudgetProject::find($id);
+
+        // Obtener el cargo si el módulo Payroll está habilitado
         $cargo = (
             Module::has("Payroll") && Module::isEnabled("Payroll")
         ) ? \Modules\Payroll\Models\PayrollStaff::where("id", $project->payroll_staff_id)->first() : [];
 
+        // Obtener los registros del historial de responsables relacionados con el proyecto.
+        $history = $project->componentManagerHistory()
+            ->with('managerable') // Cargar la relación managerable (PayrollStaff)
+            ->get()
+            ->map(function ($item) {
+                // Verificar si managerable está cargado y es una instancia de PayrollStaff
+                if ($item->managerable instanceof \Modules\Payroll\Models\PayrollStaff) {
+                    return [
+                        'id' => $item->managerable->id,
+                        'first_name' => $item->managerable->first_name,
+                        'last_name' => $item->managerable->last_name,
+                        'created_at' => $item->created_at,
+                    ];
+                }
+                // Si managerable no es una instancia de PayrollStaff, devolver null.
+                return null;
+            })
+            ->filter();
+
+        // Devolver la respuesta JSON con los datos
         return response()->json([
             'result' => true,
             'project' => $project,
-            'cargo' =>  $cargo
+            'cargo' => $cargo,
+            'history' => $history
         ], 200);
     }
 

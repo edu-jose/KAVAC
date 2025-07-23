@@ -11,7 +11,7 @@
         <i class="ion-ios-list-outline"></i><span>Almacén</span>
     </a>
     <ul class="submenu" style="{!! display_submenu('warehouse') !!}">
-        @role(['admin','warehouse'])
+        @permission('warehouse.setting')
             <li class="{!! set_active_menu('warehouse.setting.index') !!}"
                 data-toggle="tooltip" data-placement="right" 
                 title="Configuración de almacén">            
@@ -19,7 +19,7 @@
                     Configuración
                 </a>
             </li>
-        @endrole
+        @endpermission
         <li class="{!! set_active_menu(
                 [
                     'warehouse.reception.index',

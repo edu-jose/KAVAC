@@ -10,6 +10,7 @@ use Modules\Payroll\Models\PayrollStaff;
 use Modules\Payroll\Models\PayrollPosition;
 use Illuminate\Contracts\Support\Renderable;
 use Modules\WorkAttendance\Models\WorkAttendance;
+use Modules\WorkAttendance\Services\WorkAttendanceService;
 
 /**
  * @class WorkAttendanceController
@@ -96,15 +97,7 @@ class WorkAttendanceController extends Controller
         }
 
         if (!empty($data)) {
-            $workAttendance = WorkAttendance::whereDate(
-                'date_at',
-                $now
-            )->where(
-                'payroll_staff_id',
-                $staff->id
-            )->where(function ($query) {
-                $query->whereNull('entry_time')->orWhereNull('exit_time');
-            })->first();
+            $workAttendance = (new WorkAttendanceService())->getWorkAttendance($now, $staff->id);
 
             if ($workAttendance) {
                 $workAttendance->update($data);
@@ -148,7 +141,8 @@ class WorkAttendanceController extends Controller
                 'payroll_employments.active',
                 'payroll_employments.payroll_staff_id',
                 'payroll_employments.id',
-                'institution_email'
+                'institution_email',
+                'department_id'
             )->without([
                 'payrollPositions', 'payrollPositionType', 'payrollCoordination', 'department',
                 'payrollStaffType', 'payrollInactivityType', 'payrollContractType', 'payrollPreviousJob'

@@ -48,6 +48,12 @@ table {
         color: #495057;
     }
 }
+.VueTables__row {
+    p, ul {
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+}
 
 .dataTables_length {
     .select2 {

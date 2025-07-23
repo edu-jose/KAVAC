@@ -4,6 +4,7 @@ namespace Modules\Payroll\Providers;
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;
+use Illuminate\Support\Facades\File;
 
 /**
  * @class RouteServiceProvider
@@ -31,6 +32,13 @@ class RouteServiceProvider extends ServiceProvider
     public function boot()
     {
         parent::boot();
+
+        // Registrar los canales del módulo si existen
+        $channelsPath = module_path('Payroll', 'Routes/channels.php');
+
+        if (File::exists($channelsPath)) {
+            require $channelsPath;
+        }
     }
 
     /**

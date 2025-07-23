@@ -182,7 +182,7 @@
                     if (typeof(response.data.records) !== "undefined") {
                         vm.records = response.data.records;
                         for (const [i, r] of vm.records.entries()) {
-                            vm.records[i].periods = JSON.parse(vm.records[i].vacation_period_year);
+                            vm.records[i].periods = vm.records[i].vacation_period_year;
                         }
                     }
                     vm.loading = false;

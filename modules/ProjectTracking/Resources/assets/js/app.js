@@ -241,13 +241,13 @@ Vue.component("project-tracking-tasks-list", () =>
 );
 
 /**
- *  Componente para la gestión de configuración de proyectos
+ *  Componente para detallar los registros de tareas
  *  @author Oscar González <xxmaestroyixx@gmail.com/ojgonzalez@cenditel.gob.ve>
  */
-Vue.component("project-tracking-task-info", () =>
+Vue.component("project-tracking-task-show", () =>
     import(
-        /* webpackChunkName: "project-tracking-task-info" */
-        "./components/tasks/ProjectTrackingTaskInfoComponent.vue"
+        /* webpackChunkName: "project-tracking-task-show" */
+        "./components/tasks/ProjectTrackingTaskShowComponent.vue"
     )
 );
 

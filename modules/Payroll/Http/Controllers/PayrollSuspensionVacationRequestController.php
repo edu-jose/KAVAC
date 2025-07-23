@@ -384,29 +384,31 @@ class PayrollSuspensionVacationRequestController extends Controller
             // Actualizar estado de solicitud vacacional y periodos de año vacacional
             $payrollVacationRequest->status_parameters =
                 json_encode($payrollSuspensionVacationRequest->suspension_reason);
-            $period_years = json_decode($payrollVacationRequest->vacation_period_year);
+            $period_years = $payrollVacationRequest->vacation_period_year;
             $count_days = $payrollSuspensionVacationRequest->pending_days;
             $count_enjoyed = $payrollSuspensionVacationRequest->enjoyed_days;
+            $new_period = [];
 
             foreach ($period_years as $period) {
-                if (!isset($period->pending_days)) {
-                    $period->pending_days = 0;
+                if (!isset($period['pending_days'])) {
+                    $period += ['pending_days' => 0];
                 }
 
                 if (intval($count_enjoyed) > 0) {
-                    if ($period->vacation_days > $count_enjoyed) {
-                        $period->pending_days = $period->vacation_days - $count_enjoyed - $period->pending_days;
+                    if ($period['vacation_days'] > $count_enjoyed) {
+                        $period['pending_days'] = $period['vacation_days'] - $count_enjoyed - $period['pending_days'];
                         $count_enjoyed = 0;
                     } else {
-                        $count_enjoyed -= $period->vacation_days;
-                        $period->pending_days = 0;
+                        $count_enjoyed -= $period['vacation_days'];
+                        $period['pending_days'] = 0;
                     }
                 } else {
-                    $period->pending_days = $period->vacation_days;
+                    $period['pending_days'] = $period['vacation_days'];
                 }
+                $new_period[] = $period;
             }
 
-            $payrollVacationRequest->vacation_period_year = json_encode($period_years);
+            $payrollVacationRequest->vacation_period_year = $new_period;
             $payrollVacationRequest->save();
 
             $payrollSuspensionVacationRequest->status = 'approved';

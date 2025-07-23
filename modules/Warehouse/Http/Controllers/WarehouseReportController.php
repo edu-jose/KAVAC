@@ -16,6 +16,7 @@ use Modules\Warehouse\Models\WarehouseReport;
 use App\Models\Institution;
 use App\Models\FiscalYear;
 use App\Models\Currency;
+use Illuminate\Support\Facades\Log;
 use Modules\Warehouse\Models\WarehouseMovement;
 
 /**
@@ -185,48 +186,60 @@ class WarehouseReportController extends Controller
             if ($request->type_search == "date") {
                 if (!is_null($request->start_date)) {
                     if (!is_null($request->end_date)) {
-                        $fields = $fields->whereBetween(
-                            "created_at",
-                            [
-                                $request->start_date,
-                                $request->end_date
-                            ]
+                        $fields = $fields?->whereHas(
+                            'warehouseInventoryProductMovements.warehouseMovement',
+                            function ($query) use ($request) {
+                                $query->whereBetween('reception_date', [
+                                    $request->start_date,
+                                    $request->end_date
+                                ]);
+                            }
                         );
-                        $products = $fields->whereBetween(
-                            "created_at",
-                            [
-                                $request->start_date,
-                                $request->end_date
-                            ]
+                        $products = $fields?->whereHas(
+                            'warehouseInventoryProductMovements.warehouseMovement',
+                            function ($query) use ($request) {
+                                $query->whereBetween('reception_date', [
+                                    $request->start_date,
+                                    $request->end_date
+                                ]);
+                            }
                         );
-                        $productsMovement = $fields->whereBetween(
-                            "created_at",
-                            [
-                                $request->start_date,
-                                $request->end_date
-                            ]
+                        $productsMovement = $fields?->whereHas(
+                            'warehouseInventoryProductMovements.warehouseMovement',
+                            function ($query) use ($request) {
+                                $query->whereBetween('reception_date', [
+                                    $request->start_date,
+                                    $request->end_date
+                                ]);
+                            }
                         );
                     } else {
-                        $fields = $fields->whereBetween(
-                            "created_at",
-                            [
-                                $request->start_date,
-                                now()
-                            ]
+                        $fields = $fields?->whereHas(
+                            'warehouseInventoryProductMovements.warehouseMovement',
+                            function ($query) use ($request) {
+                                $query->whereBetween('reception_date', [
+                                    $request->start_date,
+                                    now()
+                                ]);
+                            }
                         );
-                        $products = $fields->whereBetween(
-                            "created_at",
-                            [
-                                $request->start_date,
-                                now()
-                            ]
+                        $products = $fields?->whereHas(
+                            'warehouseInventoryProductMovements.warehouseMovement',
+                            function ($query) use ($request) {
+                                $query->whereBetween('reception_date', [
+                                    $request->start_date,
+                                    now()
+                                ]);
+                            }
                         );
-                        $productsMovement = $fields->whereBetween(
-                            "created_at",
-                            [
-                                $request->start_date,
-                                $request->end_date
-                            ]
+                        $productsMovement = $fields?->whereHas(
+                            'warehouseInventoryProductMovements.warehouseMovement',
+                            function ($query) use ($request) {
+                                $query->whereBetween('reception_date', [
+                                    $request->start_date,
+                                    now()
+                                ]);
+                            }
                         );
                     }
                 }
@@ -234,30 +247,54 @@ class WarehouseReportController extends Controller
             if ($request->type_search == "mes") {
                 if (!is_null($request->mes_id)) {
                     if (!is_null($request->year)) {
-                        $fields = $fields->whereMonth(
-                            'created_at',
-                            $request->mes_id
-                        )->whereYear('created_at', $request->year);
-                        $products = $fields->whereMonth(
-                            'created_at',
-                            $request->mes_id
-                        )->whereYear('created_at', $request->year);
-                        $productsMovement = $fields->whereMonth(
-                            'created_at',
-                            $request->mes_id
-                        )->whereYear('created_at', $request->year);
+                        $fields = $fields?->whereHas(
+                            'warehouseInventoryProductMovements.warehouseMovement',
+                            function ($query) use ($request) {
+                                $query->whereMonth('reception_date', [
+                                    $request->mes_id
+                                ])->whereYear('reception_date', $request->year);
+                            }
+                        );
+                        $products = $fields?->whereHas(
+                            'warehouseInventoryProductMovements.warehouseMovement',
+                            function ($query) use ($request) {
+                                $query->whereMonth('reception_date', [
+                                    $request->mes_id
+                                ])->whereYear('reception_date', $request->year);
+                            }
+                        );
+                        $productsMovement = $fields?->whereHas(
+                            'warehouseInventoryProductMovements.warehouseMovement',
+                            function ($query) use ($request) {
+                                $query->whereMonth('reception_date', [
+                                    $request->mes_id
+                                ])->whereYear('reception_date', $request->year);
+                            }
+                        );
                     } else {
-                        $fields = $fields->whereMonth(
-                            'created_at',
-                            $request->mes_id
+                        $fields = $fields?->whereHas(
+                            'warehouseInventoryProductMovements.warehouseMovement',
+                            function ($query) use ($request) {
+                                $query->whereMonth('reception_date', [
+                                    $request->mes_id
+                                ]);
+                            }
                         );
-                        $products = $fields->whereMonth(
-                            'created_at',
-                            $request->mes_id
+                        $products = $fields?->whereHas(
+                            'warehouseInventoryProductMovements.warehouseMovement',
+                            function ($query) use ($request) {
+                                $query->whereMonth('reception_date', [
+                                    $request->mes_id
+                                ]);
+                            }
                         );
-                        $productsMovement = $fields->whereMonth(
-                            'created_at',
-                            $request->mes_id
+                        $productsMovement = $fields?->whereHas(
+                            'warehouseInventoryProductMovements.warehouseMovement',
+                            function ($query) use ($request) {
+                                $query->whereMonth('reception_date', [
+                                    $request->mes_id
+                                ]);
+                            }
                         );
                     }
                 }
@@ -333,20 +370,24 @@ class WarehouseReportController extends Controller
             if ($request->type_search == "date") {
                 if (!is_null($request->start_date)) {
                     if (!is_null($request->end_date)) {
-                        $fields = $fields->whereBetween(
-                            "created_at",
-                            [
-                                $request->start_date,
-                                $request->end_date
-                            ]
+                        $fields = $fields?->whereHas(
+                            'warehouseRequest',
+                            function ($query) use ($request) {
+                                $query->whereBetween('request_date', [
+                                    $request->start_date,
+                                    $request->end_date
+                                ]);
+                            }
                         );
                     } else {
-                        $fields = $fields->whereBetween(
-                            "created_at",
-                            [
-                                $request->start_date,
-                                now()
-                            ]
+                        $fields = $fields?->whereHas(
+                            'warehouseRequest',
+                            function ($query) use ($request) {
+                                $query->whereBetween('request_date', [
+                                    $request->start_date,
+                                    now()
+                                ]);
+                            }
                         );
                     }
                 }
@@ -355,14 +396,22 @@ class WarehouseReportController extends Controller
             if ($request->type_search == "mes") {
                 if (!is_null($request->mes_id)) {
                     if (!is_null($request->year)) {
-                        $fields = $fields->whereMonth(
-                            'created_at',
-                            $request->mes_id
-                        )->whereYear('created_at', $request->year);
+                        $fields = $fields?->whereHas(
+                            'warehouseRequest',
+                            function ($query) use ($request) {
+                                $query->whereMonth('request_date', [
+                                    $request->mes_id
+                                ])->whereYear('request_date', $request->year);
+                            }
+                        );
                     } else {
-                        $fields = $fields->whereMonth(
-                            'created_at',
-                            $request->mes_id
+                        $fields = $fields?->whereHas(
+                            'warehouseRequest',
+                            function ($query) use ($request) {
+                                $query->whereMonth('request_date', [
+                                    $request->mes_id
+                                ]);
+                            }
                         );
                     }
                 }
@@ -409,20 +458,24 @@ class WarehouseReportController extends Controller
             if ($request->type_search == "date") {
                 if (!is_null($request->start_date)) {
                     if (!is_null($request->end_date)) {
-                        $fields = $fields->whereBetween(
-                            "created_at",
-                            [
-                                $request->start_date,
-                                $request->end_date
-                            ]
+                        $fields = $fields?->whereHas(
+                            'warehouseInventoryProduct.warehouseInventoryProductMovements.warehouseMovement',
+                            function ($query) use ($request) {
+                                $query->whereBetween('reception_date', [
+                                    $request->start_date,
+                                    $request->end_date
+                                ]);
+                            }
                         );
                     } else {
-                        $fields = $fields->whereBetween(
-                            "created_at",
-                            [
-                                $request->start_date,
-                                now()
-                            ]
+                        $fields = $fields?->whereHas(
+                            'warehouseInventoryProduct.warehouseInventoryProductMovements.warehouseMovement',
+                            function ($query) use ($request) {
+                                $query->whereBetween('reception_date', [
+                                    $request->start_date,
+                                    now()
+                                ]);
+                            }
                         );
                     }
                 }
@@ -431,14 +484,22 @@ class WarehouseReportController extends Controller
             if ($request->type_search == "mes") {
                 if (!is_null($request->mes_id)) {
                     if (!is_null($request->year)) {
-                        $fields = $fields->whereMonth(
-                            'created_at',
-                            $request->mes_id
-                        )->whereYear('created_at', $request->year);
+                        $fields = $fields?->whereHas(
+                            'warehouseInventoryProduct.warehouseInventoryProductMovements.warehouseMovement',
+                            function ($query) use ($request) {
+                                $query->whereMonth('reception_date', [
+                                    $request->mes_id
+                                ])->whereYear('reception_date', $request->year);
+                            }
+                        );
                     } else {
-                        $fields = $fields->whereMonth(
-                            'created_at',
-                            $request->mes_id
+                        $fields = $fields?->whereHas(
+                            'warehouseInventoryProduct.warehouseInventoryProductMovements.warehouseMovement',
+                            function ($query) use ($request) {
+                                $query->whereMonth('reception_date', [
+                                    $request->mes_id
+                                ]);
+                            }
                         );
                     }
                 }
@@ -582,48 +643,60 @@ class WarehouseReportController extends Controller
             if ($request->type_search == "date") {
                 if (!is_null($request->start_date)) {
                     if (!is_null($request->end_date)) {
-                        $fields = $fields->whereBetween(
-                            "created_at",
-                            [
-                                $request->start_date,
-                                $request->end_date
-                            ]
+                        $fields = $fields?->whereHas(
+                            'warehouseInventoryProductMovements.warehouseMovement',
+                            function ($query) use ($request) {
+                                $query->whereBetween('reception_date', [
+                                    $request->start_date,
+                                    $request->end_date
+                                ]);
+                            }
                         );
-                        $products = $fields->whereBetween(
-                            "created_at",
-                            [
-                                $request->start_date,
-                                $request->end_date
-                            ]
+                        $products = $fields = $fields?->whereHas(
+                            'warehouseInventoryProductMovements.warehouseMovement',
+                            function ($query) use ($request) {
+                                $query->whereBetween('reception_date', [
+                                    $request->start_date,
+                                    $request->end_date
+                                ]);
+                            }
                         );
-                        $productsMovement = $fields->whereBetween(
-                            "created_at",
-                            [
-                                $request->start_date,
-                                $request->end_date
-                            ]
+                        $productsMovement = $fields = $fields?->whereHas(
+                            'warehouseInventoryProductMovements.warehouseMovement',
+                            function ($query) use ($request) {
+                                $query->whereBetween('reception_date', [
+                                    $request->start_date,
+                                    $request->end_date
+                                ]);
+                            }
                         );
                     } else {
-                        $fields = $fields->whereBetween(
-                            "created_at",
-                            [
-                                $request->start_date,
-                                now()
-                            ]
+                        $fields = $fields?->whereHas(
+                            'warehouseInventoryProductMovements.warehouseMovement',
+                            function ($query) use ($request) {
+                                $query->whereBetween('reception_date', [
+                                    $request->start_date,
+                                    now()
+                                ]);
+                            }
                         );
-                        $products = $fields->whereBetween(
-                            "created_at",
-                            [
-                                $request->start_date,
-                                now()
-                            ]
+                        $products = $fields = $fields?->whereHas(
+                            'warehouseInventoryProductMovements.warehouseMovement',
+                            function ($query) use ($request) {
+                                $query->whereBetween('reception_date', [
+                                    $request->start_date,
+                                    now()
+                                ]);
+                            }
                         );
-                        $productsMovement = $fields->whereBetween(
-                            "created_at",
-                            [
-                                $request->start_date,
-                                $request->end_date
-                            ]
+                        $productsMovement = $fields = $fields?->whereHas(
+                            'warehouseInventoryProductMovements.warehouseMovement',
+                            function ($query) use ($request) {
+                                $query->whereBetween('reception_date', [
+                                    $request->start_date,
+                                    now()
+                                ]);
+                            }
                         );
                     }
                 }
@@ -631,30 +704,54 @@ class WarehouseReportController extends Controller
             if ($request->type_search == "mes") {
                 if (!is_null($request->mes_id)) {
                     if (!is_null($request->year)) {
-                        $fields = $fields->whereMonth(
-                            'created_at',
-                            $request->mes_id
-                        )->whereYear('created_at', $request->year);
-                        $products = $fields->whereMonth(
-                            'created_at',
-                            $request->mes_id
-                        )->whereYear('created_at', $request->year);
-                        $productsMovement = $fields->whereMonth(
-                            'created_at',
-                            $request->mes_id
-                        )->whereYear('created_at', $request->year);
+                        $fields = $fields?->whereHas(
+                            'warehouseInventoryProductMovements.warehouseMovement',
+                            function ($query) use ($request) {
+                                $query->whereMonth('reception_date', [
+                                    $request->mes_id
+                                ])->whereYear('reception_date', $request->year);
+                            }
+                        );
+                        $products = $fields?->whereHas(
+                            'warehouseInventoryProductMovements.warehouseMovement',
+                            function ($query) use ($request) {
+                                $query->whereMonth('reception_date', [
+                                    $request->mes_id
+                                ])->whereYear('reception_date', $request->year);
+                            }
+                        );
+                        $productsMovement = $fields?->whereHas(
+                            'warehouseInventoryProductMovements.warehouseMovement',
+                            function ($query) use ($request) {
+                                $query->whereMonth('reception_date', [
+                                    $request->mes_id
+                                ])->whereYear('reception_date', $request->year);
+                            }
+                        );
                     } else {
-                        $fields = $fields->whereMonth(
-                            'created_at',
-                            $request->mes_id
+                        $fields = $fields?->whereHas(
+                            'warehouseInventoryProductMovements.warehouseMovement',
+                            function ($query) use ($request) {
+                                $query->whereMonth('reception_date', [
+                                    $request->mes_id
+                                ]);
+                            }
                         );
-                        $products = $fields->whereMonth(
-                            'created_at',
-                            $request->mes_id
+                        $products = $fields?->whereHas(
+                            'warehouseInventoryProductMovements.warehouseMovement',
+                            function ($query) use ($request) {
+                                $query->whereMonth('reception_date', [
+                                    $request->mes_id
+                                ]);
+                            }
                         );
-                        $productsMovement = $fields->whereMonth(
-                            'created_at',
-                            $request->mes_id
+                        $productsMovement = $fields?->whereHas(
+                            'warehouseInventoryProductMovements.warehouseMovement',
+                            function ($query) use ($request) {
+                                $query->whereMonth('reception_date', [
+                                    $request->mes_id
+                                ]);
+                            }
                         );
                     }
                 }
@@ -730,20 +827,24 @@ class WarehouseReportController extends Controller
             if ($request->type_search == "date") {
                 if (!is_null($request->start_date)) {
                     if (!is_null($request->end_date)) {
-                        $fields = $fields->whereBetween(
-                            "created_at",
-                            [
-                                $request->start_date,
-                                $request->end_date
-                            ]
+                        $fields = $fields?->whereHas(
+                            'warehouseRequest',
+                            function ($query) use ($request) {
+                                $query->whereBetween('request_date', [
+                                    $request->start_date,
+                                    $request->end_date
+                                ]);
+                            }
                         );
                     } else {
-                        $fields = $fields->whereBetween(
-                            "created_at",
-                            [
-                                $request->start_date,
-                                now()
-                            ]
+                        $fields = $fields?->whereHas(
+                            'warehouseRequest',
+                            function ($query) use ($request) {
+                                $query->whereBetween('request_date', [
+                                    $request->start_date,
+                                    now()
+                                ]);
+                            }
                         );
                     }
                 }
@@ -752,14 +853,22 @@ class WarehouseReportController extends Controller
             if ($request->type_search == "mes") {
                 if (!is_null($request->mes_id)) {
                     if (!is_null($request->year)) {
-                        $fields = $fields->whereMonth(
-                            'created_at',
-                            $request->mes_id
-                        )->whereYear('created_at', $request->year);
+                        $fields = $fields?->whereHas(
+                            'warehouseRequest',
+                            function ($query) use ($request) {
+                                $query->whereMonth('request_date', [
+                                    $request->mes_id
+                                ])->whereYear('request_date', $request->year);
+                            }
+                        );
                     } else {
-                        $fields = $fields->whereMonth(
-                            'created_at',
-                            $request->mes_id
+                        $fields = $fields?->whereHas(
+                            'warehouseRequest',
+                            function ($query) use ($request) {
+                                $query->whereMonth('request_date', [
+                                    $request->mes_id
+                                ]);
+                            }
                         );
                     }
                 }
@@ -805,20 +914,24 @@ class WarehouseReportController extends Controller
             if ($request->type_search == "date") {
                 if (!is_null($request->start_date)) {
                     if (!is_null($request->end_date)) {
-                        $fields = $fields->whereBetween(
-                            "created_at",
-                            [
-                                $request->start_date,
-                                $request->end_date
-                            ]
+                        $fields = $fields?->whereHas(
+                            'warehouseInventoryProduct.warehouseInventoryProductMovements.warehouseMovement',
+                            function ($query) use ($request) {
+                                $query->whereBetween('reception_date', [
+                                    $request->start_date,
+                                    $request->end_date
+                                ]);
+                            }
                         );
                     } else {
-                        $fields = $fields->whereBetween(
-                            "created_at",
-                            [
-                                $request->start_date,
-                                now()
-                            ]
+                        $fields = $fields?->whereHas(
+                            'warehouseInventoryProduct.warehouseInventoryProductMovements.warehouseMovement',
+                            function ($query) use ($request) {
+                                $query->whereBetween('reception_date', [
+                                    $request->start_date,
+                                    now()
+                                ]);
+                            }
                         );
                     }
                 }
@@ -827,14 +940,22 @@ class WarehouseReportController extends Controller
             if ($request->type_search == "mes") {
                 if (!is_null($request->mes_id)) {
                     if (!is_null($request->year)) {
-                        $fields = $fields->whereMonth(
-                            'created_at',
-                            $request->mes_id
-                        )->whereYear('created_at', $request->year);
+                        $fields = $fields?->whereHas(
+                            'warehouseInventoryProduct.warehouseInventoryProductMovements.warehouseMovement',
+                            function ($query) use ($request) {
+                                $query->whereMonth('reception_date', [
+                                    $request->mes_id
+                                ])->whereYear('reception_date', $request->year);
+                            }
+                        );
                     } else {
-                        $fields = $fields->whereMonth(
-                            'created_at',
-                            $request->mes_id
+                        $fields = $fields?->whereHas(
+                            'warehouseInventoryProduct.warehouseInventoryProductMovements.warehouseMovement',
+                            function ($query) use ($request) {
+                                $query->whereMonth('reception_date', [
+                                    $request->mes_id
+                                ]);
+                            }
                         );
                     }
                 }
@@ -997,16 +1118,18 @@ class WarehouseReportController extends Controller
     public function getCodeProductsRequest($products, $productsMovement)
     {
         $codeProducts = [];
+
         /*Codigos de productos por solicitudes pendiente*/
-        if (count($products) > 0) {
+        if (!empty($products)) {
             foreach ($products as $product) {
                 if (!in_array($product->warehouseInventoryProduct->code, $codeProducts)) {
                     array_push($codeProducts, $product->warehouseInventoryProduct->code);
                 }
             }
         }
+
         /*Codigos de productos por solicitudes pendiente por movimiento*/
-        if (count($productsMovement) > 0) {
+        if (!empty($productsMovement)) {
             foreach ($productsMovement as $product) {
                 if (count($product->warehouseInventoryProductMovements) > 0) {
                     foreach ($product->warehouseInventoryProductMovements as $movement) {
@@ -1017,6 +1140,7 @@ class WarehouseReportController extends Controller
                 }
             }
         }
+
         return $codeProducts;
     }
 }

@@ -105,7 +105,6 @@ class PayrollTrustTextFileController extends Controller
 
         $export = new PayrollTextFileExport();
         $export->setPayrollId([$payrollId], null, $processCode, $request['date'], $trustCode);
-
         return Excel::download($export, $request['fileNumber'] . $request["fileName"] . now('utc') . '.txt', \Maatwebsite\Excel\Excel::CSV);
     }
 
@@ -137,6 +136,40 @@ class PayrollTrustTextFileController extends Controller
                 'result' => false,
                 'redirect' => route('payroll.settings.index')
             ], 200);
+        }
+
+        $payrollId = Payroll::query()
+            ->where('payroll_payment_period_id', $request['payroll_id'])
+            ->first()
+            ?->id;
+
+        $trustCode = Parameter::query()
+            ->where('p_key', 'trust_code')
+            ->where('required_by', 'payroll')
+            ->first()
+            ?->p_value;
+
+        $processCode = PayrollProcessCode::query()
+            ->find($request['process_code'])
+            ?->code;
+
+        try {
+            $export = new PayrollTextFileExport();
+            $export->setPayrollId([$payrollId], null, $processCode, $request['date'], $trustCode);
+        } catch (\Exception $e) {
+            $message = [];
+
+            foreach (json_decode($e->getMessage()) as $m) {
+                if (!empty($m->employments) && count($m->employments) > 0) {
+                    $message[0] = 'Los siguientes empleados no poseen datos laborales, por favor verifique e intente nuevamente:';
+
+                    foreach ($m->employments as $employment) {
+                        $message[] = $employment;
+                    }
+                }
+            }
+
+            return response()->json(['message' => 'The given data was invalid.', 'errors' => ['error' => $message]], 422);
         }
 
         if (!$validator->fails()) {

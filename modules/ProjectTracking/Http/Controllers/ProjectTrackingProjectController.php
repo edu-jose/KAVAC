@@ -9,10 +9,10 @@ use App\Models\FiscalYear;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\Rule;
-use Modules\Budget\Models\BudgetProject;
 use Modules\ProjectTracking\Models\ProjectTrackingProject;
 use Nwidart\Modules\Facades\Module;
 use App\Models\Department;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * @class ProjectTrackingProjectController
@@ -59,8 +59,9 @@ class ProjectTrackingProjectController extends Controller
         // $this->middleware('permission:asset.setting.building');
         /* Define las reglas de validación para el formulario */
         $this->validateRules = [
-            'name' => ['required', 'unique:Modules\ProjectTracking\Models\ProjectTrackingProject,name', 'max:200'],
+            'name' => ['required', 'unique:Modules\ProjectTracking\Models\ProjectTrackingProject,name', 'max:500'],
             'description' => ['nullable', 'max:200'],
+            'budget_project_id' => ['nullable', 'integer',            ],
             'project_type_id' => ['required'],
             'code' => ['nullable', 'max:100'],
             'dependency_id' => ['required'],
@@ -71,13 +72,14 @@ class ProjectTrackingProjectController extends Controller
             'end_date' => ['required', 'after_or_equal:start_date'],
             'financing_amount' => ['nullable'],
             'currency_id' => ['required'],
+            'project_budget_id' => ['nullable', 'integer'],
         ];
 
         /* Define los mensajes de validación para las reglas del formulario */
         $this->messages = [
             'name.required' => 'El campo nombre es obligatorio',
             'name.unique' => 'El campo nombre debe ser único',
-            'name.max' => 'El campo nombre no debe contener mas de 200 caracteres',
+            'name.max' => 'El campo nombre no debe contener mas de 500 caracteres',
             'description.required' => 'El campo descripción es obligatorio.',
             'description.max' => 'El campo descripción no debe contener mas de 200 caracteres',
             'product_types.required' => 'El campo tipos de producto es obligatorio.',
@@ -107,59 +109,32 @@ class ProjectTrackingProjectController extends Controller
         $payroll = false;
         $budget = false;
         $projectsBudgetList = [];
-
-        if (Module::has('Budget') && Module::isEnabled('Budget')) {
-            $budget = true;
-            $ProjectsList = BudgetProject::query()
-            ->select([
-                'id',
-                'name',
-                'description',
-                'from_date',
-                'to_date',
-            ])->get()
-            ->all();
-
-            foreach ($ProjectsList as $project) {
-                $projectsBudgetList[] = [
-                    'id' => $project->id,
-                    'text' => $project->name,
-                    'description' => $project->description,
-                    'start_date' => $project->from_date,
-                    'end_date' => $project->to_date,
-                ];
-            }
-
-            // dd($projectsBudgetList);
-
-            // return response()->json([
-            //     'records' => $ProjectsList,
-            //     'payroll' => false,
-            //     'budget' => true,
-            // ], JsonResponse::HTTP_OK);
-        }
-        /* Contiene los registros del personal, tipos de proyecto y los tipos de producto */
-        $ProjectsList = ProjectTrackingProject::with([
-            'Responsable',
-            'ProjectType',
-            'productTypes',
-            'dependency',
+        $projectsList = ProjectTrackingProject::with([
+                'Responsable',
+                'ProjectType',
+                'productTypes',
+                'dependency',
         ])->get()
-            ->all();
-        foreach ($ProjectsList as $project) {
-            $project['responsable_name'] = $project->Responsable->name;
+        ->all();
+
+        foreach ($projectsList as $project) {
+            $project['responsable_name'] = $project->Responsable->fullName;
             $project['project_type_name'] = $project->ProjectType->name;
-            $project['type_product_name'] = $project->TypeProduct ? $project->TypeProduct->name : '';
-            $project['dependency_name'] = $project->dependency ? $project->dependency->name : '';
+            $project['type_product_name'] = $project->TypeProduct ?
+                $project->TypeProduct->name : '';
+            $project['dependency_name'] = $project->dependency ?
+                $project->dependency->name : '';
         }
+
         /* Condicional que oculta el registro común si existe el módulo de Talento Humano */
         if (Module::has('Payroll')) {
             $payroll = true;
         } else {
             $payroll = false;
         }
+
         return response()->json([
-            'records' => $ProjectsList,
+            'records' => $projectsList,
             'projects_budget' => $projectsBudgetList,
             'budget' => $budget,
             'payroll' => $payroll
@@ -182,6 +157,7 @@ class ProjectTrackingProjectController extends Controller
             'id' => '',
             'text' => 'Seleccione...',
         ]);
+
         foreach ($projectsList->all() as $project) {
             array_push($projects, [
                 'id' => $project->id,
@@ -195,7 +171,46 @@ class ProjectTrackingProjectController extends Controller
                 'end_date' => $project->end_date,
             ]);
         }
+
         return response()->json($projects, 200);
+    }
+
+    public function getBudgetProjects(Request $request): JsonResponse
+    {
+        $projectsBudget = [];
+
+        if (Module::has('Budget') && Module::isEnabled('Budget')) {
+            $projectsBudget = \Modules\Budget\Models\BudgetProject::query()
+            ->select([
+                'id',
+                'name',
+                'description',
+                'from_date',
+                'to_date',
+            ])->get()
+            ->map(function (\Modules\Budget\Models\BudgetProject $project) {
+                return [
+                    'id' => $project->id,
+                    'text' => $project->name,
+                    'description' => strip_tags($project->description),
+                    'start_date' => $project->from_date,
+                    'end_date' => $project->to_date,
+                ];
+            });
+            $projectsBudget = $projectsBudget->toArray();
+            array_unshift($projectsBudget, [
+                'id' => '',
+                'text' => 'Seleccione...',
+            ]);
+
+            return response()->json([
+                'records' => $projectsBudget
+            ]);
+        }
+
+        return response()->json([
+            'records' => $projectsBudget
+        ]);
     }
 
     /**
@@ -223,6 +238,7 @@ class ProjectTrackingProjectController extends Controller
         $this->validate($request, $this->validateRules, $this->messages);
 
         $codeSetting = CodeSetting::where('table', 'project_tracking_projects')->first();
+
         if (is_null($codeSetting)) {
             $request->session()->flash('message', [
                 'type' => 'other', 'title' => 'Alerta', 'icon' => 'screen-error', 'class' => 'growl-danger',
@@ -243,8 +259,40 @@ class ProjectTrackingProjectController extends Controller
             ProjectTrackingProject::class,
             $codeSetting->field
         );
+
+        $budgetProject = null;
+        $budgetProjectClass = null;
+
+        if (
+            Module::has('Budget') && Module::isEnabled('Budget') &&
+            $request->input('project_budget_id')
+        ) {
+            $budgetProject = \Modules\Budget\Models\BudgetProject::query()
+            ->select(['name'])
+                ->firstWhere('id', $request->input('project_budget_id'));
+            $budgetProjectClass =  \Modules\Budget\Models\BudgetProject::class;
+            //aqui
+            if (!is_null($budgetProject)) {
+                $request->merge(['budget_project_name' => $budgetProject->name]);
+                $validateRules = array_merge($this->validateRules, [
+                'budget_project_name' => [
+                'required',
+                'string',
+                // 'max:250',
+                'unique:' . ProjectTrackingProject::class . ',name',
+                ],
+                ]);
+                $validateMessages = array_merge($this->messages, [
+                    'budget_project_name.required' => 'El campo nombre es obligatorio',
+                    'budget_project_name.max' => 'El campo nombre no debe contener mas de 250 caracteres',
+                ]);
+
+                $this->validate($request, $validateRules, $validateMessages);
+            }
+        }
+
         $project = ProjectTrackingProject::create([
-            'name' => $request->input('name'),
+            'name' => $budgetProject ? $budgetProject->name : $request->input('name'),
             'description' => $request->input('description'),
             'project_type_id' => $request->input('project_type_id'),
             'code' => $code,
@@ -254,8 +302,11 @@ class ProjectTrackingProjectController extends Controller
             'start_date' => $request->input('start_date'),
             'end_date' => $request->input('end_date'),
             'financing_amount' => $request->input('financing_amount'),
+            'projectable_id' => $request->input('project_budget_id'),
+            'projectable_type' => $budgetProject ? $budgetProjectClass : null,
             'currency_id' => $request->input('currency_id')
         ]);
+
         foreach ($request->product_types as $product_type) {
             $project->productTypes()->attach($product_type['id']);
         }
@@ -348,15 +399,34 @@ class ProjectTrackingProjectController extends Controller
     public function update(Request $request, $id)
     {
         $productTypesIds = [];
-        $projects = ProjectTrackingProject::find($request->input('id'));
+        $projects = ProjectTrackingProject::firstWhere('id', $request->input('id'));
+        // dd($projects->id);
         $validateRules = array_merge($this->validateRules, [
             'name' => [
                 'required',
-                Rule::unique('project_tracking_projects')->ignore($projects->id),
+                'string',
+                'max:500',
+                Rule::unique('project_tracking_projects')->where(function ($query) use ($projects) {
+                    return $query->whereNull('deleted_at')->where('name', $projects->name);
+                })->ignore($projects->id),
             ],
         ]);
         $this->validate($request, $validateRules, $this->messages);
-        $projects->name = $request->input('name');
+
+        $budgetProject = null;
+        $budgetProjectClass = null;
+
+        if (
+            Module::has('Budget') && Module::isEnabled('Budget') &&
+            $request->input('project_budget_id')
+        ) {
+            $budgetProject = \Modules\Budget\Models\BudgetProject::query()
+            ->select(['name'])
+                ->firstWhere('id', $request->input('project_budget_id'));
+            $budgetProjectClass =  \Modules\Budget\Models\BudgetProject::class;
+        }
+
+        $projects->name = $budgetProject ? $budgetProject->name : $request->input('name');
         $projects->description = $request->input('description');
         $projects->project_type_id = $request->input('project_type_id');
         $projects->code = $request->input('code');
@@ -367,6 +437,9 @@ class ProjectTrackingProjectController extends Controller
         $projects->end_date = $request->input('end_date');
         $projects->financing_amount = $request->input('financing_amount');
         $projects->currency_id = $request->input('currency_id');
+        $projects->projectable_id = $request->input('project_budget_id');
+        $projects->projectable_type = $budgetProject ? $budgetProjectClass : null;
+
         foreach ($request->product_types as $product_type) {
             $productTypesIds[] = $product_type['id'];
         }

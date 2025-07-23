@@ -72,7 +72,7 @@ class PayrollTimeSheetPending extends Model implements Auditable
      */
     public function payrollTimeSheetParameters()
     {
-        return $this->belongsTo(PayrollTimeSheetParameter::class);
+        return $this->belongsTo(PayrollTimeSheetParameter::class, 'payroll_time_sheet_parameter_id');
     }
 
     /**

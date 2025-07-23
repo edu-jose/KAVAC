@@ -50,6 +50,9 @@ class AssetAcquisitionTypeController extends Controller
     {
         // Establece permisos de acceso para cada método del controlador
         //$this->middleware('permission:asset.setting.acquisition-type');
+        $this->middleware('permission:asset.acquisition.type.create', ['only' => 'store']);
+        $this->middleware('permission:asset.acquisition.type.edit', ['only' => 'update']);
+        $this->middleware('permission:asset.acquisition.type.delete', ['only' => 'destroy']);
         /* Define las reglas de validación para el formulario */
         $this->validateRules = [
             'name'     => ['required', 'regex:/^[a-zA-ZÁ-ÿ\s]*$/u', 'max:100',

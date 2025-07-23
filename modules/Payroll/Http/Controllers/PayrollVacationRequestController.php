@@ -289,7 +289,7 @@ class PayrollVacationRequestController extends Controller
             'code'                 => $code,
             'status'               => 'pending',
             'days_requested'       => $request->input('days_requested'),
-            'vacation_period_year' => json_encode($request->vacation_period_year),
+            'vacation_period_year' => $request->vacation_period_year,
             'start_date'           => $request->input('start_date'),
             'end_date'             => $request->input('end_date'),
             'payroll_staff_id'     => $request->input('payroll_staff_id'),
@@ -314,7 +314,7 @@ class PayrollVacationRequestController extends Controller
     public function show($id)
     {
         $payrollVacationRequest = PayrollVacationRequest::find($id);
-        return response()->json(['record' => $payrollVacationRequest], 200);
+        return response()->json(['record' => $payrollVacationRequest, 'vacation_period_years' => $payrollVacationRequest->vacation_period_year], 200);
     }
 
     /**
@@ -392,15 +392,15 @@ class PayrollVacationRequestController extends Controller
                         if (count($last_vacation_request->get()) > 1) {
                             $last_vacation_request = $last_vacation_request->first();
                         }
-                        $last_vacation_year_period = json_decode($last_vacation_request->vacation_period_year);
+                        $last_vacation_year_period = $last_vacation_request->vacation_period_year;
                         // Modificar periodo vacacional para eliminar atributo viejo
                         if ($last_vacation_request) {
                             foreach ($last_vacation_year_period as $last_year) {
-                                if (stripos($old_year->id, $last_year->id) !== false) {
-                                    unset($last_year->old);
+                                if ($old_year['id'] == $last_year['id']) {
+                                    unset($last_year['old']);
                                 }
                             }
-                            $last_vacation_request->vacation_period_year = json_encode($last_vacation_year_period);
+                            $last_vacation_request->vacation_period_year = $last_vacation_year_period;
                             $last_vacation_request->save();
                         }
                     }
@@ -419,7 +419,7 @@ class PayrollVacationRequestController extends Controller
             [
             'status'               => $request->status ?? $payrollVacationRequest->status,
             'days_requested'       => $request->input('days_requested'),
-            'vacation_period_year' => json_encode($request->vacation_period_year),
+            'vacation_period_year' => $request->vacation_period_year,
             'start_date'           => $request->input('start_date'),
             'end_date'             => $request->input('end_date'),
             'payroll_staff_id'     => $request->input('payroll_staff_id'),
@@ -448,22 +448,22 @@ class PayrollVacationRequestController extends Controller
 
         // Obtener último registro anterior de solicitud con el trabajador
         // para remover atributo old (si es que el periodo tiene dias pendientes)
-        $period_years_deleted = json_decode($payrollVacationRequest->vacation_period_year);
+        $period_years_deleted = $payrollVacationRequest->vacation_period_year;
         $last_vacation_request = PayrollVacationRequest::where('payroll_staff_id', $payrollVacationRequest->payroll_staff_id)
             ->whereIn('status', ['pending', 'approved'])
             ->where('vacation_period_year', 'like', '%pending_days%')
             ->orderBy('created_at', 'desc')->skip(1)->first();
         // Modificar periodo vacacional para eliminar atributo viejo
         if ($last_vacation_request) {
-            $last_vacation_year_period = json_decode($last_vacation_request->vacation_period_year);
+            $last_vacation_year_period = $last_vacation_request->vacation_period_year;
             foreach ($period_years_deleted as $deleted_year) {
                 foreach ($last_vacation_year_period as $old_year) {
-                    if (stripos($deleted_year->id, $old_year->id) !== false) {
-                        unset($old_year->old);
+                    if ($deleted_year['id'] == $old_year['id']) {
+                        unset($old_year['old']);
                     }
                 }
             }
-            $last_vacation_request->vacation_period_year = json_encode($last_vacation_year_period);
+            $last_vacation_request->vacation_period_year = $last_vacation_year_period;
             $last_vacation_request->save();
         }
 
@@ -614,7 +614,7 @@ class PayrollVacationRequestController extends Controller
                 'reincorporation_date' => ['required']
             ];
             $msg = [
-                'reincorporation_date.required' => ['La fecha de reincorporación es obligatoria']
+                'reincorporation_date.required' => 'La fecha de reincorporación es obligatoria'
             ];
 
             $this->validate($request, $rules, $msg);
@@ -634,15 +634,16 @@ class PayrollVacationRequestController extends Controller
                 if ($oldPayrollVacationRequest) {
                     // Modificar periodo vacacional como viejo
                     // (para usar como validacion en la carga de periodos vacacionales)
-                    $old_vacation_period_years = json_decode($oldPayrollVacationRequest->vacation_period_year);
+                    $count = 0;
+                    $old_vacation_period_years = $oldPayrollVacationRequest->vacation_period_year;
                     foreach ($request->vacation_period_year as $request_period_year) {
                         foreach ($old_vacation_period_years as $old_year) {
-                            if (stripos($old_year->id, $request_period_year['text']) !== false) {
-                                $old_year->old = 1;
+                            if ($old_year['id'] == $request_period_year['text']) {
+                                $old_vacation_period_years[$count] += ['old' => 1];
                             }
                         }
                     }
-                    $oldPayrollVacationRequest->vacation_period_year = json_encode($old_vacation_period_years);
+                    $oldPayrollVacationRequest->vacation_period_year = $old_vacation_period_years;
                     $oldPayrollVacationRequest->save();
                 }
             }

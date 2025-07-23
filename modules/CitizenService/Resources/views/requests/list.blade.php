@@ -21,7 +21,7 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-header">
-                    <h6 class="card-title">Solicitudes</h6>
+                    <h6 class="card-title">Gestión de Trámites</h6>
                     <div class="card-btns">
                         @include('buttons.previous', ['route' => url()->previous()])
                         @include('buttons.new', ['route' => route('citizenservice.request.create')])
@@ -29,7 +29,8 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <citizenservice-request-list route_list="{{ url('citizenservice/requests/vue-list') }}"
+                    <citizenservice-request-list
+                        route_list="{{ url('citizenservice/requests/vue-list') }}"
                         route_edit="{{ url('citizenservice/requests/edit/{id}') }}"
                         route_delete="{{ url('citizenservice/requests/delete') }}"
                         is-payroll-active="{{ Module::has('Payroll') && Module::isEnabled('Payroll') }}">
@@ -44,7 +45,7 @@
             <div class="col-12">
                 <div class="card">
                     <div class="card-header">
-                        <h6 class="card-title">Cierre de Solicitudes</h6>
+                        <h6 class="card-title">Cierre de Gestión de Trámites</h6>
                         <div class="card-btns">
                             @include('buttons.previous', ['route' => url()->previous()])
                             @include('buttons.minimize')

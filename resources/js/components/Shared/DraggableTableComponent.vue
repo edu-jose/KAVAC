@@ -60,7 +60,7 @@
                                     class="form-control input-sm"
                                     data-toggle="tooltip"
                                     title="Indique el valor del campo"
-                                    @input="validateInput($event, column)"
+                                    @input="validateInput($event, column); setOriginalInputValue(column, row.staff_id); calculateFormula(row.staff_id, row.days);"
                                     v-model="
                                         inputValues[
                                             column.name + '-' + row.staff_id
@@ -84,6 +84,25 @@
                                         ]
                                     "
                                     v-is-text
+                                    :disabled="column.disabled"
+                                />
+                            </span>
+                            <span
+                                v-else-if="column.type == 'formula'"
+                            >
+                                <input
+                                    type="text"
+                                    class="form-control input-sm"
+                                    data-toggle="tooltip"
+                                    title="Valor del campo según la formula"
+                                    v-model="
+                                        inputValues[
+                                            column.name + '-' + row.staff_id
+                                        ]
+                                    "
+                                    v-input-mask
+                                    data-inputmask="'alias': 'integer', 'allowMinus': 'false'"
+                                    maxlength="3"
                                     :disabled="column.disabled"
                                 />
                             </span>
@@ -137,6 +156,38 @@
                                         </i>
                                     </div>
                                 </div>
+                            </span>
+                            <span
+                                v-else-if="column.type == 'formula_extra'"
+                                :class="{
+                                    'form-control': true,
+                                    'text-center': true,
+                                    'align-middle': true,
+                                    'info-danger':
+                                        column.max &&
+                                        calculatedFormulaExtra[
+                                            column.group + '-' + row.staff_id
+                                        ] > column.max,
+                                }"
+                            >
+                                <input
+                                    type="hidden"
+                                    class="form-control input-sm"
+                                    data-toggle="tooltip"
+                                    title="Valor calculado extra"
+                                    :v-model="
+                                        inputValues[
+                                            index + '-' +
+                                                columns[index].group + // Use current column's group
+                                                '-' +
+                                                row.staff_id
+                                        ]
+                                    "
+                                    disabled
+                                />
+                                {{
+                                    calculatedFormulaExtra[index+'-'+column.group + '-' + row.staff_id]
+                                }}
                             </span>
                             <span
                                 v-else-if="column.type == 'subtotal'"
@@ -197,7 +248,7 @@
             </table>
             <div class="VuePagination-2 row col-md-12">
                 <nav class="text-center">
-                    <ul class="pagination VuePagination__pagination" style="">
+                    <ul class="pagination VuePagination__pagination">
                         <li
                             class="VuePagination__pagination-item page-item VuePagination__pagination-item-prev-chunk"
                             v-if="page != 1"
@@ -259,7 +310,6 @@
                     </ul>
                     <p
                         class="VuePagination__count text-center col-md-12"
-                        style=""
                     ></p>
                 </nav>
             </div>
@@ -273,6 +323,7 @@ export default {
         return {
             dragIndex: null,
             inputValues: {},
+            originalInputValues: {},
             pageValues: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
             lastPage: "",
             page: 1,
@@ -294,6 +345,13 @@ export default {
                 },
             ],
             tmpData: [],
+            diff: 0,
+            maxByHolidays: {
+                'domingo': 0,
+                'descanso': 0,
+                'feriado': 0,
+            },
+            maxUpdate: false
         };
     },
     props: {
@@ -302,6 +360,13 @@ export default {
             required: false,
             default: function () {
                 return {};
+            },
+        },
+        totalGroups: {
+            type: Array,
+            required: false,
+            default: function () {
+                return [];
             },
         },
         /**
@@ -424,7 +489,7 @@ export default {
             const flat_params = params.flatMap((groupObject) => {
                 return Object.values(groupObject);
             });
-            
+
             let group = null;
 
             for (let i = 0; i < flat_params.length; i++) {
@@ -433,7 +498,6 @@ export default {
                         group = flat_params[i][j];
                         break;
                     }
-                    
                 }
             }
             if (group) {
@@ -510,9 +574,217 @@ export default {
                 vm.pageValues.push(pag + i);
             }
         },
+
+        calculateFormula(staffId, days) {
+            const vm = this;
+            const processedFormulas = {}; // Objeto para almacenar las fórmulas procesadas
+            const overflowValues = {}; // Objeto para manejar los excedentes por columna
+
+            // Paso 1: Ordenar las columnas por el parámetro `order`
+            const formulaColumns = vm.columns
+                .filter((col) => col.type === 'formula');
+
+            // Paso 2: Procesar las fórmulas en el orden especificado
+            formulaColumns.forEach((col) => {
+                let formula = col.formula;
+                let max = col.max || Infinity; // Si no hay un `max`, se asume que es infinito
+                let columnKey = `${col.name}-${staffId}`;
+                let maxByClassification = {};
+
+                vm.setMaxPerColumn(staffId, days);
+
+                // Reemplazar todas las referencias en la fórmula con sus valores
+                vm.columns.forEach((refCol) => {
+                    let refName = refCol.name.split(' - ')[1]; // Obtener el nombre de referencia
+                    refName = typeof(refName) != 'undefined' ? refName.replace(/\s/g, "") : refName;
+                    const refValue = vm.originalInputValues[`${refCol.name}-${staffId}`]
+                        ||vm.inputValues[`${refCol.name}-${staffId}`]
+                        || 0;
+
+                    const staff = vm.data.find(d => d.staff_id == staffId);
+
+                    if (formula.includes("WORKLOAD")) {
+                        formula = formula.replace(new RegExp(`\\bWORKLOAD\\b`, 'g'), staff.workload ?? 0);
+                    }
+
+                    // Reemplazar el nombre de referencia en la fórmula
+                    formula = formula.replace(/\s/g, "").replace(
+                        new RegExp(`\\b${refName}\\b`, 'g'), // Coincidencias exactas
+                        refValue
+                    );
+
+                    if (!maxByClassification[refCol.classification_type]) {
+                        maxByClassification[refCol.classification_type] = {
+                            'excess': 0,
+                            'values': 0
+                        };
+                    }
+
+                    maxByClassification[refCol.classification_type]['values'] += parseInt(vm.inputValues[`${refCol.name}-${staffId}`] || 0);
+
+                    // Verificar si el valor excede el máximo permitido para la referencia
+                    if (vm.inputValues[`${refCol.name}-${staffId}`] > 0 && refCol.max && maxByClassification[refCol.classification_type]['values'] > refCol.max) {
+                        maxByClassification[refCol.classification_type]['excess'] += parseInt(maxByClassification[refCol.classification_type]['values'] - (refCol.max + maxByClassification[refCol.classification_type]['excess']));
+                    }
+                });
+
+                Object.entries(maxByClassification).forEach((maxByClass) => {
+                    const orderedColumns = vm.columns
+                        .filter((colFiltered) => colFiltered.classification_type == maxByClass[0])
+                        .sort((a, b) => a.order - b.order);
+
+                    let excess = maxByClass[1].excess;
+
+                    let colIdx = 0;
+
+                    while (excess > 0 && colIdx < orderedColumns.length) {
+                        const colOrdered = orderedColumns[colIdx];
+                        const key = `${colOrdered.name}-${staffId}`;
+                        let value = vm.inputValues[key] || 0;
+
+                        if (value > 0 && maxByClass[1].values > colOrdered.max) {
+                            // Restar el menor entre el excess y el valor actual
+                            const subtraction = Math.min(value, excess);
+
+                            vm.inputValues[key] = value - subtraction;
+                            excess -= subtraction;
+                        }
+                        colIdx++;
+                    }
+                });
+
+                formula = formula.replace(/([A-Z]+MAX)\((\d+)\)/g, (match, funcName, value) => {
+                    // Buscar la columna cuyo nombre coincida con funcName (sin el 'MAX')
+                    let col = vm.columns.find(c => {
+                        let refName = c.name.split(' - ')[1];
+                        refName = typeof refName !== 'undefined' ? refName.replace(/\s/g, "") : refName;
+                        return funcName === refName + 'MAX';
+                    });
+
+                    let newValue = parseInt(value);
+                    const key = `${col.name}-${staffId}`;
+
+                    if (col) {
+                        newValue = parseInt(vm.inputValues[key] || 0);
+                    }
+
+                    return `${funcName}(${newValue})`;
+                });
+
+                formula = formula.replace(/[A-Z]+MAX\((\d+)\)/g, '$1');
+
+                // Evaluar las expresiones entre paréntesis y ajustar valores menores a 0
+                formula = formula.replace(/\(([^()]+)\)/g, (match, innerExpression) => {
+                    try {
+                        let innerResult = new Function(`return ${innerExpression}`)();
+                        return `(${Math.max(innerResult, 0)})`; // Si el resultado es menor que 0, ajustarlo a 0
+                    } catch (error) {
+                        return `(0)`; // En caso de error, devolver 0
+                    }
+                });
+
+                // Evaluar la fórmula
+                try {
+                    let result = new Function(`return ${formula}`)(); // Evaluar la fórmula
+                    // Agregar cualquier excedente previo
+                    if (overflowValues[columnKey]) {
+                        result += overflowValues[columnKey];
+                        delete overflowValues[columnKey]; // Limpiar el excedente procesado
+                    }
+
+                    // Verificar si el resultado excede el `max`
+                    if (result > max) {
+                        const overflow = result - max; // Calcular el excedente
+                        result = max; // Limitar el resultado al máximo permitido
+
+                        // Guardar el excedente para la siguiente columna con el siguiente `order`
+                        const nextColumn = formulaColumns.find((nextCol) => nextCol.order === col.order + 1);
+
+                        if (nextColumn) {
+                            const nextColumnKey = `${nextColumn.name}-${staffId}`;
+                            overflowValues[nextColumnKey] = (overflowValues[nextColumnKey] || 0) + overflow;
+                        }
+                    }
+
+                    // Asignar el resultado a la columna actual
+                    vm.inputValues[columnKey] = result < 0 && vm.inputValues[columnKey] == 0
+                        ? 0
+                        : result == 0 && vm.inputValues[columnKey] > 0
+                        ? vm.inputValues[columnKey]
+                        : result;
+                } catch (error) {
+                    vm.inputValues[columnKey] = 0; // Asignar 0 en caso de error
+                }
+            });
+        },
+
+        setMaxPerColumn(staffId, days) {
+            const vm = this;
+            const turnoSencilloRegex = /turno(s)? sencillo(s)?/i;
+            const descansoRegex = /descanso(s)?/i;
+            const domingoRegex = /domingo(s)?/i;
+            const feriadoRegex = /feriado(s)?/i;
+
+            vm.maxByHolidays.descanso = 0;
+            vm.maxByHolidays.domingo = 0;
+            vm.maxByHolidays.feriado = 0;
+
+            vm.columns.forEach((refCol) => {
+                let inputKey = `${refCol.name}-${staffId}`;
+                let inputValue = vm.inputValues[inputKey];
+
+                let value = (typeof inputValue === 'number' || typeof inputValue === 'string') && !isNaN(inputValue) ? parseInt(inputValue) : 0;
+
+                if (descansoRegex.test(refCol.classification_type)) {
+                    vm.maxByHolidays.descanso += value;
+                }
+
+                if (domingoRegex.test(refCol.classification_type)) {
+                    vm.maxByHolidays.domingo += value;
+                }
+
+                if (feriadoRegex.test(refCol.classification_type)) {
+                    vm.maxByHolidays.feriado += value;
+                }
+
+                if (isNaN(vm.maxByHolidays.descanso)) vm.maxByHolidays.descanso = 0;
+                if (isNaN(vm.maxByHolidays.domingo)) vm.maxByHolidays.domingo = 0;
+                if (isNaN(vm.maxByHolidays.feriado)) vm.maxByHolidays.feriado = 0;
+            });
+
+            ['descanso', 'domingo', 'feriado'].forEach(tipo => {
+                if (vm.maxByHolidays[tipo] < 0) {
+                    vm.maxByHolidays[tipo] = 0;
+                }
+            });
+
+            let totalExtra = vm.maxByHolidays.descanso + vm.maxByHolidays.domingo + vm.maxByHolidays.feriado;
+            totalExtra = days - totalExtra;
+
+            vm.columns.forEach((refCol) => {
+                if (turnoSencilloRegex.test(refCol.classification_type)) {
+                    refCol.max = refCol.originalMax >= totalExtra ? refCol.originalMax : totalExtra;
+                }
+            });
+
+            vm.maxByHolidays = {
+                'domingo': 0,
+                'descanso': 0,
+                'feriado': 0,
+            };
+        },
+
+        setOriginalInputValue(column, staffId) {
+            const vm = this;
+            // Inicializar originalInputValues si no existe
+            if (!vm.originalInputValues) {
+                vm.originalInputValues = {};
+            }
+
+            vm.originalInputValues[column.name + '-' + staffId] = vm.inputValues[column.name + '-' + staffId];
+        }
     },
     created() {
-        
     },
     mounted() {
         const vm = this;
@@ -569,22 +841,69 @@ export default {
                                       groups[column.group + "-" + row.staff_id]
                                   )
                                 : 0);
-                        groups["total-" + row.staff_id] =
-                            (groups["total-" + row.staff_id]
-                                ? parseFloat(groups["total-" + row.staff_id])
-                                : 0) +
-                            (vm.inputValues[column.name + "-" + row.staff_id]
-                                ? parseFloat(
-                                      vm.inputValues[
-                                          column.name + "-" + row.staff_id
-                                      ]
-                                  )
-                                : 0);
+
+                        if (vm.totalGroups.includes(column.group)) {
+                            groups["total-" + row.staff_id] =
+                                (groups["total-" + row.staff_id]
+                                    ? parseFloat(groups["total-" + row.staff_id])
+                                    : 0) +
+                                (vm.inputValues[column.name + "-" + row.staff_id]
+                                    ? parseFloat(
+                                          vm.inputValues[
+                                              column.name + "-" + row.staff_id
+                                          ]
+                                      )
+                                    : 0);
+                        }
                     }
                 });
             });
             return groups;
         },
+        calculatedFormulaExtra: function() {
+            const vm = this;
+            const formulaExtraValues = {};
+
+            vm.data.forEach((row, dataIndex) => {
+                vm.columns.forEach((column, index) => {
+                    if (column.type === 'formula_extra') {
+                        const currentFormulaExtraKey = `${index}-${column.group}-${row.staff_id}`;
+                        let previousValue = 0;
+                        let previousMax = 0;
+
+                        if (index > 0) {
+                            const previousColumn = vm.columns[index - 1];
+                            if (previousColumn.group === 'TURNOS' && previousColumn.type === 'subtotal') {
+                                const prevSubtotalKey = `subtotal - ${previousColumn.group}-${row.staff_id}`;
+                                previousValue = parseFloat(vm.inputValues[prevSubtotalKey]) || 0;
+                                previousMax = previousColumn.max || 0;
+                                vm.diff = previousValue - previousMax;
+                            } else if (previousColumn.type === 'formula_extra') {
+                                const prevFormulaExtraKey = `${index-1}-${previousColumn.group}-${row.staff_id}`;
+                                previousValue = formulaExtraValues[prevFormulaExtraKey] || 0;
+                                previousMax = previousColumn.max || 0;
+                            }
+                        }
+
+                        const currentMax = column.max || 0;
+                        let calculatedValue = 0;
+
+                        if (vm.diff > currentMax) {
+                            calculatedValue = currentMax;
+                            vm.diff = vm.diff - currentMax;
+                        } else if (vm.diff > 0) {
+                            calculatedValue = vm.diff;
+                            vm.diff = 0;
+                        }
+
+                        formulaExtraValues[currentFormulaExtraKey] = calculatedValue;
+                        vm.inputValues[`formula_extra - ${column.group}-${row.staff_id}`] = calculatedValue;
+                    }
+                });
+            });
+            return formulaExtraValues;
+        },
+
         headers: function () {
             return this.columns.map((option) => option.name);
         },

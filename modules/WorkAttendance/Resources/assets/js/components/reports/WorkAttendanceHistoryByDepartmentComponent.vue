@@ -6,29 +6,33 @@
                 <div class="col-12">
                     <b>Filtros</b>
                 </div>
-                <div class="form-group col-md-2">
-                    <label for="from_date">Desde</label>
-                    <input
-                        type="date" name="from_date" id="from_date"
-                        class="form-control" v-model="filters.from_date"
-                        title="Indique la fecha inicial a consultar"
-                        data-toggle="tooltip"
-                    >
+                <div class="col-md-2">
+                    <div class="form-group is-required">
+                        <label for="from_date">Desde</label>
+                        <input
+                            type="date" name="from_date" id="from_date"
+                            class="form-control" v-model="filters.from_date"
+                            title="Indique la fecha inicial a consultar"
+                            data-toggle="tooltip"
+                        >
+                    </div>
                 </div>
-                <div class="form-group col-md-2">
-                    <label for="to_date">Hasta</label>
-                    <input
-                        type="date" name="to_date" id="to_date"
-                        class="form-control" v-model="filters.to_date"
-                        title="Indique la fecha final a consultar"
-                        data-toggle="tooltip"
-                    >
+                <div class="col-md-2">
+                    <div class="form-group is-required">
+                        <label for="to_date">Hasta</label>
+                        <input
+                            type="date" name="to_date" id="to_date"
+                            class="form-control" v-model="filters.to_date"
+                            title="Indique la fecha final a consultar"
+                            data-toggle="tooltip"
+                        >
+                    </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group is-required">
-                        <label for="payrollEmploymentId">Unidad / Departamento</label>
+                        <label for="department">Unidad / Departamento</label>
                         <select2
-                            id="payrollEmploymentId" :options="departments"
+                            id="department" :options="departments"
                             v-model="filters.department_id"
                             title="Seleccione la unidad o departamento a consultar"
                             data-toggle="tooltip"
@@ -84,9 +88,13 @@
             <div class="col-md-7 mt-4" v-if="show_table">
                 <h6 class="h6 table-title mb-4">Tabla de registros</h6>
                 <div class="row">
-                    <div class="col-md-4 offset-md-8">
+                    <div class="col-md-6 offset-md-6">
                         <table class="table table-bordered">
                             <tbody>
+                                <tr>
+                                    <th class="text-left">Total Horas Trabajadas</th>
+                                    <td class="text-right">{{ totalWorkedTime }}</td>
+                                </tr>
                                 <tr>
                                     <th class="text-left">Total % Asistencia</th>
                                     <td class="text-right">{{ parseFloat(total_attendance_percent).toFixed(2) }} %</td>
@@ -146,6 +154,7 @@
                 show_graph: true,
                 total_attendance_percent: 0,
                 total_absence_percent: 0,
+                totalWorkedTime: 0,
                 graph_type: 'bar',
                 graph_types: [
                     {id: '', text: 'Seleccione...'},
@@ -227,6 +236,15 @@
             searchData() {
                 const _self = this;
                 _self.errors = [];
+                if (_self.filters.from_date == '') {
+                    _self.errors.push('La fecha inicial es obligatoria.')
+                };
+                if (_self.filters.to_date == '') {
+                    _self.errors.push('La fecha final es obligatoria.')
+                };
+                if (_self.filters.to_date && _self.filters.from_date && _self.filters.from_date > _self.filters.to_date) {
+                    _self.errors.push('La fecha inicial no puede ser mayor a la fecha final.')
+                };
                 if (_self.filters.department_id == '') {
                     _self.errors.push('La unidad o departamento es obligatorio.')
                 };
@@ -242,6 +260,22 @@
                 return axios.get(_self.route_list, { params })
                             .then(response => {
                                 _self.records = response.data.records ?? [];
+                                const totalTime = _self.records.reduce((total, record) => {
+                                    // Separar horas y minutos
+                                    const [horas, minutos] = record.work_time_formated.split(':').map(Number);
+                                    // Convertir a minutos para poder realizar el cálculo
+                                    return total + (horas * 60 + minutos);
+                                }, 0);
+                                _self.totalWorkedTime = '00:00';
+
+                                if (totalTime > 0) {
+                                    // Convertir el total de minutos de nuevo a formato "00:00"
+                                    const totalHours = Math.floor(totalTime / 60);
+                                    const totalMinutes = totalTime % 60;
+
+                                    // Formatear a "00:00"
+                                    _self.totalWorkedTime = `${String(totalHours).padStart(2, '0')}:${String(totalMinutes).padStart(2, '0')}`;
+                                }
                                 if (_self.records.length == 0) {
                                     _self.showMessage(
                                         'custom', 'Info', 'warning', 'screen-warning', 'No se encontraron registros.'
@@ -253,16 +287,6 @@
                                 console.error(error);
                                 _self.loading = false;
                             });
-            },
-            async getDepartments() {
-                const _self = this;
-                _self.departments = [];
-                await axios.get(`${window.app_url}/work-attendance/get-departments`).then(response => {
-                    /** Obtiene los departamentos */
-                    _self.departments = response.data;
-                }).catch(error => {
-                    console.error(error);
-                });
             },
             /**
              * Establece los porcentajes de asistencia e inasistencia
@@ -276,105 +300,6 @@
                 _self.total_absence_percent = parseFloat(100 - totalPercent);
                 _self.graph_max = _self.total_attendance_percent > _self.total_absence_percent ? _self.total_attendance_percent : _self.total_absence_percent;
                 _self.graph_min = _self.total_attendance_percent < _self.total_absence_percent ? _self.total_attendance_percent : _self.total_absence_percent;
-            },
-            /**
-             * Establece los datos del gráfico
-             *
-             * @author Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
-             */
-            setChart() {
-                const _self = this;
-                const ctx = document.getElementById('workattendance_chart');
-                if (_self.graph !== null) {
-                    _self.graph.destroy();
-                }
-
-                const dataBar = {
-                    labels: ['Personal'],
-                    datasets: [{
-                        label: '% Asistencia',
-                        data: [_self.total_attendance_percent],
-                        backgroundColor: 'rgba(44, 168, 255, 1)',
-                        borderColor: 'rgba(44, 168, 255, 1)',
-                        borderWidth: 1
-                    }, {
-                        label: '% Inasistencia',
-                        data: [_self.total_absence_percent],
-                        backgroundColor: 'rgba(249, 99, 50, 1)',
-                        borderColor: 'rgba(249, 99, 50, 1)',
-                        borderWidth: 1
-                    }]
-                };
-                const dataLine = {
-                    labels: ['Personal'],
-                    datasets: [{
-                        label: 'Asistencia',
-                        data: [_self.total_attendance_percent],
-                        backgroundColor: 'rgba(44, 168, 255, 1)',
-                        borderColor: 'rgba(44, 168, 255, 1)',
-                        borderWidth: 1
-                    }, {
-                        label: 'Inasistencia',
-                        data: [_self.total_absence_percent],
-                        backgroundColor: 'rgba(249, 99, 50, 1)',
-                        borderColor: 'rgba(249, 99, 50, 1)',
-                        borderWidth: 1
-                    }]
-                };
-                const dataPie = {
-                    labels: ['Asistencia', 'Inasistencia'],
-                    datasets: [{
-                        label: 'Porcentaje',
-                        data: [_self.total_attendance_percent, _self.total_absence_percent],
-                        backgroundColor: [
-                            'rgba(44, 168, 255, 1)',
-                            'rgba(249, 99, 50, 1)'
-                        ],
-                        borderColor: [
-                            'rgba(44, 168, 255, 1)',
-                            'rgba(249, 99, 50, 1)'
-                        ],
-                        borderWidth: 1
-                    }]
-                };
-                let graphData = dataBar;
-                if (_self.graph_type === 'line') {
-                    graphData = dataLine;
-                } else if (_self.graph_type === 'pie') {
-                    graphData = dataPie;
-                }
-                _self.graph = new Chart(ctx, {
-                    type: _self.graph_type,
-                    data: graphData,
-                    options: {
-                        title: {
-                            display: true,
-                            text: 'Porcentaje de asistencia e inasistencia del personal'
-                        },
-                        responsive: true,
-                        tooltips: {
-                            enabled: true,
-                            callbacks: {
-                                label: function(tooltipItem, data) {
-                                    const label = data.datasets[tooltipItem.datasetIndex].label || '';
-                                    const percent = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index];
-                                    const roundedPercent = isNaN(Number(percent)) ? '0.00' : Number(percent).toFixed(2);
-                                    return `${label}: ${roundedPercent}%`;
-                                }
-                            }
-                        },
-                        //maintainAspectRatio: false,
-                        scales: (_self.graph_type === 'pie') ? {} : {
-                            yAxes: [{
-                                ticks: {
-                                    beginAtZero: false,
-                                    max: _self.graph_max,
-                                    min: _self.graph_min
-                                }
-                            }]
-                        },
-                    }
-                });
             },
             /**
              * Guarda el gráfico generado

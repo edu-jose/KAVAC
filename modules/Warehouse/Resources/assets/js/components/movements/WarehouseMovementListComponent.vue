@@ -29,6 +29,16 @@
 				<warehouse-movement-info
                     :route_list="app_url + '/warehouse/movements/info/'+ props.row.id">
                 </warehouse-movement-info>
+				<a
+					class="btn btn-primary btn-xs btn-icon"
+					title="Imprimir registro"
+					data-toggle="tooltip"
+					target="_blank"
+					:href="warehouse_movements_pdf + props.row.id"
+					v-has-tooltip
+				>
+					<i class="fa fa-print"></i>
+				</a>
 
 				<button @click="editForm(props.row.id)"
 	    				class="btn btn-warning btn-xs btn-icon btn-action"
@@ -52,6 +62,7 @@
 		data() {
 			return {
 				records: [],
+				warehouse_movements_pdf: `${window.app_url}/warehouse/movements/pdf/`,
 				columns: ['code', 'description', 'warehouse_initial', 'warehouse_end', 'state', 'id']
 			}
 		},

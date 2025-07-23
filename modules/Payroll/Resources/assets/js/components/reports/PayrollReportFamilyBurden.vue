@@ -112,6 +112,10 @@ export default {
                         vm.reset();
                     }
                     vm.loading = false;
+                    setTimeout(function(){
+                        window.location.reload();
+                    }, 1500);
+
                 }).catch(error => {
                     vm.errors = [];
 
@@ -129,7 +133,6 @@ export default {
                 }
                 vm.loading = false;
             });
-
         },
 
         addAllToOptions() {

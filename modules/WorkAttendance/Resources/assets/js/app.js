@@ -49,7 +49,7 @@ Vue.component('workattendance-history-individual', () => import(
 ));
 
 /**
- * Componente para mostrar el histórico de asistencia individual
+ * Componente para mostrar el histórico de asistencia por Departamento
  *
  * @author  Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
  */
@@ -68,8 +68,73 @@ Vue.component('workattendance-schedule', () => import(
     './components/settings/schedules/WorkAttendanceScheduleComponent.vue'
 ));
 
+/**
+ * Componente para la gestion de asistencia a actividades externas
+ *
+ * @author  Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
+ */
+Vue.component('workattendance-external-activity-list', () => import(
+    /* webpackChunkName: "workattendance-external-activity-list" */
+    './components/external-activities/WorkAttendanceExternalActivityListComponent.vue'
+));
+
+/**
+ * Componente para el registro y actualización de datos de asistencia a actividades externas
+ *
+ * @author  Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
+ */
+Vue.component('workattendance-external-activity-form', () => import(
+    /* webpackChunkName: "workattendance-external-activity-form" */
+    './components/external-activities/WorkAttendanceExternalActivityFormComponent.vue'
+));
+
+/**
+ * Componente para la gestion de horarios personalizados
+ *
+ * @author  Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
+ */
+Vue.component('workattendance-custom-schedule-list', () => import(
+    /* webpackChunkName: "workattendance-custom-schedule-list" */
+    './components/custom-schedules/WorkAttendanceCustomScheduleListComponent.vue'
+));
+
+/**
+ * Componente para el registro y actualización de datos de horarios personalizados
+ *
+ * @author  Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
+ */
+Vue.component('workattendance-custom-schedule-form', () => import(
+    /* webpackChunkName: "workattendance-custom-schedule-form" */
+    './components/custom-schedules/WorkAttendanceCustomScheduleFormComponent.vue'
+));
+
+/**
+ * Componente para ver información de datos de horarios personalizados
+ *
+ * @author  Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
+ */
+Vue.component('workattendance-custom-schedule-info', () => import(
+    /* webpackChunkName: "workattendance-custom-schedule-info" */
+    './components/custom-schedules/WorkAttendanceCustomScheduleInfoComponent.vue'
+));
+
 Vue.mixin({
     methods: {
+        /**
+         * Obtiene los datos de las Unidades, Dependencias o Departamentos
+         *
+         * @author Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
+         */
+        async getDepartments() {
+            const _self = this;
+            _self.departments = [];
+            await axios.get(`${window.app_url}/work-attendance/get-departments`).then(response => {
+                /** Obtiene los departamentos */
+                _self.departments = response.data;
+            }).catch(error => {
+                console.error(error);
+            });
+        },
         /**
          * Obtiene los datos de los cargos registrados
          *
@@ -84,8 +149,27 @@ Vue.mixin({
                         id: '',
                         text: 'Seleccione...'
                     },
-                    ...response.data.records];
+                    ...response.data.records
+                ];
             });
+        },
+        async getStaffs() {
+            const _self = this;
+            await axios.get(`${window.app_url}/work-attendance/get-staffs`)
+                .then(response => {
+                    _self.payroll_staffs = [
+                        {id: '', text: 'Seleccione...'},
+                        ...response.data.staffs.map(staff => {
+                            return {
+                                id: staff.id,
+                                text: staff.full_name
+                            };
+                        })
+                    ];
+                })
+                .catch(error => {
+                    console.error(error);
+                });
         },
         setEmployments(field = 'record') {
             this.employments = [{
@@ -119,6 +203,105 @@ Vue.mixin({
             const minutes = diffTime.minutes.toString().padStart(2, '0');
             const seconds = diffTime.seconds.toString().padStart(2, '0');
             return `${diffDays}${hours}:${minutes}:${seconds}`;
+        },
+        /**
+         * Establece los datos del gráfico
+         *
+         * @author Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
+         */
+        setChart() {
+            const _self = this;
+            const ctx = document.getElementById('workattendance_chart');
+            if (_self.graph !== null) {
+                _self.graph.destroy();
+            }
+
+            const dataBar = {
+                labels: ['Personal'],
+                datasets: [{
+                    label: '% Asistencia',
+                    data: [_self.total_attendance_percent],
+                    backgroundColor: 'rgba(44, 168, 255, 1)',
+                    borderColor: 'rgba(44, 168, 255, 1)',
+                    borderWidth: 1
+                }, {
+                    label: '% Inasistencia',
+                    data: [_self.total_absence_percent],
+                    backgroundColor: 'rgba(249, 99, 50, 1)',
+                    borderColor: 'rgba(249, 99, 50, 1)',
+                    borderWidth: 1
+                }]
+            };
+            const dataLine = {
+                labels: ['Personal'],
+                datasets: [{
+                    label: 'Asistencia',
+                    data: [_self.total_attendance_percent],
+                    backgroundColor: 'rgba(44, 168, 255, 1)',
+                    borderColor: 'rgba(44, 168, 255, 1)',
+                    borderWidth: 1
+                }, {
+                    label: 'Inasistencia',
+                    data: [_self.total_absence_percent],
+                    backgroundColor: 'rgba(249, 99, 50, 1)',
+                    borderColor: 'rgba(249, 99, 50, 1)',
+                    borderWidth: 1
+                }]
+            };
+            const dataPie = {
+                labels: ['Asistencia', 'Inasistencia'],
+                datasets: [{
+                    label: 'Porcentaje',
+                    data: [_self.total_attendance_percent, _self.total_absence_percent],
+                    backgroundColor: [
+                        'rgba(44, 168, 255, 1)',
+                        'rgba(249, 99, 50, 1)'
+                    ],
+                    borderColor: [
+                        'rgba(44, 168, 255, 1)',
+                        'rgba(249, 99, 50, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            };
+            let graphData = dataBar;
+            if (_self.graph_type === 'line') {
+                graphData = dataLine;
+            } else if (_self.graph_type === 'pie') {
+                graphData = dataPie;
+            }
+            _self.graph = new Chart(ctx, {
+                type: _self.graph_type,
+                data: graphData,
+                options: {
+                    title: {
+                        display: true,
+                        text: 'Porcentaje de asistencia e inasistencia del personal'
+                    },
+                    responsive: true,
+                    tooltips: {
+                        enabled: true,
+                        callbacks: {
+                            label: function(tooltipItem, data) {
+                                const label = data.datasets[tooltipItem.datasetIndex].label || '';
+                                const percent = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index];
+                                const roundedPercent = isNaN(Number(percent)) ? '0.00' : Number(percent).toFixed(2);
+                                return `${label}: ${roundedPercent}%`;
+                            }
+                        }
+                    },
+                    //maintainAspectRatio: false,
+                    scales: (_self.graph_type === 'pie') ? {} : {
+                        yAxes: [{
+                            ticks: {
+                                beginAtZero: false,
+                                max: _self.graph_max,
+                                min: _self.graph_min
+                            }
+                        }]
+                    },
+                }
+            });
         },
     }
 })

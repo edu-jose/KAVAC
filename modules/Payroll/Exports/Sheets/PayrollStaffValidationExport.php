@@ -4,15 +4,15 @@ namespace Modules\Payroll\Exports\Sheets;
 
 use App\Models\Parish;
 use Illuminate\Support\Collection;
-use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Events\AfterSheet;
+use Maatwebsite\Excel\Concerns\WithTitle;
+use Modules\Payroll\Models\PayrollGender;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithHeadings;
-use Maatwebsite\Excel\Concerns\WithTitle;
-use Maatwebsite\Excel\Events\AfterSheet;
 use Modules\Payroll\Models\PayrollBloodType;
 use Modules\Payroll\Models\PayrollDisability;
+use Maatwebsite\Excel\Concerns\FromCollection;
 use Modules\Payroll\Models\PayrollNationality;
-use Modules\Payroll\Models\PayrollGender;
 use Modules\Payroll\Models\PayrollLicenseDegree;
 
 /**
@@ -52,7 +52,14 @@ class PayrollStaffValidationExport implements
         $bloodTypes = PayrollBloodType::query()->select('name')->get()->pluck('name')->toArray();
         $disabilitys = PayrollDisability::query()->select('name')->get()->pluck('name')->toArray();
         $licenses = PayrollLicenseDegree::query()->select('name')->get()->pluck('name')->toArray();
-        $parishes = Parish::query()->select('name')->get()->pluck('name')->toArray();
+        $parishes = Parish::with('municipality.estate')
+                            ->orderBy('code')
+                            ->orderBy('name')
+                            ->get()->keyBy('id')->map(function ($parish) {
+                                return $parish->municipality->estate->name . ' - ' .
+                                       $parish->municipality->name . ' - ' .
+                                       $parish->name;
+                            })->toArray();
         $decisions = ['Si', 'No'];
         $maxCount = max(
             count($nationalities),

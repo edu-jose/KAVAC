@@ -9,6 +9,7 @@ use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Modules\Payroll\Models\PayrollStaff;
+use Modules\Payroll\Models\PayrollSurvivor;
 use Illuminate\Contracts\Support\Renderable;
 use Modules\Payroll\Models\PayrollFamilyBurden;
 use Modules\Payroll\Models\PayrollSocioeconomic;
@@ -111,6 +112,12 @@ class PayrollSocioeconomicController extends Controller
     {
         $rules = $this->rules;
         $messages = $this->messages;
+        $hasSurvive = $request->survivor_first_name ||
+                      $request->survivor_last_name ||
+                      $request->survivor_id_number ||
+                      $request->survivor_finance_bank_id ||
+                      $request->survivor_finance_account_type_id ||
+                      $request->survivor_payroll_account_number;
 
         $relationshipSonId = \Modules\Payroll\Models\PayrollRelationship::where('name', 'Hijo(a)')->value('id');
         $request->validate([
@@ -124,7 +131,7 @@ class PayrollSocioeconomicController extends Controller
                         });
 
                     if ($relationshipIds->count() > $relationshipIds->unique()->count()) {
-                        $fail('la relacion con el pariente no puede repetirse a menos que sea hijos.');
+                        $fail('la relación con el pariente no puede repetirse a menos que sea hijos.');
                     }
                 },
             ],
@@ -183,8 +190,50 @@ class PayrollSocioeconomicController extends Controller
                 => 'El campo discapacidad #' . ($i + 1) . ' es obligatorio',
             ]);
         }
+
+        $payrollStaff = PayrollStaff::find($request->payroll_staff_id);
+
+        if ($hasSurvive) {
+            $rules = array_merge($rules, [
+                'survivor_first_name' => ['required'],
+                'survivor_last_name' => ['required'],
+                'survivor_id_number' => [
+                    'required',
+                    'regex:/^([\d]{7}|[\d]{8})$/u',
+                    'unique:payroll_survivors,id_number'
+                ],
+                'survivor_finance_account_type_id' => ['required'],
+                'survivor_payroll_account_number' => ['required',
+                'max:20',
+                'digits_between:20,20',
+                function ($attribute, $value, $fail) use ($payrollStaff) {
+                    if (PayrollSurvivor::where('payroll_account_number', $value)->where('payroll_staff_id', '!=', $payrollStaff->id)->exists()) {
+                        $fail('la cuenta del sobreviviente ya esta registrada a otro trabajador');
+                    }
+                },
+                ],
+                'survivor_finance_bank_id' => ['required']
+            ]);
+
+            $messages = array_merge($messages, [
+                'survivor_first_name.required' => 'El campo nombres del sobreviviente es obligatorio',
+                'survivor_last_name.required' => 'El campo apellidos del sobreviviente es obligatorio',
+                'survivor_id_number.required' => 'El campo cédula del sobreviviente es obligatorio',
+                'survivor_id_number.regex'
+                => 'El campo cédula del sobreviviente es inválido. Debe contener 7 u 8 dígitos',
+                'survivor_id_number.unique' => 'El campo cédula del sobreviviente ya existe en el registro',
+                'survivor_finance_account_type_id.required'
+                => 'El campo tipo de cuenta bancaria del sobreviviente es obligatorio',
+                'survivor_payroll_account_number.required'
+                => 'El campo cuenta bancaria del sobreviviente es obligatorio',
+                'survivor_payroll_account_number.max'
+                => 'El campo cuenta bancaria debe contener un máximo de 20 dígitos',
+                'survivor_finance_bank_id.required'
+                => 'El campo banco de la cuenta bancaria del sobreviviente es obligatorio',
+            ]);
+        }
         $this->validate($request, $rules, $messages);
-        DB::transaction(function () use ($request) {
+        DB::transaction(function () use ($request, $payrollStaff, $hasSurvive) {
             $payrollSocioeconomic = PayrollSocioeconomic::create([
                 'payroll_staff_id' => $request->payroll_staff_id,
                 'marital_status_id' => $request->marital_status_id,
@@ -211,6 +260,16 @@ class PayrollSocioeconomicController extends Controller
                     ]);
                 }
             }
+            if ($hasSurvive) {
+                $payrollStaff->payrollSurvivor()->create([
+                    'first_name' => $request->survivor_first_name,
+                    'last_name' => $request->survivor_last_name,
+                    'id_number' => $request->survivor_id_number,
+                    'finance_bank_id' => $request->survivor_finance_bank_id,
+                    'finance_account_type_id' => $request->survivor_finance_account_type_id,
+                    'payroll_account_number' => $request->survivor_payroll_account_number
+                ]);
+            }
         });
         $request->session()->flash('message', ['type' => 'store']);
         return response()->json([
@@ -230,7 +289,11 @@ class PayrollSocioeconomicController extends Controller
     public function show($id)
     {
         $payrollSocioeconomic = PayrollSocioeconomic::where('id', $id)->with([
-            'payrollStaff', 'maritalStatus', 'payrollChildrens' => function ($query) {
+            'payrollStaff' => function ($query) {
+                $query->with([
+                    'payrollSurvivor',
+                ]);
+            }, 'maritalStatus', 'payrollChildrens' => function ($query) {
                 $query->with([
                     'payrollSchoolingLevel',
                     'payrollDisability',
@@ -255,6 +318,7 @@ class PayrollSocioeconomicController extends Controller
     public function edit($id)
     {
         $payrollSocioeconomic = PayrollSocioeconomic::find($id);
+        $payrollSocioeconomic->payrollStaff()->with('payrollSurvivor');
         return view('payroll::socioeconomics.create-edit', compact('payrollSocioeconomic'));
     }
 
@@ -277,6 +341,12 @@ class PayrollSocioeconomicController extends Controller
 
         $rules = $this->rules;
         $messages = $this->messages;
+        $hasSurvive = $request->survivor_first_name ||
+                      $request->survivor_last_name ||
+                      $request->survivor_id_number ||
+                      $request->survivor_finance_bank_id ||
+                      $request->survivor_finance_account_type_id ||
+                      $request->survivor_payroll_account_number;
 
         $relationshipSonId = \Modules\Payroll\Models\PayrollRelationship::where('name', 'Hijo(a)')->value('id');
         $request->validate(
@@ -298,7 +368,8 @@ class PayrollSocioeconomicController extends Controller
                 'payroll_childrens.*.payroll_relationships_id' => 'required|integer',
             ],
             [
-                'payroll_childrens.*.payroll_relationships_id.required' => 'La información del pariente es obligatoria.',
+                'payroll_childrens.*.payroll_relationships_id.required'
+                => 'La información del pariente es obligatoria.',
             ]
         );
 
@@ -364,6 +435,52 @@ class PayrollSocioeconomicController extends Controller
                 => 'El campo discapacidad #' . ($i + 1) . ' es obligatorio',
             ]);
         }
+        if ($hasSurvive) {
+            $rules = array_merge($rules, [
+                'survivor_first_name' => ['required'],
+                'survivor_last_name' => ['required'],
+                'survivor_id_number' => [
+                    'required',
+                    'regex:/^([\d]{7}|[\d]{8})$/u',
+                    function ($attribute, $value, $fail) use ($payrollSocioeconomic) {
+                        if (PayrollSurvivor::where('id_number', $value)->where('payroll_staff_id', '!=', $payrollSocioeconomic->payrollStaff->id)->exists()) {
+                            $fail('El campo cédula del sobreviviente ya esta registrada a otro trabajador');
+                        }
+                    },
+                ],
+                'survivor_finance_account_type_id' => ['required'],
+                'survivor_payroll_account_number' => ['required',
+                'digits_between:20,20',
+                'max:20',
+                function ($attribute, $value, $fail) use ($payrollSocioeconomic) {
+                    if (PayrollSurvivor::where('payroll_account_number', $value)->where('payroll_staff_id', '!=', $payrollSocioeconomic->payrollStaff->id)->exists()) {
+                        $fail('la cuenta del sobreviviente ya esta registrada a otro trabajador');
+                    }
+                },
+                ],
+                'survivor_finance_bank_id' => ['required']
+            ]);
+
+            $messages = array_merge($messages, [
+                'survivor_first_name.required' => 'El campo nombres del sobreviviente es obligatorio',
+                'survivor_last_name.required' => 'El campo apellidos del sobreviviente es obligatorio',
+                'survivor_id_number.required' => 'El campo cédula del sobreviviente es obligatorio',
+                'survivor_id_number.exists' => 'El campo cédula del sobreviviente ya esta registrada a otro trabajador existe',
+                'survivor_id_number.unique' => 'El campo cédula del sobreviviente  ya esta registrada a otro trabajador',
+                'survivor_id_number.regex'
+                => 'El campo cédula del sobreviviente es inválido. Debe contener 7 u 8 dígitos',
+                'survivor_finance_account_type_id.required'
+                => 'El campo tipo de cuenta bancaria del sobreviviente es obligatorio',
+                'survivor_payroll_account_number.required'
+                => 'El campo cuenta bancaria del sobreviviente es obligatorio',
+                'survivor_payroll_account_number.max'
+                => 'El campo cuenta bancaria debe contener un máximo de 20 dígitos',
+                'survivor_payroll_account_number.digits_between'
+                => 'El campo número de cuenta debe tener 20 dígitos',
+                'survivor_finance_bank_id.required'
+                => 'El campo banco de la cuenta bancaria del sobreviviente es obligatorio',
+            ]);
+        }
         $this->validate($request, $rules, $messages);
 
         $payrollSocioeconomic->payroll_staff_id = $request->payroll_staff_id;
@@ -378,7 +495,7 @@ class PayrollSocioeconomicController extends Controller
         if ($request->payroll_childrens && !empty($request->payroll_childrens)) {
             foreach ($request->payroll_childrens as $payrollChildren) {
                 if (!is_null($payrollChildren["id_number"]) && !empty($payrollChildren["id_number"])) {
-                    $indentifier =                  [
+                    $indentifier = [
                         'first_name' => $payrollChildren['first_name'],
                         'id_number' => $payrollChildren['id_number'],
                         'last_name' => $payrollChildren['last_name'],
@@ -416,6 +533,22 @@ class PayrollSocioeconomicController extends Controller
         } else {
             foreach ($payrollSocioeconomic->payrollChildrens as $payrollChildren) {
                 $payrollChildren->delete();
+            }
+        }
+
+        if ($hasSurvive) {
+            $survivorData = [
+                'first_name' => $request->survivor_first_name,
+                'last_name' => $request->survivor_last_name,
+                'id_number' => $request->survivor_id_number,
+                'finance_bank_id' => $request->survivor_finance_bank_id,
+                'finance_account_type_id' => $request->survivor_finance_account_type_id,
+                'payroll_account_number' => $request->survivor_payroll_account_number
+            ];
+            if (!$payrollSocioeconomic->payrollStaff->payrollSurvivor()->where('payroll_staff_id', $payrollSocioeconomic->payrollStaff->id)->exists()) {
+                $payrollSocioeconomic->payrollStaff->payrollSurvivor()->Create($survivorData);
+            } else {
+                $payrollSocioeconomic->payrollStaff->payrollSurvivor()->where('payroll_staff_id', $payrollSocioeconomic->payrollStaff->id)->update($survivorData);
             }
         }
 

@@ -39,6 +39,10 @@ class FinancePaymentMethodsController extends Controller
      */
     public function __construct()
     {
+        // Establece permisos de acceso para cada método del controlador
+        $this->middleware('permission:finance.payment.methods.create', ['only' => 'store']);
+        $this->middleware('permission:finance.payment.methods.edit', ['only' => ['update']]);
+        $this->middleware('permission:finance.payment.methods.delete', ['only' => 'destroy']);
         $this->data[0] = [
             'id' => '',
             'text' => 'Seleccione...'

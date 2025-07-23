@@ -67,7 +67,7 @@ class PayrollSendReceiptsEmailJob implements ShouldQueue
             // Verifica si es un correo válido para envíar el mensaje
             Mail::to($this->email)->send($this->mailable);
 
-            unlink($this->pdfPath);
+            DeleteFileJob::dispatch($this->pdfPath);
         }
     }
 }

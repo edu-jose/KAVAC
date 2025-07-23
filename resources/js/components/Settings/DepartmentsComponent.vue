@@ -6,8 +6,8 @@
 			<i class="icofont icofont-architecture-alt ico-3x"></i>
 			<span>Unidades / Dependencias</span>
 		</a>
-		<div class="modal fade text-left" tabindex="-1" role="dialog" id="add_department">
-			<div class="modal-dialog vue-crud" role="document">
+		<div class="modal fade text-left" tabindex="-1" id="add_department">
+			<div class="modal-dialog vue-crud">
 				<div class="modal-content">
 					<div class="modal-header">
 						<button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -23,45 +23,60 @@
 						<div class="row">
 							<div class="col-12 col-md-6">
 								<div class="form-group is-required">
-									<label>Organización:</label>
-									<select2 :options="institutions" v-model="record.institution_id"
-											 title="Organización a la cual pertenece" @input="getDepartments()"
-											 data-toggle="tooltip"></select2>
-									<input type="hidden" v-model="record.id">
+									<label for="departmentInstitution">Organización:</label>
+									<select2
+                                        id="departmentInstitution"
+                                        :options="institutions" v-model="record.institution_id"
+										title="Organización a la cual pertenece" @input="getDepartments()"
+										data-toggle="tooltip"
+                                    ></select2>
 			                    </div>
 							</div>
 							<div class="col-12 col-md-6">
 								<div class="form-group">
-									<label>Depende de:</label>
-									<select2 :options="departments" v-model="record.parent_id" id="parentId"
-											 title="Unidad, Departamento o dependencia de la cual depende. No seleccionar si no es subordinada a otra dependencia"
-											 data-toggle="tooltip"></select2>
+									<label for="departmentParentId">Depende de:</label>
+									<select2
+                                        id="departmentParentId"
+                                        :options="departments" v-model="record.parent_id"
+                                        title="Unidad, Departamento o dependencia de la cual depende. No seleccionar si no es subordinada a otra dependencia"
+                                        data-toggle="tooltip"
+                                    ></select2>
 			                    </div>
 							</div>
 							<div class="col-12 col-md-2">
 								<div class="form-group">
-									<label>Siglas:</label>
-									<input type="text" class="form-control input-sm" data-toggle="tooltip"
-										   title="Siglas o acrónimo para el departamento (si posee)"
-										   placeholder="SIGLAS" v-model="record.acronym" v-is-text>
+									<label for="departmentAcronym">Siglas:</label>
+									<input
+                                        id="departmentAcronym"
+                                        type="text" class="form-control input-sm" data-toggle="tooltip"
+                                        title="Siglas o acrónimo para el departamento (si posee)"
+                                        placeholder="SIGLAS" v-model="record.acronym" v-is-text
+                                    >
 			                    </div>
 							</div>
 							<div class="col-12 col-md-10">
 								<div class="form-group is-required">
-									<label>Nombre:</label>
-									<input type="text" class="form-control input-sm" data-toggle="tooltip"
-										   placeholder="Nombre de la unidad, departamento o dependencia"
-										   v-model="record.name" v-is-text>
+									<label for="departmentName">Nombre:</label>
+									<input
+                                        id="departmentName"
+                                        type="text" class="form-control input-sm" data-toggle="tooltip"
+                                        placeholder="Nombre de la unidad, departamento o dependencia"
+                                        v-model="record.name" v-is-text
+                                    >
 			                    </div>
 							</div>
 							<div class="col-12 col-md-2">
 								<div class="form-group is-required">
-									<label>Activo:</label>
-									<div class="custom-control custom-switch" data-toggle="tooltip"
-										 title="Indique si se encuentra activo">
-										<input type="checkbox" class="custom-control-input"
-											   id="departmentActive" v-model="record.active" :value="true">
-										<label class="custom-control-label" for="departmentActive"></label>
+									<label for="departmentActive">Activo:</label>
+									<div
+                                        class="custom-control custom-switch" data-toggle="tooltip"
+										title="Indique si se encuentra activo"
+                                    >
+										<input
+                                            type="checkbox" class="custom-control-input"
+											id="departmentActive" v-model="record.active" :value="true"
+                                        >
+										<label class="custom-control-label" for="departmentActive">&nbsp;</label>
 									</div>
 			                    </div>
 							</div>
@@ -69,16 +84,22 @@
 	                </div>
 	                <div class="modal-footer">
 	                	<div class="form-group">
-	                		<button type="button" class="btn btn-default btn-sm btn-round btn-modal-close"
-									@click="clearFilters" data-dismiss="modal">
+	                		<button
+                                type="button" class="btn btn-default btn-sm btn-round btn-modal-close"
+								@click="clearFilters" data-dismiss="modal"
+                            >
 								Cerrar
 							</button>
-							<button type="button" class="btn btn-warning btn-sm btn-round btn-modal btn-modal-clear"
-									@click="reset()">
+							<button
+                                type="button" class="btn btn-warning btn-sm btn-round btn-modal btn-modal-clear"
+								@click="reset()"
+                            >
 								Cancelar
 							</button>
-							<button type="button" @click="createRecord('departments')"
-									class="btn btn-primary btn-sm btn-round btn-modal-save">
+							<button
+                                type="button" @click="createRecord('departments')"
+								class="btn btn-primary btn-sm btn-round btn-modal-save"
+                            >
 								Guardar
 							</button>
 	                	</div>
@@ -96,15 +117,19 @@
 								<span v-else class="text-danger font-weight-bold">NO</span>
 							</div>
 	                		<div slot="id" slot-scope="props" class="text-center">
-	                			<button @click="initUpdate(props.row.id, $event)"
-		                				class="btn btn-warning btn-xs btn-icon btn-action"
-		                				title="Modificar registro" data-toggle="tooltip" type="button">
+	                			<button
+                                    @click="initUpdate(props.row.id, $event)"
+		                			class="btn btn-warning btn-xs btn-icon btn-action"
+		                			title="Modificar registro" data-toggle="tooltip" type="button"
+                                >
 		                			<i class="fa fa-edit"></i>
 		                		</button>
-		                		<button @click="deleteRecord(props.row.id, 'departments')"
-										class="btn btn-danger btn-xs btn-icon btn-action"
-										title="Eliminar registro" data-toggle="tooltip"
-										type="button">
+		                		<button
+                                    @click="deleteRecord(props.row.id, 'departments')"
+									class="btn btn-danger btn-xs btn-icon btn-action"
+									title="Eliminar registro" data-toggle="tooltip"
+									type="button"
+                                >
 									<i class="fa fa-trash-o"></i>
 								</button>
 	                		</div>

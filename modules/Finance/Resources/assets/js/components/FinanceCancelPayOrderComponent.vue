@@ -238,7 +238,7 @@ export default {
 
         /**
          * Método que obtiene el mensaje de alerta a tomar en cuenta antes de seguir con el proceso de anulación
-         * 
+         *
          * @author Francisco J. P. Ruiz <fjpenya@cenditel.gob.ve> | <javierrupe19@gmail.com>
          *
          *  @param {type: Integer} id  entero que representa el id de la opción que se escoge

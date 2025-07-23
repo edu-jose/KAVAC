@@ -39,4 +39,14 @@ class ProjectTrackingTags extends Model implements Auditable
      * @var array $fillable
      */
     protected $fillable = ['name', 'color'];
+
+    /**
+     * Establece la relación con las tareas
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
+     */
+    public function tasks()
+    {
+        return $this->belongsToMany(ProjectTrackingTask::class, 'project_tracking_tag_task')->withTimestamps();
+    }
 }

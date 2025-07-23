@@ -63,7 +63,7 @@
                             </button>
                         </span>
                         <span v-else>
-                            <send-custom-messages v-if="budget_exist && moment_close_permission != true "
+                            <send-custom-messages v-if="budget_exist"
                                 :has_availability_request_permission="has_availability_request_permission"
                                 :employments="employments" :id="props.row.id" :module="'payroll'"
                                 :status="props.row.payroll_payment_period.payment_status" />
@@ -138,30 +138,41 @@
                 }}
             </div>
             <div slot="document_status" slot-scope="props" class="text-center">
-                <span class="badge badge-warning"
-                    v-if="props.row.document_status && props.row.document_status.action === 'PR'">
-                    {{ props.row.document_status.name }}
-                </span>
-                <span class="badge badge-info"
-                    v-else-if="props.row.document_status && props.row.document_status.action === 'EL'">
-                    {{ props.row.document_status.name }}
-                </span>
-                <span class="badge badge-success"
-                    v-else-if="props.row.document_status && props.row.document_status.action === 'AP'">
-                    {{ props.row.document_status.name }}
-                </span>
-                <span class="badge badge-default"
-                    v-else-if="props.row.document_status && props.row.document_status.action === 'CE'">
-                    {{ props.row.document_status.name }}
-                </span>
-                <span class="badge badge-danger"
-                    v-else> Error
-                </span>
+                <div class="progress-container progress-warning">
+                    <span class="badge badge-warning"
+                        v-if="props.row.document_status && props.row.document_status.action === 'PR'">
+                        {{ props.row.document_status.name }}
+                    </span>
+                    <span class="badge badge-info"
+                        v-else-if="props.row.document_status && props.row.document_status.action === 'EL'">
+                        {{ props.row.document_status.name }}
+                    </span>
+                    <span class="badge badge-success"
+                        v-else-if="props.row.document_status && props.row.document_status.action === 'AP'">
+                        {{ props.row.document_status.name }}
+                    </span>
+                    <span class="badge badge-default"
+                        v-else-if="props.row.document_status && props.row.document_status.action === 'CE'">
+                        {{ props.row.document_status.name }}
+                    </span>
+                    <span class="badge badge-danger"
+                        v-else> Error
+                    </span>
+
+                    <div class="progress" style="margin-top: 0px;"
+                        v-if="props.row.document_status && props.row.document_status.action === 'PR'">
+                        <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100"
+                            :style="{ width: (percentage[props.row.id] !== undefined ? percentage[props.row.id] : 0) + '%' }">
+                            <span class="progress-value">{{ percentage[props.row.id] !== undefined ? percentage[props.row.id] : 0 }}%</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </v-client-table>
     </section>
 </template>
 <script>
+
 export default {
     props: {
         employments: {
@@ -178,6 +189,9 @@ export default {
         },
         has_availability_request_permission: {
             type: Boolean
+        },
+        userId: {
+            type: Number
         }
     },
     data() {
@@ -185,6 +199,7 @@ export default {
             record: {},
             records: [],
             lastYear: "",
+            percentage: [],
             columns: [
                 'code',
                 'created_at',
@@ -212,6 +227,16 @@ export default {
     },
     async mounted() {
         const vm = this;
+        window.Echo.private(`notifications.${vm.userId}`)
+            .listen('.system.notificacion', (e) => {
+                Vue.set(vm.percentage, e.payroll_id, e.porcentaje);
+                console.log(`⏳ Progreso de la nómina ${e.payroll_code}: ${e.porcentaje}% (${e.procesados}/${e.total})`);
+                if (e.porcentaje == 100) {
+                    setTimeout(() => {
+                        vm.initRecords(vm.route_list, '');
+                    }, 1000);
+                }
+            });
         await vm.initRecords(vm.route_list, '');
         await vm.queryLastFiscalYear();
     },

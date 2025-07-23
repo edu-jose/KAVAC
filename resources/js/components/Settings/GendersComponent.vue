@@ -6,8 +6,8 @@
            <i class="icofont icofont-group-students ico-3x"></i>
 		   <span>Géneros</span>
 		</a>
-		<div class="modal fade text-left" tabindex="-1" role="dialog" id="add_gender">
-			<div class="modal-dialog vue-crud" role="document">
+		<div class="modal fade text-left" tabindex="-1" id="add_gender">
+			<div class="modal-dialog vue-crud">
 				<div class="modal-content">
 					<div class="modal-header">
 						<button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -25,8 +25,10 @@
                                     <i class="now-ui-icons objects_support-17"></i>
                                 </div>
                                 <strong>Cuidado!</strong> Debe verificar los siguientes errores antes de continuar:
-                                <button type="button" class="close" data-dismiss="alert" aria-label="Close"
-                                        @click.prevent="errors = []">
+                                <button
+                                    type="button" class="close" data-dismiss="alert" aria-label="Close"
+                                    @click.prevent="errors = []"
+                                >
                                     <span aria-hidden="true">
                                         <i class="now-ui-icons ui-1_simple-remove"></i>
                                     </span>
@@ -39,27 +41,34 @@
                         <div class="row">
                             <div class="col-md-12">
         						<div class="form-group is-required">
-        							<label for="name">Nombre:</label>
-        							<input type="text" id="name" placeholder="Nombre"
-        								   class="form-control input-sm" v-model="record.name" data-toggle="tooltip"
-        								   title="Indique el nombre del género (requerido)">
-        							<input type="hidden" name="id" id="id" v-model="record.id">
+        							<label for="genderName">Nombre:</label>
+        							<input
+                                        type="text" id="genderName" placeholder="Nombre"
+        								class="form-control input-sm" v-model="record.name" data-toggle="tooltip"
+        								title="Indique el nombre del género (requerido)"
+                                    >
         	                    </div>
                             </div>
                         </div>
 	                </div>
 					<div class="modal-footer">
 	                	<div class="form-group">
-	                		<button type="button" class="btn btn-default btn-sm btn-round btn-modal-close"
-									@click="clearFilters" data-dismiss="modal">
+	                		<button
+                                type="button" class="btn btn-default btn-sm btn-round btn-modal-close"
+								@click="clearFilters" data-dismiss="modal"
+                            >
 								Cerrar
 							</button>
-							<button type="button" class="btn btn-warning btn-sm btn-round btn-modal btn-modal-clear"
-									@click="reset()">
+							<button
+                                type="button" class="btn btn-warning btn-sm btn-round btn-modal btn-modal-clear"
+								@click="reset()"
+                            >
 								Cancelar
 							</button>
-							<button type="button" @click="createRecord('genders')"
-									class="btn btn-primary btn-sm btn-round btn-modal-save">
+							<button
+                                type="button" @click="createRecord('genders')"
+								class="btn btn-primary btn-sm btn-round btn-modal-save"
+                            >
 								Guardar
 							</button>
 	                	</div>
@@ -67,15 +76,19 @@
 	                <div class="modal-body modal-table">
 	                	<v-client-table :columns="columns" :data="records" :options="table_options">
 	                		<div slot="id" slot-scope="props" class="text-center">
-	                			<button @click="initUpdate(props.row.id, $event)"
-		                				class="btn btn-warning btn-xs btn-icon btn-action"
-		                				title="Modificar registro" data-toggle="tooltip" type="button">
+	                			<button
+                                    @click="initUpdate(props.row.id, $event)"
+		                			class="btn btn-warning btn-xs btn-icon btn-action"
+		                			title="Modificar registro" data-toggle="tooltip" type="button"
+                                >
 		                			<i class="fa fa-edit"></i>
 		                		</button>
-		                		<button @click="deleteRecord(props.row.id, 'genders')"
-										class="btn btn-danger btn-xs btn-icon btn-action"
-										title="Eliminar registro" data-toggle="tooltip"
-										type="button">
+		                		<button
+                                    @click="deleteRecord(props.row.id, 'genders')"
+									class="btn btn-danger btn-xs btn-icon btn-action"
+									title="Eliminar registro" data-toggle="tooltip"
+									type="button"
+                                >
 									<i class="fa fa-trash-o"></i>
 								</button>
 	                		</div>

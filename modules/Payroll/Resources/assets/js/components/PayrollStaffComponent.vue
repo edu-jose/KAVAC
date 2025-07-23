@@ -25,10 +25,11 @@
             </div>
 
             <div class="row">
-                <div class="col-md-4" id="helpStaffName">
+                <div class="col-md-3" id="helpStaffName">
                     <div class="form-group is-required">
-                        <label>Nombres</label>
+                        <label for="staffName">Nombres</label>
                         <input
+                            id="staffName"
                             type="text"
                             class="form-control input-sm"
                             v-model="record.first_name"
@@ -36,10 +37,11 @@
                         <input type="hidden" v-model="record.id" v-is-text>
                     </div>
                 </div>
-                <div class="col-md-4" id="helpStaffLastName">
+                <div class="col-md-3" id="helpStaffLastName">
                     <div class="form-group is-required">
-                        <label>Apellidos</label>
+                        <label for="staffLastName">Apellidos</label>
                         <input
+                            id="staffLastName"
                             type="text"
                             class="form-control input-sm"
                             v-model="record.last_name"
@@ -47,22 +49,11 @@
                         />
                     </div>
                 </div>
-                <div class="col-md-4" id="helpStaffNationality">
+                <div class="col-md-3" id="helpStaffIdNumber">
                     <div class="form-group is-required">
-                        <label>Nacionalidad</label>
-                        <select2
-                            :options="payroll_nationalities"
-                            v-model="record.payroll_nationality_id"
-                        ></select2>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-md-4" id="helpStaffIdNumber">
-                    <div class="form-group is-required">
-                        <label>Cédula de Identidad</label>
+                        <label for="staffIdNumber">Cédula de Identidad</label>
                         <input
+                            id="staffIdNumber"
                             type="text"
                             class="form-control input-sm"
                             v-model="record.id_number"
@@ -71,10 +62,23 @@
                         />
                     </div>
                 </div>
-                <div class="col-md-4" id="helpStaffPassport">
-                    <div class="form-group">
-                        <label>Pasaporte</label>
+                <div class="col-md-3" id="helpStaffRif">
+                    <div class="form-group is-required">
+                        <label for="staffRif">Rif</label>
                         <input
+                            id="staffRif"
+                            type="text"
+                            class="form-control input-sm"
+                            v-model="record.rif"
+                            maxlength="10"
+                        />
+                    </div>
+                </div>
+                <div class="col-md-3" id="helpStaffPassport">
+                    <div class="form-group">
+                        <label for="staffPassport">Pasaporte</label>
+                        <input
+                            id="staffPassport"
                             type="text"
                             class="form-control input-sm"
                             v-model="record.passport"
@@ -83,62 +87,60 @@
                         />
                     </div>
                 </div>
-                <div class="col-md-4" id="helpStaffRif">
+                <div class="col-md-3" id="helpStaffNationality">
                     <div class="form-group is-required">
-                        <label>Rif</label>
+                        <label for="staffNationality">Nacionalidad</label>
+                        <select2
+                            id="staffNationality"
+                            :options="payroll_nationalities"
+                            v-model="record.payroll_nationality_id"
+                        ></select2>
+                    </div>
+                </div>
+                <div class="col-md-3" id="helpStaffBirthDate">
+                    <div class="form-group is-required">
+                        <label for="staffBirthDate">Fecha de Nacimiento</label>
                         <input
-                            type="text"
+                            id="staffBirthDate"
+                            type="date"
                             class="form-control input-sm"
-                            v-model="record.rif"
-                            maxlength="10"
+                            v-model="record.birthdate"
+                            @input="setAgeGroup()"
                         />
                     </div>
                 </div>
-                <div class="col-md-4" id="helpStaffEmail">
+                <div class="col-md-3" id="helpStaffEmail">
                     <div class="form-group">
-                        <label>Correo Electrónico</label>
+                        <label for="staffEmail">Correo Electrónico</label>
                         <input
+                            id="staffEmail"
                             type="email"
                             class="form-control input-sm"
                             v-model="record.email"
                         />
                     </div>
                 </div>
-            </div>
-
-            <div class="row">
-                <div class="col-md-4" id="helpStaffBirthDate">
-                    <div class="form-group is-required">
-                        <label>Fecha de Nacimiento</label>
-                        <input
-                            type="date"
-                            class="form-control input-sm"
-                            v-model="record.birthdate"
-                        />
-                    </div>
-                </div>
                 <div
-                    class="col-md-4"
+                    class="col-md-3"
                     id="helpStaffGender"
                     v-if="genders.length > 0"
                 >
                     <div class="form-group is-required">
-                        <label>Género</label>
+                        <label for="staffGender">Género</label>
                         <select2
+                            id="staffGender"
                             :options="genders"
                             v-model="record.payroll_gender_id"
                         ></select2>
                     </div>
                 </div>
-            </div>
-
-            <div class="row">
-                <div class="col-md-4" id="helpStaffEmergencyContact">
+                <div class="col-md-3" id="helpStaffEmergencyContact">
                     <div class="form-group">
-                        <label>
+                        <label for="staffEmergencyContact">
                             Nombres y Apellidos de la Persona de Contacto
                         </label>
                         <input
+                            id="staffEmergencyContact"
                             type="text"
                             class="form-control input-sm"
                             v-model="record.emergency_contact"
@@ -146,10 +148,11 @@
                         />
                     </div>
                 </div>
-                <div class="col-md-4" id="helpStaffEmergencyContactPhone">
+                <div class="col-md-3" id="helpStaffEmergencyContactPhone">
                     <div class="form-group">
-                        <label>Teléfono de la Persona de Contacto</label>
+                        <label for="staffEmergencyContactPhone">Teléfono de la Persona de Contacto</label>
                         <input
+                            id="staffEmergencyContactPhone"
                             type="text"
                             class="form-control input-sm"
                             placeholder="+00-000-0000000"
@@ -159,12 +162,47 @@
                         />
                     </div>
                 </div>
-            </div>
-
-            <div class="row">
-                <div class="col-md-4">
+                <div
+                    class="col-md-3"
+                    id="helpStaffBloodType"
+                    v-if="payroll_blood_types.length > 0"
+                >
+                    <div class="form-group">
+                        <label for="staffBloodType">Tipo de Sangre</label>
+                        <select2
+                            id="staffBloodType"
+                            :options="payroll_blood_types"
+                            v-model="record.payroll_blood_type_id"
+                        >
+                        </select2>
+                    </div>
+                </div>
+                <div class="col-md-3" id="helpStaffSocialSecurity">
+                    <div class="form-group">
+                        <label for="staffSocialSecurity">Seguro Social</label>
+                        <input
+                            id="staffSocialSecurity"
+                            type="text"
+                            class="form-control input-sm"
+                            v-model="record.social_security"
+                            title="Indique el número de seguro social"
+                        />
+                    </div>
+                </div>
+                <div
+                    class="col-md-3"
+                    id="helpAgeGroup"
+                    v-if="record.payroll_age_group_id != '' && record.birthdate != ''"
+                >
+                    <div class="form-group">
+                        <label for="staffAgeGroup">Grupo Etario</label>
+                        <br>
+                        <span>{{ record.age_group }}</span>
+                    </div>
+                </div>
+                <div class="col-md-3">
                     <div class="form-group" id="helpStaffDisability">
-                        <label>¿Posee una Discapacidad?</label>
+                        <label for="has_disability">¿Posee una Discapacidad?</label>
                         <div class="col-md-12">
                             <div
                                 class="custom-control custom-switch"
@@ -186,21 +224,22 @@
                                 <label
                                     class="custom-control-label"
                                     for="has_disability"
-                                ></label>
+                                >&nbsp;</label>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div
-                    class="col-md-4"
+                    class="col-md-3"
                     id="helpStaffDisabilityName"
                     v-if="
                         record.has_disability && payroll_disabilities.length > 0
                     "
                 >
                     <div class="form-group is-required">
-                        <label>Discapacidad</label>
+                        <label for="staffDisability">Discapacidad</label>
                         <select2
+                            id="staffDisability"
                             :options="payroll_disabilities"
                             v-model="record.payroll_disability_id"
                         >
@@ -208,36 +247,11 @@
                     </div>
                 </div>
                 <div
-                    class="col-md-4"
-                    id="helpStaffBloodType"
-                    v-if="payroll_blood_types.length > 0"
+                    class="col-md-3"
+                    id="helpStaffDiverLicense"
                 >
                     <div class="form-group">
-                        <label>Tipo de Sangre</label>
-                        <select2
-                            :options="payroll_blood_types"
-                            v-model="record.payroll_blood_type_id"
-                        >
-                        </select2>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-md-4" id="helpStaffSocialSecurity">
-                    <div class="form-group">
-                        <label>Seguro Social</label>
-                        <input
-                            type="text"
-                            class="form-control input-sm"
-                            v-model="record.social_security"
-                            title="Indique el número de seguro social"
-                        />
-                    </div>
-                </div>
-                <div class="col-md-4" id="helpStaffDiverLicense">
-                    <div class="form-group">
-                        <label>¿Posee Licencia de Conducir?</label>
+                        <label for="has_driver_license">¿Posee Licencia de Conducir?</label>
                         <div class="col-md-12">
                             <div
                                 class="custom-control custom-switch"
@@ -257,13 +271,13 @@
                                 <label
                                     class="custom-control-label"
                                     for="has_driver_license"
-                                ></label>
+                                >&nbsp;</label>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div
-                    class="col-md-4"
+                    class="col-md-3"
                     id="helpStaffLicenseDegree"
                     v-if="
                         record.has_driver_license
@@ -271,70 +285,124 @@
                     "
                 >
                     <div class="form-group is-required">
-                        <label>Grado de Licencia de Conducir</label>
+                        <label for="staffLicenseDegree">Grado de Licencia de Conducir</label>
                         <select2
+                            id="staffLicenseDegree"
                             :options="payroll_license_degrees"
                             v-model="record.payroll_license_degree_id"
                         >
                         </select2>
                     </div>
                 </div>
+                <div
+                    class="col-md-3"
+                    id="helpStaffDiverLicense"
+                >
+                    <div class="form-group">
+                        <label for="has_died">¿Fallecido?</label>
+                        <div class="col-md-12">
+                            <div
+                                class="custom-control custom-switch"
+                                data-toggle="tooltip"
+                                title="
+                                    Indique si el trabajador ya fallecio
+                                "
+                            >
+                                <input
+                                    type="checkbox"
+                                    class="custom-control-input sel_has_died"
+                                    id="has_died"
+                                    v-model="record.has_died"
+                                    :value="false"
+                                    name="has_died"
+                                >
+                                <label
+                                    class="custom-control-label"
+                                    for="has_died"
+                                >&nbsp;</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <br>
+            <hr>
             <div>
-                <label>Dirección de Habitación</label>
+                <h6 class="card-title">Dirección de Habitación</h6>
             </div>
             <div class="row">
                 <div
-                    class="col-md-4"
+                    class="col-md-3"
                     id="helpStaffCountry"
                     v-if="countries.length > 0"
                 >
                     <div class="form-group is-required">
-                        <label>País</label>
+                        <label for="staffCountry">País</label>
                         <select2
+                            id="staffCountry"
                             :options="countries"
                             @input="getEstates()"
                             v-model="record.country_id"
                         ></select2>
                     </div>
                 </div>
-                <div class="col-md-4" id="helpStaffState">
+                <div class="col-md-3" id="helpStaffState">
                     <div class="form-group is-required">
-                        <label>Estado</label>
+                        <label for="staffState">Estado</label>
                         <select2
+                            id="staffState"
                             :options="estates"
-                            @input="getMunicipalities()"
+                            @input="getMunicipalities(), getRegions()"
                             v-model="record.estate_id"
                         ></select2>
                     </div>
                 </div>
-                <div class="col-md-4" id="helpStaffMunicipality">
-                    <div class="form-group is-required">
-                        <label>Municipio</label>
+                <div class="col-md-3" id="helpStaffRegion">
+                    <div class="form-group">
+                        <label for="staffRegion">Región</label>
                         <select2
+                            id="staffRegion"
+                            :options="regions"
+                            v-model="record.region_id"
+                        ></select2>
+                    </div>
+                </div>
+                <div class="col-md-3" id="helpStaffMunicipality">
+                    <div class="form-group is-required">
+                        <label for="staffMunicipality">Municipio</label>
+                        <select2
+                            id="staffMunicipality"
                             :options="municipalities"
                             @input="getParishes()"
                             v-model="record.municipality_id"
                         ></select2>
                     </div>
                 </div>
-            </div>
-
-            <div class="row">
-                <div class="col-md-4" id="helpStaffParish">
+                <div class="col-md-3" id="helpStaffParish">
                     <div class="form-group is-required">
-                        <label>Parroquia</label>
+                        <label for="staffParish">Parroquia</label>
                         <select2
+                            id="staffParish"
                             :options="parishes"
+                            @input="getLocalities()"
                             v-model="record.parish_id"
                         ></select2>
                     </div>
                 </div>
-                <div class="col-md-4" id="helpStaffAddress">
+                <div class="col-md-3" id="helpStaffLocality">
                     <div class="form-group">
-                        <label>Dirección</label>
+                        <label for="staffLocality">Localidad</label>
+                        <select2
+                            id="staffLocality"
+                            :options="localities"
+                            v-model="record.locality_id"
+                        ></select2>
+                    </div>
+                </div>
+                <div class="col-md-6" id="helpStaffAddress">
+                    <div class="form-group">
+                        <label for="staffAddress">Dirección</label>
                         <input
+                            id="staffAddress"
                             type="text"
                             class="form-control input-sm"
                             v-model="record.address"
@@ -342,11 +410,11 @@
                     </div>
                 </div>
             </div>
-
+            <hr>
             <div class="row">
                 <div class="col-12" id="helpStaffMedicalHistory">
                     <div class="form-group">
-                        <label>Historial Médico</label>
+                        <h6 class="card-title">Historial Médico</h6>
                         <ckeditor
                             :editor="ckeditor.editor"
                             id="medical_history"
@@ -375,7 +443,7 @@
                 ></i>
             </h6>
             <div class="row" v-for="(uniform, u) in record.uniform_sizes" :key="u">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="form-group is-required">
                         <label for="uniform_name">Nombre:</label>
                         <input
@@ -388,7 +456,7 @@
                         >
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="form-group is-required">
                         <label for="uniform_name">Talla:</label>
                         <input
@@ -414,6 +482,7 @@
                     </div>
                 </div>
             </div>
+            <hr>
             <h6 class="card-title" id="helpStaffPhone">
                 Números Telefónicos
                 <i class="fa fa-plus-circle cursor-pointer" @click="addPhone"></i>
@@ -421,6 +490,7 @@
             <div class="row phone-row" v-for="(phone, i) in record.phones" :key="i">
                 <div class="col-3">
                     <div class="form-group is-required">
+                        <label for="phone_type">Tipo de número telefónico</label>
                         <select
                             data-toggle="tooltip"
                             v-model="phone.type"
@@ -439,6 +509,7 @@
                 </div>
                 <div class="col-2">
                     <div class="form-group is-required">
+                        <label for="area_code">Código de área</label>
                         <input
                             type="text"
                             placeholder="Cod. Area"
@@ -451,6 +522,7 @@
                 </div>
                 <div class="col-4">
                     <div class="form-group is-required">
+                        <label for="phone_number">Número telefônico</label>
                         <input
                             type="text"
                             placeholder="Número"
@@ -464,6 +536,7 @@
                 </div>
                 <div class="col-2">
                     <div class="form-group">
+                        <label for="extension">Extensión</label>
                         <input
                             type="text"
                             placeholder="Extensión"
@@ -546,16 +619,20 @@
                     social_security: '',
                     has_driver_license: '',
                     payroll_license_degree_id: '',
+                    payroll_age_group_id: '',
                     emergency_contact: '',
                     emergency_phone: '',
                     country_id: '',
                     estate_id: '',
                     municipality_id: '',
                     parish_id: '',
+                    region_id: '',
+                    locality_id: '',
                     address: '',
                     medical_history: '',
                     uniform_sizes: [],
                     phones: [],
+                    age_group: '',
                 },
                 errors: [],
                 payroll_nationalities: [],
@@ -564,9 +641,12 @@
                 estates: [],
                 municipalities: [],
                 parishes: [],
+                regions: [],
+                localities: [],
                 payroll_license_degrees: [],
                 payroll_blood_types: [],
                 payroll_disabilities: [],
+                payroll_age_groups: [],
             }
         },
         methods: {
@@ -601,10 +681,14 @@
                     estate_id: '',
                     municipality_id: '',
                     parish_id: '',
+                    region_id: '',
+                    locality_id: '',
+                    payroll_age_group_id: '',
                     address: '',
                     medical_history: '',
                     uniform_sizes: [],
                     phones: [],
+                    age_group: '',
                 };
             },
 
@@ -630,6 +714,7 @@
                         has_driver_license: data.has_driver_license
                             ? data.has_driver_license : false,
                         payroll_license_degree_id: data.payroll_license_degree_id,
+                        has_died: data.has_died ? data.has_died : false,
                         emergency_contact: data.emergency_contact
                             ? data.emergency_contact : '',
                         emergency_phone: data.emergency_phone
@@ -638,6 +723,9 @@
                         estate_id: data.estate_id,
                         municipality_id: data.municipality_id,
                         parish_id: data.parish_id,
+                        locality_id: data.locality_id,
+                        region_id: data.region_id,
+                        payroll_age_group_id: data.payroll_age_group_id,
                         address: data.address,
                         medical_history: data.medical_history
                             ? data.medical_history : '',
@@ -645,8 +733,14 @@
                             ? data.payroll_staff_uniform_size : [],
                         phones: data.phones ? data.phones : [],
                     }
+
                     vm.record.parish = data.parish;
+                    vm.record.region = data.region;
+                    vm.record.locality = data.locality;
                     vm.record.country_id = vm.record.parish.municipality.estate.country_id;
+                    setTimeout(() => {
+                        vm.record.payroll_nationality_id = data.payroll_nationality_id;
+                    }, 100);
                 });
             },
 
@@ -708,6 +802,46 @@
             },
 
             /**
+             * Obtiene las Regiones
+             *
+             * @author Pedro Contreras <pmcontreras@cenditel.gob.ve>
+             *
+             */
+             async getRegions() {
+                const vm = this;
+                vm.regions = [];
+                if (vm.record.estate_id) {
+                    await axios.get(`${window.app_url}/get-regions/${vm.record.estate_id}`).then((response) => {
+                        vm.regions = response.data?.records || [];
+                    });
+                    if (vm.record.id) {
+                        if(vm.record.region){
+                            vm.record.region_id = vm.record.region.id;
+                        }
+                    }
+                }
+            },
+
+            /**
+             * Obtiene las Localidades
+             *
+             * @author Pedro Contreras <pmcontreras@cenditel.gob.ve>
+             *
+             */
+            async getLocalities() {
+            const vm = this;
+                vm.localities = [];
+                if (vm.record.parish_id) {
+                    await axios.get(`${window.app_url}/get-localities/${vm.record.parish_id}`).then((response) => {
+                        vm.localities = response.data?.records || [];
+                    });
+                    if (vm.record.id) {
+                        vm.record.locality_id = vm.record.locality?.id;
+                    }
+                }
+            },
+
+            /**
              * Agrega una nueva columna para las tallas de uniformes
              *
              * @author Daniel Contreras <dcontreras@cenditel.gob.ve> | <exodiadaniel@gmail.com>
@@ -738,9 +872,30 @@
                     });
                 }
             },
+
+            /**
+             * Selecciona el grupo etario al que pertenece de acuerdo a la fecha de nacimiento
+             *
+             * @author Daniel Contreras <dcontreras@cenditel.gob.ve> | <exodiadaniel@gmail.com>
+             */
+            setAgeGroup() {
+                const vm = this;
+                let age = vm.setAge(vm.record.birthdate);
+
+                vm.record.payroll_age_group_id = '';
+                vm.record.age_group = '';
+
+                vm.payroll_age_groups.forEach((ageGruop) => {
+                    if (age >= ageGruop.minimum && age <= ageGruop.maximum) {
+                        vm.record.payroll_age_group_id = ageGruop.id;
+                        vm.record.age_group = ageGruop.text;
+                    }
+                })
+            },
         },
         async created() {
             this.loading = true;
+            await this.getPayrollAgeGroups();
             await this.getPayrollNationalities();
             await this.getGenders();
             await this.getCountries();
@@ -756,6 +911,7 @@
             vm.loading = true;
             if (vm.payroll_staff_id) {
                 await vm.getStaff();
+                await vm.setAgeGroup();
             } else {
                 this.record.has_disability = false;
                 this.record.has_driver_license = false;

@@ -198,9 +198,11 @@
         },
         mounted() {
            	const vm = this;
-            vm.getTypesProducts();
-            vm.getTypesProjects();
-
+            $("#add_activity").on("show.bs.modal", function () {
+                vm.reset();
+                vm.getTypesProducts();
+                vm.getTypesProjects();
+            });
         }
     };
 </script>

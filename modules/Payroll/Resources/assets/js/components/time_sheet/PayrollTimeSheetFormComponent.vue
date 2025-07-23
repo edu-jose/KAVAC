@@ -67,7 +67,7 @@
                     <div class="form-group is-required">
                         <label for="from_date">Desde:</label>
                         <input type="date" id="from_date" class="form-control no-restrict input-sm"
-                            v-model="record.from_date" data-toggle="tooltip" @input="loadDataCompletedPeriods"
+                            v-model="record.from_date" data-toggle="tooltip" @input="loadDataCompletedPeriods(); getHolidaysByPeriod(); getPayrollTimeSheetParameters(); setDaysInPeriod();"
                             title="Indique el periodo (requerido)" />
                         <input type="hidden" name="id" id="id" v-model="record.id" />
                     </div>
@@ -78,7 +78,7 @@
                     <div class="form-group is-required">
                         <label for="to_date">Hasta:</label>
                         <input type="date" id="to_date" placeholder="Hasta" class="form-control no-restrict input-sm"
-                            @input="loadDataCompletedPeriods" v-model="record.to_date" data-toggle="tooltip"
+                            @input="loadDataCompletedPeriods(); getHolidaysByPeriod(); getPayrollTimeSheetParameters(); setDaysInPeriod();" v-model="record.to_date" data-toggle="tooltip"
                             title="Indique el periodo (requerido)" />
                     </div>
                     <!-- ./Hasta -->
@@ -121,15 +121,17 @@
                     </div>
                     <!-- ./Aprobador -->
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-6" >
                     <!-- Parámetros de la hoja de tiempo -->
-                    <div class="form-group is-required">
+                    <div class="form-group is-required" v-if="payroll_time_sheet_parameters.length != 0">
                         <label>Parámetros de la hoja de tiempo:</label>
                         <select2 :options="payroll_time_sheet_parameters"
                             v-model="record.payroll_time_sheet_parameter_id" 
                             @input="setTimeSheetColumns();
                             loadDataCompletedPeriods();
-                            ">
+                            setHolidaysByPeriod();
+                            "
+                            :disabled="!record.from_date || !record.to_date || !record.payroll_supervised_group_id">
                         </select2>
                     </div>
                     <!-- ./Parámetros de la hoja de tiempo -->
@@ -156,7 +158,7 @@
                 </div>
             </div>
             <v-draggable-table ref="draggableTable" :columns="draggableColumns"
-                @error="receiveErrors" :data="draggableData" :parameters="parameters"></v-draggable-table>
+                @error="receiveErrors" :data="draggableData" :parameters="parameters" :totalGroups="totalGroups"></v-draggable-table>
         </div>
         <!-- Final card-body -->
 
@@ -194,6 +196,7 @@ export default {
                 supervisor: "",
                 approver: "",
                 time_sheet_data: {},
+                time_sheet_original_data: {},
                 time_sheet_columns: {},
             },
             parameters: {},
@@ -206,12 +209,15 @@ export default {
             errors: [],
             draggableColumns: [],
             draggableData: [],
+            maxHolidays: [],
+            totalGroups: [],
+            daysInPeriod: 0,
         };
     },
     watch: {
         'record.payroll_time_sheet_parameter_id': function (payrollTimeSheetParameterId) {
             const vm = this;
-            if (payrollTimeSheetParameterId) {
+            if (payrollTimeSheetParameterId && vm.payroll_time_sheet_parameters.length != 0) {
                 vm.parameters = vm.payroll_time_sheet_parameters.filter((parameter) => {
                     return parameter.id == payrollTimeSheetParameterId
                     })[0].parameters;
@@ -221,7 +227,12 @@ export default {
     methods: {
         receiveErrors(errors) {
             const vm = this;
-            vm.errors = errors;
+
+            let selectedParam = vm.payroll_time_sheet_parameters.find(param => vm.record.payroll_time_sheet_parameter_id == param["id"]);
+
+            if (selectedParam && !selectedParam.total_for_period) {
+                vm.errors = errors;
+            }
         },
         /**
          * Método que borra todos los datos del formulario
@@ -239,8 +250,25 @@ export default {
                 supervisor: "",
                 approver: "",
                 time_sheet_data: {},
+                time_sheet_original_data: {},
                 time_sheet_columns: {},
             };
+        },
+
+        /**
+         * Método que establece la cantidad de dias seleccionado en el periodo
+         * para calcular los maximos
+         *
+         * @author  Daniel Contreras <dcontreras@cenditel.gob.ve>
+         */
+        setDaysInPeriod() {
+            const vm = this;
+
+            let startDate = new Date(vm.record.from_date);
+            let endDate = new Date(vm.record.to_date);
+            let timeDiff = Math.abs(endDate - startDate);
+            let diffDays = Math.ceil(timeDiff / (1000 * 3600 * 24));
+            vm.daysInPeriod = diffDays + 1;
         },
 
         /**
@@ -274,14 +302,72 @@ export default {
          *
          * @author  Daniel Contreras <dcontreras@cenditel.gob.ve>
          */
-        async getPayrollTimeSheetParameters() {
+        async getPayrollTimeSheetParameters(paramId = null) {
             const vm = this;
             vm.payroll_time_sheet_parameters = [];
             await axios
-                .get(`${window.app_url}/payroll/get-time-sheet-parameters`)
+                .get(
+                    `${window.app_url}/payroll/get-time-sheet-parameters`,
+                    {
+                        params : {
+                            'from_date': vm.record.from_date,
+                            'to_date': vm.record.to_date
+                        }
+                    }
+                )
                 .then((response) => {
                     vm.payroll_time_sheet_parameters = response.data;
+
+                    if (paramId !== null) {
+                        setTimeout(() => {
+                            vm.record.payroll_time_sheet_parameter_id = paramId;
+                        }, 500);
+                    }
                 });
+        },
+
+        /**
+         * Método que obitiene los días feriados y domingos que hay dentro del periodo seleccionado
+         *
+         * @author  Daniel Contreras <dcontreras@cenditel.gob.ve>
+         */
+         async getHolidaysByPeriod() {
+            const vm = this;
+            vm.maxHolidays = [];
+            await axios
+                .get(`${window.app_url}/payroll/get-time-sheet-holidays`, {
+                    params: {
+                        from_date: vm.record.from_date,
+                        to_date: vm.record.to_date,
+                    },
+                })
+                .then((response) => {
+                    vm.maxHolidays = response.data;
+                });
+
+            if (vm.record.payroll_time_sheet_parameter_id) {
+                vm.setHolidaysByPeriod();
+            }
+        },
+
+        /**
+         * Método que establece los días feriados y domingos que hay dentro del periodo seleccionado
+         * en la hoja de tiempo
+         *
+         * @author  Daniel Contreras <dcontreras@cenditel.gob.ve>
+         */
+        setHolidaysByPeriod() {
+            const vm = this;
+
+            if (!vm.$refs.draggableTable) {
+                return;
+            }
+
+            Vue.set(
+                vm.$refs.draggableTable,
+                "maxHolidays",
+                vm.maxHolidays
+            );
         },
 
         /**
@@ -321,6 +407,8 @@ export default {
                         }
                     );
 
+                    vm.totalGroups = params.total_groups;
+
                     Object.values(params.parameters).forEach(
                         (param, index, array) => {
                             let group = "";
@@ -330,11 +418,27 @@ export default {
                                     group = p.group;
                                     groupMax = p.max;
                                 }
+
                                 draggableColumns.push({
                                     name: p.text,
                                     group: p.group,
-                                    type: "input",
+                                    type: p.formula != "" && params.total_for_period ? "formula" : "input",
                                     isDraggable: true,
+                                    formula: p.formula,
+                                    order: p.order,
+                                    classification_type: p.classification_type,
+                                    max: vm.setMaxPerParameter(
+                                        params.total_for_period,
+                                        params.breaks_allowed_per_week,
+                                        p.max_value_allowed_per_time_sheet,
+                                        p.classification_type,
+                                    ),
+                                    originalMax: vm.setMaxPerParameter(
+                                        params.total_for_period,
+                                        params.breaks_allowed_per_week,
+                                        p.max_value_allowed_per_time_sheet,
+                                        p.classification_type,
+                                    )
                                 });
                             });
 
@@ -376,13 +480,85 @@ export default {
                 vm.draggableColumns = [];
             }
 
+            vm.$refs.draggableTable.data.forEach((d, index) => {
+                vm.$refs.draggableTable.setMaxPerColumn(d.staff_id, vm.daysInPeriod);
+            });
+
             if (vm.record.id) {
                 Vue.set(
                     vm.$refs.draggableTable,
                     "inputValues",
                     vm.record.time_sheet_data
                 );
+
+                Vue.set(
+                    vm.$refs.draggableTable,
+                    "originalInputValues",
+                    vm.record.time_sheet_original_data
+                );
             }
+        },
+
+        /**
+         * Método que establece el máximo de un parámetro dependiendo del periodo
+         *
+         * @author  Daniel Contreras <dcontreras@cenditel.gob.ve>
+         */
+        setMaxPerParameter(total_for_period, breaks_allowed_per_week, max_parameter_value, classification_type) {
+            const vm = this;
+
+            if (!total_for_period) {
+                return max_parameter_value;
+            }
+
+            const descansoRegex = /descanso(s)?/i;
+            const domingoRegex = /domingo(s)?/i;
+            const feriadoRegex = /feriado(s)?/i;
+            const turnoSencilloRegex = /turno(s)? sencillo(s)?/i;
+            let domingoMax = 0;
+            let feriadoMax = 0;
+
+            if (descansoRegex.test(classification_type) && breaks_allowed_per_week > 0) {
+                // Calcular la cantidad de semanas que hay en el periodo de acuerdo al record.from_date y record.to_date
+                let startDate = new Date(vm.record.from_date);
+                let endDate = new Date(vm.record.to_date);
+                let timeDiff = Math.abs(endDate - startDate);
+                let diffDays = Math.ceil(timeDiff / (1000 * 3600 * 24));
+                let weeks = Math.floor(diffDays / 7);
+
+                return breaks_allowed_per_week * weeks;
+            }
+
+            for (let[i, v] of Object.entries(vm.maxHolidays)) {
+                domingoMax = v['domingos'];
+                feriadoMax = v['feriados'];
+
+                if (domingoRegex.test(classification_type)) {
+                    // Si se encuentra una coincidencia, usar el valor correspondiente
+                    return v['domingos'];
+                }
+
+                if (feriadoRegex.test(classification_type)) {
+                    // Si se encuentra una coincidencia, usar el valor correspondiente
+                    return v['feriados'];
+                }
+            }
+
+            if (turnoSencilloRegex.test(classification_type)) {
+                let startDate = new Date(vm.record.from_date);
+                let endDate = new Date(vm.record.to_date);
+                let timeDiffDays = Math.abs(endDate - startDate);
+                let diffDays = (Math.ceil(timeDiffDays / (1000 * 3600 * 24))) + 1;
+
+                let timeDiff = Math.abs(endDate - startDate);
+                let diffDaysWeek = Math.ceil(timeDiff / (1000 * 3600 * 24));
+                let weeks = Math.floor(diffDaysWeek / 7);
+                let weekDays = breaks_allowed_per_week * weeks;
+
+                return diffDays - (weekDays + feriadoMax + domingoMax);
+            }
+
+            return max_parameter_value;
         },
 
         /**
@@ -404,7 +580,6 @@ export default {
                     );
                 });
                 let index = 1;
-                let indexof = -1;
 
                 group.payroll_staffs.forEach((staff, indexof) => {
                     draggableData.push({
@@ -413,6 +588,8 @@ export default {
                         Nombre: staff.name,
                         staff_id: staff.id,
                         id_number: staff.id_number,
+                        workload: staff.workload,
+                        days: vm.daysInPeriod,
                     });
                     payroll_staffs.push({
                         "N°": index,
@@ -420,12 +597,22 @@ export default {
                         Nombre: staff.name,
                         id_number: staff.id_number,
                         staff_id: staff.id,
+                        workload: staff.workload,
+                        days: vm.daysInPeriod,
                     });
                 });
             }
 
             vm.draggableData = draggableData;
             vm.payroll_staffs_reference = payroll_staffs;
+        },
+
+        contarDiasEntreFechas(from_date_str, to_date_str) {
+
+            let from_date = moment(from_date_str);
+            let to_date = moment(to_date_str);
+
+            return to_date.diff(from_date, 'days') + 1
         },
 
         /**
@@ -447,7 +634,7 @@ export default {
                 vm.updateRecord(url);
             } else {
                 vm.loading = true;
-                var fields = {};
+                let fields = {};
 
                 if (
                     vm.$refs.draggableTable &&
@@ -474,23 +661,47 @@ export default {
                             type: updatedColumn.type,
                             isDraggable: updatedColumn.isDraggable,
                             max: updatedColumn.max,
+                            formula: updatedColumn.formula || '',
+                            order: updatedColumn.order || '',
+                            classification_type: updatedColumn.classification_type || '',
                         });
                     });
 
                     vm.record.time_sheet_data =
                         vm.$refs.draggableTable.inputValues;
                     vm.record.time_sheet_columns = columns;
+                    vm.record.time_sheet_original_data =
+                        vm.$refs.draggableTable.originalInputValues;
                 } else {
                     vm.record.time_sheet_data = [];
                     vm.record.time_sheet_columns = [];
                 }
 
-                for (var index in vm.record) {
+                for (let index in vm.record) {
                     fields[index] = vm.record[index];
                 }
-                
+
                 if (vm.parameters) {
                     fields["parameters"] = vm.parameters;
+                }
+
+                let selectedParam = vm.payroll_time_sheet_parameters.find(param => vm.record.payroll_time_sheet_parameter_id == param["id"]);
+
+                if (selectedParam) {
+                    fields["total_for_period"] = selectedParam.total_for_period
+                }
+
+                if (selectedParam && fields["total_for_period"]) {
+                    let maxtotal = vm.contarDiasEntreFechas(fields.from_date, fields.to_date);
+
+                    const totalKeys = Object.keys(fields.time_sheet_data).filter(key => key.startsWith('total-'));
+
+                    totalKeys.forEach(key => {
+                        const value = fields.time_sheet_data[key];
+                        if (value > maxtotal) {
+                            vm.errors.push('El total no puede ser mayor al periodo de ' + maxtotal + ' dias establecido el rango de fechas.');
+                        }
+                    });
                 }
 
                 await axios
@@ -570,11 +781,15 @@ export default {
                     type: updatedColumn.type,
                     isDraggable: updatedColumn.isDraggable,
                     max: updatedColumn.max,
+                    formula: updatedColumn.formula || '',
+                    order: updatedColumn.order || '',
+                    classification_type: updatedColumn.classification_type || '',
                 });
             });
 
             vm.record.time_sheet_columns = columns;
             vm.record.time_sheet_data = vm.$refs.draggableTable.inputValues;
+            vm.record.time_sheet_original_data = vm.$refs.draggableTable.originalInputValues;
 
             for (var index in vm.record) {
                 fields[index] = vm.record[index];
@@ -641,11 +856,19 @@ export default {
                 });
 
             vm.record = recordEdit;
+            vm.totalGroups = recordEdit.total_groups;
+
+            await vm.setDaysInPeriod();
+            await vm.getPayrollTimeSheetParameters(recordEdit.payroll_time_sheet_parameter_id);
 
             if (vm.record.payroll_time_sheet_parameter_id) {
                 vm.parameters = vm.payroll_time_sheet_parameters.filter((parameter) => {
                     return parameter.id == vm.record.payroll_time_sheet_parameter_id
                     })[0].parameters;
+                vm.setTimeSheetColumns();
+                vm.loadDataCompletedPeriods();
+                vm.setHolidaysByPeriod();
+                            
             }
         },
 
@@ -709,6 +932,9 @@ export default {
             vm.peopleFound = [];
             const formData = new FormData();
             formData.append("file", file);
+            if(typeof vm.$refs.draggableTable.originalInputValues === 'undefined' ){
+                vm.$refs.draggableTable.originalInputValues = vm.$refs.draggableTable.inputValues;
+            }
 
             axios
                 .post(`${window.app_url}/payroll/time-sheet/import`, formData, {
@@ -739,6 +965,7 @@ export default {
                                 name: column.name + "-" + d.staff_id,
                                 n: d["N°"],
                                 disabled: column.disabled,
+                                days: vm.daysInPeriod,
                             });
                         });
                     });
@@ -755,6 +982,7 @@ export default {
                                 item.cedula == id_number &&
                                 item[column_name] !== null
                         );
+
 
                         if (
                             valor &&
@@ -807,6 +1035,13 @@ export default {
                                 col_name,
                                 parseInt(valor[column_name])
                             );
+                            Vue.set(
+                                vm.$refs.draggableTable.originalInputValues,
+                                col_name,
+                                parseInt(valor[column_name])
+                            );
+
+                            vm.$refs.draggableTable.calculateFormula(formattedColumns[i].staff_id, vm.daysInPeriod);
                         } else {
                             vm.peopleNotOneFound = true;
                         }
@@ -824,6 +1059,14 @@ export default {
                                     element[0],
                                     parseInt(element[1])
                                 );
+
+                                if(vm.$refs.draggableTable.originalInputValues){
+                                    Vue.set(
+                                        vm.$refs.draggableTable.originalInputValues,
+                                        element[0],
+                                        parseInt(element[1])
+                                    );
+                                }
                             });
                         }
                     }
@@ -968,6 +1211,17 @@ export default {
                                                         key
                                                         ]
                                                     );
+
+                                                    Vue.set(
+                                                        vm.$refs.draggableTable
+                                                            .originalInputValues,
+                                                        key,
+                                                        response.data.result[
+                                                        key
+                                                        ]
+                                                    );
+
+                                                    vm.$refs.draggableTable.calculateFormula(staffId, vm.daysInPeriod);
                                                 }
                                             }
 
@@ -992,7 +1246,6 @@ export default {
 
     created() {
         const vm = this;
-        vm.getPayrollTimeSheetParameters();
 
         if (vm.payroll_time_sheet_id) {
             vm.loadForm(vm.payroll_time_sheet_id);

@@ -5,6 +5,7 @@ namespace Modules\Payroll\Exports;
 use DateTime;
 use App\Models\Parameter;
 use Modules\Payroll\Models\Payroll;
+use Nwidart\Modules\Facades\Module;
 use Modules\Payroll\Models\Institution;
 use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\Exportable;
@@ -117,6 +118,13 @@ class PayrollTextFileExport implements FromArray, ShouldAutoSize, WithCustomCsvS
     protected $result = [];
 
     /**
+     * Resultados para la exportación
+     *
+     * @var array $errors
+     */
+    protected $errors = [];
+
+    /**
      * Registros de la nómina
      *
      * @var array $records
@@ -159,7 +167,11 @@ class PayrollTextFileExport implements FromArray, ShouldAutoSize, WithCustomCsvS
         $mergedCollection = collect([]);
 
         foreach ($payrolls as $payroll) {
-            $mergedCollection = $mergedCollection->merge($payroll->payrollStaffPayrolls);
+            if ($payroll->payrollPaymentPeriod?->payrollPaymentType?->is_survivor) {
+                $mergedCollection = $mergedCollection->merge($payroll->payrollStaffPayrolls->load('payrollStaff.PayrollSurvivor'));
+            } else {
+                $mergedCollection = $mergedCollection->merge($payroll->payrollStaffPayrolls);
+            }
         }
 
         $this->total = [];
@@ -174,17 +186,32 @@ class PayrollTextFileExport implements FromArray, ShouldAutoSize, WithCustomCsvS
         $data = [];
         foreach ($mergedCollection->toArray() as $model) {
             if (isset($model["payroll_staff"])) {
+                if (empty($model["payroll_staff"]["payroll_employment"])) {
+                    $this->errors[]['employments'][] = $model["payroll_staff"]["id_number"]
+                        . ' - ' . $model["payroll_staff"]["first_name"] . ' '
+                        . $model["payroll_staff"]["last_name"];
+                    continue;
+                }
                 array_push($data, $model);
             }
+        }
+
+        if (count($this->errors) > 0) {
+            throw new \Exception(json_encode($this->errors));
         }
 
         foreach ($data as &$d) {
             $d['index'] = $i++;
         }
-
-        usort($data, function ($a, $b) {
-            return $a["payroll_staff"]["first_name"] > $b["payroll_staff"]["first_name"];
-        });
+        if ($data[0]["payroll"]["payroll_payment_period"]["payroll_payment_type"]["is_survivor"]) {
+            usort($data, function ($a, $b) {
+                return $a["payroll_staff"]["payroll_survivor"]["first_name"] > $b["payroll_staff"]["payroll_survivor"]["first_name"];
+            });
+        } else {
+            usort($data, function ($a, $b) {
+                return $a["payroll_staff"]["first_name"] > $b["payroll_staff"]["first_name"];
+            });
+        }
 
         $this->payroll = collect($data);
     }
@@ -243,17 +270,26 @@ class PayrollTextFileExport implements FromArray, ShouldAutoSize, WithCustomCsvS
             $yearsApn = new DateTime($payroll["payroll_staff"]["payroll_employment"]["startDateApn"]);
             $diff = date_diff($dateNow, $yearsApn);
             $institution_years = $diff->format("%y");
+            $financeAccountType = "";
+
+            if (
+                Module::has('Finance')
+                && Module::isEnabled('Finance')
+                && $payroll["payroll"]["payroll_payment_period"]["payroll_payment_type"]["is_survivor"] == true
+            ) {
+                $financeAccountType =  \Modules\Finance\Models\FinanceAccountType::class::find($payroll["payroll_staff"]["payroll_survivor"]["finance_account_type_id"]);
+            }
 
             $data = [
                 $payroll["index"],
-                $payroll["payroll_staff"]["first_name"] . ' ' . $payroll["payroll_staff"]["last_name"],
-                $payroll["payroll_staff"]["id_number"],
+                $payroll["payroll"]["payroll_payment_period"]["payroll_payment_type"]["is_survivor"] ? ($payroll["payroll_staff"]["payroll_survivor"]["first_name"] . ' ' . $payroll["payroll_staff"]["payroll_survivor"]["last_name"] ) : ($payroll["payroll_staff"]["first_name"] . ' ' . $payroll["payroll_staff"]["last_name"]),
+                $payroll["payroll"]["payroll_payment_period"]["payroll_payment_type"]["is_survivor"] ? ($payroll["payroll_staff"]["payroll_survivor"]["id_number"]) : ($payroll["payroll_staff"]["id_number"]),
                 $payroll["payroll_staff"]["payroll_employment"]["payroll_positions"][0]['name'],
                 date_format($startDate, 'd/m/Y'),
                 $institution_years,
-                $payroll["payroll_staff"]["payroll_financial"][0]["payroll_account_number"] ?? '',
+                $payroll["payroll"]["payroll_payment_period"]["payroll_payment_type"]["is_survivor"] ? ($payroll["payroll_staff"]["payroll_survivor"]["payroll_account_number"] ?? '') : ($payroll["payroll_staff"]["payroll_financial"][0]["payroll_account_number"] ?? ''),
                 $payroll["payroll_staff"]["payroll_nationality"]["country"]["name"],
-                $payroll["payroll_staff"]["payroll_financial"][0]["finance_account_type"]["code"] ?? ''
+                $payroll["payroll"]["payroll_payment_period"]["payroll_payment_type"]["is_survivor"] ? ($financeAccountType->code ?? '') : ($payroll["payroll_staff"]["payroll_financial"][0]["finance_account_type"]["code"] ?? '')
             ];
 
             if ($this->trust_code != false) {

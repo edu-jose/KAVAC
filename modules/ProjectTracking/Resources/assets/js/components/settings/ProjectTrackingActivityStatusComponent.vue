@@ -166,31 +166,33 @@
                             ></span>
                            </div>
                             <div slot="id" slot-scope="props">
-                                <button
-                                    @click="initUpdate(props.row.id, $event)"
-                                    class="btn btn-warning btn-xs btn-icon btn-action"
-                                    v-has-tooltip
-                                    title="Modificar registro"
-                                    data-toggle="tooltip"
-                                    type="button"
-                                >
-                                    <i class="fa fa-edit"></i>
-                                </button>
-                                <button
-                                    @click="
-                                        deleteRecord(
-                                            props.row.id,
-                                            'projecttracking/activity-status'
-                                        )
-                                    "
-                                    class="btn btn-danger btn-xs btn-icon btn-action"
-                                    v-has-tooltip
-                                    title="Eliminar registro"
-                                    data-toggle="tooltip"
-                                    type="button"
-                                >
-                                    <i class="fa fa-trash-o"></i>
-                                </button>
+                                <div v-if="!['Abierta', 'Pausada', 'Cerrada'].includes(props.row.name)" class="d-inline-flex">
+                                    <button
+                                        @click="initUpdate(props.row.id, $event)"
+                                        class="btn btn-warning btn-xs btn-icon btn-action"
+                                        v-has-tooltip
+                                        title="Modificar registro"
+                                        data-toggle="tooltip"
+                                        type="button"
+                                    >
+                                        <i class="fa fa-edit"></i>
+                                    </button>
+                                    <button
+                                        @click="
+                                            deleteRecord(
+                                                props.row.id,
+                                                'projecttracking/activity-status'
+                                            )
+                                        "
+                                        class="btn btn-danger btn-xs btn-icon btn-action"
+                                        v-has-tooltip
+                                        title="Eliminar registro"
+                                        data-toggle="tooltip"
+                                        type="button"
+                                    >
+                                        <i class="fa fa-trash-o"></i>
+                                    </button>
+                                </div>
                             </div>
                         </v-client-table>
                     </div>

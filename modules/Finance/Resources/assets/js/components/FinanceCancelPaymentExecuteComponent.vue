@@ -82,14 +82,6 @@
                                         :options="cancelPaymentExecuteOptions"
                                         v-model="record.cancel_payment_execute_option_id"
                                     >
-                                    <option
-                                        v-for="option in cancelPaymentExecuteOptions"
-                                        :key="option.id"
-                                        :value="option.id"
-                                        :disabled="(isPartial && option.id === 1) || (is_payroll && option.id === 2)"
-                                    >
-                                         {{ option.text }}
-                                    </option>
                                     </select2>
                                 </div>
                             </div>
@@ -97,8 +89,8 @@
                                 <div class="form-group">
                                     <label>Observaciones</label>
                                     <textarea
-                                        rows="2"  
-                                        class="form-control" 
+                                        rows="2"
+                                        class="form-control"
                                         tabindex="14"
                                         v-model="observations"
                                         readonly
@@ -128,8 +120,8 @@
                                 <div class="form-group is-required">
                                     <label>Descripción del motivo de la anulación</label>
                                     <textarea
-                                        rows="4"  
-                                        class="form-control" 
+                                        rows="4"
+                                        class="form-control"
                                         tabindex="14"
                                         v-model="record.description"
                                         title="
@@ -153,7 +145,7 @@
                             >
                                 Cerrar
                             </button>
-							<button type="button" 
+							<button type="button"
                                     class="btn btn-primary btn-sm btn-round btn-modal-save"
                                     @click="sendCancellation"
                             >
@@ -168,6 +160,8 @@
     </div>
 </template>
 <script>
+import { set } from 'lodash';
+
 export default {
     props: {
             id: {
@@ -210,14 +204,12 @@ export default {
             },
             cancelPaymentExecuteOptions: [
                     {'id': '', 'text': 'Seleccione...', 'disabled': false},
-                    {'id': 1, 'text': 'Sin Remisión', 'disabled': false},
-                    {'id': 2, 'text': 'Con Remisión', 'disabled': false},
                 ],
             message : [
                 "¿Está seguro? Una vez anulada esta Emisión de pago,"
                     +" todo el proceso se anulará hasta el compromiso.",
                 "¿Está seguro? Una vez anulada esta Emisión de pago,"
-                    +" el estado del registro cambiaŕa a 'Anulado' y se podrá"
+                    +" el estado del registro cambiará a 'Anulado' y se podrá"
                     +" generar una nueva 'Emisión de pago'."
             ],
             errors : [],
@@ -226,7 +218,8 @@ export default {
     },
     created(){
     },
-    mounted() {
+    async mounted() {
+        await this.setPaymentExecuteOptions();
     },
     methods: {
         /**
@@ -246,7 +239,7 @@ export default {
 
         /**
          * Método que obtiene el mensaje de alerta a tomar en cuenta antes de seguir con el proceso de anulación
-         * 
+         *
          * @author Francisco J. P. Ruiz <fjpenya@cenditel.gob.ve> | <javierrupe19@gmail.com>
          *
          *  @param {type: Integer} id  entero que representa el id de la opción que se escoge
@@ -288,9 +281,9 @@ export default {
 
         /**
          * Método que permite levantar el modal
-         * @param {*} modal 
+         * @param {*} modal
          * @param {*} id
-         * @param {*} event 
+         * @param {*} event
          */
         async showModal(modal, id, event){
             event.preventDefault();
@@ -340,6 +333,28 @@ export default {
             });
             vm.loading = false;
         },
+
+        /*
+         * Método que obtiene las opciones de anulación de la emisión de pago
+         */
+        async setPaymentExecuteOptions(){
+            const vm = this;
+            // Desabilitar la opcion sin remisión si la emisión de pago es parcial
+            vm.cancelPaymentExecuteOptions.push(
+                {
+                    'id': 1,
+                    'text': 'Sin Remisión',
+                    'disabled': this.isPartial
+                });
+
+            // Desabilitar la opcion con remisión si la emisión de pago es de nómina
+            vm.cancelPaymentExecuteOptions.push(
+                {
+                    'id': 2,
+                    'text': 'Con Remisión',
+                    'disabled': this.is_payroll
+                });
+        }
     },
 
     watch : {

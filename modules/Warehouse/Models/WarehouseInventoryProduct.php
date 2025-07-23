@@ -39,7 +39,7 @@ class WarehouseInventoryProduct extends Model implements Auditable
      */
     protected $fillable = [
         'code', 'exist', 'reserved', 'unit_value', 'currency_id', 'warehouse_product_id',
-        'warehouse_institution_warehouse_id'
+        'warehouse_institution_warehouse_id', 'expiration_date', 'batch_number'
     ];
 
      /**
@@ -117,5 +117,10 @@ class WarehouseInventoryProduct extends Model implements Auditable
     public function warehouseInventoryRule()
     {
         return $this->hasOne(WarehouseInventoryRule::class);
+    }
+
+    public function warehouseInventoryProductMovements()
+    {
+        return $this->hasMany(WarehouseInventoryProductMovement::class);
     }
 }

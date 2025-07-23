@@ -9,6 +9,8 @@ use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithDrawings;
 use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use Maatwebsite\Excel\Concerns\WithColumnFormatting;
+use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 
 /**
  * @class AccountingBalanceSheetExport
@@ -21,7 +23,7 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
  * @license
  *     [LICENCIA DE SOFTWARE CENDITEL](http://conocimientolibre.cenditel.gob.ve/licencia-de-software-v-1-3/)
  */
-class AccountingBalanceSheetExport implements WithDrawings, FromView, WithStyles
+class AccountingBalanceSheetExport implements WithDrawings, FromView, WithStyles, WithColumnFormatting
 {
     /**
      * Listado de datos a exportar
@@ -111,5 +113,23 @@ class AccountingBalanceSheetExport implements WithDrawings, FromView, WithStyles
         $sheet->mergeCells('A1:E1');
         $sheet->mergeCells('A2:E2');
         $sheet->mergeCells('A3:E3');
+    }
+
+    /**
+     * Establece los estilos en la exportación de excel para evitar apostrofe en celdas numericas
+     *
+     * @param \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet
+     *
+     * @author Tsu. Miguel Narvaez <mnarvaez@cenditel.gob.ve> | <miguelnarvaez31@gmail.com>
+     *
+     * @return void
+     */
+    public function columnFormats(): array
+    {
+        return [
+            'C' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, // Columna "ACUMULADO"
+            'D' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, // Columna "MES"
+            'E' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, // Columna "TOTAL"
+        ];
     }
 }

@@ -10,8 +10,8 @@
             <i class="icofont icofont-deal ico-3x"></i>
             <span>Impuestos</span>
         </a>
-        <div class="modal fade text-left" tabindex="-1" role="dialog" id="add_tax">
-            <div class="modal-dialog vue-crud" role="document">
+        <div class="modal fade text-left" tabindex="-1" id="add_tax">
+            <div class="modal-dialog vue-crud">
                 <div class="modal-content">
                     <div class="modal-header">
                         <button
@@ -32,8 +32,9 @@
                         <div class="row">
                             <div class="col-12 col-md-6">
                                 <div class="form-group is-required">
-                                    <label>Nombre:</label>
+                                    <label for="taxName">Nombre:</label>
                                     <input
+                                        id="taxName"
                                         type="text"
                                         placeholder="Impuesto"
                                         data-toggle="tooltip"
@@ -47,8 +48,9 @@
                             </div>
                             <div class="col-12 col-md-6">
                                 <div class="form-group is-required">
-                                    <label>Descripción:</label>
+                                    <label for="taxDescription">Descripción:</label>
                                     <input
+                                        id="taxDescription"
                                         type="text"
                                         placeholder="Descripción"
                                         data-toggle="tooltip"
@@ -60,8 +62,9 @@
                             </div>
                             <div class="col-12 col-md-6">
                                 <div class="form-group is-required">
-                                    <label>Fecha entrada en vigencia:</label>
+                                    <label for="taxOperationDate">Fecha entrada en vigencia:</label>
                                     <input
+                                        id="taxOperationDate"
                                         type="date" placeholder="dd/mm/yyyy"
                                         data-toggle="tooltip"
                                         title="Seleccione una fecha del calendario (requerido)"
@@ -72,8 +75,9 @@
                             </div>
                             <div class="col-12 col-md-6">
                                 <div class="form-group is-required">
-                                    <label>Porcentaje:</label>
+                                    <label for="taxPercentage">Porcentaje:</label>
                                     <input
+                                        id="taxPercentage"
                                         type="number"
                                         placeholder="0"
                                         step="0.01"
@@ -86,7 +90,7 @@
                             </div>
                             <div class="col-12 col-md-3">
                                 <div class="form-group is-required">
-                                    <label>Afecta cuenta de IVA:</label>
+                                    <label for="taxAffect">Afecta cuenta de IVA:</label>
                                     <div
                                         class="custom-control custom-switch"
                                         data-toggle="tooltip"
@@ -104,13 +108,13 @@
                                         <label
                                             class="custom-control-label"
                                             for="taxAffect"
-                                        ></label>
+                                        >&nbsp;</label>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-12 col-md-3">
                                 <div class="form-group is-required">
-                                    <label>Activo:</label>
+                                    <label for="taxActive">Activo:</label>
                                     <div
                                         class="custom-control custom-switch"
                                         data-toggle="tooltip"
@@ -126,7 +130,7 @@
                                         <label
                                             class="custom-control-label"
                                             for="taxActive"
-                                        ></label>
+                                        >&nbsp;</label>
                                     </div>
                                 </div>
                             </div>

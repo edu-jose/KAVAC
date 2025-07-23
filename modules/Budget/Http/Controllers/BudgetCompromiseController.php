@@ -1076,7 +1076,7 @@ class BudgetCompromiseController extends Controller
 
         try {
             /* Objeto con información del compromiso a Anular */
-            $compromise = BudgetCompromise::with('budgetStages')->find($request->id);
+            $compromise = BudgetCompromise::query()->findOrFail($request->id);
 
             // Se verifica que la fecha de anulación no sea menor a las fecha del aprobación
             if ($request->canceled_at < date_format($compromise->compromised_at, 'Y-m-d')) {
@@ -1098,7 +1098,8 @@ class BudgetCompromiseController extends Controller
                     $isPurchase,
                 ) {
                     if (isset($compromise)) {
-                        $documentStatusAN = DocumentStatus::where('action', 'AN')->first();
+                        $documentStatusAN = DocumentStatus::getStatus('AN');
+
                         $compromisedYear = explode("-", $compromise->compromised_at)[0];
                         /* Se verifica que el compromiso no sea un aporte de nómina de lo contrario no podrá ser anulado */
                         $CodePayroll = $isPayroll
@@ -1108,7 +1109,7 @@ class BudgetCompromiseController extends Controller
                         )->first()
                         : null;
 
-                        $regexPattern = '/^AP - \\d+' . $CodePayroll?->format_prefix . '/';
+                        $regexPattern = '/^(AP|DE) - \\d+' . $CodePayroll?->format_prefix . '/';
 
                         if (!preg_match($regexPattern, $compromise->document_number)) {
                             /* Se buscan todas las BudgetStage (etapas presupuestarias)pertenecintes al compromiso. (COMprometido) */
@@ -1119,13 +1120,8 @@ class BudgetCompromiseController extends Controller
                                 )->where('type', 'COM')->delete();
 
                             /* Se buscan los ítems del compromiso */
-                            $budgetCompromiseDetails = BudgetCompromiseDetail::query()
-                                ->where(
-                                    [
-                                    'budget_compromise_id' => $compromise->id,
-                                    'document_status_id'   => null
-                                    ]
-                                )->get();
+                            $budgetCompromiseDetails = $compromise->budgetCompromiseDetails()
+                                ->where('document_status_id', null)->get();
 
                             foreach ($budgetCompromiseDetails as $budgetCompromiseDetail) {
                                 $formulation = $budgetCompromiseDetail
@@ -1166,22 +1162,21 @@ class BudgetCompromiseController extends Controller
                             }
                         } else {
                             throw new \Exception(
-                                'El compromiso perteneciente a un aporte de nómina, no puede ser anulado.'
+                                'El compromiso perteneciente a un aporte o dedución de nómina, no puede ser anulado.'
                             );
                         }
 
-                        /* Se Cambia el estatus de la orden de compra sí existe */
-                        if ($isPurchase) {
-                            $purchaseOrder = (isset($compromise->sourceable_type)
-                            && $compromise->sourceable_type
-                            == \Modules\Purchase\Models\PurchaseDirectHire::class)
-                            ? \Modules\Purchase\Models\PurchaseDirectHire::query()
-                            ->where(
-                                [
-                                'id' => $compromise->sourceable_id,
-                                'code' => $compromise->document_number
-                                ]
-                            )->first() : null;
+                        // Se busca el modelo de donde se creó el compromiso
+                        $fromProcessModel = $compromise->sourceable
+                            ? $compromise->sourceable()->where('code', $compromise->document_number)->first()
+                            : null;
+
+                        //Se Cambia el estatus de la orden de compra sí existe
+                        if (
+                            $isPurchase
+                            && ($fromProcessModel instanceof \Modules\Purchase\Models\PurchaseDirectHire)
+                        ) {
+                            $purchaseOrder = $fromProcessModel ?? null;
 
                             if ($purchaseOrder) {
                                 $purchaseOrder->status = 'WAIT';
@@ -1189,17 +1184,17 @@ class BudgetCompromiseController extends Controller
                             }
                         }
 
-                        /* Se Cambia el estatus de la Nómina sí existe */
-                        if ($isPayroll) {
-                            $payroll = \Modules\Payroll\Models\Payroll::query()
-                                ->where(
-                                    [
-                                    'id' => $compromise->sourceable_id,
-                                    'code' => $compromise->document_number
-                                    ]
-                                )->first() ?? null;
+                        //Se Cambia el estatus de la Nómina sí existe
+                        if (
+                            $isPayroll
+                            && ($fromProcessModel instanceof \Modules\Payroll\Models\Payroll)
+                        ) {
+                            $payroll = $fromProcessModel ?? null;
 
-                            if (isset($payroll)) {
+                            if ($payroll) {
+                                $payroll->document_status_id = DocumentStatus::query()->getStatus('EL')->id ?? null;
+                                $payroll->save();
+
                                 $payrollPaymentPeriod = $payroll->payrollPaymentPeriod;
                                 $payrollPaymentPeriod->payment_status = 'pending';
                                 $payrollPaymentPeriod->availability_status = 'AN';
@@ -1333,7 +1328,7 @@ class BudgetCompromiseController extends Controller
                     'title' => 'Alerta',
                     'icon' => 'screen-error',
                     'class' => 'growl-danger',
-                    'text' => 'No se pudo completar la operación. ' . ucfirst($errorMessage)
+                    'text' => 'No se pudo completar la operación. Contacte al administrador del sistema.',
                 ]],
                 500
             );
@@ -1357,19 +1352,14 @@ class BudgetCompromiseController extends Controller
     {
         /* Se buscan todas las ordenes de pago asociadas a este compromiso */
         //Status del documento ANulado
-        $documentStatusAN = DocumentStatus::where('action', 'AN')->first();
+        $documentStatusAN = DocumentStatus::getStatus('AN');
         // Patrón de la expresión regular relacionada con el código de nómina
-        $regexPattern = "AP - \\d+$code";
+        $regexPattern = "^(AP|DE) - \\d+$code";
+
         $compromiseContribution = BudgetCompromise::query()
-            ->where(
-                'document_number',
-                '~',
-                $regexPattern
-            )->where(
-                'document_status_id',
-                '!=',
-                $documentStatusAN->id
-            )->get() ?? null;
+            ->where('document_number', '~', $regexPattern)
+            ->where('document_status_id', '!=', $documentStatusAN->id)
+            ->get() ?? null;
 
         $isAccounting = Module::has('Accounting') && Module::isEnabled('Accounting');
         $isFinance = Module::has('Finance') && Module::isEnabled('Finance');
@@ -1388,192 +1378,179 @@ class BudgetCompromiseController extends Controller
                     ])
                     ->where('type', 'PAG')->get() ?? null;
 
-                //Se realiza todo el proceso de anulación para las emisiones de pago
-                if (isset($paymentExecuteBugetStages)) {
-                    foreach ($paymentExecuteBugetStages as $paymentExecuteBugetStage) {
-                        $financePaymentExecute =  $isFinance
-                        ? \Modules\Finance\Models\FinancePaymentExecute::query()
-                            ->find($paymentExecuteBugetStage->stageable_id)
-                        : null;
+                if ($isFinance) {
+                    //Se realiza todo el proceso de anulación para las emisiones de pago
+                    if (isset($paymentExecuteBugetStages)) {
+                        foreach ($paymentExecuteBugetStages as $paymentExecuteBugetStage) {
+                            $financePaymentExecute = $paymentExecuteBugetStage->stageable()->first();
+                            ;
 
-                        if (isset($financePaymentExecute)) {
-                            $financePaymentExecute->status = 'AN';
-                            $financePaymentExecute->description = $description;
-                            $financePaymentExecute->document_status_id = $documentStatusAN->id;
+                            if (
+                                isset($financePaymentExecute)
+                                && $financePaymentExecute instanceof \Modules\Finance\Models\FinancePaymentExecute
+                            ) {
+                                $financePaymentExecute->status = 'AN';
+                                $financePaymentExecute->description = $description;
+                                $financePaymentExecute->document_status_id = $documentStatusAN->id;
 
-                            /* Se eliminan las retenciones asociadas a la emisión de pago */
-                            $financePaymentExecute->financePaymentDeductions()->delete();
-                            /* Se guadan los cambios en la emisión de pago */
-                            $financePaymentExecute->save();
+                                /* Se eliminan las retenciones asociadas a la emisión de pago */
+                                $financePaymentExecute->financePaymentDeductions()->delete();
+                                /* Se guadan los cambios en la emisión de pago */
+                                $financePaymentExecute->save();
 
-                            if ($isAccounting) {
-                                /**
-                                 * Reverso de Asiento contable de la emisión de pago
-                                 */
-                                $accountEntry = \Modules\Accounting\Models\AccountingEntry::where(
-                                    'reference',
-                                    $financePaymentExecute->code
-                                )->first();
-                                $accountEntryNew = \Modules\Accounting\Models\AccountingEntry::create(
-                                    [
-                                        'from_date' => $date,
-                                        // Código de la ejecución de pago como referencia
-                                        'reference' => $financePaymentExecute->code,
-                                        'concept' => 'Anulación: ' . $accountEntry->concept ,
-                                        'observations' => $description,
-                                        'accounting_entry_category_id' => $accountEntry->accounting_entry_category_id,
-                                        'institution_id' => $accountEntry->institution_id,
-                                        'currency_id' => $accountEntry->currency_id,
-                                        'tot_debit' => $accountEntry->tot_assets,
-                                        'tot_assets' => $accountEntry->tot_debit,
-                                        'approved' => false,
-                                    ]
-                                );
-
-                                $accountingItems = \Modules\Accounting\Models\AccountingEntryAccount::query()
-                                    ->where(
-                                        'accounting_entry_id',
-                                        $accountEntry->id,
-                                    )->get();
-
-                                foreach ($accountingItems as $account) {
-                                    /* Se crea la relación de cuenta a ese asiento */
-                                    \Modules\Accounting\Models\AccountingEntryAccount::create(
+                                if ($isAccounting) {
+                                    /**
+                                     * Reverso de Asiento contable de la emisión de pago
+                                     */
+                                    $accountEntry = \Modules\Accounting\Models\AccountingEntry::where(
+                                        'reference',
+                                        $financePaymentExecute->code
+                                    )->first();
+                                    $accountEntryNew = \Modules\Accounting\Models\AccountingEntry::create(
                                         [
-                                        'accounting_entry_id' => $accountEntryNew->id,
-                                        'accounting_account_id' => $account['accounting_account_id'],
-                                        'debit' => $account['assets'],
-                                        'assets' => $account['debit'],
+                                            'from_date' => $date,
+                                            // Código de la ejecución de pago como referencia
+                                            'reference' => $financePaymentExecute->code,
+                                            'concept' => 'Anulación: ' . $accountEntry->concept ,
+                                            'observations' => $description,
+                                            'accounting_entry_category_id' => $accountEntry->accounting_entry_category_id,
+                                            'institution_id' => $accountEntry->institution_id,
+                                            'currency_id' => $accountEntry->currency_id,
+                                            'tot_debit' => $accountEntry->tot_assets,
+                                            'tot_assets' => $accountEntry->tot_debit,
+                                            'approved' => false,
+                                        ]
+                                    );
+
+                                    $accountingItems = \Modules\Accounting\Models\AccountingEntryAccount::query()
+                                        ->where(
+                                            'accounting_entry_id',
+                                            $accountEntry->id,
+                                        )->get();
+
+                                    foreach ($accountingItems as $account) {
+                                        /* Se crea la relación de cuenta a ese asiento */
+                                        \Modules\Accounting\Models\AccountingEntryAccount::create(
+                                            [
+                                            'accounting_entry_id' => $accountEntryNew->id,
+                                            'accounting_account_id' => $account['accounting_account_id'],
+                                            'debit' => $account['assets'],
+                                            'assets' => $account['debit'],
+                                            ]
+                                        );
+                                    }
+
+                                    /* Crea la relación entre el asiento contable y el registro de emisión de pago */
+                                    \Modules\Accounting\Models\AccountingEntryable::create(
+                                        [
+                                            'accounting_entry_id' => $accountEntryNew->id,
+                                            'accounting_entryable_type' => \Modules\Finance\Models\FinancePaymentExecute::class,
+                                            'accounting_entryable_id' => $financePaymentExecute->id,
                                         ]
                                     );
                                 }
 
-                                /* Crea la relación entre el asiento contable y el registro de emisión de pago */
-                                \Modules\Accounting\Models\AccountingEntryable::create(
-                                    [
-                                        'accounting_entry_id' => $accountEntryNew->id,
-                                        'accounting_entryable_type' => \Modules\Finance\Models\FinancePaymentExecute::class,
-                                        'accounting_entryable_id' => $financePaymentExecute->id,
-                                    ]
-                                );
-                            }
+                                //Se eliminan las estapas presupuestarias
+                                $paymentExecuteBugetStage->delete();
 
-                            //Se eliminan las estapas presupuestarias
-                            BudgetStage::query()
-                                ->where(
-                                    [
-                                    'budget_compromise_id'  => $compContribution->id,
-                                    'stageable_type'        => \Modules\Finance\Models\FinancePaymentExecute::class,
-                                    'stageable_id'          => $financePaymentExecute->id
-                                    ]
-                                )
-                                ->where('type', 'PAG')->delete();
+                                /* Buscar los movimientos bancarios, actualizar el concepto del movimiento,
+                                y cambiar el estatus a anulado el registro */
+                                $bankingMovementPaymentExecute = \Modules\Finance\Models\FinanceBankingMovement::query()
+                                    ->where(
+                                        'reference',
+                                        $financePaymentExecute->code
+                                    )->where(
+                                        'document_status_id',
+                                        '!=',
+                                        $documentStatusAN->id
+                                    )->first();
 
-                            /* Buscar los movimientos bancarios, actualizar el concepto del movimiento,
-                            y cambiar el estatus a anulado el registro */
-                            $bankingMovementPaymentExecute = \Modules\Finance\Models\FinanceBankingMovement::query()
-                                ->where(
-                                    'reference',
-                                    $financePaymentExecute->code
-                                )->where(
-                                    'document_status_id',
-                                    '!=',
-                                    $documentStatusAN->id
-                                )->first();
-
-                            if ($bankingMovementPaymentExecute) {
-                                $bankingMovementPaymentExecute->concept = 'Anulado: '
-                                . $bankingMovementPaymentExecute->concept
-                                . '. (' . $description . ')';
-                                $bankingMovementPaymentExecute->document_status_id = $documentStatusAN->id;
-                                $bankingMovementPaymentExecute->save();
+                                if ($bankingMovementPaymentExecute) {
+                                    $bankingMovementPaymentExecute->concept = 'Anulado: '
+                                    . $bankingMovementPaymentExecute->concept
+                                    . '. (' . $description . ')';
+                                    $bankingMovementPaymentExecute->document_status_id = $documentStatusAN->id;
+                                    $bankingMovementPaymentExecute->save();
+                                }
                             }
                         }
                     }
-                }
 
-                //Etapa relacionada con la orden de pago
-                $payOrderBugetStages = BudgetStage::query()
-                    ->where(
-                        [
-                            'budget_compromise_id'  => $compContribution->id,
-                            'stageable_type'        => \Modules\Finance\Models\FinancePayOrder::class,
-                        ]
-                    )
-                    ->where('type', 'CAU')->get();
+                    //Etapa relacionada con la orden de pago
+                    $payOrderBugetStages = BudgetStage::query()
+                        ->where(
+                            [
+                                'budget_compromise_id'  => $compContribution->id,
+                                'stageable_type'        => \Modules\Finance\Models\FinancePayOrder::class,
+                            ]
+                        )
+                        ->where('type', 'CAU')->get();
 
-                //Se realiza todo el proceso de anulación para las ordenes de pago
-                if (isset($payOrderBugetStages)) {
-                    foreach ($payOrderBugetStages as $payOrderBugetStage) {
-                        // Se buscan todas las órdenes de pago asociadas a este compromiso
-                        $financePayOrder = $isFinance
-                        ? \Modules\Finance\Models\FinancePayOrder::query()
-                            ->find($payOrderBugetStage->stageable_id)
-                        : null;
+                    //Se realiza todo el proceso de anulación para las ordenes de pago
+                    if (isset($payOrderBugetStages)) {
+                        foreach ($payOrderBugetStages as $payOrderBugetStage) {
+                            // Se buscan todas las órdenes de pago asociadas a este compromiso
+                            $financePayOrder = $payOrderBugetStage->stageable()->first();
 
-                        if (isset($financePayOrder)) {
-                            $financePayOrder->status = 'PE';
-                            $financePayOrder->document_status_id = $documentStatusAN->id;
-                            $financePayOrder->observations = 'ANULADO: ' . $financePayOrder->observations
-                            . '. (' . $description . ')';
-                            $financePayOrder->save();
+                            if (
+                                isset($financePayOrder)
+                                && $financePayOrder instanceof \Modules\Finance\Models\FinancePayOrder
+                            ) {
+                                $financePayOrder->status = 'PE';
+                                $financePayOrder->document_status_id = $documentStatusAN->id;
+                                $financePayOrder->observations = 'ANULADO: ' . $financePayOrder->observations
+                                . '. (' . $description . ')';
+                                $financePayOrder->save();
 
-                            if ($isAccounting) {
-                                /* Reverso de Asiento contable de la orden de pago */
-                                $accountEntry = \Modules\Accounting\Models\AccountingEntry::where('reference', $financePayOrder->code)->first();
-                                $accountEntryNew = \Modules\Accounting\Models\AccountingEntry::create(
-                                    [
-                                        'from_date' => $date,
-                                        // Código de la ejecución de pago como referencia
-                                        'reference' => $financePayOrder->code,
-                                        'concept' => 'Anulación: ' . $accountEntry->concept ,
-                                        'observations' => $description,
-                                        'accounting_entry_category_id' => $accountEntry->accounting_entry_category_id,
-                                        'institution_id' => $accountEntry->institution_id,
-                                        'currency_id' => $accountEntry->currency_id,
-                                        'tot_debit' => $accountEntry->tot_assets,
-                                        'tot_assets' => $accountEntry->tot_debit,
-                                        'approved' => false,
-                                    ]
-                                );
-
-                                $accountingItems = \Modules\Accounting\Models\AccountingEntryAccount::query()
-                                    ->where(
-                                        'accounting_entry_id',
-                                        $accountEntry->id,
-                                    )->get();
-                                foreach ($accountingItems as $account) {
-                                    /* Se crea la relación de cuenta a ese asiento */
-                                    \Modules\Accounting\Models\AccountingEntryAccount::create(
+                                if ($isAccounting) {
+                                    /* Reverso de Asiento contable de la orden de pago */
+                                    $accountEntry = \Modules\Accounting\Models\AccountingEntry::where('reference', $financePayOrder->code)->first();
+                                    $accountEntryNew = \Modules\Accounting\Models\AccountingEntry::create(
                                         [
-                                        'accounting_entry_id' => $accountEntryNew->id,
-                                        'accounting_account_id' => $account['accounting_account_id'],
-                                        'debit' => $account['assets'],
-                                        'assets' => $account['debit'],
+                                            'from_date' => $date,
+                                            // Código de la ejecución de pago como referencia
+                                            'reference' => $financePayOrder->code,
+                                            'concept' => 'Anulación: ' . $accountEntry->concept ,
+                                            'observations' => $description,
+                                            'accounting_entry_category_id' => $accountEntry->accounting_entry_category_id,
+                                            'institution_id' => $accountEntry->institution_id,
+                                            'currency_id' => $accountEntry->currency_id,
+                                            'tot_debit' => $accountEntry->tot_assets,
+                                            'tot_assets' => $accountEntry->tot_debit,
+                                            'approved' => false,
+                                        ]
+                                    );
+
+                                    $accountingItems = \Modules\Accounting\Models\AccountingEntryAccount::query()
+                                        ->where(
+                                            'accounting_entry_id',
+                                            $accountEntry->id,
+                                        )->get();
+                                    foreach ($accountingItems as $account) {
+                                        /* Se crea la relación de cuenta a ese asiento */
+                                        \Modules\Accounting\Models\AccountingEntryAccount::create(
+                                            [
+                                            'accounting_entry_id' => $accountEntryNew->id,
+                                            'accounting_account_id' => $account['accounting_account_id'],
+                                            'debit' => $account['assets'],
+                                            'assets' => $account['debit'],
+                                            ]
+                                        );
+                                    }
+
+                                    /* Crea la relación entre el asiento contable y el registro de orden de pago */
+                                    \Modules\Accounting\Models\AccountingEntryable::create(
+                                        [
+                                            'accounting_entry_id' => $accountEntryNew->id,
+                                            'accounting_entryable_type' => \Modules\Finance\Models\FinancePayOrder::class,
+                                            'accounting_entryable_id' => $financePayOrder->id,
                                         ]
                                     );
                                 }
 
-                                /* Crea la relación entre el asiento contable y el registro de orden de pago */
-                                \Modules\Accounting\Models\AccountingEntryable::create(
-                                    [
-                                        'accounting_entry_id' => $accountEntryNew->id,
-                                        'accounting_entryable_type' => \Modules\Finance\Models\FinancePayOrder::class,
-                                        'accounting_entryable_id' => $financePayOrder->id,
-                                    ]
-                                );
+                                //Se eliminan las estapas presupuestarias
+                                $payOrderBugetStage->delete();
                             }
-
-                            //Se eliminan las estapas presupuestarias
-                            BudgetStage::query()
-                                ->where(
-                                    [
-                                        'budget_compromise_id'  => $compContribution->id,
-                                        'stageable_type'        => \Modules\Finance\Models\FinancePayOrder::class,
-                                        'stageable_id'          => $financePayOrder->id
-                                    ]
-                                )
-                                ->where('type', 'CAU')->delete();
                         }
                     }
                 }

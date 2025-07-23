@@ -145,21 +145,34 @@ class AppManagementController extends Controller
         foreach ($deleted as $del) {
             // Texto con las etiquetas html que contiene los registros eliminados
             $regs = '<div class="row">';
-
-            foreach ($del as $attr => $value) {
+            $attributes = $del;
+            try {
+                if ($del instanceof \Illuminate\Database\Eloquent\Model) {
+                    $attributes = $del->getAttributes();
+                }
+            } catch (Exception $e) {
+                Log::error($e->getMessage());
+            }
+            foreach ($attributes as $attr => $value) {
                 if (
                     str_contains($attr, 'password') ||
                     str_contains($attr, 'key') ||
                     str_contains($attr, 'token') ||
-                    empty($value)
+                    empty($value) || is_array($value) || is_array($attr)
                 ) {
                     continue;
                 }
                 $regs .= "<div class='col-6 break-words'><b>$attr:</b> $value</div>";
             }
             $regs .= '</div>';
+            try {
+                $secureRecord = secure_record($del->id);
+            } catch (Exception $e) {
+                Log::error($e->getMessage());
+                continue;
+            }
             array_push($trashed, [
-                'id' => secure_record($del->id),
+                'id' => $secureRecord,
                 'deleted_at' => Carbon::parse($del->deleted_at)->format("d-m-Y"),
                 'module' => $model_name ?? get_class($del),
                 'registers' => $regs

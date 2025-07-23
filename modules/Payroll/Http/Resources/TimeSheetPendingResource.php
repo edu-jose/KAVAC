@@ -29,6 +29,12 @@ class TimeSheetPendingResource extends JsonResource
     public function toArray($request)
     {
         $payrollSuperviedGroup = $this->getPayrollSuperviedGroup();
+        $exceptionTypeNames = $this->resource->payrollTimeSheetParameters?->payrollExceptionTypeTimeSheetParameters
+                ->map(function ($item) {
+                    return $item->payrollExceptionType?->name;
+                })
+                ->filter()->unique()->values()->all();
+
         return [
             'id' => $this->resource->id,
             'institution_id' => $this->resource->institution_id,
@@ -60,6 +66,7 @@ class TimeSheetPendingResource extends JsonResource
             'time_sheet_columns' => $this->resource->time_sheet_columns,
             'observations' => $this->resource->observations,
             'updated_at' => $this->resource->updated_at,
+            'total_groups' => $exceptionTypeNames ?? [],
         ];
     }
 

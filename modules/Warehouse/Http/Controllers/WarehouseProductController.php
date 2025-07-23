@@ -68,7 +68,7 @@ class WarehouseProductController extends Controller
 
         /* Define las reglas de validación para el formulario */
         $this->validateRules = [
-            'name' => ['required', 'max:100', 'unique:warehouse_products,name', 'titlecase'],
+            'name' => ['required', 'unique:warehouse_products,name', 'titlecase'],
             'description' => ['required'],
             'measurement_unit_id' => ['required']
         ];
@@ -76,7 +76,6 @@ class WarehouseProductController extends Controller
         /* Define los mensajes de validación para las reglas del formulario */
         $this->messages = [
             'name.required' => 'El campo nombre del insumo es obligatorio.',
-            'name.max' => 'El campo nombre del insumo no debe ser mayor que 100 caracteres.',
             'name.unique:warehouse_products,name' => 'El campo nombre ya ha sido registrado anteriormente',
             'name.titlecase' => 'El campo nombre debe ser escrito en mayusculas',
             'description.required' => 'El campo descripción es obligatorio.',
@@ -93,7 +92,7 @@ class WarehouseProductController extends Controller
      */
     public function index()
     {
-        return response()->json(['records' => WarehouseProduct::with('warehouseProductAttributes')->get()], 200);
+        return response()->json(['records' => WarehouseProduct::with('measurementUnit')->get()], 200);
     }
 
     /**
@@ -159,7 +158,6 @@ class WarehouseProductController extends Controller
     {
         $this->messages = [
             'name.required' => 'El campo nombre del insumo es obligatorio.',
-            'name.max' => 'El campo nombre del insumo no debe ser mayor que 100 caracteres.',
             'name.titlecase' => 'El campo nombre debe ser escrito en mayusculas',
             'description.required' => 'El campo descripción es obligatorio.',
             'measurement_unit_id.required' => 'El campo unidad de medida es obligatorio.'
@@ -168,7 +166,7 @@ class WarehouseProductController extends Controller
         $this->validate(
             $request,
             [
-            'name' => ['required', 'max:100', 'titlecase'],
+            'name' => ['required', 'titlecase'],
             'description' => ['required'],
             'measurement_unit_id' => ['required']
             ],

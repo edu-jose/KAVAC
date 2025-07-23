@@ -6,8 +6,8 @@
             <i class="icofont icofont-globe-alt ico-3x"></i>
             <span>Regiones</span>
         </a>
-        <div id="add_region" class="modal fade text-left" tabindex="-1" role="dialog">
-            <div class="modal-dialog vue-crud" role="document">
+        <div id="add_region" class="modal fade text-left" tabindex="-1">
+            <div class="modal-dialog vue-crud">
                 <div class="modal-content">
                     <div class="modal-header">
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -23,8 +23,9 @@
                         <div class="row">
                             <div class="col-12 col-md-4">
                                 <div class="form-group is-required">
-                                    <label>Código:</label>
+                                    <label for="regionCode">Código:</label>
                                     <input
+                                        id="regionCode"
                                         class="form-control input-sm" type="text" data-toggle="tooltip"
                                         maxlength="20" placeholder="Código de Región"
                                         title="Indique el código de la Región (requerido)"
@@ -34,8 +35,9 @@
                             </div>
                             <div class="col-12 col-md-4">
                                 <div class="form-group is-required">
-                                    <label>Nombre:</label>
+                                    <label for="regionName">Nombre:</label>
                                     <input
+                                        id="regionName"
                                         class="form-control input-sm" type="text" data-toggle="tooltip"
                                         placeholder="Nombre de Región"
                                         title="Indique el nombre de la Región (requerido)"
@@ -45,14 +47,18 @@
                             </div>
                             <div class="col-12 col-md-4">
                                 <div class="form-group is-required">
-                                    <label>País:</label>
-                                    <select2 :options="countries" @input="getEstates" v-model="record.country_id"/>
+                                    <label for="regionCountry">País:</label>
+                                    <select2
+                                        id="regionCountry"
+                                        :options="countries" @input="getEstates" v-model="record.country_id"
+                                    />
                                 </div>
                             </div>
                             <div class="col-12 col-md-12">
                                 <div class="form-group is-required">
-                                    <label>Estados:</label>
+                                    <label for="regionEstate">Estados:</label>
                                     <v-multiselect
+                                        id="regionEstate"
                                         track_by="text" :options="estates"
                                         :hide_selected="true"
                                         :close_on_select="true"
@@ -64,16 +70,22 @@
                     </div>
                     <div class="modal-footer">
                         <div class="form-group">
-                            <button type="button" class="btn btn-default btn-sm btn-round btn-modal-close"
-                                    @click="clearFilters" data-dismiss="modal">
+                            <button
+                                type="button" class="btn btn-default btn-sm btn-round btn-modal-close"
+                                @click="clearFilters" data-dismiss="modal"
+                            >
                                 Cerrar
                             </button>
-                            <button type="button" class="btn btn-warning btn-sm btn-round btn-modal btn-modal-clear"
-                                    @click="reset()">
+                            <button
+                                type="button" class="btn btn-warning btn-sm btn-round btn-modal btn-modal-clear"
+                                @click="reset()"
+                            >
                                 Cancelar
                             </button>
-                            <button type="button" @click="createRecord('regions')"
-                                    class="btn btn-primary btn-sm btn-round btn-modal-save">
+                            <button
+                                type="button" @click="createRecord('regions')"
+                                class="btn btn-primary btn-sm btn-round btn-modal-save"
+                            >
                                 Guardar
                             </button>
                         </div>
@@ -89,15 +101,19 @@
                                 </span>
                             </div>
                             <div slot="id" slot-scope="props" class="text-center">
-                                <button @click="initUpdate(props.row.id, $event)"
-                                        class="btn btn-warning btn-xs btn-icon btn-action"
-                                        title="Modificar registro" data-toggle="tooltip" type="button">
+                                <button
+                                    @click="initUpdate(props.row.id, $event)"
+                                    class="btn btn-warning btn-xs btn-icon btn-action"
+                                    title="Modificar registro" data-toggle="tooltip" type="button"
+                                >
                                     <i class="fa fa-edit"></i>
                                 </button>
-                                <button @click="deleteRecord(props.row.id, 'regions')"
-                                        class="btn btn-danger btn-xs btn-icon btn-action"
-                                        title="Eliminar registro" data-toggle="tooltip"
-                                        type="button">
+                                <button
+                                    @click="deleteRecord(props.row.id, 'regions')"
+                                    class="btn btn-danger btn-xs btn-icon btn-action"
+                                    title="Eliminar registro" data-toggle="tooltip"
+                                    type="button"
+                                >
                                     <i class="fa fa-trash-o"></i>
                                 </button>
                             </div>

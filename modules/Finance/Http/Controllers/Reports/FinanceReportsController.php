@@ -169,6 +169,9 @@ class FinanceReportsController extends Controller
             'order' => 'amount',
             'execute' => 'paid_amount',
         ];
+        $this->middleware('permission:finance.payorder.report', ['only' => 'pdfPayOrders']);
+        $this->middleware('permission:finance.paymentexecute.report', ['only' => 'pdfPaymentExecutes']);
+        $this->middleware('permission:finance.movements.report', ['only' => 'pdfBankingMovements']);
     }
 
     /**

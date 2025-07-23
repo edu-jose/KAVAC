@@ -74,7 +74,6 @@ class WarehouseRequestStaffController extends Controller
             'payroll_staff_id.required'    => 'El campo "Solicitante" es obligatorio',
             'motive.required'              => 'El campo "Motivo de la solicitud" es obligatorio',
             'request_date.required'        => 'El campo "Fecha de la solicitud" es obligatorio'
-
         ];
     }
 
@@ -112,14 +111,21 @@ class WarehouseRequestStaffController extends Controller
             $products = WarehouseInventoryProduct::where('id', $request->warehouse_products[$i]['id'])->with('warehouseProduct')->first();
 
             $messages = array_merge($messages, [
-                'warehouse_products.' . $i . '.requested.max' => 'El producto "' . $products->warehouseProduct->name . '" no posee suficiente existencia en almacén'
+                'warehouse_products.' . $i . '.requested.max'
+                => 'El producto "' . $products->warehouseProduct->name . '" no posee suficiente existencia en almacén',
+                'warehouse_products.' . $i . '.requested.required'
+                => 'La cantidad solicitada de "' . $products->warehouseProduct->name . '" es requerida',
             ]);
         }
 
 
         $this->validate($request, $validateRules, $messages);
 
-        $codeSetting = CodeSetting::where('table', 'warehouse_requests')->first();
+        $codeFilter = 'warehouse.requestStaff';
+        $codeSetting = CodeSetting::where([
+            'table' => 'warehouse_requests',
+            'type'  => $codeFilter
+        ])->first();
         if (is_null($codeSetting)) {
             $request->session()->flash('message', [
                 'type' => 'other', 'title' => 'Alerta', 'icon' => 'screen-error', 'class' => 'growl-danger',
@@ -226,7 +232,9 @@ class WarehouseRequestStaffController extends Controller
             $products = WarehouseInventoryProduct::where('id', $request->warehouse_products[$i]['id'])->with('warehouseProduct')->first();
 
             $messages = array_merge($messages, [
-                'warehouse_products.' . $i . '.requested.max' => 'El producto "' . $products->warehouseProduct->name . '" no posee suficiente existencia en almacén'
+                'warehouse_products.' . $i . '.requested.max' =>
+                'El producto "' . $products->warehouseProduct->name . '" no posee suficiente existencia en almacén',
+                'La cantidad solicitada de "' . $products->warehouseProduct->name . '" es requerida'
             ]);
         }
 
@@ -327,6 +335,7 @@ class WarehouseRequestStaffController extends Controller
     {
         $warehouse_requests = WarehouseRequest::with('department', 'payrollStaff')
             ->whereNotNull('payroll_staff_id')
+            ->orWhere('state', 'Rechazado')
             ->get();
         return response()->json(['records' => $warehouse_requests], 200);
     }

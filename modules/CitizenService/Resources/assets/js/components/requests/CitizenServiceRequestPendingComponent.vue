@@ -5,7 +5,7 @@
             href="#"
             title="Aceptar solicitud"
             data-toggle="tooltip"
-            @click="initPending('view_pending_a', $event)"
+            @click="initPending('view_pending_a'+requestid, $event)"
             v-if="request_type == 'accept'"
             :disabled="requeststate != 'Pendiente'"
         >
@@ -16,7 +16,7 @@
             href="#"
             title="Rechazar solicitud"
             data-toggle="tooltip"
-            @click="initPending('view_pending_r', $event)"
+            @click="initPending('view_pending_r'+requestid, $event)"
             v-else
             :disabled="requeststate != 'Pendiente'"
         >
@@ -25,10 +25,9 @@
         <div
             class="modal fade text-left"
             tabindex="-1"
-            role="dialog"
-            id="view_pending_a"
+            :id="'view_pending_a'+requestid"
         >
-            <div class="modal-dialog modal-xs" role="document">
+            <div class="modal-dialog modal-xs">
                 <div class="modal-content">
                     <div class="modal-header">
                         <button
@@ -86,8 +85,9 @@
                             </div>
                             <div class="col-md-12">
                                 <div class="form-group">
-                                    <label>Observación:</label>
+                                    <label for="observation">Observación:</label>
                                     <ckeditor
+                                        id="observation"
                                         :editor="ckeditor.editor"
                                         data-toggle="tooltip"
                                         title="Indique alguna observación referente a la operación que esta realizando "
@@ -98,11 +98,6 @@
                                         v-model="record.observation"
                                         placeholder="Observaciones referentes a la operación"
                                     ></ckeditor>
-                                    <input
-                                        type="hidden"
-                                        v-model="record.id"
-                                        id="id"
-                                    />
                                 </div>
                             </div>
                         </div>
@@ -123,7 +118,7 @@
                             type="button"
                             @click="
                                 updateRecord(
-                                    '/citizenservice/requests/request-approved/'
+                                    '/citizenservice/requests/request-approved/' + requestid
                                 )
                             "
                             class="btn btn-primary btn-sm btn-round btn-modal-save"
@@ -141,10 +136,9 @@
         <div
             class="modal fade text-left"
             tabindex="-1"
-            role="dialog"
-            id="view_pending_r"
+            :id="'view_pending_r'+requestid"
         >
-            <div class="modal-dialog modal-xs" role="document">
+            <div class="modal-dialog modal-xs">
                 <div class="modal-content">
                     <div class="modal-header">
                         <button
@@ -202,8 +196,9 @@
                             </div>
                             <div class="col-md-12">
                                 <div class="form-group">
-                                    <label>Observación:</label>
+                                    <label for="observationModal">Observación:</label>
                                     <ckeditor
+                                        id="observationModal"
                                         :editor="ckeditor.editor"
                                         data-toggle="tooltip"
                                         title="Indique alguna observación referente a la operación que esta realizando "
@@ -214,11 +209,6 @@
                                         v-model="record.observation"
                                         placeholder="Observaciones referentes a la operación"
                                     ></ckeditor>
-                                    <input
-                                        type="hidden"
-                                        v-model="record.id"
-                                        id="id"
-                                    />
                                 </div>
                             </div>
                         </div>
@@ -239,7 +229,7 @@
                             type="button"
                             @click="
                                 updateRecord(
-                                    '/citizenservice/requests/request-rejected/'
+                                    '/citizenservice/requests/request-rejected/' + requestid
                                 )
                             "
                             class="btn btn-primary btn-sm btn-round btn-modal-save"
@@ -291,7 +281,6 @@ export default {
         },
         initPending(modal_id, event) {
             if (this.requeststate == "Pendiente") {
-                $(".modal-body #id").val(this.requestid);
                 if ($("#" + modal_id).length) {
                     $("#" + modal_id).modal("show");
                 }
@@ -300,11 +289,11 @@ export default {
         },
         updateRecord(url) {
             const vm = this;
-            var id = $(".modal-body #id").val();
+
             if (typeof url != "undefined") {
                 url = vm.setUrl(url);
                 axios
-                    .put(url + id, vm.record)
+                    .put(url, vm.record)
                     .then((response) => {
                         if (typeof response.data.redirect !== "undefined")
                             location.href = response.data.redirect;
@@ -321,7 +310,7 @@ export default {
                                     error.response.data.message
                                 );
                             }
-                            for (var index in error.response.data.errors) {
+                            for (let index in error.response.data.errors) {
                                 if (error.response.data.errors[index]) {
                                     vm.errors.push(
                                         error.response.data.errors[index][0]

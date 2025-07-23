@@ -76,5 +76,8 @@ class PayrollDatabaseSeeder extends Seeder
 
         /* Seeder para la carga de códigos de procesos */
         $this->call(PayrollProcessCodeTableSeeder::class);
+
+        /* Seeder para la carga datos de clasificacion de parametros */
+        $this->call(PayrollClassificationParameterTableSeeder::class);
     }
 }

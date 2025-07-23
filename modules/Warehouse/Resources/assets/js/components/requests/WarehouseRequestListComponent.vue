@@ -33,13 +33,23 @@
                     </button>
                 </template>
                 <template v-else>
+                    <a
+                        class="btn btn-primary btn-xs btn-icon"
+                        title="Imprimir registro"
+                        data-toggle="tooltip"
+                        target="_blank"
+                        :href="warehouse_requests_pdf + props.row.id"
+                        v-has-tooltip
+                    >
+                        <i class="fa fa-print"></i>
+                    </a>
                     <button @click="editForm(props.row.id)"
                             class="btn btn-warning btn-xs btn-icon btn-action"
                             title="Modificar registro" data-toggle="tooltip" type="button"
                             :disabled="props.row.state != 'Pendiente'">
                         <i class="fa fa-edit"></i>
                     </button>
-                    <button @click="deleteRecord(props.index, '')"
+                    <button @click="deleteRecord(props.row.id, '')"
                             class="btn btn-danger btn-xs btn-icon btn-action"
                             title="Eliminar registro" data-toggle="tooltip" type="button"
                             :disabled="props.row.state != 'Pendiente'">
@@ -56,6 +66,7 @@ export default {
     data() {
         return {
             records: [],
+            warehouse_requests_pdf: `${window.app_url}/warehouse/requests/pdf/`,
             lastYear: "",
             columns: ['code', 'department', 'motive', 'state', 'request_date', 'id']
         }

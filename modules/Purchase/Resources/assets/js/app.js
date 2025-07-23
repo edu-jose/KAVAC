@@ -6,7 +6,7 @@
 Vue.component('purchase-supplier-branches-fix', () =>
     import (
         /* webpackChunkName: "purchase-supplier-branches-fix" */
-        './components/PurchaseSupplierBranchComponent.vue'));
+        './components/settings/PurchaseSupplierBranchComponent.vue'));
 
 /**
  * Componente para la gestión de los objetos de proveedores
@@ -16,7 +16,7 @@ Vue.component('purchase-supplier-branches-fix', () =>
 Vue.component('purchase-supplier-objects-fix', () =>
     import (
         /* webpackChunkName: "purchase-supplier-objects-fix" */
-        './components/PurchaseSupplierObjectsComponent.vue'));
+        './components/settings/PurchaseSupplierObjectsComponent.vue'));
 
 /**
  * Componente para la gestión de las especialidades de proveedores
@@ -26,7 +26,7 @@ Vue.component('purchase-supplier-objects-fix', () =>
 Vue.component('purchase-supplier-specialties-fix', () =>
     import (
         /* webpackChunkName: "purchase-supplier-specialties-fix" */
-        './components/PurchaseSupplierSpecialtyComponent.vue'));
+        './components/settings/PurchaseSupplierSpecialtyComponent.vue'));
 
 /**
  * Componente para la gestión de los tipos de proveedores
@@ -36,7 +36,7 @@ Vue.component('purchase-supplier-specialties-fix', () =>
 Vue.component('purchase-supplier-types-fix', () =>
     import (
         /* webpackChunkName: "purchase-supplier-types-fix" */
-        './components/PurchaseSupplierTypeComponent.vue'));
+        './components/settings/PurchaseSupplierTypeComponent.vue'));
 
 /**
  * Componente para la gestión de proveedores
@@ -64,7 +64,7 @@ Vue.component('purchase-suppliers-show', () =>
 Vue.component('purchase-processes', () =>
     import (
         /* webpackChunkName: "purchase-processes" */
-        './components/PurchaseProcessComponent.vue'));
+        './components/settings/PurchaseProcessComponent.vue'));
 
 /**
  * Componente para la gestión de creacion y actualización de requerimientos
@@ -227,7 +227,7 @@ Vue.component('purchase-quotation-show', () =>
 Vue.component('purchase-type', () =>
     import (
         /* webpackChunkName: "purchase-type" */
-        './components/PurchaseTypeComponent.vue'));
+        './components/settings/PurchaseTypeComponent.vue'));
 
 /**
  * Componente para la gestión de tipos de contratacion
@@ -237,7 +237,7 @@ Vue.component('purchase-type', () =>
 Vue.component('purchase-type-hiring', () =>
     import (
         /* webpackChunkName: "purchase-type-hiring" */
-        './components/PurchaseTypeHiringComponent.vue'));
+        './components/settings/PurchaseTypeHiringComponent.vue'));
 
 /**
  * Componente para la gestión de tipos de operacion
@@ -247,7 +247,7 @@ Vue.component('purchase-type-hiring', () =>
 Vue.component('purchase-type-operations', () =>
     import (
         /* webpackChunkName: "purchase-type-operations" */
-        './components/PurchaseTypeOperationComponent.vue'));
+        './components/settings/PurchaseTypeOperationComponent.vue'));
 
 /**
  *  Componente para gestionar la disponibilidad presupuestaria para una orden de compra
@@ -327,7 +327,7 @@ Vue.component('purchase-show-errors', () =>
 Vue.component('purchase-services', () =>
     import (
         /* webpackChunkName: "purchase-services" */
-        './components/PurchaseServicesComponent.vue'));
+        './components/settings/PurchaseServicesComponent.vue'));
 
 /**
  *  Componente para el registro de productos e insumos
@@ -337,12 +337,48 @@ Vue.component('purchase-services', () =>
 Vue.component('purchase-products', () =>
     import (
         /* webpackChunkName: "purchase-products" */
-        './components/PurchaseProductsComponent.vue'));
+        './components/settings/PurchaseProductsComponent.vue'));
 
 Vue.component('purchase-general-conditions', () =>
     import (
         /* webpackChunkName: "purchase-general-conditions" */
-        './components/PurchaseGeneralConditionsComponent.vue'));
+        './components/settings/PurchaseGeneralConditionsComponent.vue'));
+
+/**
+ * Configuración de los tipos de actividad de compra
+ *
+ * @author Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>                       [return description]
+ */
+Vue.component('purchase-activity-types', () =>
+    import (
+        /* webpackChunkName: "purchase-activity-types" */
+        './components/settings/PurchaseActivityTypeComponent.vue'
+    )
+);
+
+/**
+ * Configuración del orden de prioridades de compra
+ *
+ * @author Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>                       [return description]
+ */
+Vue.component('purchase-priority-orders', () =>
+    import (
+        /* webpackChunkName: "purchase-priority-orders" */
+        './components/settings/PurchasePriorityOrderComponent.vue'
+    )
+);
+
+ /**
+ * Configuración de las prioridades de compra
+ *
+ * @author Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>                       [return description]
+ */
+Vue.component('purchase-priorities', () =>
+    import (
+        /* webpackChunkName: "purchase-priorities" */
+        './components/settings/PurchasePriorityComponent.vue'
+    )
+);
 
 /**
  * Opciones de configuración global del módulo de compras

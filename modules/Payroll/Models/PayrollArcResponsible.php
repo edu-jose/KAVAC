@@ -36,7 +36,7 @@ class PayrollArcResponsible extends Model implements Auditable
      *
      * @var array $fillable
      */
-    protected $fillable = ['payroll_staff_id', 'start_date', 'end_date'];
+    protected $fillable = ['payroll_staff_id', 'fiscal_year', 'blocked_at'];
 
     /**
      * Obtiene la relación con el personal

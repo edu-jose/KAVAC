@@ -35,6 +35,7 @@ use Modules\Budget\Models\BudgetModification;
 use Modules\Budget\Models\BudgetSpecificAction;
 use Nwidart\Modules\Facades\Module;
 use Modules\Budget\Exports\BudgetFormulatedSheetExport;
+use Modules\Budget\Exports\BudgetModificationsExport;
 
 /**
  * @class BudgetAccountOpenController
@@ -58,8 +59,11 @@ class BudgetReportsController extends Controller
     {
         /* Establece permisos de acceso para cada método del controlador */
         $this->middleware('permission:budget.analyticalmajor.index', ['only' => 'budgetAnalyticalMajor']);
-        $this->middleware('permission:budget.budgetavailability.index', ['only' => 'budgetAvailability']);
-        $this->middleware('permission:budget.formulated.index', ['only' => 'getFormulatedView']);
+        $this->middleware('permission:budget.budgetavailability.report.index', ['only' => 'budgetAvailability']);
+        $this->middleware('permission:budget.consolidated.report.index', ['only' => 'createBudgetConsolidated']);
+        $this->middleware('permission:budget.compromisos.report.index', ['only' => 'getCompromiseView']);
+        $this->middleware('permission:budget.formulated.report.index', ['only' => 'getFormulatedView']);
+        $this->middleware('permission:budget.modification.report.index', ['only' => 'createBudgetModifications']);
     }
 
     /**
@@ -1559,8 +1563,16 @@ class BudgetReportsController extends Controller
 
             $totalFormulations = 0;
 
+            // Conversion monetaria de cada total a la moneda destino
             foreach ($formulation as $form) {
-                $totalFormulations += $form->total_formulated;
+                $total_formulated =
+                    \Modules\Budget\Facades\CurrencyConverter::convert(
+                        $form->total_formulated,
+                        $form->date,
+                        $form->currency,
+                        $currency
+                    );
+                $totalFormulations += $total_formulated;
             }
 
             if ($request->xml == 'true') {
@@ -2146,6 +2158,291 @@ class BudgetReportsController extends Controller
     {
         $errorMessage = $request->message;
         return view('budget::reports.consolidated', compact('errorMessage'));
+    }
+
+    /**
+     * Metodo que retorna la vista para crear el reporte de modificaciones presupuestarias
+     *
+     * @author    Pedro Contreras <pmcontreras@cenditel.gob.ve>
+     *
+     * @method createBudgetModifications
+     *
+     */
+    public function createBudgetModifications()
+    {
+        $budgetProjects = $this->getBudgetProjects(true);
+        $budgetCentralizedActions = $this->getBudgetCentralizedActions(true);
+
+        $documentStatusList = DocumentStatus::get();
+
+        $documentStatuses = [
+            ['id' => '', 'text' => 'Seleccione...'],
+            ['id' => 'Todos', 'text' => 'Todos']
+        ];
+
+        foreach ($documentStatusList as $documentStatus) {
+            if (in_array($documentStatus->name, ['Aprobado(a)', 'En Proceso'])) {
+                $documentStatuses[] = [
+                    'id' => $documentStatus->id,
+                    'text' => $documentStatus->name
+                ];
+            }
+        }
+
+        $modifications = [
+            ['id' => '', 'text' => 'Seleccione...'],
+            ['id' => '1', 'text' => 'Créditos Adicionales'],
+            ['id' => '2', 'text' => 'Reducciones'],
+            ['id' => '3', 'text' => 'Traspasos']
+        ];
+
+        return view('budget::reports.budgetModifications', [
+            'budgetProjects' => json_encode($budgetProjects),
+            'budgetCentralizedActions' => json_encode($budgetCentralizedActions),
+            'documentStatuses' => json_encode($documentStatuses),
+            'modifications' => json_encode($modifications),
+        ]);
+    }
+
+    /**
+     * Genera el reporte de modificaciones presupuestarias
+     *
+     * @author    Pedro Contreras <pmcontreras@cenditel.gob.ve>
+     *
+     * @param \Illuminate\Http\Request $request Datos de la petición
+     *
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse|void
+     */
+    public function getBudgetModificationsPdf(Request $request)
+    {
+        $currency = Currency::where('id', $request['currency_id'])->first() ??
+            Currency::where('default', true)->first();
+        $institution = Institution::where('default', true)
+            ->where('active', true)
+            ->first();
+
+        $initialDate = $request['initialDate'];
+        $finalDate = $request['finalDate'];
+        $ids = explode(',', $request->input('specific_actions_ids'));
+        $project_id = (int) $request['project_id'];
+        $project_type = $request['project_type'];
+
+        if ($request['document_status_id'] != 'Todos') {
+            $documentStatus = DocumentStatus::where('id', $request['document_status_id'])->first();
+        } else {
+            $documentStatus = 'Todos';
+        }
+
+        if ($request['modification_id'] == '1') {
+            $type = 'C';
+        } elseif ($request['modification_id'] == '2') {
+            $type = 'R';
+        } else {
+            $type = 'T';
+        }
+
+        if ($project_type == 'project') {
+            $project_type = BudgetProject::class;
+        } else {
+            $project_type = BudgetCentralizedAction::class;
+        }
+
+        $query = BudgetModification::where('type', $type)
+            ->whereBetween('approved_at', [$request['initialDate'], $request['finalDate']])
+            ->whereHas('budgetModificationAccounts.budgetSubSpecificFormulation.specificAction', function ($query) use ($ids, $project_id, $project_type) {
+                $query->where('specificable_type', $project_type)
+                    ->where('specificable_id', $project_id)
+                    ->whereIn('id', $ids);
+            });
+
+        // Aplica el filtro de estatus si no es 'Todos'
+        if ($request['document_status_id'] !== 'Todos') {
+            $query->where('document_status_id', $request['document_status_id']);
+        }
+
+        $withRelations = [
+            'budgetModificationAccounts' => function ($query) use ($ids, $project_id, $project_type) {
+                $query->with([
+                    'budgetSubSpecificFormulation' => function ($query) use ($ids, $project_id, $project_type) {
+                        $query->with([
+                            'specificAction' => function ($query) use ($ids, $project_id, $project_type) {
+                                $query->where('specificable_type', $project_type)
+                                    ->where('specificable_id', $project_id)
+                                    ->whereIn('id', $ids);
+                            }
+                        ]);
+                    }
+                ]);
+            }
+        ];
+
+        $records = $query->with($withRelations)->get();
+
+        foreach ($records as $record) {
+            $filteredAccounts = $record->budgetModificationAccounts->filter(function ($account) {
+                return $account
+                    && $account->budgetSubSpecificFormulation
+                    && $account->budgetSubSpecificFormulation->specificAction !== null;
+            })->values();
+
+            $record->setRelation('budgetModificationAccounts', $filteredAccounts);
+        }
+
+        $records = $records->filter(function ($record) {
+            return $record->budgetModificationAccounts->count() > 0;
+        })->values();
+
+        if ($type == 'T' && $records->count() > 0) {
+            $withRelations = [
+                'budgetModificationAccounts' => function ($query) {
+                    $query->with([
+                        'budgetSubSpecificFormulation' => function ($query) {
+                            $query->with('specificAction');
+                        }
+                    ]);
+                }
+            ];
+
+            $allBudgetModificationIds = $records->flatMap(function ($record) {
+                return $record->budgetModificationAccounts->pluck('budget_modification_id');
+            })->unique()->toArray();
+
+            $records = BudgetModification::whereHas(
+                'budgetModificationAccounts',
+                function ($query) use ($allBudgetModificationIds) {
+                    $query->whereIn('budget_modification_id', $allBudgetModificationIds);
+                }
+            )
+            ->with($withRelations)
+            ->get();
+
+            $array_accounts = [];
+
+            $from_add = [
+                'spac_description' => '',
+                'code' => '',
+                'description' => '',
+                'amount' => '',
+                'account_id' => '',
+                'specific_action_id' => '',
+            ];
+
+            $to_add = [
+                'spac_description' => '',
+                'code' => '',
+                'description' => '',
+                'amount' => '',
+                'account_id' => '',
+                'specific_action_id' => '',
+            ];
+
+            $i = 0;
+            foreach ($records as $record) {
+                foreach ($record?->budgetModificationAccounts as $key => $account) {
+                    $item = explode('.', $account?->budgetAccount?->code);
+                    if ($item[2] != '00' && $item[3] != '00') {
+                        $sp = $account?->budgetSubSpecificFormulation?->specificAction;
+                        $spac_desc = $sp?->specificable?->code . ' - ' . $sp?->code . ' | ' . $sp?->name;
+                        $acc = $account?->budgetAccount;
+                        $code = $acc?->code;
+
+                        if ($account->operation === "D") {
+                            $from_add = [
+                                'spac_description' => $spac_desc,
+                                'code' => $code,
+                                'description' => $account?->budgetAccount?->denomination,
+                                'amount' => $account?->amount,
+                                'account_id' => $acc?->id,
+                                'specific_action_id' => $sp?->id,
+                            ];
+                        } else {
+                            $to_add = [
+                                'spac_description' => $spac_desc,
+                                'code' => $code,
+                                'description' => $account?->budgetAccount?->denomination,
+                                'amount' => $account?->amount,
+                                'account_id' => $acc?->id,
+                                'specific_action_id' => $sp?->id,
+                            ];
+                        }
+
+                        if (($key % 2) === 1) {
+                            $array_accounts[$i] = [
+                                'approved_at' => $record->approved_at,
+                                'from_spac_description' => $from_add['spac_description'],
+                                'from_code' => $from_add['code'],
+                                'from_description' => $from_add['description'],
+                                'from_amount' => $from_add['amount'],
+                                'from_account_id' => $from_add['account_id'],
+                                'from_specific_action_id' => $from_add['specific_action_id'],
+                                'to_spac_description' => $to_add['spac_description'],
+                                'to_code' => $to_add['code'],
+                                'to_description' => $to_add['description'],
+                                'to_amount' => $to_add['amount'],
+                                'to_account_id' => $to_add['account_id'],
+                                'to_specific_action_id' => $to_add['specific_action_id'],
+                            ];
+                            $i++;
+                        }
+                    }
+                }
+            }
+
+            $modification_accounts = $array_accounts;
+        }
+
+        if ($request['exportReport'] == 'true') {
+            if ($type == 'C') {
+                $title = '_Reporte_de_Créditos_Adicionales.csv';
+            } elseif ($type == 'R') {
+                $title = '_Reporte_de_Reducciones.csv';
+            } else {
+                $title = '_Reporte_de_Traspasos.csv';
+            }
+            return Excel::download(new BudgetModificationsExport([
+                'records' => $records,
+                'institution' => $institution,
+                'currency' => $currency,
+                'documentStatus' => $documentStatus,
+                'modification_accounts' => $modification_accounts ?? null,
+                'typeReport' => $type,
+                'initialDate' => $initialDate,
+                'finalDate' => $finalDate,
+            ]), now()->format('d-m-Y') . $title);
+        } else {
+            $pdf = new ReportRepository();
+
+            $config = [
+                'institution' => $institution,
+                'orientation' => 'P',
+                'urlVerify' => url(''),
+            ];
+            $pdf->setConfig($config);
+
+            if ($type == 'C') {
+                $pdf->setHeader('Reporte de Créditos Adicionales');
+            } elseif ($type == 'R') {
+                $pdf->setHeader('Reporte de Reducciones');
+            } else {
+                $pdf->setHeader('Reporte de Traspasos');
+            }
+
+            $pdf->setFooter();
+
+            $bodyData = [
+                'pdf' => $pdf,
+                'records' => $records,
+                'institution' => $institution,
+                'currency' => $currency,
+                'documentStatus' => $documentStatus,
+                'modification_accounts' => $modification_accounts ?? null,
+                'typeReport' => $type,
+                'initialDate' => $initialDate,
+                'finalDate' => $finalDate,
+            ];
+
+            $pdf->setBody('budget::pdf.modifications', true, $bodyData);
+        }
     }
 
     /**

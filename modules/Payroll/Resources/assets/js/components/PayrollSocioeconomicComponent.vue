@@ -33,8 +33,9 @@
             <div class="row">
                 <div class="col-md-4" id="helpSocioeconomicStaff">
                     <div class="form-group is-required">
-                        <label>Trabajador:</label>
+                        <label for="payroll_staff_id">Trabajador:</label>
                         <select2
+                            id="payroll_staff_id"
                             :options="payroll_socioeconomic"
                             v-model="record.payroll_staff_id"
                             :disabled="isEditMode"
@@ -49,9 +50,13 @@
                     v-if="marital_status.length > 0"
                 >
                     <div class="form-group is-required">
-                        <label>Estado Civil:</label>
-                        <select2 :options="marital_status"
-                            v-model="record.marital_status_id"></select2>
+                        <label for="marital_status_id">Estado Civil:</label>
+                        <select2
+                            id="marital_status_id"
+                            :options="marital_status"
+                            v-model="record.marital_status_id"
+                            :disabled="isEditMode"
+                        ></select2>
                     </div>
                 </div>
             </div>
@@ -74,8 +79,9 @@
                         id="helpChildSchoolingLevelname"
                         v-if="payroll_relationships.length > 0"
                     >
-                        <label>Parentesco</label>
+                        <label for="payroll_relationships_id">Parentesco</label>
                         <select2
+                            id="payroll_relationships_id"
                             :options="payroll_relationships"
                             v-model="payroll_children.payroll_relationships_id"
                             @input="
@@ -90,8 +96,9 @@
                 </div>
                 <div class="col-4">
                     <div class="form-group is-required">
-                        <label>Nombres:</label>
+                        <label for="payroll_children_first_name">Nombres:</label>
                         <input
+                            id="payroll_children_first_name"
                             type="text"
                             placeholder="Nombres de familiar"
                             data-toggle="tooltip"
@@ -103,8 +110,9 @@
                 </div>
                 <div class="col-4">
                     <div class="form-group is-required">
-                        <label>Apellidos:</label>
+                        <label for="payroll_children_last_name">Apellidos:</label>
                         <input
+                            id="payroll_children_last_name"
                             type="text"
                             placeholder="Apellidos de familiar"
                             data-toggle="tooltip"
@@ -116,8 +124,9 @@
                 </div>
                 <div class="col-4">
                     <div class="form-group is-required">
-                        <label>Fecha de Nacimiento:</label>
+                        <label for="birthdate">Fecha de Nacimiento:</label>
                         <input
+                            id="birthdate"
                             type="date"
                             placeholder="Fecha de Nacimiento"
                             data-toggle="tooltip"
@@ -130,7 +139,7 @@
                 </div>
                 <div class="col-4">
                     <div class="form-group is-required">
-                        <label>Edad:</label>
+                        <label for="age">Edad:</label>
                         <input
                             type="text"
                             data-toggle="tooltip"
@@ -148,8 +157,9 @@
                 </div>
                 <div class="col-4">
                     <div class="form-group">
-                        <label>Cédula de identidad :</label>
+                        <label for="id_number">Cédula de identidad :</label>
                         <input
+                            id="id_number"
                             type="text"
                             placeholder="Cédula de Identidad"
                             data-toggle="tooltip"
@@ -163,8 +173,9 @@
                 <div class="col-4">
                     <div class="form-group is-required" id="helpChildSchoolingLevelname" v-if="genders.length > 0">
                         <div class="form-group is-required">
-                        <label>Género</label>
+                        <label for="payroll_gender_id">Género</label>
                         <select2
+                            id="payroll_gender_id"
                             :options="genders"
                             v-model="payroll_children.payroll_gender_id"
                         ></select2>
@@ -173,8 +184,9 @@
                 </div>
                 <div class="col-4">
                     <div class="form-group">
-                        <label>Direccion:</label>
+                        <label for="address">Direccion:</label>
                         <input
+                            id="address"
                             type="text"
                             placeholder="Direccion"
                             data-toggle="tooltip"
@@ -195,7 +207,7 @@
                 >
                     <div class="row col-md-6">
                         <div class="form-group">
-                            <label>¿Es estudiante?</label>
+                            <label :for="`mySwicth${index}`">¿Es estudiante?</label>
                             <div
                                 class="custom-control custom-switch"
                                 data-toggle="tooltip"
@@ -211,7 +223,7 @@
                                 <label
                                     class="custom-control-label"
                                     :for="`mySwicth${index}`"
-                                ></label>
+                                >&nbsp;</label>
                             </div>
                         </div>
                     </div>
@@ -221,8 +233,9 @@
                             id="helpChildSchoolingLevelname"
                             v-if="payroll_schooling_levels.length > 0"
                         >
-                            <label>¿Nivel de escolaridad?</label>
+                            <label for="payroll_schooling_level_id">¿Nivel de escolaridad?</label>
                             <select2
+                                id="payroll_schooling_level_id"
                                 :options="payroll_schooling_levels"
                                 v-model="
                                     payroll_children.payroll_schooling_level_id
@@ -231,8 +244,9 @@
                             </select2>
                         </div>
                         <div class="form-group is-required">
-                            <label>Centro de estudio</label>
+                            <label for="study_center">Centro de estudio</label>
                             <input
+                                id="study_center"
                                 type="text"
                                 placeholder="Nombre del centro de estudio"
                                 data-toggle="tooltip"
@@ -279,8 +293,9 @@
                             id="helphas_scholarships"
                             v-if="payroll_scholarship_types.length > 0"
                         >
-                            <label>¿Tipo de beca?</label>
+                            <label for="payroll_scholarship_types_id">¿Tipo de beca?</label>
                             <select2
+                                id="payroll_scholarship_types_id"
                                 :options="payroll_scholarship_types"
                                 v-model="
                                     payroll_children.payroll_scholarship_types_id
@@ -326,8 +341,9 @@
                         "
                     >
                         <div class="form-group is-required">
-                            <label>Discapacidad</label>
+                            <label for="payroll_disability_id">Discapacidad</label>
                             <select2
+                                id="payroll_disability_id"
                                 :options="payroll_disabilities"
                                 v-model="payroll_children.payroll_disability_id"
                             >
@@ -348,6 +364,91 @@
                         >
                             <i class="fa fa-minus-circle"></i>
                         </button>
+                    </div>
+                </div>
+            </div>
+            <h6 class="card-title" id="helpSocioeconomicChildren">
+               Familiar Sobreviviente
+            </h6>
+        <div class="row">
+                <div class="col-4">
+                    <div class="form-group is-required">
+                        <label for="survivor_first_name">Nombres:</label>
+                        <input
+                            id="survivor_first_name"
+                            type="text"
+                            placeholder="Nombres de familiar"
+                            data-toggle="tooltip"
+                            title="Indique nombres de familiar"
+                            v-model="record.survivor_first_name"
+                            class="form-control input-sm"
+                        >
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="form-group is-required">
+                        <label for="survivor_last_name">Apellidos:</label>
+                        <input
+                            id="survivor_last_name"
+                            type="text"
+                            placeholder="Apellidos de familiar"
+                            data-toggle="tooltip"
+                            title="Indique apellidos de familiar"
+                            v-model="record.survivor_last_name"
+                            class="form-control input-sm"
+                        >
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="form-group is-required">
+                        <label for="survivor_id_number">Cédula de identidad :</label>
+                        <input
+                            id="survivor_id_number"
+                            type="text"
+                            placeholder="Cédula de Identidad"
+                            data-toggle="tooltip"
+                            title="Indique la cédula de indentidad "
+                            v-model="record.survivor_id_number"
+                            class="form-control input-sm"
+                            v-is-digits
+                        >
+                    </div>
+                </div>
+                <div
+                    class="col-md-4"
+                    id="helpFinancialBank"
+                >
+                    <div class="form-group is-required">
+                        <label for="finance_bank_id">Banco:</label>
+                        <select2
+                            :options="banks"
+                            id="finance_bank_id"
+                            v-model="record.survivor_finance_bank_id">
+                        </select2>
+                    </div>
+                </div>
+                <div class="col-md-4" id="helpFinancialTypeAccount">
+                    <div
+                        class="form-group is-required"
+                    >
+                        <label for="finance_account_type_id">Tipo de Cuenta:</label>
+                        <select2
+                            :options="account_types"
+                            id="finance_account_type_id"
+                            v-model="record.survivor_finance_account_type_id">
+                        </select2>
+                    </div>
+                </div>
+                <div class="col-md-4" id="helpFinancialAccountNumber">
+                    <div class="form-group is-required">
+                        <label for="bank_code">Número de cuenta:</label>
+                        <input
+                            type="text"
+                            class="form-control input-sm"
+                            id="bank_code"
+                            v-model="record.survivor_payroll_account_number"
+                            v-input-mask data-inputmask-regex="[0-9]*"
+                        >
                     </div>
                 </div>
             </div>
@@ -397,6 +498,12 @@
                     payroll_staff_id: '',
                     marital_status_id: '',
                     payroll_childrens: [],
+                    survivor_first_name: '',
+                    survivor_last_name: '',
+                    survivor_id_number: '',
+                    survivor_finance_account_type_id: '',
+                    survivor_payroll_account_number: '',
+                    survivor_finance_bank_id: '',
                 },
                 errors: [],
                 payroll_socioeconomic: [],
@@ -405,6 +512,8 @@
                 payroll_scholarship_types: [],
                 payroll_schooling_levels: [],
                 genders: [],
+                banks: [],
+                account_types: [],
                 payroll_childrens: [],
                 payroll_disabilities: [],
                 isEditMode: false,
@@ -422,6 +531,12 @@
                     payroll_staff_id: '',
                     marital_status_id: '',
                     payroll_childrens: [],
+                    survivor_first_name: '',
+                    survivor_last_name: '',
+                    survivor_id_number: '',
+                    survivor_finance_account_type_id: '',
+                    survivor_payroll_account_number: '',
+                    survivor_finance_bank_id: '',
                 };
             },
 
@@ -487,6 +602,8 @@
 
         async created() {
             this.loading = true;
+            await this.getAccountTypes();
+            await this.getBanks();
             if (this.payroll_socioeconomic_id) {
                 await this.getPayrollSocioeconomic(this.payroll_socioeconomic_id);
             } else {
@@ -499,6 +616,14 @@
             await this.getPayrollScholarshipTypes();
             await this.getPayrollSchoolingLevels();
             await this.getPayrollDisabilities();
+            this.record.payroll_staff_id = this.record?.payroll_staff?.id || '';
+            const survivor = (this.record?.payroll_staff?.payroll_survivor);
+            this.record.survivor_first_name = survivor ? this.record?.payroll_staff?.payroll_survivor.first_name : '';
+            this.record.survivor_last_name = survivor ? this.record?.payroll_staff?.payroll_survivor.last_name : '';
+            this.record.survivor_id_number = survivor ? this.record?.payroll_staff?.payroll_survivor.id_number : '';
+            this.record.survivor_finance_account_type_id = survivor ? this.record?.payroll_staff?.payroll_survivor.finance_account_type_id : '';
+            this.record.survivor_payroll_account_number = survivor ? this.record?.payroll_staff?.payroll_survivor.payroll_account_number : '';
+            this.record.survivor_finance_bank_id = survivor ? this.record?.payroll_staff?.payroll_survivor.finance_bank_id : '';
             this.loading = false;
         },
 

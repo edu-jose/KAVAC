@@ -11,15 +11,16 @@
 |
 */
 
-use App\Http\Controllers\Admin\LogController;
-use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\Auth\UserController;
 use App\Models\Deduction;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Response;
+use App\Http\Controllers\CommonController;
+use App\Http\Controllers\Admin\LogController;
+use App\Http\Controllers\Auth\UserController;
 use App\Http\Controllers\DeductionController;
+use App\Http\Controllers\Auth\LoginController;
 
 /*
  | -----------------------------------------------------------------------
@@ -301,7 +302,7 @@ Route::group(['middleware' => ['auth', 'verified']], function () {
     /* Ruta para obtener datos de los perfiles dependiendo de la institución*/
     Route::get(
         'get-select-data-staff/{parent_name}/{parent_id}/{fk?}',
-        'CommonController@getSelectStaffData'
+        [CommonController::class, 'getSelectStaffData']
     )->name('get-select-data-staff');
 
     /* Ruta para obtener datos de los departamentos */

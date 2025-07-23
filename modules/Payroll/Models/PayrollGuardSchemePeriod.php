@@ -95,7 +95,7 @@ final class PayrollGuardSchemePeriod extends Model implements Auditable
                 $toDate = $toYear . '-' . $months[$month] . '-' . str_pad($day, 2, '0', STR_PAD_LEFT);
 
                 if ($fromYear != $toYear) {
-                    if ($fromDate >= $this->from_date && $toDate <= $this->to_date) {
+                    if ($fromDate >= $this->from_date && $this->to_date <= $toDate) {
                         $carry[$fromDate][$value['text'] . '-' . $staffId] = [
                             'count' => $value['count'],
                             'confirmed' => "Confirmación total" == $this->observations ? true : false,

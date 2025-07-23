@@ -8,6 +8,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Queue\InteractsWithQueue;
 use App\Notifications\SystemNotification;
+use Illuminate\Bus\Queueable;
 use Modules\Payroll\Mail\PayrollSendMail;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -26,8 +27,16 @@ class PayrollReportConceptExportJob implements ShouldQueue
 {
     use Dispatchable;
     use InteractsWithQueue;
+    use Queueable;
     use SerializesModels;
-    use SerializesModels;
+
+    /**
+     * Variable que contiene el tiempo de espera para la ejecución del trabajo,
+     * si no se quiere limite de tiempo, se define en 0
+     *
+     * @var integer $timeout
+     */
+    public $timeout = 0; //300; /** 5min */
 
     /**
      * Arreglo con los datos de la petición

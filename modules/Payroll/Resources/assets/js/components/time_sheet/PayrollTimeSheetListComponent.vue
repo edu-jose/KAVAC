@@ -1,6 +1,6 @@
 <template>
     <div>
-        <v-client-table ref="tableResults" :columns="columns" :data="records" :options="table_options">
+        <v-server-table ref="tableResults" :columns="columns" :url="route_list" :options="table_options">
             <div slot="document_status.name" slot-scope="props" class="text-center">
                 <span v-if="props.row.document_status.action == 'EL'" class="text-warning">
                     {{ props.row.document_status.name }}
@@ -71,7 +71,7 @@
                     <i class="fa fa-trash-o"></i>
                 </button>
             </div>
-        </v-client-table>
+        </v-server-table>
         <payroll-time-sheet-info ref="TimeSheetInfo"></payroll-time-sheet-info>
     </div>
 </template>
@@ -89,6 +89,7 @@ export default {
                 'document_status.name',
                 'id'
             ],
+            route_list_vue: '',
         };
     },
     created() {
@@ -130,7 +131,9 @@ export default {
         };
     },
     mounted() {
-       this.readRecords(this.route_list);
+    //    this.readRecords(this.route_list);
+    //    this.route_list_vue = `${window.app_url}/payroll/time-sheet/vue-list`; // Set the vueList route
+
     },
     props: {
         approve_permission: String,
@@ -146,6 +149,103 @@ export default {
         reset() {
             // 
         },
+
+                /**
+         * Método para la eliminación de registros
+         *
+         * @author  Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
+         *
+         * @param  {integer} id    ID del Elemento seleccionado para su eliminación
+         * @param  {string}  url   Ruta que ejecuta la acción para eliminar un registro
+         */
+        deleteRecord(id, url) {
+            const vm = this;
+            /** @type {string} URL que atiende la petición de eliminación del registro */
+            var url = vm.setUrl((url) ? url : vm.route_delete);
+
+            bootbox.confirm({
+                title: "¿Eliminar registro?",
+                message: "¿Está seguro de eliminar este registro?",
+                buttons: {
+                    cancel: {
+                        label: '<i class="fa fa-times"></i> Cancelar'
+                    },
+                    confirm: {
+                        label: '<i class="fa fa-check"></i> Confirmar'
+                    }
+                },
+                callback: async function (result) {
+                    if (result) {
+                        vm.loading = true;
+                        await axios.delete(`${url}${url.endsWith('/') ? '' : '/'}${id}`).then(response => {
+                            if (typeof (response.data.error) !== "undefined") {
+                                /** Muestra un mensaje de error si sucede algún evento en la eliminación */
+                                vm.showMessage('custom', 'Alerta!', 'warning', 'screen-error', response.data.message);
+                                return false;
+                            }
+                            vm.showMessage('destroy');
+                            /** @type {array} Arreglo de registros filtrado sin el elemento eliminado */
+                            vm.records = JSON.parse(JSON.stringify(vm.records.filter((rec) => {
+                                return rec.id !== id;
+                            })));
+                            if (typeof (vm.$refs.tableResults) !== "undefined") {
+                                vm.$refs.tableResults.refresh();
+                            }
+                        }).catch(error => {
+                            if (typeof (error.response) != "undefined") {
+                                if (error.response.status == 403) {
+                                    vm.showMessage(
+                                        'custom', 'Acceso Denegado', 'danger', 'screen-error', error.response.data.message
+                                    );
+                                }
+                            }
+                        });
+                        vm.loading = false;
+                    }
+                }
+            });
+        },
+        /**
+             * Método para reestablecer valores iniciales del formulario de filtros.
+             *
+             * @method resetFilters
+             *
+             * @author Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
+             * @author Argenis Osorio <aosorio@cenditel.gob.ve> | <aosorio@cenditel.gob.ve>
+             */
+            resetFilters() {
+                const vm = this;
+                vm.filterBy = {
+                    compromised_at: '',
+                    code: '',
+                };
+                vm.$refs.tableResults.refresh();
+            },
+
+            /**
+             * Método que permite filtrar los datos de la tabla.
+             *
+             * @method filterTable
+             *
+             * @author Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
+             */
+            filterTable() {
+                const vm = this;
+
+                let params = {
+                    query: vm.filterBy.compromised_at ? vm.format_date(vm.filterBy.compromised_at) : vm.filterBy.code,
+                    limit: 10,
+                    ascending: 1,
+                    page: 1,
+                    byColumn: 0
+                }
+
+                axios.get(`${window.app_url}/budget/compromises/list/all`, {params: params})
+                .then(response => {
+                        vm.$refs.tableResults.data = response.data.data;
+                        vm.$refs.tableResults.count = response.data.count;
+                    });
+            },
 
         /**
          * Método que establece los datos del registro seleccionado para el

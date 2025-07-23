@@ -151,10 +151,10 @@
                 </td>
                 <td style="font-size: 9rem;" align="right">
                     @if ($typeBalance === 'fiscal')
-                        {{ $record['balance'] != 0 ? number_format($record['balance'], (int) $currency->decimal_places, ',', '.') : '0,00' }}
+                        {{ $record['balance'] != 0 ? str_replace(',', '', number_format($record['balance'], (int) $currency->decimal_places, '.', '')) : '0,00' }}
                     @endif
                     @if ($typeBalance === 'month')
-                        {{ $record['balance'] != 0 ? number_format($record['balance'], (int) $currency->decimal_places, ',', '.') : '0,00' }}
+                        {{ $record['balance'] != 0 ? str_replace(',', '', number_format($record['balance'], (int) $currency->decimal_places, '.', '')) : '0,00' }}
                     @endif
                 </td>
             </tr>
@@ -165,14 +165,14 @@
                         <td style="font-size: 9rem;"> {{ $r['entries']['reference'] }}</td>
                         <td style="font-size: 9rem;"> {{ strip_tags($r['entries']['concept']) }}</td>
                         <td style="font-size: 9rem;" align="right">
-                            {{ number_format($r['debit'], (int) $currency->decimal_places, ',', '.') }}
+                            {{ str_replace(',', '', number_format($r['debit'], (int) $currency->decimal_places, '.', '')) }}
                             @php
                                 // se realizan los calculos para el saldo total por el debe
                                 $totDebit += (float) $r['debit'];
                             @endphp
                         </td>
                         <td style="font-size: 9rem;" align="right">
-                            {{ number_format($r['assets'], (int) $currency->decimal_places, ',', '.') }}
+                            {{ str_replace(',', '', number_format($r['assets'], (int) $currency->decimal_places, '.', '')) }}
                             @php
                                 // se realizan los calculos para el saldo total por el haber
                                 $totAssets += (float) $r['assets'];
@@ -208,7 +208,7 @@
                                 }
                                 $previousBalance = $totBalance;
                             @endphp
-                            {{ number_format($totBalance, (int) $currency->decimal_places, ',', '.') }}
+                            {{ str_replace(',', '', number_format($totBalance, (int) $currency->decimal_places, '.', '')) }}
                         </td>
                     </tr>
                 @endif
@@ -218,11 +218,11 @@
                 <td style="font-size: 9rem; background-color: #BDBDBD;"></td>
                 <td style="font-size: 9rem; background-color: #BDBDBD;" align="right"> TOTAL CUENTA</td>
                 <td style="font-size: 9rem; background-color: #BDBDBD;" align="right">
-                    {{ number_format($totDebit, (int) $currency->decimal_places, ',', '.') }} </td>
+                    {{ str_replace(',', '', number_format($totDebit, (int) $currency->decimal_places, '.', '')) }} </td>
                 <td style="font-size: 9rem; background-color: #BDBDBD;" align="right">
-                    {{ number_format($totAssets, (int) $currency->decimal_places, ',', '.') }} </td>
+                    {{ str_replace(',', '', number_format($totAssets, (int) $currency->decimal_places, '.', '')) }} </td>
                 <td style="font-size: 9rem; background-color: #BDBDBD;" align="right">
-                    {{ number_format($totBalance, (int) $currency->decimal_places, ',', '.') }} </td>
+                    {{ str_replace(',', '', number_format($totBalance, (int) $currency->decimal_places, '.', '')) }} </td>
             </tr>
         </table>
         <br>

@@ -1,9 +1,13 @@
 @if (!isset($hide_clear) || !$hide_clear)
-    {!! Form::button('<i class="fa fa-eraser"></i>', [
-        'class' => 'btn btn-default btn-icon btn-round btn-eraser',
-        'data-toggle' => 'tooltip', 'type' => 'reset',
-        'title' => __('Borrar datos del formulario'),
-    ]) !!}
+    <button
+        type="reset"
+        class="btn btn-default btn-icon btn-round btn-eraser"
+        data-toggle="tooltip"
+        title="{{ __('Borrar datos del formulario') }}"
+        @if (isset($btnClearId)) id="{{ $btnClearId }}" @endif
+    >
+        <i class="fa fa-eraser"></i>
+    </button>
 @endif
 @if (!isset($hide_previous) || !$hide_previous)
     {!! Form::button('<i class="fa fa-ban"></i>', [

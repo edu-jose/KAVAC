@@ -1,2 +1,5 @@
 .ck-editor__editable {min-height: 100px !important;}
 .ck.ck-button, a.ck.ck-button {font-size: 0.725rem;}
+.ck-read-only {background-color: #E3E3E3 !important;cursor: not-allowed !important;}
+.ck.ck-editor__main>.ck-editor__editable.ck-rounded-corners.ck-read-only {border-radius: 15px  !important;-webkit-border-radius: 15px  !important;-moz-border-radius: 15px  !important;-ms-border-radius: 15px  !important;-o-border-radius: 15px  !important;border: none !important;}
+.ckeditor-readonly .ck.ck-toolbar {border: none !important;}

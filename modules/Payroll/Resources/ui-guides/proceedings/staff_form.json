@@ -14,18 +14,8 @@
         "position" : "right"
     },
     {
-        "element" : "#helpStaffNationality",
-        "intro" : "Parámetro que establece la nacionalidad del personal",
-        "position" : "right"
-    },
-    {
         "element" : "#helpStaffIdNumber",
         "intro" : "Parámetro que establece la cédula de identidad del personal",
-        "position" : "right"
-    },
-    {
-        "element" : "#helpStaffPassport",
-        "intro" : "Parámetro que establece el pasaporte del personal",
         "position" : "right"
     },
     {
@@ -34,13 +24,23 @@
         "position" : "right"
     },
     {
-        "element" : "#helpStaffEmail",
-        "intro" : "Parámetro que establece el correo electrónico del personal",
+        "element" : "#helpStaffPassport",
+        "intro" : "Parámetro que establece el pasaporte del personal",
+        "position" : "right"
+    },
+    {
+        "element" : "#helpStaffNationality",
+        "intro" : "Parámetro que establece la nacionalidad del personal",
         "position" : "right"
     },
     {
         "element" : "#helpStaffBirthDate",
         "intro" : "Parámetro que establece la fecha de nacimiento del personal",
+        "position" : "right"
+    },
+    {
+        "element" : "#helpStaffEmail",
+        "intro" : "Parámetro que establece el correo electrónico del personal",
         "position" : "right"
     },
     {
@@ -59,16 +59,6 @@
         "position" : "right"
     },
     {
-        "element" : "#helpStaffDisability",
-        "intro" : "Parámetro que indica si el personal tiene alguna discapacidad",
-        "position" : "right"
-    },
-    {
-        "element" : "#helpStaffDisabilityName",
-        "intro" : "Parámetro que establece el nombre de la discapacidad del personal",
-        "position" : "right"
-    },
-    {
         "element" : "#helpStaffBloodType",
         "intro" : "Parámetro que establece el tipo de sangre del personal",
         "position" : "right"
@@ -76,6 +66,21 @@
     {
         "element" : "#helpStaffSocialSecurity",
         "intro" : "Parámetro que establece el seguro social del personal",
+        "position" : "right"
+    },
+    {
+        "element" : "#helpAgeGroup",
+        "intro" : "Parámetro que establece el grupo etario del personal",
+        "position" : "right"
+    },
+    {
+        "element" : "#helpStaffDisability",
+        "intro" : "Parámetro que indica si el personal tiene alguna discapacidad",
+        "position" : "right"
+    },
+    {
+        "element" : "#helpStaffDisabilityName",
+        "intro" : "Parámetro que establece el nombre de la discapacidad del personal",
         "position" : "right"
     },
     {
@@ -99,6 +104,11 @@
         "position" : "right"
     },
     {
+        "element" : "#helpStaffRegion",
+        "intro" : "Parámetro que establece la región donde reside el personal",
+        "position" : "right"
+    },
+    {
         "element" : "#helpStaffMunicipality",
         "intro" : "Parámetro que establece el municipio donde reside el personal",
         "position" : "right"
@@ -109,18 +119,23 @@
         "position" : "right"
     },
     {
+        "element" : "#helpStaffLocality",
+        "intro" : "Parámetro que establece la localidad donde reside el personal",
+        "position" : "right"
+    },
+    {
         "element" : "#helpStaffAddress",
         "intro" : "Parámetro que establece la dirección donde reside el personal",
         "position" : "right"
     },
     {
-        "element" : "#helpStaffUniformSize",
-        "intro" : "Parámetro que establece la talla de uniforme del personal",
+        "element" : "#helpStaffMedicalHistory",
+        "intro" : "Parámetro que establece la historia médica del personal",
         "position" : "right"
     },
     {
-        "element" : "#helpStaffMedicalHistory",
-        "intro" : "Parámetro que establece la historia médica del personal",
+        "element" : "#helpStaffUniformSize",
+        "intro" : "Parámetro que establece la talla de uniforme del personal",
         "position" : "right"
     },
     {

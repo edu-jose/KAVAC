@@ -28,46 +28,28 @@
     .text-center {
         text-align: center !important;
     }
+    .border-top {
+        border-top: .5px solid #000;
+    }
+    .border-bottom {
+        border-bottom: .5px solid #000;
+    }
 </style>
-{{-- <table class="table-employment-data">
-    <thead>
-        <tr>
-            <th>Cédula:</th>
-            <td>{{ $employment->payrollStaff->id_number }}</td>
-        </tr>
-        <tr>
-            <th>Nombre y Apellido:</th>
-            <td>{{ $employment->payrollStaff->full_name }}</td>
-        </tr>
-        <tr>
-            <th>Cargo:</th>
-            <td>{{ $employment->payrollPosition->name }}</td>
-        </tr>
-        <tr>
-            <th>Unidad / Departamento:</th>
-            <td>{{ $employment->department->name }}</td>
-        </tr>
-        <tr>
-            <th>Período Consultado:</th>
-            <td>{{ $periodConsulted }}</td>
-        </tr>
-    </thead>
-</table> --}}
 <br>
 <h4>Historial de Asistencia</h4>
 <table class="table-work-attendance">
     <thead>
         <tr>
-            <th class="text-center">C.I.</th>
-            <th class="text-center">Nombres y Apellidos</th>
-            <th class="text-center">Cargo</th>
-            <th class="text-center">Día</th>
-            <th class="text-center">Fecha</th>
-            <th class="text-center">Hora de Entrada</th>
-            <th class="text-center">Hora de Salida</th>
-            <th class="text-center">Total Asistencia</th>
-            <th class="text-center">% Asistencia</th>
-            <th class="text-center">% Inasistencia</th>
+            <th class="text-center border-top border-bottom">C.I.</th>
+            <th class="text-center border-top border-bottom">Nombres y Apellidos</th>
+            <th class="text-center border-top border-bottom">Cargo</th>
+            <th class="text-center border-top border-bottom">Día</th>
+            <th class="text-center border-top border-bottom">Fecha</th>
+            <th class="text-center border-top border-bottom">Hora de Entrada</th>
+            <th class="text-center border-top border-bottom">Hora de Salida</th>
+            <th class="text-center border-top border-bottom">Total Asistencia</th>
+            <th class="text-center border-top border-bottom">% Asistencia</th>
+            <th class="text-center border-top border-bottom">% Inasistencia</th>
         </tr>
     </thead>
     <tbody>
@@ -97,11 +79,11 @@
             </tr>
         @endforeach
         <tr>
-            <td colspan="5" class="text-right">
+            <td colspan="8" class="text-right border-top border-bottom">
                 <b>% de Asistencia / % de Inasistencia</b>
             </td>
-            <td class="text-right">{{ number_format($totalAttendance / $workAttendance->count(), 2) }} %</td>
-            <td class="text-right">{{ number_format($totalAbsence / $workAttendance->count(), 2) }} %</td>
+            <td class="text-right border-top border-bottom">{{ number_format($totalAttendance / $workAttendance->count(), 2) }} %</td>
+            <td class="text-right border-top border-bottom">{{ number_format($totalAbsence / $workAttendance->count(), 2) }} %</td>
         </tr>
     </tbody>
 </table>

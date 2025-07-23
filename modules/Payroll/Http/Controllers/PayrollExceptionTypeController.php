@@ -6,6 +6,7 @@ use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Modules\Payroll\Models\Parameter;
+use Modules\Payroll\Models\PayrollClassificationParameter;
 use Modules\Payroll\Models\PayrollExceptionType;
 
 /**
@@ -68,13 +69,14 @@ final class PayrollExceptionTypeController extends Controller
      */
     public function index()
     {
-        return response()->json(['records' => PayrollExceptionType::all()->map(fn($type) => [
+        return response()->json(['records' => PayrollExceptionType::with('payrollClassificationParameter')->get()->map(fn($type) => [
             'id'   => $type->id,
             'name' => $type->name,
             'sign' => $type->sign ?? '',
             'description' => $type->description ?? '',
             'affect_id' => $type->affect_id,
             'value_max' => $type->value_max,
+            'classifications' => $type->payrollClassificationParameter,
             'created_at' => $type->created_at,
             'updated_at' => $type->updated_at,
             'deleted_at' => $type->deleted_at,
@@ -102,34 +104,83 @@ final class PayrollExceptionTypeController extends Controller
             'value_max'   => $request->value_max,
         ]);
 
+        if (count($request->classifications) > 0) {
+            foreach ($request->classifications as $classification) {
+                PayrollClassificationParameter::create([
+                    'name' => $classification['name'],
+                    'payroll_exception_type_id' => $exceptionType->id,
+                ]);
+            }
+        }
+
         return response()->json(['record' => $exceptionType, 'message' => 'Success'], 200);
     }
 
     /**
-     * Actualiza la información de un tipo de excepción
+     * Actualiza la información de un tipo de excepción de nómina
+     *
+     * Esta función valida los datos de la solicitud, actualiza la nómina especificada.
+     * tipo de excepción y administra sus clasificaciones asociadas.
      *
      * @author Henry Paredes <hparedes@cenditel.gob.ve>
+     * @author Juan Rosas <jrosar@cenditel.gob.ve>
      *
-     * @param Request $request Datos de la petición
-     * @param PayrollExceptionType $exceptionType Registro de tipo de excepción
+     * @param Request $request Request data
+     * @param PayrollExceptionType $exceptionType Payroll exception type record
      *
-     * @return \Illuminate\Http\JsonResponse Json con mensaje de confirmación de la operación
+     * @return \Illuminate\Http\JsonResponse Json response with success message
      */
     public function update(Request $request, PayrollExceptionType $exceptionType)
     {
-        $validateRules  = array_replace(
+        // Customize validation rules to include unique check excluding current record
+        $validationRules = array_replace(
             $this->validateRules,
-            ['name' => ['required', 'max:100', 'unique:payroll_exception_types,name,' . $exceptionType->id]]
+            [
+                'name' => [
+                    'required',
+                    'max:100',
+                    'unique:payroll_exception_types,name,' . $exceptionType->id
+                ]
+            ]
         );
-        $this->validate($request, $validateRules, $this->messages);
 
+        // Validar los datos de la solicitud
+        $this->validate($request, $validationRules, $this->messages);
+
+        // Actualizar el registro del tipo de excepción de nómina
         $exceptionType->update([
-            'name'        => $request->name,
+            'name' => $request->name,
             'description' => $request->description,
-            'sign'        => $request->sign,
-            'affect_id'   => $request->affect_id,
-            'value_max'   => $request->value_max,
+            'sign' => $request->sign,
+            'affect_id' => $request->affect_id,
+            'value_max' => $request->value_max
         ]);
+
+        // Obtener clasificaciones existentes vinculadas a este tipo de excepción
+        $existingClassifications = PayrollClassificationParameter::where('payroll_exception_type_id', $exceptionType->id)->get();
+        $incomingClassificationNames = collect($request->classifications)->pluck('name')->toArray();
+
+        // Eliminar clasificaciones que ya no están asociadas
+        foreach ($existingClassifications as $existingClassification) {
+            if (!in_array($existingClassification->name, $incomingClassificationNames)) {
+                $existingClassification->delete();
+            }
+        }
+
+        // Agregar o restaurar clasificaciones desde la solicitud
+        foreach ($request->classifications as $classification) {
+            $classificationRecord = PayrollClassificationParameter::firstOrCreate(
+                [
+                    'name' => $classification['name'],
+                    'payroll_exception_type_id' => $exceptionType->id
+                ]
+            );
+
+            // Restaurar la clasificación si fue eliminada previamente
+            if ($classificationRecord->trashed()) {
+                $classificationRecord->restore();
+            }
+        }
 
         return response()->json(['message' => 'Success'], 200);
     }
@@ -171,6 +222,10 @@ final class PayrollExceptionTypeController extends Controller
                 200
             );
         }
+
+        PayrollClassificationParameter::query()
+            ->where('payroll_exception_type_id', $exceptionType->id)
+            ->delete();
 
         $exceptionType->delete();
 

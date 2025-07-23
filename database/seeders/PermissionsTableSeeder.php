@@ -1081,6 +1081,16 @@ class PermissionsTableSeeder extends Seeder
             ]
         ]);
 
+        /* Permisos para la gestión de herramientas de monitoreo */
+        $permissions = array_merge($permissions, [
+            [
+                'name' => 'Ver panel de monitoreo del sistema', 'slug' => 'monitoring.view',
+                'description' => 'Acceso al panel de monitoreo del sistema',
+                'model' => null, 'model_prefix' => '0general',
+                'slug_alt' => 'monitoreo', 'short_description' => 'monitoro del sistema'
+            ],
+        ]);
+
         $this->command->line("");
         $this->command->info("<fg=yellow>Cargando los Permisos Generalses del Sistema</>");
         $this->command->line("");

@@ -6,8 +6,8 @@
             <i class="icofont icofont-pin ico-3x"></i>
             <span>Localidades</span>
         </a>
-        <div id="add_locality" class="modal fade text-left" tabindex="-1" role="dialog">
-            <div class="modal-dialog vue-crud" role="document">
+        <div id="add_locality" class="modal fade text-left" tabindex="-1">
+            <div class="modal-dialog vue-crud">
                 <div class="modal-content">
                     <div class="modal-header">
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -23,32 +23,48 @@
                         <div class="row">
                             <div class="col-12 col-md-3">
                                 <div class="form-group is-required">
-                                    <label>País:</label>
-                                    <select2 :options="countries" @input="getEstates" v-model="record.country_id"/>
+                                    <label for="localityCountry">País:</label>
+                                    <select2
+                                        id="localityCountry"
+                                        :options="countries" @input="getEstates"
+                                        v-model="record.country_id"
+                                    />
                                 </div>
                             </div>
                             <div class="col-12 col-md-3">
                                 <div class="form-group is-required">
-                                    <label>Estados:</label>
-                                    <select2 :options="estates" v-model="record.estate_id" @input="getMunicipalities"/>
+                                    <label for="localityEstate">Estados:</label>
+                                    <select2
+                                        id="localityEstate"
+                                        :options="estates" v-model="record.estate_id"
+                                        @input="getMunicipalities"
+                                    />
                                 </div>
                             </div>
                             <div class="col-12 col-md-3">
                                 <div class="form-group is-required">
-                                    <label>Municipio:</label>
-                                    <select2 :options="municipalities" v-model="record.municipality_id" @input="getParishes"/>
+                                    <label for="localityMunicipality">Municipio:</label>
+                                    <select2
+                                        id="localityMunicipality"
+                                        :options="municipalities" v-model="record.municipality_id"
+                                        @input="getParishes"
+                                    />
                                 </div>
                             </div>
                             <div class="col-12 col-md-3">
                                 <div class="form-group is-required">
-                                    <label>Parroquia:</label>
-                                    <select2 :options="parishes" v-model="record.parish_id"/>
+                                    <label for="localityParish">Parroquia:</label>
+                                    <select2
+                                        id="localityParish"
+                                        :options="parishes" v-model="record.parish_id"
+                                    />
                                 </div>
                             </div>
                             <div class="col-12 col-md-6">
                                 <div class="form-group is-required">
-                                    <label>Código:</label>
+                                    <label for="localityCode">Código:</label>
                                     <input
+                                        id="localityCode"
                                         class="form-control input-sm" type="text" data-toggle="tooltip"
                                         maxlength="20" placeholder="Código de Localidad"
                                         title="Indique el código de la Localidad (requerido)"
@@ -58,8 +74,9 @@
                             </div>
                             <div class="col-12 col-md-6">
                                 <div class="form-group is-required">
-                                    <label>Nombre:</label>
+                                    <label for="localityName">Nombre:</label>
                                     <input
+                                        id="localityName"
                                         class="form-control input-sm" type="text" data-toggle="tooltip"
                                         placeholder="Nombre de Localidad"
                                         title="Indique el nombre de la Localidad (requerido)"
@@ -71,16 +88,22 @@
                     </div>
                     <div class="modal-footer">
                         <div class="form-group">
-                            <button type="button" class="btn btn-default btn-sm btn-round btn-modal-close"
-                                    @click="clearFilters" data-dismiss="modal">
+                            <button
+                                type="button" class="btn btn-default btn-sm btn-round btn-modal-close"
+                                @click="clearFilters" data-dismiss="modal"
+                            >
                                 Cerrar
                             </button>
-                            <button type="button" class="btn btn-warning btn-sm btn-round btn-modal btn-modal-clear"
-                                    @click="reset()">
+                            <button
+                                type="button" class="btn btn-warning btn-sm btn-round btn-modal btn-modal-clear"
+                                @click="reset()"
+                            >
                                 Cancelar
                             </button>
-                            <button type="button" @click="createRecord('localities')"
-                                    class="btn btn-primary btn-sm btn-round btn-modal-save">
+                            <button
+                                type="button" @click="createRecord('localities')"
+                                class="btn btn-primary btn-sm btn-round btn-modal-save"
+                            >
                                 Guardar
                             </button>
                         </div>
@@ -91,15 +114,19 @@
                             ref="tableResults"
                         >
                             <div slot="id" slot-scope="props" class="text-center">
-                                <button @click="initUpdate(props.row.id, $event)"
-                                        class="btn btn-warning btn-xs btn-icon btn-action"
-                                        title="Modificar registro" data-toggle="tooltip" type="button">
+                                <button
+                                    @click="initUpdate(props.row.id, $event)"
+                                    class="btn btn-warning btn-xs btn-icon btn-action"
+                                    title="Modificar registro" data-toggle="tooltip" type="button"
+                                >
                                     <i class="fa fa-edit"></i>
                                 </button>
-                                <button @click="deleteRecord(props.row.id, 'localities')"
-                                        class="btn btn-danger btn-xs btn-icon btn-action"
-                                        title="Eliminar registro" data-toggle="tooltip"
-                                        type="button">
+                                <button
+                                    @click="deleteRecord(props.row.id, 'localities')"
+                                    class="btn btn-danger btn-xs btn-icon btn-action"
+                                    title="Eliminar registro" data-toggle="tooltip"
+                                    type="button"
+                                >
                                     <i class="fa fa-trash-o"></i>
                                 </button>
                             </div>
@@ -112,8 +139,6 @@
 </template>
 
 <script>
-import { set } from 'lodash';
-
     export default {
         data() {
             return {

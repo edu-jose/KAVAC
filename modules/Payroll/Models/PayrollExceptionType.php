@@ -49,4 +49,12 @@ final class PayrollExceptionType extends Model implements Auditable
     {
         return $this->belongsTo(PayrollExceptionType::class, 'affect_id');
     }
+
+    /**
+     * Obtiene la relacion con los modelos de clasificacion de parametros
+     */
+    public function payrollClassificationParameter()
+    {
+        return $this->hasMany(PayrollClassificationParameter::class);
+    }
 }

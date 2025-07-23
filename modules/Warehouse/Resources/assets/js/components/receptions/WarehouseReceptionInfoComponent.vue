@@ -81,6 +81,33 @@
 											</div>
 										</div>
 									</div>
+									<div class="col-md-6">
+										<div class="form-group">
+											<strong>Código</strong>
+											<div class="row" style="margin: 1px 0">
+												<span class="col-md-12" id="direct_hire">
+												</span>
+											</div>
+										</div>
+									</div>
+									<div class="col-md-6">
+										<div class="form-group">
+											<strong>Proveedor</strong>
+											<div class="row" style="margin: 1px 0">
+												<span class="col-md-12" id="supplier">
+												</span>
+											</div>
+										</div>
+									</div>
+									<div class="col-md-12">
+										<div class="form-group">
+											<strong>Oberservaciones generales</strong>
+											<div class="row" style="margin: 1px 0">
+												<span class="col-md-12" id="general_observations">
+												</span>
+											</div>
+										</div>
+									</div>
 							    </div>
 	                    	</div>
 
@@ -209,10 +236,11 @@
 
 						$(".modal-body #id").val( fields.id );
 		            	document.getElementById('date_init').innerText = (fields.reception_date)?vm.format_date(fields.reception_date):vm.format_date(fields.created_at);
+						document.getElementById('direct_hire').innerText = (fields.direct_hire)?fields.direct_hire:fields.purchase_direct_hire.code;
+		            	document.getElementById('supplier').innerText = (fields.supplier)?fields.supplier:fields.purchase_supplier.name;
+		            	document.getElementById('general_observations').innerHTML = (fields.general_observations) ? fields.general_observations : 'No definido';
 
-
-		            	document.getElementById('description').innerText =fields.description.replace('<p>', '').replace('</p>', '');
-
+						document.getElementById('description').innerText =fields.description.replace('<p>', '').replace('</p>', '');
 
 		            	document.getElementById('warehouse').innerText = (fields.warehouse_institution_warehouse_end)?fields.warehouse_institution_warehouse_end.warehouse.name:'';
 		            	document.getElementById('state').innerText = (fields.state)?fields.state:'No definido';

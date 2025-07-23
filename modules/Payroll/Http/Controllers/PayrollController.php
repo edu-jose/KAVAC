@@ -21,14 +21,17 @@ use Maatwebsite\Excel\Facades\Excel;
 use Modules\Payroll\Models\Parameter;
 use Modules\Payroll\Exports\PayrollExport;
 use Modules\Payroll\Models\PayrollConcept;
-use Illuminate\Contracts\Support\Renderable;
 use App\Exceptions\ClosedFiscalYearException;
 use Modules\Payroll\Models\PayrollEmployment;
 use Modules\Payroll\Models\PayrollPaymentPeriod;
 use Modules\Payroll\Http\Resources\PayrollResource;
 use Illuminate\Foundation\Validation\ValidatesRequests;
-use Modules\Payroll\Jobs\PayrollCreatePaymentRelationship;
-use Modules\Payroll\Jobs\PayrollUpdatePaymentRelationship;
+use Modules\Payroll\Actions\Payroll\PayrollParametersExportAction;
+use Modules\Payroll\Imports\Payroll\PayrollParameterImport;
+use Modules\Payroll\Jobs\CreatePayrollPaymentRelationship;
+use Modules\Payroll\Models\PayrollResetParameter;
+use Modules\Payroll\Repositories\PayrollAssociatedParametersRepository;
+use Ramsey\Uuid\Type\Integer;
 
 /**
  * @class      PayrollController
@@ -219,11 +222,30 @@ class PayrollController extends Controller
                 );
             }
 
+            $payrollConceptIds = array_reduce($request->payroll_concepts, function ($carry, $concept) {
+                $carry[] = $concept['id'];
+                return $carry;
+            }, []);
+
+            $countParams = DB::table('payroll_concept_parameters_view')
+                ->whereIn('id', $payrollConceptIds)
+                ->where('parameter_type', '<>', 'time_parameter')
+                ->where('parameter_name', '!=', 'Numero de lunes del mes')
+                ->count();
+
             $this->validateRules['created_at'] = [
                 'required',
                 'before_or_equal:' . $period->end_date,
                 'after_or_equal:' . $period->start_date
             ];
+
+            if ($countParams > 0 && $request->file_parameters == false) {
+                $this->validateRules['parameters'] = [
+                    'required',
+                ];
+
+                $this->messages['parameters.required'] = 'El archivo de parámetros de nómina es obligatorio';
+            }
 
             $formatedStartDate = $date->format('d/m/Y');
             $endDate = new DateTime($period->end_date);
@@ -255,6 +277,7 @@ class PayrollController extends Controller
             Payroll::class,
             'code'
         );
+
         $params = $request->all();
         $user = auth()->user();
         $params['code'] = $code;
@@ -267,14 +290,25 @@ class PayrollController extends Controller
                 'status' => 'En Proceso',
                 'code' => $code,
                 'payroll_payment_period_id' => $request->input('payroll_payment_period_id'),
-                'payroll_parameters' => json_encode($request->input('payroll_parameters')),
                 'created_at' => (new DateTime($request->input('created_at')))->format('Y-m-d H:i:s'),
                 'document_status_id' => DocumentStatus::query()->where('action', 'PR')->value('id')
             ]
         );
         $params['id'] = $payroll->id;
 
-        PayrollCreatePaymentRelationship::dispatch($params);
+        if (!$countParams && $request->file_parameters == false) {
+            $payrollParameters = $this->updateOrCreateMondayParam(
+                $payroll->id,
+                $period,
+                $payrollConceptIds
+            );
+
+            $payroll->update([
+                'payroll_parameters' => json_encode($payrollParameters ?? [])
+            ]);
+        }
+
+        CreatePayrollPaymentRelationship::dispatch($params);
 
         $request->session()->flash('message', ['type' => 'other', 'title' => '¡Éxito!',
             'text' => 'Su solicitud esta en proceso, esto puede tardar unos ' .
@@ -368,6 +402,24 @@ class PayrollController extends Controller
                     __('No puede registrar, actualizar o eliminar registros de un año fiscal cerrado')
                 );
             }
+
+            $payrollConceptIds = array_reduce($request->payroll_concepts, function ($carry, $concept) {
+                $carry[] = $concept['id'];
+                return $carry;
+            }, []);
+
+            $isEqual = $this->validateParametersIsEqual(
+                $request->input('id'),
+                $payrollConceptIds
+            );
+
+            if (!$isEqual && $request->file_parameters == false) {
+                $this->validateRules['parameters'] = [
+                    'required',
+                ];
+
+                $this->messages['parameters.required'] = 'El archivo de parámetros de nómina es obligatorio';
+            }
         }
 
         $this->validate($request, $this->validateRules, $this->messages);
@@ -375,7 +427,7 @@ class PayrollController extends Controller
         $params = $request->all();
         $params['user_id'] = $user->id;
         $params['institution_id'] = $user->profile?->institution_id ?? null;
-        Payroll::query()->updateOrCreate(
+        $payroll = Payroll::query()->updateOrCreate(
             [
                 'id' => $request->input('id'),
             ],
@@ -383,12 +435,25 @@ class PayrollController extends Controller
                 'name' => $request->input('name'),
                 'status' => 'En Proceso',
                 'payroll_payment_period_id' => $request->input('payroll_payment_period_id'),
-                'payroll_parameters' => json_encode($request->input('payroll_parameters')),
                 'created_at' => (new DateTime($request->input('created_at')))->format('Y-m-d H:i:s'),
                 'document_status_id' => DocumentStatus::query()->where('action', 'PR')->value('id')
             ]
         );
-        PayrollUpdatePaymentRelationship::dispatch($params);
+
+        // Actualizar el parámetro de lunes si solo existe este parámetro
+        if ($request->file_parameters == false) {
+            $payrollParameters = $this->updateOrCreateMondayParam(
+                $payroll->id,
+                $period,
+                $payrollConceptIds
+            );
+
+            $payroll->update([
+                'payroll_parameters' => json_encode($payrollParameters ?? [])
+            ]);
+        }
+
+        CreatePayrollPaymentRelationship::dispatch($params);
 
         $request->session()->flash('message', ['type' => 'other', 'title' => '¡Éxito!',
             'text' => 'Su solicitud esta en proceso, esto puede tardar unos ' .
@@ -398,6 +463,113 @@ class PayrollController extends Controller
         ]);
 
         return response()->json(['redirect' => route('payroll.registers.index')], 200);
+    }
+
+    /**
+     * Actualizar el parámetro de lunes si solo existe este parámetro
+     * @param Integer $payrollId
+     * @param  $period
+     * @param array $payrollConceptIds
+     *
+     * @return array
+     */
+    private function updateOrCreateMondayParam($payrollId, $period = null, $payrollConceptIds = [])
+    {
+        // Obtener todos los parámetros de la nómina
+        $allParameters = DB::table('payroll_concept_parameters_view')
+            ->whereIn('id', $payrollConceptIds)
+            ->where('parameter_type', '<>', 'time_parameter');
+
+        // Obtener todos los nombres de los parámetros
+        $allParametersName = $allParameters
+            ->pluck('parameter_name')
+            ->unique()
+            ->values()
+            ->toArray();
+
+        // Eliminar los parámetros que no existen en los conceptos de nómina
+        PayrollResetParameter::query()->toBase()
+            ->where('payroll_id', $payrollId)
+            ->whereNotIn('name', $allParametersName)
+            ->delete();
+
+        // Contar el parámetro de lunes
+        $queryMondayParams = (clone $allParameters)->where('parameter_name', 'Numero de lunes del mes')->count();
+
+        if ($queryMondayParams > 0) {
+            PayrollResetParameter::updateOrCreate(
+                [
+                    'payroll_id' => $payrollId,
+                    'name' => 'Numero de lunes del mes'
+                ],
+                [
+                    'value' => $period?->number_of_days_monday ?? 0
+                ]
+            );
+        }
+
+        $allParams = $allParameters->get();
+
+        $payrollParameters = PayrollResetParameter::query()
+            ->where('payroll_id', $payrollId)
+            ->get()
+            ->flatMap(function ($item) use ($allParams) {
+                // Filtrar parámetros según si tiene concept_id o no
+                $matchingParams = $allParams->filter(function ($param) use ($item) {
+                    if ($item->payroll_concept_id) {
+                        return $param->id === $item->payroll_concept_id &&
+                            $param->parameter_name === $item->name;
+                    }
+
+                    return $param->parameter_name === $item->name;
+                });
+
+                // Mapear a la estructura esperada
+                return $matchingParams->map(function ($param) use ($item) {
+                    return [
+                        'id' => $param->parameter_id,
+                        'name' => $item->name,
+                        'staff_id' => $item->payroll_staff_id,
+                        'concept_id' => $param->id,
+                        'value' => $item->value,
+                    ];
+                });
+            })
+            ->values()
+            ->toArray();
+
+        return $payrollParameters;
+    }
+
+    /**
+     * Valida que los parámetros de la nómina sean iguales
+     * @param Integer $payrollId
+     * @param array $payrollConceptIds
+     *
+     * @return boolean
+     */
+    private function validateParametersIsEqual($payrollId, $payrollConceptIds)
+    {
+        // Obtener todos los parámetros de la nómina
+        $allParameters = DB::table('payroll_concept_parameters_view')
+            ->whereIn('id', $payrollConceptIds)
+            ->where('parameter_type', '<>', 'time_parameter')
+            ->where('parameter_name', '!=', 'Numero de lunes del mes')
+            ->pluck('parameter_name')
+            ->unique()
+            ->values()
+            ->toArray();
+
+        $parameters = PayrollResetParameter::query()
+            ->where('payroll_id', $payrollId)
+            ->whereIn('name', $allParameters)
+            ->where('name', '!=', 'Numero de lunes del mes')
+            ->pluck('name')
+            ->unique()
+            ->values()
+            ->toArray();
+
+        return empty(array_diff($parameters, $allParameters)) && empty(array_diff($allParameters, $parameters));
     }
 
     /**
@@ -476,6 +648,8 @@ class PayrollController extends Controller
                     $payroll = Payroll::find($id);
                     $payroll->document_status_id = DocumentStatus::query()->where('action', 'CE')->value('id');
                     $payroll->save();
+
+                    $hasBudget = Module::has('Budget') && Module::isEnabled('Budget');
 
                     if ($payroll?->payrollPaymentPeriod?->payrollPaymentType?->skip_moments == true) {
                         $payrollPaymentPeriod = $payroll->payrollPaymentPeriod;
@@ -557,7 +731,7 @@ class PayrollController extends Controller
                             $currency = Currency::where('default', true)->first();
                         }
 
-                        if (Module::has('Budget') && Module::isEnabled('Budget')) {
+                        if ($hasBudget) {
                             /* Estado inicial del compromiso establecido a elaborado */
                             $documentStatusEL = DocumentStatus::where('action', 'EL')->first();
                             /* Estado Comprometido del compromiso establecido a PROCESADO */
@@ -642,7 +816,7 @@ class PayrollController extends Controller
                                         }
                                     }
 
-                                    $compromiseContributionTotal = $compromiseContribution->budgetStages[0]['amount'];
+                                    $compromiseContributionTotal = $compromiseContribution?->budgetStages[0]['amount'] ?? 0;
 
                                     if (isset($compromiseContribution)) {
                                         $compromiseContribution->compromised_at = $date;
@@ -667,13 +841,13 @@ class PayrollController extends Controller
 
                                     foreach ($valuesNA as $key => $value) {
                                         $rec = $value['receiver'];
-                                        if ($source->receiver->description == $rec->description) {
+                                        if ($source && $source->receiver->description == $rec->description) {
                                             $rec = $source->receiver;
                                         }
                                         $totalContributions += $value['valueTotal'];
                                     }
 
-                                    $compromiseContribution->budgetStages()->update([
+                                    $compromiseContribution?->budgetStages()->update([
                                         'type' => 'COM',
                                         'amount' => $compromiseContributionTotal
                                     ]);
@@ -1042,100 +1216,105 @@ class PayrollController extends Controller
                                 'code'
                             );
 
-                            /** @todo Se registra la orden de pago de las deducciones */
-                            $financePayOrderDeducction = \Modules\Finance\Models\FinancePayOrder::create([
-                                'code' => $codeD,
-                                'ordered_at' => $date,
-                                'type' => 'PR',
-                                'is_partial' => false,
-                                'pending_amount' => 0,
-                                'completed' => true,
-                                'document_type' => 'O',
-                                'document_number' => null,
-                                'source_amount' => $dPayOrder['amount'],
-                                'amount' => $dPayOrder['amount'],
-                                'concept' => "Pago de deducción de nómina $reference correspondiente al período " .
-                                    $payrollPaymentPeriod->start_date . ' - ' .
-                                    $payrollPaymentPeriod->end_date,
-                                'observations' => '',
-                                'status' => 'PE',
-                                'budget_specific_action_id' => $specificActionId,
-                                'institution_id' => $institution->id,
-                                'document_status_id' => $documentStatusPR->id,
-                                'currency_id' => $currency->id,
-                                'name_sourceable_type' => str_replace("modules", "Modules", Receiver::class),
-                                'name_sourceable_id' => $dPayOrder['receiver_id'],
-                                'document_sourceable_id' => $dPayOrder['compromise_id'] ?? null,
-                                'document_sourceable_type' => \Modules\Budget\Models\BudgetCompromise::class ?? null
-                            ]);
+                            if ($hasBudget) {
+                                $compromiseDeduction = \Modules\Budget\Models\BudgetCompromise::find($dPayOrder['compromise_id']);
 
-                            /** @todo Validar segundo estado financiero */
-                            $codeStage = generate_registration_code('STG', 8, 4, \Modules\Budget\Models\BudgetStage::class, 'code');
-                            $compromiseDeduction = \Modules\Budget\Models\BudgetCompromise::find($dPayOrder['compromise_id']);
-                            if (isset($compromiseDeduction) && isset($codeStage)) {
-                                $documentStatusApproved = DocumentStatus::where('action', 'AP')->first();
-                                $compromiseDeduction->compromised_at = $date;
-                                $compromiseDeduction->document_status_id = $documentStatusApproved->id;
-                                $compromiseDeduction->save();
-                                $compromiseDeduction->budgetStages()->where('type', 'PRE')->delete();
-                                $compromiseDeduction->budgetStages()->create([
-                                    'code' => $codeStage,
-                                    'registered_at' => $date,
-                                    'type' => 'COM',
-                                    'amount' => $dPayOrder['amount'],
-                                    'stageable_type' => \Modules\Finance\Models\FinancePayOrder::class,
-                                    'stageable_id' => $financePayOrderDeducction->id,
-                                ]);
+                                if (isset($compromiseDeduction)) {
+                                    /** @todo Se registra la orden de pago de las deducciones */
+                                    $financePayOrderDeducction = \Modules\Finance\Models\FinancePayOrder::create([
+                                        'code' => $codeD,
+                                        'ordered_at' => $date,
+                                        'type' => 'PR',
+                                        'is_partial' => false,
+                                        'pending_amount' => 0,
+                                        'completed' => true,
+                                        'document_type' => 'O',
+                                        'document_number' => null,
+                                        'source_amount' => $dPayOrder['amount'],
+                                        'amount' => $dPayOrder['amount'],
+                                        'concept' => "Pago de deducción de nómina $compromiseDeduction->document_number correspondiente al período " .
+                                            $payrollPaymentPeriod->start_date . ' - ' .
+                                            $payrollPaymentPeriod->end_date,
+                                        'observations' => '',
+                                        'status' => 'PE',
+                                        'budget_specific_action_id' => $specificActionId,
+                                        'institution_id' => $institution->id,
+                                        'document_status_id' => $documentStatusPR->id,
+                                        'currency_id' => $currency->id,
+                                        'name_sourceable_type' => str_replace("modules", "Modules", Receiver::class),
+                                        'name_sourceable_id' => $dPayOrder['receiver_id'],
+                                        'document_sourceable_id' => $dPayOrder['compromise_id'] ?? null,
+                                        'document_sourceable_type' => \Modules\Budget\Models\BudgetCompromise::class ?? null
+                                    ]);
 
-                                $codeStage = generate_registration_code('STG', 8, 4, \Modules\Budget\Models\BudgetStage::class, 'code');
+                                    /** @todo Validar segundo estado financiero */
+                                    $codeStage = generate_registration_code('STG', 8, 4, \Modules\Budget\Models\BudgetStage::class, 'code');
+                                    if (isset($codeStage)) {
+                                        $documentStatusApproved = DocumentStatus::where('action', 'AP')->first();
+                                        $compromiseDeduction->compromised_at = $date;
+                                        $compromiseDeduction->document_status_id = $documentStatusApproved->id;
+                                        $compromiseDeduction->save();
+                                        $compromiseDeduction->budgetStages()->where('type', 'PRE')->delete();
+                                        $compromiseDeduction->budgetStages()->create([
+                                            'code' => $codeStage,
+                                            'registered_at' => $date,
+                                            'type' => 'COM',
+                                            'amount' => $dPayOrder['amount'],
+                                            'stageable_type' => \Modules\Finance\Models\FinancePayOrder::class,
+                                            'stageable_id' => $financePayOrderDeducction->id,
+                                        ]);
 
-                                $compromiseDeduction->budgetStages()->create([
-                                    'code' => $codeStage,
-                                    'registered_at' => $date,
-                                    'type' => 'CAU',
-                                    'amount' => $dPayOrder['amount'],
-                                    'stageable_type' => \Modules\Finance\Models\FinancePayOrder::class,
-                                    'stageable_id' => $financePayOrderDeducction->id,
-                                ]);
+                                        $codeStage = generate_registration_code('STG', 8, 4, \Modules\Budget\Models\BudgetStage::class, 'code');
 
-                                $source = Source::query()
-                                    ->where('sourceable_type', PayrollConcept::class)
-                                    ->where('sourceable_id', $compromiseDeduction->compromiseable_id)
-                                    ->first();
+                                        $compromiseDeduction->budgetStages()->create([
+                                            'code' => $codeStage,
+                                            'registered_at' => $date,
+                                            'type' => 'CAU',
+                                            'amount' => $dPayOrder['amount'],
+                                            'stageable_type' => \Modules\Finance\Models\FinancePayOrder::class,
+                                            'stageable_id' => $financePayOrderDeducction->id,
+                                        ]);
 
-                                if ($source) {
-                                    Source::create(
+                                        $source = Source::query()
+                                            ->where('sourceable_type', PayrollConcept::class)
+                                            ->where('sourceable_id', $compromiseDeduction->compromiseable_id)
+                                            ->first();
+
+                                        if ($source) {
+                                            Source::create(
+                                                [
+                                                    'receiver_id' => $source->receiver_id,
+                                                    'sourceable_type' => \Modules\Budget\Models\BudgetCompromise::class,
+                                                    'sourceable_id' => $compromiseDeduction->id,
+                                                ]
+                                            );
+                                        }
+                                    }
+
+                                    /* Asiento contable de la orden de pago de nómina */
+                                    $accountingCategory = \Modules\Accounting\Models\AccountingEntryCategory::findOrFail($payrollPaymentPeriod->payrollPaymentType->accounting_entry_category_id);
+
+                                    \Modules\Accounting\Jobs\AccountingManageEntries::dispatch(
                                         [
-                                            'receiver_id' => $source->receiver_id,
-                                            'sourceable_type' => \Modules\Budget\Models\BudgetCompromise::class,
-                                            'sourceable_id' => $compromiseDeduction->id,
-                                        ]
+                                            'date' => $date,
+                                            'reference' => $codeD,
+                                            'concept' => "Orden de pago de deducción de nómina $compromiseDeduction->document_number correspondiente al período " .
+                                                $payrollPaymentPeriod->start_date . ' - ' .
+                                                $payrollPaymentPeriod->end_date,
+                                            'observations' => '',
+                                            'category' => $accountingCategory->id,
+                                            'currency_id' => $currency->id,
+                                            'totDebit' => $dPayOrder['amount'],
+                                            'totAssets' => $dPayOrder['amount'],
+                                            'module' => 'Finance',
+                                            'model' => \Modules\Finance\Models\FinancePayOrder::class,
+                                            'relatable_id' => $financePayOrderDeducction->id,
+                                            'accountingAccounts' => $dPayOrder['accounts']
+                                        ],
+                                        $institution->id,
                                     );
                                 }
                             }
-
-                            /* Asiento contable de la orden de pago de nómina */
-                            $accountingCategory = \Modules\Accounting\Models\AccountingEntryCategory::findOrFail($payrollPaymentPeriod->payrollPaymentType->accounting_entry_category_id);
-
-                            \Modules\Accounting\Jobs\AccountingManageEntries::dispatch(
-                                [
-                                    'date' => $date,
-                                    'reference' => $codeD,
-                                    'concept' => "Orden de pago de deducción de nómina $reference correspondiente al período " .
-                                        $payrollPaymentPeriod->start_date . ' - ' .
-                                        $payrollPaymentPeriod->end_date,
-                                    'observations' => '',
-                                    'category' => $accountingCategory->id,
-                                    'currency_id' => $currency->id,
-                                    'totDebit' => $dPayOrder['amount'],
-                                    'totAssets' => $dPayOrder['amount'],
-                                    'module' => 'Finance',
-                                    'model' => \Modules\Finance\Models\FinancePayOrder::class,
-                                    'relatable_id' => $financePayOrderDeducction->id,
-                                    'accountingAccounts' => $dPayOrder['accounts']
-                                ],
-                                $institution->id,
-                            );
                         }
                     }
                 }
@@ -1218,7 +1397,7 @@ class PayrollController extends Controller
     {
         ini_set('max_execution_time', 300); /** 5min */
         try {
-            $payroll = Payroll::where('id', $id)->first();
+            $payroll = Payroll::toBase()->where('id', $id)->first();
             $export = new PayrollExport();
             $export->setPayrollId($payroll->id);
             return Excel::download($export, 'payroll_register' . $payroll->created_at . '.xlsx');
@@ -2197,5 +2376,298 @@ class PayrollController extends Controller
             'number_decimals' => $number_decimals,
             'deductionToPayOrder' => $deductionToPayOrder,
         ];
+    }
+
+    public function exportParameters(
+        Request $request,
+        PayrollParametersExportAction $export
+    ) {
+        $period = PayrollPaymentPeriod::find($request->payroll_payment_period_id);
+        $payrollConceptAvailableIds = [];
+        $payrollConceptIds = array_reduce($request->payroll_concepts, function ($carry, $concept) {
+            $carry[] = $concept['id'];
+            return $carry;
+        }, []);
+
+        $allParams = DB::table('payroll_concept_parameters_view')
+            ->whereIn('id', $payrollConceptIds)
+            ->where('parameter_type', '<>', 'time_parameter')
+            ->get();
+
+        $groupedByConcept = $allParams->groupBy('id');
+        $totalConceptExport = $groupedByConcept->count();
+        $paramToConceptCount = $allParams->groupBy('parameter_id')
+            ->map(fn ($items) => $items->pluck('id')->unique()->count());
+
+        //Conocer el ID del parámetro general 'Numero de lunes del mes'
+        $paramMonday = (int) (clone $allParams)->where('parameter_name', 'Numero de lunes del mes')->pluck('parameter_id')->first();
+
+        // Filtrar los parámetros generales que se exportarán
+        // Se consideran generales aquellos que son del tipo 'Numero de lunes del mes' o que están asociados a mas de un concepto
+        $paramIdsGenerals = $paramToConceptCount
+            ->filter(fn ($count, $key) => (
+                $key === $paramMonday ||
+                $count > 1 ||
+                $totalConceptExport === 1
+            ))->keys();
+
+        // Filtrar los parámetros generales de la consulta
+        $parameterGenerals = $allParams
+            ->whereIn('parameter_id', $paramIdsGenerals)->unique('parameter_id')
+            ->map(fn ($param) => [
+                'id' => $param->parameter_id,
+                'name' => $param->parameter_name,
+                'type' => $param->parameter_type,
+                'value' => ($param->parameter_name == "Numero de lunes del mes")
+                    ? ($period->number_of_days_monday ?? 0)
+                    : $param->parameter_value,
+            ])->values();
+
+        $result = collect([
+            'General' => $parameterGenerals,
+        ]);
+
+        foreach ($groupedByConcept as $items) {
+            array_push($payrollConceptAvailableIds, $items->first()->id);
+            $conceptName = $items->first()->name;
+
+            $parameters = $items
+                ->reject(fn ($param) => $paramIdsGenerals->contains($param->parameter_id))
+                ->map(fn ($param) => [
+                    'id' => $param->parameter_id,
+                    'name' => $param->parameter_name,
+                    'type' => $param->parameter_type,
+                    'value' => $param->parameter_value,
+                ])
+                ->values();
+
+            $result->put($conceptName, $parameters);
+        }
+
+        $concepts = PayrollConcept::query()
+            ->with(['payrollConceptAssignOptions'])
+            ->whereIn('id', $payrollConceptAvailableIds)
+            ->get();
+
+        $extraOptions = [];
+        foreach ($concepts as $concept) {
+            foreach ($concept->payrollConceptAssignOptions->where('key', 'staff') as $assign_option) {
+                $extraOptions[$concept->id][] = $assign_option['assignable_id'];
+            }
+        }
+        /**$staffsPending = array_reduce($request->pending_concepts ?? [], function ($carry, $concept) {
+            return array_merge($carry, $concept['staffs']);
+        }, []);
+        $exceptionStaffs = array_unique(array_merge($staffsPending, ...$extraOptions));*/
+        $exceptionStaffs = array_unique(array_merge(...$extraOptions));
+
+        $parameterRepository = new PayrollAssociatedParametersRepository();
+        $assignToRules = $parameterRepository->loadData('assignTo');
+        $staffsByConcept = [];
+
+        foreach ($concepts as $payrollConcept) {
+            $conceptIndex = $payrollConcept->name;
+            $conceptFilters = json_decode($payrollConcept->assign_to) ?? [];
+            $isStrict = $payrollConcept->is_strict ?? false;
+            $conceptOptions = $payrollConcept->payrollConceptAssignOptions;
+
+            $assignableStaffs = findAssignableStaff(
+                $conceptFilters,
+                $assignToRules,
+                $conceptOptions,
+                !empty($request->payroll_payment_period)
+                    && array_key_exists('start_date', $request->payroll_payment_period)
+                    ? $request->payroll_payment_period['start_date']
+                    : $period->start_date,
+                !empty($request->payroll_payment_period)
+                    && array_key_exists('end_date', $request->payroll_payment_period)
+                    ? $request->payroll_payment_period['end_date']
+                    : $period->end_date,
+                $exceptionStaffs,
+                $isStrict
+            );
+
+            $staffsByConcept[$conceptIndex] = $assignableStaffs
+                ->orderBy('last_name')
+                ->orderBy('first_name')
+                ->get()
+                ->map(fn ($staff) => [
+                    'id' => $staff->id,
+                    'name' => $staff->full_name,
+                    'id_number' => $staff->id_number,
+                ]);
+        }
+        $result = $result
+            ->filter(fn ($valor) => $valor->isNotEmpty())
+            ->map(function ($valor, $clave) use ($staffsByConcept, $concepts) {
+                return [
+                    'parameters' => $valor,
+                    'concept_id' => $concepts->firstWhere('name', $clave)->id ?? null,
+                    'staffs' => 'General' === $clave
+                        ? collect($staffsByConcept)
+                            ->flatten(1)
+                            ->unique('id')
+                            ->sortBy('name')
+                            ->values()
+                        : $staffsByConcept[$clave] ?? collect(),
+                ];
+            });
+
+        try {
+            return $export->invoke(
+                $request->id,
+                $result->toArray(),
+                $allParams->pluck('parameter_name')->unique()->values()->toArray(),
+                now()->format('d-m-Y') . '_Parametros_de_Nomina'
+            );
+        } catch (\Throwable $th) {
+            Log::error($th->getMessage());
+            report($th);
+
+            request()->session()->flash('message', [
+                'type' => 'other', 'title' => 'Alerta', 'icon' => 'screen-error', 'class' => 'growl-danger',
+                'text' => 'No se puede generar el archivo porque se ha presentando.',
+            ]);
+            return redirect()->route('payroll.registers.index');
+        }
+    }
+
+    public function importParameters(Request $request)
+    {
+        $period = PayrollPaymentPeriod::find($request->payroll_payment_period_id);
+        if (isset($period)) {
+            $date = new DateTime($period->start_date);
+            $formatedDate = $date->format('Y');
+
+            if (isset(auth()->user()->profile) && isset(auth()->user()->profile->institution_id)) {
+                $institution = Institution::query()
+                    ->where(['id' => auth()->user()->profile->institution_id])
+                    ->first();
+            } else {
+                $institution = Institution::query()
+                    ->where(['active' => true, 'default' => true])
+                    ->first();
+            }
+
+            $currentFiscalYear = FiscalYear::query()
+                ->where(['active' => true, 'closed' => false, 'institution_id' => $institution->id])
+                ->orderBy('year', 'desc')
+                ->first();
+
+            if (isset($currentFiscalYear->entries)) {
+                return throw new ClosedFiscalYearException(
+                    __('No puede registrar, actualizar o eliminar ' .
+                        'registros debido a que se está realizando el cierre de año fiscal')
+                );
+            }
+
+            $closedFiscalYear = FiscalYear::query()
+                ->where(['active' => false, 'closed' => true, 'institution_id' => $institution->id])
+                ->orderBy('year', 'desc')
+                ->first();
+
+            if (isset($closedFiscalYear) && $formatedDate == $closedFiscalYear->year) {
+                return throw new ClosedFiscalYearException(
+                    __('No puede registrar, actualizar o eliminar registros de un año fiscal cerrado')
+                );
+            }
+        }
+        $request['payroll_concepts'] = json_decode($request->payroll_concepts, true);
+
+        $this->validate($request, $this->validateRules, $this->messages);
+
+        $codeSetting = CodeSetting::where(['model' => Payroll::class, 'table' => 'payrolls'])->first();
+
+        if (!$codeSetting) {
+            return response()->json(['result' => false, 'message' => [
+                'type' => 'custom', 'title' => 'Alerta', 'icon' => 'screen-error', 'class' => 'danger',
+                'text' => 'Debe configurar previamente el formato para el código a generar',
+            ]], 422);
+        }
+
+        list($year, $month, $day) = explode("-", $request->created_at);
+
+        $code = generate_registration_code(
+            $codeSetting->format_prefix,
+            strlen($codeSetting->format_digits),
+            (strlen($codeSetting->format_year) == 2) ? substr($year, 0, 2) : $year,
+            Payroll::class,
+            'code'
+        );
+
+        $path = $request->file('file')->storeAs('temp', uniqid() . '.' . $request->file('file')->getClientOriginalExtension());
+        $fullPath = storage_path("app/{$path}");
+
+        return DB::transaction(function () use ($request, $fullPath, $code) {
+            $payrollConceptIds = array_reduce($request->payroll_concepts, function ($carry, $concept) {
+                $carry[] = $concept['id'];
+                return $carry;
+            }, []);
+
+            $payroll = Payroll::query()
+                ->when(
+                    !empty($request->input('id')),
+                    fn ($query) => $query->updateOrCreate(
+                        ['id' => $request->input('id')],
+                        [
+                            'name' => $request->input('name'),
+                            'status' => 'En Proceso',
+                            'payroll_payment_period_id' => $request->input('payroll_payment_period_id'),
+                            'created_at' => (new DateTime($request->input('created_at')))->format('Y-m-d H:i:s'),
+                            'document_status_id' => DocumentStatus::query()->where('action', 'PR')->value('id')
+                        ]
+                    ),
+                    fn ($query) => $query->create([
+                        'code' => $code,
+                        'name' => $request->input('name'),
+                        'status' => 'En Proceso',
+                        'payroll_payment_period_id' => $request->input('payroll_payment_period_id'),
+                        'created_at' => (new DateTime($request->input('created_at')))->format('Y-m-d H:i:s'),
+                        'document_status_id' => DocumentStatus::query()->where('action', 'PR')->value('id')
+                    ])
+                );
+
+            Excel::import(new PayrollParameterImport($fullPath, $payroll->id), $fullPath);
+
+            $allParams = DB::table('payroll_concept_parameters_view')
+                ->whereIn('id', $payrollConceptIds)
+                ->where('parameter_type', '<>', 'time_parameter')
+                ->get();
+
+            $parameters = PayrollResetParameter::query()
+                ->where('payroll_id', $payroll->id)
+                ->get()
+                ->flatMap(function ($item) use ($allParams) {
+                    // Filtrar parámetros según si tiene concept_id o no
+                    $matchingParams = $allParams->filter(function ($param) use ($item) {
+                        if ($item->payroll_concept_id) {
+                            return $param->id === $item->payroll_concept_id &&
+                                $param->parameter_name === $item->name;
+                        }
+
+                        return $param->parameter_name === $item->name;
+                    });
+
+                    // Mapear a la estructura esperada
+                    return $matchingParams->map(function ($param) use ($item) {
+                        return [
+                            'id' => $param->parameter_id,
+                            'name' => $item->name,
+                            'staff_id' => $item->payroll_staff_id,
+                            'concept_id' => $param->id,
+                            'value' => $item->value,
+                        ];
+                    });
+                })->values()->toArray();
+
+            $payroll->update([
+                'payroll_parameters' => json_encode($parameters ?? [])
+            ]);
+
+            return response()->json([
+                'payroll_id' => $payroll->id ?? '',
+                'result' => true
+            ], 200);
+        });
     }
 }

@@ -92,7 +92,6 @@
 
             deleteRecord(id, index) {
                 const vm = this;
-
                 bootbox.confirm({
                     title: "¿Eliminar registro?",
                     message: "¿Está seguro de eliminar este registro?",
@@ -107,13 +106,23 @@
                     callback: async function (result) {
                         if (result) {
                             vm.loading = true;
-
                             await axios.delete(`${window.app_url}/citizenservice/registers/delete/${id}`).then(response => {
                                 vm.records.splice(index, 1);
                                 vm.showMessage('destroy');
                                 vm.loading = false;
-                            });
+                            }).catch(error => {
+                                vm.logs('mixins.js', 498, error, 'deleteRecord');
+                            if (error.response.status == 403) {
+                            vm.showMessage(
+                                'custom', 'Acceso Denegado', 'danger', 'screen-error', error.response.data.message
+                            );
+                            }else{
+                                vm.showMessage('custom', 'Alerta!', 'warning', 'screen-error', error.response.data.message);
+                            }
+                        });
+
                         }
+                        vm.loading = false;
                     }
                 });
 

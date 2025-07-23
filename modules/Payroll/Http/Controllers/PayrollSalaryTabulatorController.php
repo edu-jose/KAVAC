@@ -7,6 +7,7 @@ use App\Models\FiscalYear;
 use App\Models\CodeSetting;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use Maatwebsite\Excel\HeadingRowImport;
@@ -18,6 +19,9 @@ use Modules\Payroll\Models\PayrollSalaryAdjustment;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Modules\Payroll\Models\PayrollSalaryTabulatorScale;
 use Modules\Payroll\Exports\PayrollSalaryTabulatorExport;
+use Modules\Payroll\Models\PayrollEmployment;
+use Modules\Payroll\Models\PayrollStaff;
+use Modules\Payroll\Repositories\PayrollAssociatedParametersRepository;
 
 /**
  * @class      PayrollSalaryTabulatorController
@@ -340,5 +344,193 @@ class PayrollSalaryTabulatorController extends Controller
             'payrollSalaryAdjustments'
         ])->find($id);
         return response()->json(['record' => $payrollSalaryTabulator], 200);
+    }
+
+    /**
+     * Obtiene el salario base de un trabajador de acuerdo a un tabulador
+     *
+     * @author    Daniel Contreras <dcontreras@cenditel.gob.ve>
+     *
+     * @return    string   Salario base calculado
+     */
+    public function getBaseSalaryByTabulator(Request $request)
+    {
+        if (empty($request->payroll_salary_tabulator_id)) {
+            return 0;
+        }
+
+        $payrollParameters = new PayrollAssociatedParametersRepository();
+        $scaleParameters = $payrollParameters->loadData('associatedWorkerFile');
+
+        $payrollSalaryTabulator = PayrollSalaryTabulator::query()
+            ->with([
+                'payrollVerticalSalaryScale',
+                'payrollHorizontalSalaryScale',
+                'payrollSalaryTabulatorScales'
+            ])
+            ->find($request->payroll_salary_tabulator_id);
+
+        $verticalScale = $payrollSalaryTabulator->payrollVerticalSalaryScale;
+        $horizontalScale = $payrollSalaryTabulator->payrollHorizontalSalaryScale;
+
+        $verticalScaleId = null;
+        $horizontalScaleId = null;
+
+        foreach ($scaleParameters as $parameter) {
+            if (!empty($parameter['children'])) {
+                foreach ($parameter['children'] as $children) {
+                    if ($children['id'] == $verticalScale?->group_by) {
+                        $verticalScaleId = $this->getPayrollScaleId($verticalScale, $request, $parameter, $children);
+                    }
+
+                    if ($children['id'] == $horizontalScale?->group_by) {
+                        $horizontalScaleId = $this->getPayrollScaleId($horizontalScale, $request, $parameter, $children);
+                    }
+                }
+            }
+        }
+
+        $tabScale = $payrollSalaryTabulator->payrollSalaryTabulatorScales
+            ->where('payroll_horizontal_scale_id', $horizontalScaleId ?? null)
+            ->where('payroll_vertical_scale_id', $verticalScaleId ?? null)
+            ->first();
+
+        return !empty($tabScale)
+            ? $this->setTabScaleValueWithAdjustments($tabScale, $payrollSalaryTabulator)
+            : 'error';
+    }
+
+    /**
+     * Obtiene el ID de la escala a utilizar para buscar en el tabulador
+     *
+     * @author    Daniel Contreras <dcontreras@cenditel.gob.ve>
+     *
+     * @return    integer   ID de la escala
+     */
+    private function getPayrollScaleId(object $scale, object $request, array $parameter, array $children)
+    {
+        $scaleId = null;
+
+        if (
+            PayrollStaff::class != $parameter['model']
+            && PayrollEmployment::class != $parameter['model']
+        ) {
+            $record = $parameter['model']::query()
+                ->where('payroll_staff_id', $request->payroll_staff_id)
+                ->first();
+        } elseif ($parameter['model'] == PayrollStaff::class) {
+            $record = $parameter['model']::find($request->payroll_staff_id);
+        } else {
+            $record = $request;
+        }
+
+        if (!empty($record)) {
+            foreach ($scale->payrollScales as $scl) {
+                $sclValue = json_decode($scl->value);
+
+                if ($children['type'] === 'date') {
+                    if ('START_APN' !== $children['id']) {
+                        $match = age($record[$children['required'][0]]);
+                    } else {
+                        $match = age($record->start_date);
+
+                        foreach ($record->previous_jobs as $prevJob) {
+                            $match += age($prevJob['start_date'], $prevJob['end_date']);
+                        }
+                    }
+                }
+
+                if ($children['type'] == 'number') {
+                    if (isset($record) && $parameter['model'] != PayrollEmployment::class) {
+                        $record->loadCount($children['required'][0]);
+                        $match = $record[Str::snake($children['required'][0]) . '_count'];
+                    };
+                }
+
+                if (
+                    isset($sclValue->from)
+                    && isset($sclValue->to)
+                    && $sclValue->from <= $match
+                    && $sclValue->to >= $match
+                ) {
+                    $scaleId = $scl->id;
+                }
+
+                if (
+                    'value' == $scale->type
+                    && $sclValue == $match
+                    && null === $scaleId
+                ) {
+                    $scaleId = $scl->id;
+                }
+
+                if (
+                    $sclValue == $record[$children['required'][0]]
+                    && null === $scaleId
+                ) {
+                    $scaleId = $scl->id;
+                }
+
+                if (null !== $scaleId) {
+                    break;
+                }
+            }
+
+            return $scaleId;
+        }
+
+        return null;
+    }
+
+    /**
+     * Obtiene el valor de la escala tomando en cuenta los ajustes a los tabuladores
+     *
+     * @author    Daniel Contreras <dcontreras@cenditel.gob.ve>
+     *
+     * @return    string   Valor de la escala
+     */
+    private function setTabScaleValueWithAdjustments($tabScale, $payrollSalaryTabulator)
+    {
+        $salaryAdjustmentWithEndDate = $payrollSalaryTabulator->payrollSalaryAdjustments()
+            ->whereNotNull('end_increase_date')
+            ->whereDate('start_increase_date', '<=', Carbon::now()->format('Y-m-d'))
+            ->whereDate('end_increase_date', '>=', Carbon::now()->format('Y-m-d'));
+
+        $salaryAdjustment = null;
+
+        if ($salaryAdjustmentWithEndDate->get()->isNotEmpty()) {
+            $salaryAdjustment = $salaryAdjustmentWithEndDate->first();
+        }
+
+        $salaryAdjustmentWithoutEndDate = $payrollSalaryTabulator->payrollSalaryAdjustments()
+            ->whereNull('end_increase_date')
+            ->whereDate('start_increase_date', '<=', Carbon::now()->format('Y-m-d'));
+
+        if ($salaryAdjustmentWithoutEndDate->get()->isNotEmpty()) {
+            $salaryAdjustment = $salaryAdjustmentWithoutEndDate->first();
+        }
+
+        if ($salaryAdjustment && !empty($tabScale)) {
+            if ($salaryAdjustment->increase_of_type == 'absolute_value') {
+                $tabScale['value'] = json_encode($tabScale['value'] + $salaryAdjustment->value);
+            } elseif ($salaryAdjustment->increase_of_type == 'percentage') {
+                $tabScale['value'] = json_encode($tabScale['value'] + ($tabScale['value'] * $salaryAdjustment->value / 100));
+            } else {
+                $salary_values = $salaryAdjustment->salary_values
+                    ? json_decode($salaryAdjustment->salary_values)
+                    : null;
+
+                if ($salary_values) {
+                    foreach ($salary_values as $salary) {
+                        if ($tabScale['id'] == $salary->id) {
+                            $tabScale['value'] = $salary->value;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        return $tabScale['value'] ?? '0';
     }
 }

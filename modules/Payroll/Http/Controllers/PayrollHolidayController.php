@@ -47,10 +47,10 @@ class PayrollHolidayController extends Controller
     public function __construct()
     {
         // Establece permisos de acceso para cada método del controlador
-        //$this->middleware('permission:payroll.disabilities.list', ['only' => ['index', 'vueList']]);
-        $this->middleware('permission:payroll.disabilities.create', ['only' => ['create', 'store']]);
-        $this->middleware('permission:payroll.disabilities.edit', ['only' => ['edit', 'update']]);
-        $this->middleware('permission:payroll.disabilities.delete', ['only' => 'destroy']);
+        $this->middleware('permission:payroll.holiday.list', ['only' => ['index', 'vueList']]);
+        $this->middleware('permission:payroll.holiday.create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:payroll.holiday.edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:payroll.holiday.delete', ['only' => 'destroy']);
 
         $this->validateRules = [
             'date' => ['required', 'unique:payroll_holidays,date'],

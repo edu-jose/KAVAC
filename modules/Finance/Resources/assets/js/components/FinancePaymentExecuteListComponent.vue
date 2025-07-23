@@ -143,7 +143,7 @@
                     >
                         <i class="fa fa-eye"></i>
                     </button>
-                    <button
+                    <button v-show="ivaPaymentExecutedPermission"
                         class="btn btn-warning btn-xs btn-icon btn-warning-alternative"
                         data-title="Generar Comprobante de retencion"
                         title="Generar Comprobante de retencion"
@@ -154,20 +154,20 @@
                     >
                         <i class="fa fa-leanpub"></i>
                     </button>
-                    <a
-                        v-if="props.row.finance_payment_execute_iva"
-                        :href="
-                            setUrl(
-                                `finance/payment-execute/iva/pdf/${props.row.id}`
-                            )
-                        "
-                        target="_blank"
-                        class="btn btn-primary btn-xs btn-icon btn-action"
-                        title="Imprimir registro Retencion Iva"
-                        data-toggle="tooltip"
-                    >
-                        <i class="fa fa-print"></i>
-                    </a>
+                        <a 
+                            v-if="props.row.finance_payment_execute_iva && ivaPaymentExecutedPermission"
+                            :href="
+                                setUrl(
+                                    `finance/payment-execute/iva/pdf/${props.row.id}`
+                                )
+                            "
+                            target="_blank"
+                            class="btn btn-primary btn-xs btn-icon btn-action"
+                            title="Imprimir registro Retencion Iva"
+                            data-toggle="tooltip"
+                        >
+                            <i class="fa fa-print"></i>
+                        </a>
                     <a
                         :href="
                             setUrl(
@@ -304,6 +304,10 @@
                             <div class="col-md-4">
                                 <b>Nro. Factura:</b>
                                 <span class="ml-2">{{ details.payment_number }}</span>
+                            </div>
+                            <div class="col-md-4">
+                                <b>Nro. de Referencia bancaria:</b>
+                                <span class="ml-2">{{ details.general_bank_reference ?? "No definido" }}</span>
                             </div>
                         </div>
                         <div class="row">
@@ -713,6 +717,7 @@ export default {
         return {
             records: [],
             cancelPaymentExecutedPermission: false,
+            ivaPaymentExecutedPermission : false,
             approvePaymentExecutedPermission: false,
             lastYear: "",
             tmpRecords: [],
@@ -954,7 +959,7 @@ export default {
                 query: vm.filterBy.date
                     ? vm.format_date(vm.filterBy.date)
                     : vm.filterBy.code,
-                limit: 10,
+                limit: vm.$refs.tableOptions.per_page,
                 ascending: 1,
                 page: 1,
                 byColumn: 0,
@@ -966,6 +971,7 @@ export default {
                 })
                 .then((response) => {
                     vm.$refs.tableOptions.data = response.data.data;
+                    vm.$refs.tableOptions.total = response.data.total;
                 });
         },
 
@@ -1072,15 +1078,15 @@ export default {
         const vm = this;
         vm.loadingState(true); // Inicio de spinner de carga.
         axios
-            .get(`${window.app_url}/finance/payment-execute/vue-list`)
+            .get(vm.setUrl(`finance/payment-execute/get-permissions`))
             .then((response) => {
                 vm.records = response.data.records;
+                vm.ivaPaymentExecutedPermission =
+                    response.data.ivaPaymentExecutedPermission;
                 vm.cancelPaymentExecutedPermission =
                     response.data.cancelPaymentExecutedPermission;
                 vm.approvePaymentExecutedPermission =
                     response.data.approvePaymentExecutedPermission;
-                // Variable usada para el reseteo de los filtros de la tabla.
-                vm.tmpRecords = vm.records;
             });
         await vm.queryLastFiscalYear();
         await vm.getOpenedFiscalYears();

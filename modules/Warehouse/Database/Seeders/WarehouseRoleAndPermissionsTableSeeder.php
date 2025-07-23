@@ -62,23 +62,23 @@ class WarehouseRoleAndPermissionsTableSeeder extends Seeder
                 'slug_alt' => 'configuracion.almacen', 'short_description' => 'Configuración de los almacenes'
             ],
             [
-                'name' => 'Crear almacenes',
+                'name' => 'Crear registro de almacenes',
                 'slug' => 'warehouse.setting.warehouse.create',
-                'description' => 'Acceso para crear almacenes',
+                'description' => 'Acceso para crear registro de almacenes',
                 'model' => 'Modules\Warehouse\Models\Warehouse', 'model_prefix' => 'Almacén',
                 'slug_alt' => 'configuracion.almacen.crear', 'short_description' => 'Crear almacenes'
             ],
             [
-                'name' => 'Editar almacenes',
+                'name' => 'Modificar registro de almacenes',
                 'slug' => 'warehouse.setting.warehouse.edit',
-                'description' => 'Acceso para editar almacenes',
+                'description' => 'Acceso para modificar registro de almacenes',
                 'model' => 'Modules\Warehouse\Models\Warehouse', 'model_prefix' => 'Almacén',
                 'slug_alt' => 'configuracion.almacen.editar', 'short_description' => 'Editar almacenes'
             ],
             [
-                'name' => 'Eliminar almacenes',
+                'name' => 'Eliminar registro de almacenes',
                 'slug' => 'warehouse.setting.warehouse.delete',
-                'description' => 'Acceso para eliminar almacenes',
+                'description' => 'Acceso para eliminar registro de almacenes',
                 'model' => 'Modules\Warehouse\Models\Warehouse', 'model_prefix' => 'Almacén',
                 'slug_alt' => 'configuracion.almacen.eliminar', 'short_description' => 'Eliminar almacenes'
             ],
@@ -92,25 +92,25 @@ class WarehouseRoleAndPermissionsTableSeeder extends Seeder
                 'short_description' => 'Configuración de los productos almacenables'
             ],
             [
-                'name' => 'Crear insumos',
+                'name' => 'Crear registro de insumos',
                 'slug' => 'warehouse.setting.product.create',
-                'description' => 'Acceso para crear productos almacenables',
+                'description' => 'Acceso para crear registro de productos almacenables',
                 'model' => 'Modules\Warehouse\Models\WarehouseProduct', 'model_prefix' => 'Almacén',
                 'slug_alt' => 'configuracion.almacen.producto.crear',
                 'short_description' => 'Crear productos almacenables'
             ],
             [
-                'name' => 'Editar insumos',
+                'name' => 'Modificar registro de insumos',
                 'slug' => 'warehouse.setting.product.edit',
-                'description' => 'Acceso para editar productos almacenables',
+                'description' => 'Acceso para modificar registro de productos almacenables',
                 'model' => 'Modules\Warehouse\Models\WarehouseProduct', 'model_prefix' => 'Almacén',
                 'slug_alt' => 'configuracion.almacen.producto.editar',
                 'short_description' => 'Editar productos almacenables'
             ],
             [
-                'name' => 'Eliminar insumos',
+                'name' => 'Eliminar registro de insumos',
                 'slug' => 'warehouse.setting.product.delete',
-                'description' => 'Acceso para eliminar productos almacenables',
+                'description' => 'Acceso para eliminar registro de productos almacenables',
                 'model' => 'Modules\Warehouse\Models\WarehouseProduct', 'model_prefix' => 'Almacén',
                 'slug_alt' => 'configuracion.almacen.producto.eliminar',
                 'short_description' => 'Eliminar productos almacenables'
@@ -182,30 +182,30 @@ class WarehouseRoleAndPermissionsTableSeeder extends Seeder
 
             /* Solicitudes de Almacén */
             [
-                'name' => 'Ver solicitud de almacén',
+                'name' => 'Visualizar registro de solicitud de almacén',
                 'slug' => 'warehouse.request.list',
                 'description' => 'Acceso para ver las solicitudes de almacén',
                 'model' => 'Modules\Warehouse\Models\WarehouseRequest', 'model_prefix' => 'Almacén',
                 'slug_alt' => 'almacen.solicitud.ver', 'short_description' => 'ver solicitud de almacén'
             ],
             [
-                'name' => 'Crear solicitud de almacén',
+                'name' => 'Crear registro de solicitud de almacén',
                 'slug' => 'warehouse.request.create',
-                'description' => 'Acceso para crear solicitud de almacén',
+                'description' => 'Acceso para crear registro de solicitud de almacén',
                 'model' => 'Modules\Warehouse\Models\WarehouseRequest', 'model_prefix' => 'Almacén',
                 'slug_alt' => 'almacen.solicitud.crear', 'short_description' => 'agregar solicitud de almacén'
             ],
             [
-                'name' => 'Editar solicitud de almacén',
+                'name' => 'Modificar registro de solicitud de almacén',
                 'slug' => 'warehouse.request.edit',
-                'description' => 'Acceso para editar solicitud de almacén',
+                'description' => 'Acceso para modificar registro de solicitud de almacén',
                 'model' => 'Modules\Warehouse\Models\WarehouseRequest', 'model_prefix' => 'Almacén',
                 'slug_alt' => 'almacen.solicitud.editar', 'short_description' => 'editar solicitud de almacén'
             ],
             [
-                'name' => 'Eliminar solicitud de almacén',
+                'name' => 'Eliminar registro de solicitud de almacén',
                 'slug' => 'warehouse.request.delete',
-                'description' => 'Acceso para eliminar solicitud de almacén',
+                'description' => 'Acceso para eliminar registro de solicitud de almacén',
                 'model' => 'Modules\Warehouse\Models\WarehouseRequest', 'model_prefix' => 'Almacén',
                 'slug_alt' => 'almacen.solicitud.eliminar', 'short_description' => 'eliminar solicitud de bienes'
             ],
@@ -225,32 +225,32 @@ class WarehouseRoleAndPermissionsTableSeeder extends Seeder
             ],
             /* Movimientos de Almacén */
             [
-                'name' => 'Ver movimiento de artículos de almacén',
+                'name' => 'Visualizar registro de movimiento de artículos de almacén',
                 'slug' => 'warehouse.movement.list',
                 'description' => 'Acceso para ver los movimientos de artículos de almacén',
                 'model' => 'Modules\Warehouse\Models\WarehouseMovement', 'model_prefix' => 'Almacén',
                 'slug_alt' => 'almacen.movimiento.ver', 'short_description' => 'ver movimiento de artículos de almacén'
             ],
             [
-                'name' => 'Crear movimiento de artículos de almacén',
+                'name' => 'Crear registro de movimiento de artículos de almacén',
                 'slug' => 'warehouse.movement.create',
-                'description' => 'Acceso para crear movimientos de artículos de almacén',
+                'description' => 'Acceso para crear registro de movimientos de artículos de almacén',
                 'model' => 'Modules\Warehouse\Models\WarehouseMovement', 'model_prefix' => 'Almacén',
                 'slug_alt' => 'almacen.movimiento.crear',
                 'short_description' => 'Agregar movimiento de artículos de almacén'
             ],
             [
-                'name' => 'Editar movimiento de artículos de almacén',
+                'name' => 'Modificar registro de movimiento de artículos de almacén',
                 'slug' => 'warehouse.movement.edit',
-                'description' => 'Acceso para editar los movimientos de artículos de almacén',
+                'description' => 'Acceso para modificar registro de los movimientos de artículos de almacén',
                 'model' => 'Modules\Warehouse\Models\WarehouseMovement', 'model_prefix' => 'Almacén',
                 'slug_alt' => 'almacen.movimiento.editar',
                 'short_description' => 'Editar movimiento de artículos de almacén'
             ],
             [
-                'name' => 'Eliminar movimiento de artículos de almacén',
+                'name' => 'Eliminar registro de movimiento de artículos de almacén',
                 'slug' => 'warehouse.movement.delete',
-                'description' => 'Acceso para eliminar los movimientos de artículos de almacén',
+                'description' => 'Acceso para eliminar registro de los movimientos de artículos de almacén',
                 'model' => 'Modules\Warehouse\Models\WarehouseMovement', 'model_prefix' => 'Almacén',
                 'slug_alt' => 'almacen.movement.eliminar',
                 'short_description' => 'Eliminar movimiento de artículos de almacén'
@@ -281,30 +281,30 @@ class WarehouseRoleAndPermissionsTableSeeder extends Seeder
             ],
             /* Ingresos de Almacén */
             [
-                'name' => 'Crear ingreso de almacén',
+                'name' => 'Crear registro de ingreso de almacén',
                 'slug' => 'warehouse.inventory.create',
-                'description' => 'Acceso para crear ingresos del almacén',
+                'description' => 'Acceso para crear registro de ingresos del almacén',
                 'model' => 'Modules\Warehouse\Models\WarehouseInventoryProduct', 'model_prefix' => 'Almacén',
                 'slug_alt' => 'almacen.ingreso.crear', 'short_description' => 'Crear ingreso de almacén'
             ],
             [
-                'name' => 'Ver ingreso de almacén',
+                'name' => 'Visualizar registro de ingreso de almacén',
                 'slug' => 'warehouse.inventory.show',
                 'description' => 'Acceso para ver ingresos del almacén',
                 'model' => 'Modules\Warehouse\Models\WarehouseInventoryProduct', 'model_prefix' => 'Almacén',
                 'slug_alt' => 'almacen.ingreso.ver', 'short_description' => 'Ver ingreso de almacén'
             ],
             [
-                'name' => 'Editar ingreso de almacén',
+                'name' => 'Modificar registro de ingreso de almacén',
                 'slug' => 'warehouse.inventory.edit',
-                'description' => 'Acceso para editar ingresos del almacén',
+                'description' => 'Acceso para modificar registro de ingresos del almacén',
                 'model' => 'Modules\Warehouse\Models\WarehouseInventoryProduct', 'model_prefix' => 'Almacén',
                 'slug_alt' => 'almacen.ingreso.editar', 'short_description' => 'Editar ingreso de almacén'
             ],
             [
-                'name' => 'Eliminar ingreso de almacén',
+                'name' => 'Eliminar registro de ingreso de almacén',
                 'slug' => 'warehouse.inventory.delete',
-                'description' => 'Acceso para eliminar ingresos del almacén',
+                'description' => 'Acceso para eliminar registro de ingresos del almacén',
                 'model' => 'Modules\Warehouse\Models\WarehouseInventoryProduct', 'model_prefix' => 'Almacén',
                 'slug_alt' => 'almacen.ingreso.eliminar', 'short_description' => 'Eliminar ingreso de almacén'
             ],
@@ -324,9 +324,9 @@ class WarehouseRoleAndPermissionsTableSeeder extends Seeder
             ],
             /* Reportes de Bienes */
             [
-                'name' => 'Crear reporte de inventario',
+                'name' => 'Crear registro de reporte de inventario',
                 'slug' => 'warehouse.report.create',
-                'description' => 'Acceso para crear reportes de inventario',
+                'description' => 'Acceso para crear registro de reportes de inventario',
                 'model' => '', 'model_prefix' => 'Almacén',
                 'slug_alt' => 'almacen.reporte.crear', 'short_description' => 'generar reporte de inventario'
             ],

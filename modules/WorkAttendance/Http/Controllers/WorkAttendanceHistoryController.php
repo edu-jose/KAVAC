@@ -14,6 +14,8 @@ use Modules\Payroll\Models\PayrollEmployment;
 use Modules\WorkAttendance\Models\WorkAttendance;
 use Modules\WorkAttendance\Models\WorkAttendanceSchedule;
 use Modules\ProjectTracking\Models\ProjectTrackingWorkDay;
+use Modules\WorkAttendance\Models\WorkAttendanceCustomSchedule;
+use Modules\WorkAttendance\Services\WorkAttendanceService;
 
 /**
  * @class WorkAttendanceHistoryController
@@ -50,6 +52,8 @@ class WorkAttendanceHistoryController extends Controller
     ];
 
     protected $formatDateTime = 'Y-m-d H:i:s';
+
+    protected $saveGraphPattern = '#^data:image/\w+;base64,#i';
 
     public function __construct()
     {
@@ -168,6 +172,8 @@ class WorkAttendanceHistoryController extends Controller
         }
         if ($request->payroll_employment_id) {
             $workAttendance->filterByEmployment($request->payroll_employment_id);
+            //Agrega información de calendario personalizado para verificar el cumplimiento del mismo
+            //(new WorkAttendanceService())->getCustomSchedule(Carbon::now()->format('Y-m-d'), $request->payroll_employment_id);
         }
         if ($request->department_id) {
             $workAttendance->with([
@@ -229,6 +235,7 @@ class WorkAttendanceHistoryController extends Controller
                     2
                 );
             }
+
             if ($request->department_id) {
                 $employee = $workAttendance->payrollStaff->toArray();
                 $workAttendance['employee'] = [
@@ -241,6 +248,7 @@ class WorkAttendanceHistoryController extends Controller
             }
             return $workAttendance;
         });
+
         return $workAttendance;
     }
 
@@ -420,7 +428,7 @@ class WorkAttendanceHistoryController extends Controller
 
     public function saveGraph(Request $request)
     {
-        $image = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $request->image));
+        $image = base64_decode(preg_replace($this->saveGraphPattern, '', $request->image));
         $fileName = 'workattendance_graph_' . $request->employee_id . '.png';
         Storage::disk('public')->put($fileName, $image);
 
@@ -429,7 +437,7 @@ class WorkAttendanceHistoryController extends Controller
 
     public function saveGraphByDepartment(Request $request)
     {
-        $image = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $request->image));
+        $image = base64_decode(preg_replace($this->saveGraphPattern, '', $request->image));
         $fileName = 'workattendance_graph_department_' . $request->department_id . '.png';
         Storage::disk('public')->put($fileName, $image);
 

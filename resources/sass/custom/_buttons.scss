@@ -11,6 +11,11 @@
 		}
 	}
 }
+.btn-simplex {
+    &.btn-font-small {
+        font-size: 11px !important;
+    }
+}
 
 .btn {
     &.btn-icon {

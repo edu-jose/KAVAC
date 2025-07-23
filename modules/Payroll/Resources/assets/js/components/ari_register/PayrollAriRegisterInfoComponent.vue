@@ -49,6 +49,34 @@
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group">
+                                        <strong>RIF:</strong>
+                                        <div class="row" style="margin: 1px 0">
+                                            <span class="col-md-12">
+                                                {{
+                                                record.rif ?
+                                                    record.rif :
+                                                    'N/A'
+                                            }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <strong>Nacionalidad:</strong>
+                                        <div class="row" style="margin: 1px 0">
+                                            <span class="col-md-12">
+                                                {{  
+                                                record.payroll_nationality ?
+                                                record.payroll_nationality.name :
+                                                'N/A'
+                                                     }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
                                         <strong>Correo electrónico:</strong>
                                         <div class="row" style="margin: 1px 0">
                                             <span class="col-md-12">

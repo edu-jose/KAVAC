@@ -109,6 +109,18 @@ Vue.component("form-errors", () =>
 );
 
 /**
+ * Componente genérico para la gestión de galería de imágenes
+ *
+ * @author  Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
+ */
+Vue.component("image-gallery", () =>
+    import(
+        /* webpackChunkName: "image-gallery" */
+        "./components/Shared/ImageGalleryComponent.vue"
+    )
+);
+
+/**
  * Componente genérico para la gestión de imágenes
  *
  * @author  Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>

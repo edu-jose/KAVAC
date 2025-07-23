@@ -21,17 +21,7 @@ class RouteServiceProvider extends ServiceProvider
      *
      * @var string
      */
-    protected $moduleNamespace = 'Modules\CitizenService\Http\Controllers';
-
-    /**
-     * Se invoca antes de las rutas que fueron registradas.
-     *
-     * @return void
-     */
-    public function boot()
-    {
-        parent::boot();
-    }
+    protected $moduleNamespace = '';
 
     /**
      * Define las rutas del módulo de bienes

@@ -38,7 +38,10 @@
                     </div>
                 </div>
                 <warehousereception-create route_list="{{ url('warehouse/receptions') }}"
-                    institution_id="{!! isset($institution) ? $institution->id : 'null' !!}" :receptionid="{!! isset($reception) ? $reception->id : 'null' !!}">
+                    institution_id="{!! isset($institution) ? $institution->id : 'null' !!}" :receptionid="{!! isset($reception) ? $reception->id : 'null' !!}"
+                    :purchase_existing="{{ isset($purchase_existing) ? $purchase_existing : 'null' }}"
+                    :purchase_suppliers="{{ json_encode($purchase_suppliers) }}"
+                    :purchase_direct_hires="{{ json_encode($purchase_direct_hires) }}">
                 </warehousereception-create>
             </div>
         </div>

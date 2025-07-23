@@ -35,7 +35,7 @@ class PayrollTimeSheetParameter extends Model implements Auditable
      *
      * @var array $fillable
      */
-    protected $fillable = ['code', 'name', 'description'];
+    protected $fillable = ['code', 'name', 'description', 'breaks_allowed_per_week', 'validate_total_for_period'];
 
     /**
      * Método que obtiene la información de los parámetros de hoja de tiempo
@@ -59,6 +59,18 @@ class PayrollTimeSheetParameter extends Model implements Auditable
     public function payrollPaymentTypeTimeSheetParameters()
     {
         return $this->hasMany(PayrollPaymentTypeTimeSheetParameter::class);
+    }
+
+    /**
+     * Método que obtiene la información de las categorias de hoja de tiempo a los que afectan los parámetros de hoja de tiempo
+     *
+     * @author Juan Rosas <jrosas@cenditel.gob.ve> | <juan.rosasr01@gmail.com>
+     *
+     * @return    \Illuminate\Database\Eloquent\Relations\hasMany
+     */
+    public function payrollExceptionTypeTimeSheetParameters()
+    {
+        return $this->hasMany(PayrollExceptionTypeTimeSheetParameter::class);
     }
 
     /**
@@ -89,5 +101,31 @@ class PayrollTimeSheetParameter extends Model implements Auditable
     public function payrollTimeSheetsPending()
     {
         return $this->hasMany(PayrollTimeSheetPending::class);
+    }
+
+    /**
+     * Método que obtiene la información de los parámetros de clasificación
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\belongsToMany
+    */
+    public function classificationParameters()
+    {
+        return $this->belongsToMany(PayrollClassificationParameter::class)
+                ->withTimestamps()
+                ->withPivot('order') // Incluye la columna 'order' en la relación
+                ->orderBy('pivot_order'); // Ordena por la columna 'order' en la tabla pivote
+    }
+
+    /**
+     * Obtiene los registros pivot de la relación con classificationParameters
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function classificationParameterPivots()
+    {
+        return $this->hasMany(
+            PayrollClassificationParameterTimeSheetParameter::class,
+            "payroll_time_sheet_parameter_id"
+        );
     }
 }

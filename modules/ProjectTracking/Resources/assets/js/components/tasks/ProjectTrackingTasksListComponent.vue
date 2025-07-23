@@ -4,23 +4,6 @@
             <div slot="number" slot-scope="props" class="text-center">
                 {{ getTaskNumber(props.row.id) }}
             </div>
-            <div slot="activity_status.name" slot-scope="props" class="form-group">
-                <select class="text-center form-control"
-                    id="activity_status"
-                    v-model="props.row.activity_status_id"
-                    @change="changeActivityStatus(props.row.activity_status_id, props.row.id)"
-                    style="padding: 10px;
-                        border: 1px solid #ccc;
-                        border-radius: 30px;
-                        background-color: #f9f9f9;
-                        font-size: 10px;"
-                >
-                    <option v-for="activity_status in activity_statuses_list" :key="activity_status.text"
-                            :value="activity_status.id">
-                        {{activity_status.text}}
-                    </option>
-                </select>
-            </div>
             <div slot="associate_to" slot-scope="props" class="text-center">
                 <div v-if="props.row.project_name && props.row.project">
                     {{ 'Proyecto: ' + props.row.project.name }}
@@ -32,17 +15,24 @@
                     {{ 'Subproyecto: ' + props.row.subproject.name }}
                 </div>
             </div>
+            <div slot="end_date" slot-scope="props" class="text-center">
+                {{ props.row.new_end_date ?
+                    format_date(props.row.new_end_date) :
+                        format_date(props.row.end_date) }}  
+            </div>
             <div slot="id" slot-scope="props" class="text-center">
                 <div class="d-inline-flex">
-                    <project-tracking-task-info :modal_id="props.row.id"
-                        :url="'projecttracking/get-task-info/' + props.row.id">
-                    </project-tracking-task-info>
+                    <button @click="showRecord(props.row.id)" v-if="route_show"
+                        class="btn btn-info btn-xs btn-icon btn-action btn-tooltip" title="Ver registro"
+                        aria-label="Ver registro" data-toggle="tooltip" data-placement="bottom" type="button">
+                        <i class="fa fa-eye"></i>
+                    </button>
                     <button @click="editForm(props.row.id)"
                         class="btn btn-warning btn-xs btn-icon btn-action btn-tooltip" title="Modificar registro"
                         data-toggle="tooltip" data-placement="bottom" type="button">
                         <i class="fa fa-edit"></i>
                     </button>
-                    <button @click="deleteRecord(props.row.id, props.row.index)"
+                    <button @click="deleteRecord(props.row.id, props.index)"
                         class="btn btn-danger btn-xs btn-icon btn-action btn-tooltip" title="Eliminar registro"
                         data-toggle="tooltip" data-placement="bottom" type="button">
                         <i class="fa fa-trash-o"></i>
@@ -67,9 +57,12 @@ export default {
         route_edit: {
             type: String
         },
+        route_show: {
+            type: String
+        },
         route_delete: {
             type: String
-        }
+        },
     },
     data() {
         return {
@@ -83,8 +76,6 @@ export default {
     },
 
     created() {
-        this.getActivityStatuses();
-
         this.table_options.headings = {
             'number': 'N°',
             'name': 'Nombre de la Tarea',
@@ -117,29 +108,6 @@ export default {
             let index = vm.records.findIndex(obj => { return obj.id == param })
             return index + 1
         },
-        getActivityStatuses() {
-            const vm = this;
-            axios.get(`${window.app_url}/projecttracking/get-activity-statuses`).then(response => {
-                vm.activity_statuses_list = response.data;
-            });
-        },
-        changeActivityStatus(status_id, task_id) {
-            const vm = this;
-
-            axios.post(`${window.app_url}/projecttracking/tasks/change-activity-status`, {
-                activity_status_id: status_id,
-                id: task_id,
-            })
-            .then(response => {
-                vm.showMessage(
-                    "custom",
-                    "Exito",
-                    "success",
-                    "screen-ok",
-                    "El estatus de la actividad ha sido actualizada."
-                );
-            });
-        },
 
         /**
          * Método que borra un registro de la tabla
@@ -157,7 +125,7 @@ export default {
                         label: '<i class="fa fa-times"></i> Cancelar'
                     },
                     confirm: {
-                        label: '<i class="fa fa-check"></i> Confirmar'
+                        label: '<i class="fa fa-check"></i> Agregar'
                     }
                 },
                 callback: async function (result) {
@@ -165,7 +133,7 @@ export default {
                         vm.loading = true;
 
                         await axios.delete(`${window.app_url}/projecttracking/tasks/delete/${id}`).then(response => {
-                            vm.records.splice(index, 1);
+                            vm.records.splice(index - 1, 1);
                             vm.showMessage('destroy');
                             vm.loading = false;
                         });

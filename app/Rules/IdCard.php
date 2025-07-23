@@ -37,7 +37,15 @@ class IdCard implements Rule
      */
     public function passes($attribute, $value)
     {
-        return validate_ci($value, (in_array(substr($value, 0, 1), ['V', 'E'])));
+        return validate_ci(
+            $value,
+            (
+                in_array(
+                    substr($value, 0, 1),
+                    ['V', 'E']
+                )
+            )
+        );
     }
 
     /**

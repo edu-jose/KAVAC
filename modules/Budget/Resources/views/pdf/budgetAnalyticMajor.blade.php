@@ -147,7 +147,7 @@
                             {{ $budgetAccount['budgetAccount']['denomination'] ?? $budgetAccount['denomination'] }}</td>
 
                         <td style="border: solid 1px #808080; {{ $styles }}">
-                            {!! $modification['increment_descriptions'] ?? $modification['decrement_descriptions'] !!}
+                            {!! str_replace(['&', '<', '>'], ['&amp;', '&lt;', '&gt;'], $modification['increment_descriptions'] ?? $modification['decrement_descriptions']) !!}
                         </td>
 
                         <td style="border: solid 1px #808080; {{ $styles }}">

@@ -64,6 +64,16 @@
         "position" : "right"
     },
     {
+        "element" : "#helpBasicSalary",
+        "intro" : "Parámetro que establece el salario básico",
+        "position" : "right"
+    },
+    {
+        "element" : "#helpPaymentType",
+        "intro" : "Parámetro que establece la frecuencia de nómina",
+        "position" : "right"
+    },
+    {
         "element" : "#helpEmploymentInstitution",
         "intro" : "Parámetro que establece la institución",
         "position" : "right"
@@ -73,6 +83,22 @@
         "intro" : "Parámetro que establece el departamento",
         "position" : "right"
     },
+    {
+        "element" : "#helpWorkersUnion",
+        "intro" : "Parámetro que establece si pertenece al sindicato de trabajadores o no",
+        "position" : "right"
+    },
+    {
+        "element" : "#helpSavingsFund",
+        "intro" : "Parámetro que establece si es fondo de ahorro o no",
+        "position" : "right"
+    },
+    {
+        "element" : "#helpSeniority",
+        "intro" : "Parámetro que establece el nivel de antigüedad",
+        "position" : "right"
+    },
+
     {
         "element" : "#helpParamButtons",
         "intro" : "Botones para ejecutar las acciones de limpiar, cancelar o guardar los datos del formulario",

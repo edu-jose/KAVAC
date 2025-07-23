@@ -49,7 +49,9 @@ class AssetStatusController extends Controller
     public function __construct()
     {
         // Establece permisos de acceso para cada método del controlador
-        //$this->middleware('permission:asset.setting.status');
+        $this->middleware('permission:asset.status.create', ['only' => 'store']);
+        $this->middleware('permission:asset.status.edit', ['only' => 'update']);
+        $this->middleware('permission:asset.status.delete', ['only' => 'destroy']);
         /* Define las reglas de validación para el formulario */
         $this->validateRules = [
             'name'     => ['required', 'regex:/^[a-zA-ZÁ-ÿ\s]*$/u', 'max:100', Rule::unique('asset_status')],

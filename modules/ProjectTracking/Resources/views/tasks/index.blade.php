@@ -29,9 +29,12 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <project-tracking-tasks-list route_list="{{ url('projecttracking/tasks/show/vue-list') }}"
+                    <project-tracking-tasks-list
+                        route_list="{{ url('projecttracking/tasks/vue-list') }}"
+                        route_show="{{ url('projecttracking/tasks/show/{id}') }}"
                         route_edit="{{ url('projecttracking/tasks/edit/{id}') }}"
-                        route_delete="{{ url('projecttracking/tasks/delete') }}">
+                        route_delete="{{ url('projecttracking/tasks/delete') }}"
+                        class_type="{{ $classType }}">
                     </project-tracking-tasks-list>
                 </div>
             </div>

@@ -18,11 +18,11 @@ Route::group(
     ],
     function () {
         /*
-         | -----------------------------------------------------------------------
-         | Ruta para el panel de control del módulo de presupuesto
-         | -----------------------------------------------------------------------
-         |
-         | Muestra información del módulo de presupuesto
+         * -----------------------------------------------------------------------
+         * Ruta para el panel de control del módulo de presupuesto
+         * -----------------------------------------------------------------------
+         *
+         * Muestra información del módulo de presupuesto
          */
         Route::get(
             '/',
@@ -30,12 +30,12 @@ Route::group(
         )->name('budget.index');
 
         /*
-         | -----------------------------------------------------------------------
-         | Rutas para la configuración general del módulo de presupuesto
-         | -----------------------------------------------------------------------
-         |
-         | Gestiona los datos de configuración del módulo de presupuesto y los
-         | registros comunes
+         * -----------------------------------------------------------------------
+         * Rutas para la configuración general del módulo de presupuesto
+         * -----------------------------------------------------------------------
+         *
+         * Gestiona los datos de configuración del módulo de presupuesto y los
+         * registros comunes
          */
         Route::group(
             ['middleware' => 'permission:budget.setting.create'],
@@ -58,11 +58,11 @@ Route::group(
         );
 
         /*
-         | -----------------------------------------------------------------------
-         | Rutas para la gestión del clasificador presupuestario
-         | -----------------------------------------------------------------------
-         |
-         | Gestiona los datos del clasificador de cuentas presupuestarias
+         * -----------------------------------------------------------------------
+         * Rutas para la gestión del clasificador presupuestario
+         * -----------------------------------------------------------------------
+         *
+         * Gestiona los datos del clasificador de cuentas presupuestarias
          */
         Route::get(
             'accounts',
@@ -84,11 +84,11 @@ Route::group(
         )->name('budget.set-parent-account');
 
         /*
-         | -----------------------------------------------------------------------
-         | Rutas para la gestión de proyectos
-         | -----------------------------------------------------------------------
-         |
-         | Gestiona los datos de los proyectos
+         * -----------------------------------------------------------------------
+         * Rutas para la gestión de proyectos
+         * -----------------------------------------------------------------------
+         *
+         * Gestiona los datos de los proyectos
          */
         Route::resource('projects', 'BudgetProjectController', ['as' => 'budget', 'except' => ['index', 'show']]);
         Route::get('projects/vue-list/{active?}', 'BudgetProjectController@vueList')->name('budget.projects.vuelist');
@@ -103,11 +103,11 @@ Route::group(
         )->name('budget.get-projects-assigned');
 
         /*
-         | -----------------------------------------------------------------------
-         | Rutas para la gestión de acciones centralizadas
-         | -----------------------------------------------------------------------
-         |
-         | Gestiona los datos de las acciones centralizadas
+         * -----------------------------------------------------------------------
+         * Rutas para la gestión de acciones centralizadas
+         * -----------------------------------------------------------------------
+         *
+         * Gestiona los datos de las acciones centralizadas
          */
         Route::resource(
             'centralized-actions',
@@ -134,11 +134,11 @@ Route::group(
         )->name('budget.get-centralized-actions-assigned');
 
         /*
-         | -----------------------------------------------------------------------
-         | Rutas para la gestión de acciones especificas
-         | -----------------------------------------------------------------------
-         |
-         | Gestiona los datos de las acciones específicas
+         * -----------------------------------------------------------------------
+         * Rutas para la gestión de acciones especificas
+         * -----------------------------------------------------------------------
+         *
+         * Gestiona los datos de las acciones específicas
          */
         Route::resource(
             'specific-actions',
@@ -165,13 +165,13 @@ Route::group(
         )->name('budget.specific-actions.detail');
 
         /*
-         | -----------------------------------------------------------------------
-         | Rutas para la gestión de formulación por subespecifica
-         | -----------------------------------------------------------------------
-         |
-         | Gestiona los datos de las formulaciones de presupuesto por subespecífica.
-         | La formulación del presupuesto se realiza mediante las acciones específicas
-         | de proyectos y acciones centralizadas
+         * -----------------------------------------------------------------------
+         * Rutas para la gestión de formulación por subespecifica
+         * -----------------------------------------------------------------------
+         *
+         * Gestiona los datos de las formulaciones de presupuesto por subespecífica.
+         * La formulación del presupuesto se realiza mediante las acciones específicas
+         * de proyectos y acciones centralizadas
          */
         Route::resource(
             'subspecific-formulations',
@@ -200,6 +200,10 @@ Route::group(
             'get-import-formulation',
             'BudgetSubSpecificFormulationController@importFormulation'
         )->name('import.formulation');
+        Route::post(
+            'export-subformulation',
+            'BudgetSubSpecificFormulationController@exportFormulation'
+        )->name('export.subformulation');
         Route::get(
             'print-formulated/{id}',
             'BudgetSubSpecificFormulationController@printFormulated'
@@ -215,12 +219,12 @@ Route::group(
         Route::get('reports/download', 'BudgetSubSpecificFormulationController@download');
 
         /*
-         | -----------------------------------------------------------------------
-         | Rutas para la gestión de modificaciones presupuestarias
-         | -----------------------------------------------------------------------
-         |
-         | Gestiona los datos de las modificaciones presupuestarias (créditos adicionales,
-         | reducciones y/o traspasos)
+         * -----------------------------------------------------------------------
+         * Rutas para la gestión de modificaciones presupuestarias
+         * -----------------------------------------------------------------------
+         *
+         * Gestiona los datos de las modificaciones presupuestarias (créditos adicionales,
+         * reducciones y/o traspasos)
          */
         Route::get('modifications', 'BudgetModificationController@index')->name('budget.modifications.index');
         Route::get(
@@ -253,12 +257,12 @@ Route::group(
         )->name('budget.modifications.change-status');
 
         /*
-         | -----------------------------------------------------------------------
-         | Rutas para la gestión de compromisos presupuestarios
-         | -----------------------------------------------------------------------
-         |
-         | Gestiona los datos de las modificaciones presupuestarias (créditos adicionales,
-         | reducciones y/o traspasos)
+         * -----------------------------------------------------------------------
+         * Rutas para la gestión de compromisos presupuestarios
+         * -----------------------------------------------------------------------
+         *
+         * Gestiona los datos de las modificaciones presupuestarias (créditos adicionales,
+         * reducciones y/o traspasos)
          */
         Route::resource('compromises', 'BudgetCompromiseController', ['as' => 'budget']);
         Route::get(
@@ -309,11 +313,11 @@ Route::group(
         )->name('budget.transfers.pdf');
 
         /*
-         | -----------------------------------------------------------------------
-         | Rutas para la gestión de cuentas formuladas y aperturadas
-         | -----------------------------------------------------------------------
-         |
-         | Gestiona los datos de las cuentas aperturadas para la ejecución del presupuesto
+         * -----------------------------------------------------------------------
+         * Rutas para la gestión de cuentas formuladas y aperturadas
+         * -----------------------------------------------------------------------
+         *
+         * Gestiona los datos de las cuentas aperturadas para la ejecución del presupuesto
          */
         Route::get(
             'get-opened-accounts/{specificActionId}/{selDate?}',
@@ -403,6 +407,14 @@ Route::group(
                 '/consolidated',
                 'Reports\BudgetReportsController@createBudgetConsolidated'
             )->name('budget.report.consolidated');
+            Route::get(
+                '/modifications',
+                'Reports\BudgetReportsController@createBudgetmodifications'
+            )->name('budget.report.budgetModifications');
+            Route::get(
+                '/modifications-pdf',
+                'Reports\BudgetReportsController@getBudgetModificationsPdf'
+            )->name('budget.report.budgetModificationsPdf');
             Route::get(
                 '/get-proyects',
                 'Reports\BudgetReportsController@getProyects'

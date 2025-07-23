@@ -28,7 +28,7 @@ class WarehouseInventoryProductMovement extends Model implements Auditable
      */
     protected $fillable = [
         'quantity', 'new_value', 'warehouse_movement_id', 'warehouse_initial_inventory_product_id',
-        'warehouse_inventory_product_id'
+        'warehouse_inventory_product_id', 'batch_number', 'expiration_date'
     ];
 
     /**

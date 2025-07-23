@@ -49,33 +49,42 @@
                     </div>
                     <div class="col-6">
                         <div class="form-group" id="user">
-                            {!! Form::label('staff', __('Empleado'), []) !!}
+                            {!! Form::label('employee', __('Empleado'), []) !!}
 
-                            {{-- Update --}}
-                            @if(isset($model) && $model->profile && $model->profile->employee_id)
-                                {!! Form::select('staff', ['' => 'Seleccione...'] + $allPersons->toArray(), $model->profile->employee_id, [
-                                    'class' => 'form-control select2',
-                                    'id' => 'staff',
-                                    'disabled' => false,
-                                    'data-old' => old('staff')
-                                ]) !!}
-                            {{-- Create --}}
-                            @else
-                                {!! Form::select('staff', ['' => 'Seleccione...'] + $allPersons->toArray(), null, [
-                                    'class' => 'form-control select2',
-                                    'id' => 'staff',
-                                    'disabled' => (isset($model) && $model->profile !== null) ? false : true,
-                                    'data-old' => old('staff')
-                                ]) !!}
-                            @endif
+                            @php
+                                $employee = old('employee_id');
+                                $employees = [];
+                                $employees = (isset($model))? $allPersons->toArray() : $allPersons->mapWithKeys(function ($person) {
+                                    return [
+                                        $person->employee_id => $person->full_name
+                                    ];
+                                })->toArray();
+                                $employeeList = [
+                                    '' => 'Seleccione...',
+                                ];
+                                $disabled = true;
+                                if (isset($model) && $model->profile) {
+                                    if ($model->profile->employee_id) {
+                                        $employee = $model->profile->employee_id;
+                                    }
+                                    $disabled = false;
+                                }
+                            @endphp
+
+                            {!! Form::select('employee_id', $employeeList+$employees, $employee, [
+                                'class' => 'form-control select2',
+                                'id' => 'employee',
+                                'disabled' => $disabled,
+                                'data-old' => old('employee_id')
+                            ]) !!}
                         </div>
                     </div>
                 </div>
                 <div class="row">
-                    <div class="col-6 staff_name">
+                    <div class="col-6 employee_name">
                         <div class="form-group is-required" id="user_first_name">
                             {!! Form::label('first_name', __('Nombre'), ['id' => 'first_name_label']) !!}
-                            {!! Form::text('first_name', (isset($model) && $model->profile!==null)?$model->profile->first_name:old('first_name'), [
+                            {!! Form::text('first_name', (isset($model) && $model->profile!==null)?trim($model->profile->first_name . ' ' . $model->profile->last_name):old('first_name'), [
                                 'class' => 'form-control input-sm', 'id' => 'first_name', 'data-toggle' => 'tooltip',
                                 'title' => __('Indique el Nombre completo de la persona')
                             ]) !!}
@@ -117,10 +126,10 @@
     <script nonce="{{ session()->get('nonce') }}">
         $(document).ready(function() {
             $('#institution_id').on('input', function() {
-                updateStaffSelect($(this), $("#staff"));
+                updateEmployeeSelect($(this), $("#employee"));
             });
-            $('#staff').on('change', function() {
-                hasStaff();
+            $('#employee').on('change', function() {
+                hasEmployee();
             });
         })
         /**
@@ -128,11 +137,11 @@
          *
          * @author     Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
          */
-        var hasStaff = () => {
-            $(".staff_name").show();
-            if ($('#staff').val() !== "") {
+        var hasEmployee = () => {
+            $(".employee_name").show();
+            if ($('#employee').val() !== "") {
                 document.getElementById("first_name").value = '';
-                $(".staff_name").hide();
+                $(".employee_name").hide();
             }
         }
 
@@ -144,7 +153,7 @@
          * @param  {string}  target_model   Modelo en el cual se va a realizar la consulta
          * @param  {string}  module_name    Nombre del módulo que ejecuta la acción
          */
-        function updateStaffSelect(parent_element, target_element, edit) {
+        function updateEmployeeSelect(parent_element, target_element, edit) {
             var module_name = (typeof(module_name) !== "undefined") ? '/' + module_name : '';
             var parent_id = parent_element.val();
             var parent_name = parent_element.attr('id');
@@ -164,11 +173,11 @@
                                 `<option value="${record['id']}">${record['first_name']} ${record['last_name']}</option>`
                             );
                             if (edit) {
-                                let staff = document.getElementById('staff');
-                                let staffOld = staff.getAttribute('data-old');
-                                let staffValues = Object.values(staff);
-                                for (let value of staffValues) {
-                                    if (record['id'] == staffOld && staffOld == value.value) {
+                                let employee = document.getElementById('employee');
+                                let employeeOld = employee.getAttribute('data-old');
+                                let employeeValues = Object.values(employee);
+                                for (let value of employeeValues) {
+                                    if (record['id'] == employeeOld && employeeOld == value.value) {
                                         value.selected = true;
                                     }
                                 }
@@ -182,10 +191,10 @@
                 target_element.attr('disabled', true);
             }
         }
-        @if (old('staff'))
+        @if (old('employee_id'))
             const timeOpen = setTimeout(addInstitutionId, 3000);
             function addInstitutionId () {
-                updateStaffSelect($('#institution_id'), $('#staff'), true);
+                updateEmployeeSelect($('#institution_id'), $('#employee'), true);
             }
         @endif
     </script>

@@ -51,6 +51,8 @@ class EmploymentStaffExportFromButton extends DataExport implements
             'coordinacion',
             'tipo_de_personal',
             'tipo_de_contrato',
+            'tabulador_salario_basico',
+            'tipo_de_nomina',
             'departamento',
             'descripcion_de_funciones',
             'nombre_de_la_organizacion_anterior_1',
@@ -110,6 +112,8 @@ class EmploymentStaffExportFromButton extends DataExport implements
             $map[] = $data->payrollCoordination?->name  ?? '';
             $map[] = $data->payrollStaffType?->name  ?? '';
             $map[] = $data->payrollContractType?->name  ?? '';
+            $map[] = $data->payrollSalaryTabulator?->name  ?? '';
+            $map[] = $data->payrollPaymentType?->name  ?? '';
             $map[] = $data->department?->name  ?? '';
             $map[] = strip_tags($data['function_description']  ?? '');
 

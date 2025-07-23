@@ -50,7 +50,7 @@
 					</div>
 				</div>
 				<div class="col-md-6" id="helpWarehouseRequestProject">
-					<div class=" form-group is-required">
+					<div class=" form-group">
 						<label>Proyecto</label>
 						<div class="custom-control custom-switch mb-4">
 							<input type="radio" class="custom-control-input sel_pry_acc" id="sel_project"
@@ -64,7 +64,7 @@
 					</div>
 				</div>
 				<div class="col-md-6" id="helpWarehouseRequestCentralizedAction">
-					<div class=" form-group is-required">
+					<div class=" form-group">
 						<label>Acción centralizada</label>
 						<div class="custom-control custom-switch mb-4">
 							<input type="radio" class="custom-control-input sel_pry_acc" id="sel_centralized_action"
@@ -77,7 +77,7 @@
 					</div>
 				</div>
 				<div class="col-md-12" id="helpWarehouseRequestSpecificAction">
-					<div class=" form-group is-required">
+					<div class=" form-group">
 						<label>Acción específica</label>
 						<select2 :options="budget_specific_actions" id="budget_specific_action_id"
 							v-model="record.budget_specific_action_id" disabled></select2>
@@ -127,7 +127,9 @@
 						<div v-for="(att, index) in props.row.warehouse_product_values" :key="index">
 							<b>{{ att.warehouse_product_attribute.name + ":" }}</b> {{ att.value }}<br>
 						</div>
-						<b>Valor:</b> {{ props.row.unit_value }} {{ (props.row.currency) ? props.row.currency.name : '' }}
+						<b>Valor:</b> {{ props.row.unit_value }} {{ (props.row.currency) ? props.row.currency.name : '' }} <br>
+						<b>Fecha de vencimiento:</b> {{ props.row.expiration_date ? format_date(props.row.expiration_date) : '' }} <br>
+						<b>Lote:</b> {{ props.row.batch_number }}
 					</span>
 				</div>
 				<div slot="inventory" slot-scope="props">
@@ -136,7 +138,7 @@
 							props.row.warehouse_institution_warehouse.warehouse.name
 						}} <br>
 						<b>Existencia:</b> {{ props.row.real }}<br>
-						<b>Reservados:</b> {{ (props.row.reserved === null) ? '0' : props.row.reserved }}
+						<b>Entregados:</b> {{ (props.row.reserved === null) ? '0' : props.row.reserved }}
 						<br>
 						<b>Solicitados:</b> {{ quantityProductRequests(props.row.code) }}
 

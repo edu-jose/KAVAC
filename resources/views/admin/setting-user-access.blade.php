@@ -29,10 +29,10 @@
                 </div>
                     <user-roles-permissions
                         :user='{!! json_encode($user) !!}'
-                        :user-roles='{!! json_encode($user->roles()->get()) !!}'
+                        :user-roles='{!! json_encode($user->roles()->with("permissions")->get()) !!}'
                         :user-permissions='{!! json_encode($user->permissions()->get()) !!}'
                         :roles='{!! json_encode(App\Roles\Models\Role::with("permissions")->get()) !!}'
-                        :permissions='{!! json_encode(App\Roles\Models\Permission::all()) !!}'
+                        :permissions='{!! json_encode(App\Roles\Models\Permission::with('roles')->get()) !!}'
                     />
             </div>
         </div>

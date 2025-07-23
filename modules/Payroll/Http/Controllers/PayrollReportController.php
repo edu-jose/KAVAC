@@ -40,8 +40,10 @@ use Modules\Payroll\Jobs\PayrollReportConceptExportJob;
 use Modules\Payroll\Models\PayrollSupervisedGroupStaff;
 use Modules\Payroll\Jobs\PayrollStaffPdfReportExportJob;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Modules\Payroll\Jobs\PayrollFamilyBurdenPdfReportJob;
 use Modules\Payroll\Jobs\PayrollSendRequestedReceiptsJob;
 use Modules\Payroll\Jobs\PayrollSendStaffPdfReportEmailJob;
+use Modules\Payroll\Jobs\PayrollSendFamilyBurdenPdfReportEmailJob;
 
 /**
  * @class      PayrollReportController
@@ -78,10 +80,10 @@ class PayrollReportController extends Controller
         $this->middleware('permission:payroll.reports.concepts', ['only' => 'concepts']);
         $this->middleware('permission:payroll.reports.relationship.concepts', ['only' => 'relationshipConcepts']);
         $this->middleware('permission:payroll.reports.payment.receipts', ['only' => 'paymentReceipt']);
-        $this->middleware('permission:payroll.workers.report.create', ['only' => ['filterWorkersByPayroll']]);
-        $this->middleware('permission:payroll.timesheets.report.create', ['only' => ['timeSheetsPdf']]);
-        $this->middleware('permission:payroll.family.burden.report.create', ['only' => ['create']]);
-        $this->middleware('permission:payroll.historical.positions.report.create', ['only' => ['create']]);
+        $this->middleware('permission:payroll.workers.report.create', ['only' => ['workersByPayroll']]);
+        $this->middleware('permission:payroll.timesheets.report.create', ['only' => ['timeSheets']]);
+        $this->middleware('permission:payroll.family.burden.report.create', ['only' => ['familyBurden']]);
+        $this->middleware('permission:payroll.historical.positions.report.create', ['only' => ['historicalPosition']]);
     }
 
     /**
@@ -130,6 +132,73 @@ class PayrollReportController extends Controller
     }
 
     /**
+     * Genera el reporte de carga familiar solicitado
+     *
+     * @param \Illuminate\Http\Request $request Datos de la petición
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function reportFamilyBurdenPdf(Request $request): JsonResponse
+    {
+        /* Obtiene el usuario */
+        $user = User::without(['roles', 'permissions'])->where('id', auth()->user()->id)->first();
+
+        /* Obtiene el perfil del usuario */
+        $profileUser = $user->profile;
+
+        /* Obtiene la institución por defecto */
+        if (($profileUser) && isset($profileUser->institution_id)) {
+            $institution = Institution::find($profileUser->institution_id);
+        } else {
+            $institution = Institution::where('active', true)->where('default', true)->first();
+        }
+
+        // Validar los datos para generar el reporte
+        $rules = [
+            "payroll_staffs" => ['required'],
+            "payroll_relationships" => ['required'],
+        ];
+
+        $messages = [
+            "payroll_staffs.required" => 'Debe seleccionar un trabajador para poder generar el reporte',
+            "payroll_relationships.required" => 'Debe seleccionar un parentesco para poder generar el reporte',
+        ];
+
+        $this->validate($request, $rules, $messages);
+
+        // Crear PDF y proceso de generacion de reporte
+        $filename       = 'payroll-report-' . Carbon::now()->format('Y-m-d');
+        $pdfBody        = 'payroll::pdf.payroll-family-burden';
+
+        $data = [
+            $institution,
+            $filename,
+            $pdfBody,
+            $request->toArray()
+        ];
+        // Configura la ruta del archivo del txt
+        $filename = $filename . '.txt';
+        $filepath = storage_path() . DIRECTORY_SEPARATOR . 'reports' . DIRECTORY_SEPARATOR . $filename;
+        file_put_contents(storage_path() . DIRECTORY_SEPARATOR . 'reports' . DIRECTORY_SEPARATOR . $filename, "");
+        dispatch(new PayrollFamilyBurdenPdfReportJob($data, $filepath, $user))->chain(
+            [
+                new PayrollSendFamilyBurdenPdfReportEmailJob($user, $filepath, $filename)
+            ]
+        );
+
+        // Mostrar mensaje de notificación de espera
+        request()->session()->flash('message', [
+            'type' => 'other', 'title' => '¡Éxito!',
+            'text' => 'Su solicitud esta en proceso, esto puede tardar unos ' .
+                'minutos. Se le notificara por correo al terminar la operación',
+            'icon' => 'screen-ok',
+            'class' => 'growl-primary'
+        ]);
+
+        return response()->json(['result' => true], 200);
+    }
+
+    /**
      * Muestra el formulario para crear un nuevo reporte
      *
      * @param \Illuminate\Http\Request $request datos de la petición
@@ -165,8 +234,6 @@ class PayrollReportController extends Controller
             $body = 'payroll::pdf.payroll-concepts';
         } elseif ($request->current == 'relationship-concepts') {
             $body = 'payroll::pdf.payroll-relationship-concepts';
-        } elseif ($request->current == 'family-burden') {
-            $body = 'payroll::pdf.payroll-family-burden';
         } elseif ($request->current == 'historical-position') {
             $body = 'payroll::pdf.payroll-historical-position';
         } else {
@@ -509,127 +576,7 @@ class PayrollReportController extends Controller
                     'No es posible generar el reporte, no existen cálculos asociados a los parámetros'
                 ]]], 422);
             }
-        } elseif ($request->current == 'family-burden') {
-            if (empty($request->payroll_staffs) && empty($request->payroll_relationships)) {
-                return response()->json(['errors' => [
-                    'payroll_familyBurden' => [
-                        'Debe seleccionar un trabajador para poder genera el reporte',
-                    ],
-                    'payroll_relationships' => [
-                        'Debe seleccionar un parentesco para poder genera el reporte',
-                    ],
-                ]], 422);
-            } elseif (empty($request->payroll_staffs) || count($request->payroll_staffs) == 0) {
-                return response()->json(['errors' => ['payroll_familyBurden' => [
-                    'Debe seleccionar un trabajador para poder genera el reporte'
-                ]]], 422);
-            } elseif (empty($request->payroll_relationships) || count($request->payroll_relationships) == 0) {
-                return response()->json(['errors' => ['payroll_familyBurden' => [
-                    'Debe seleccionar un parentesco para poder genera el reporte'
-                ]]], 422);
-            }
-
-            $allStaffs = array_search('todos', array_column($request->payroll_staffs, 'id'));
-            $allRelationships = array_search('todos', array_column($request->payroll_relationships, 'id'));
-
-            if ($allStaffs !== false) {
-                if ($allRelationships !== false) {
-                    $records = PayrollSocioeconomic::with(
-                        ['payrollStaff' => fn($query) => $query->without(
-                            [
-                                'payrollNationality',
-                                'payrollFinancial',
-                                'payrollGender',
-                                'payrollBloodType',
-                                'payrollDisability',
-                                'payrollLicenseDegree',
-                                'payrollStaffUniformSize',
-                                'payrollSocioeconomic',
-                                'payrollProfessional',
-                                'payrollResponsibility'
-                            ]
-                        )->select('id', 'first_name', 'last_name', 'id_number')->with(
-                            ['payrollEmployment' => fn($query) => $query->without(
-                                [
-                                    'payrollPositionType',
-                                    'payrollCoordination',
-                                    'payrollStaffType',
-                                    'payrollInactivityType',
-                                    'payrollContractType',
-                                    'payrollPreviousJob'
-                                ]
-                            )->select('id', 'payroll_staff_id', 'department_id')->with(['department' => fn($query) => $query->select('id', 'name')])
-                            ]
-                        )]
-                    )->has('payrollChildrens')
-                    ->without('maritalStatus')
-                    ->get();
-                } else {
-                    $realtionshipsIds = array_column($request->payroll_relationships, 'id');
-
-                    $records = PayrollSocioeconomic::with(
-                        ['payrollStaff' => fn($query) => $query->without(
-                            [
-                                'payrollNationality',
-                                'payrollFinancial',
-                                'payrollGender',
-                                'payrollBloodType',
-                                'payrollDisability',
-                                'payrollLicenseDegree',
-                                'payrollStaffUniformSize',
-                                'payrollSocioeconomic',
-                                'payrollProfessional',
-                                'payrollResponsibility'
-                            ]
-                        )->select('id', 'first_name', 'last_name', 'id_number')->with(
-                            ['payrollEmployment' => fn($query) => $query->without(
-                                [
-                                    'payrollPositionType',
-                                    'payrollCoordination',
-                                    'payrollStaffType',
-                                    'payrollInactivityType',
-                                    'payrollContractType',
-                                    'payrollPreviousJob'
-                                ]
-                            )->select('id', 'payroll_staff_id', 'department_id')->with(['department' => fn($query) => $query->select('id', 'name')])
-                            ]
-                        )]
-                    )->whereHas('payrollChildrens', function ($query) use ($realtionshipsIds) {
-                            $query->whereIn('payroll_relationships_id', $realtionshipsIds);
-                    })
-                    ->without('maritalStatus')
-                    ->get();
-                }
-            } else {
-                if ($allRelationships !== false) {
-                    $staffIds = array_column($request->payroll_staffs, 'id');
-
-                    $records = PayrollSocioeconomic::query()
-                        ->has('payrollChildrens')
-                        ->without('maritalStatus')
-                        ->whereIn('payroll_staff_id', $staffIds)
-                        ->get();
-                } else {
-                    $staffIds = array_column($request->payroll_staffs, 'id');
-                    $realtionshipsIds = array_column($request->payroll_relationships, 'id');
-
-                    $records = PayrollSocioeconomic::query()
-                        ->whereIn('payroll_staff_id', $staffIds)
-                        ->whereHas('payrollChildrens', function ($query) use ($realtionshipsIds) {
-                            $query->whereIn('payroll_relationships_id', $realtionshipsIds);
-                        })
-                        ->without('maritalStatus')
-                        ->get();
-                }
-            }
-
-            if (count($records) == 0) {
-                return response()->json(['result' => 'empty'], 200);
-            }
-
-            $pdf->setHeader('Reporte de carga familiar');
         }
-
         $pdf->setFooter(true, strip_tags($institution->legal_address));
 
         $pdf->setBody(
@@ -640,16 +587,9 @@ class PayrollReportController extends Controller
                 'field' => $records,
             ]
         );
+
         $url = route('payroll.reports.show', [$filename]);
-        if ($request->current == 'family-burden') {
-            if ($allStaffs !== false && $allRelationships !== false) {
-                $user->notify(new SystemNotification('Éxito', 'Ha finalizado la generación del reporte de carga familiar. Por favor abra este enlace para ver el documento: <a href="' . $url . '" class="link-download">Enlace</a>'));
-                return response()->json(['all_data' => true, 'result' => false, 'redirect' => env('APP_URL') . '/payroll/reports/family-burden'], 200);
-            }
-            return response()->json(['all_data' => true, 'result' => true, 'redirect' => $url], 200);
-        } else {
-            return response()->json(['all_data' => true, 'result' => true, 'redirect' => $url], 200);
-        }
+        return response()->json(['all_data' => true, 'result' => true, 'redirect' => $url], 200);
     }
 
     /**

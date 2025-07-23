@@ -18,7 +18,7 @@
         <th width="20%">Descripción</th>
         <th width="10%">Almacén</th>
         <th width="10%">Existencia</th>
-        <th width="10%">Reservados</th>
+        <th width="10%">Entregados</th>
         <th width="10%">Solicitados</th>
         <th width="10%">Disponible para solicitar</th>
         <th width="10%">Valor Unitario</th>

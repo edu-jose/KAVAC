@@ -2,18 +2,21 @@
 
 namespace Modules\Payroll\Models;
 
+use DateTime;
 use Carbon\Carbon;
 use App\Models\Phone;
 use App\Models\Gender;
 use App\Traits\ModelsTrait;
 use Illuminate\Support\Arr;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Nwidart\Modules\Facades\Module;
 use Illuminate\Database\Eloquent\Model;
 use OwenIt\Auditing\Contracts\Auditable;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Http\Request;
 use Modules\Payroll\Models\PayrollAriRegister;
 use OwenIt\Auditing\Auditable as AuditableTrait;
+use Modules\Payroll\Models\PayrollSavingsFund;
 
 /**
  * @class      PayrollStaff
@@ -71,11 +74,32 @@ class PayrollStaff extends Model implements Auditable
      * @var array $fillable
      */
     protected $fillable = [
-        'code', 'first_name', 'last_name', 'id_number', 'passport', 'email', 'birthdate',
-        'emergency_contact', 'emergency_phone', 'address', 'has_disability', 'social_security',
-        'has_driver_license', 'uniform_size', 'medical_history', 'payroll_license_degree_id',
-        'payroll_blood_type_id', 'parish_id', 'payroll_nationality_id', 'payroll_gender_id',
-        'payroll_disability_id', 'rif'
+        'code',
+        'first_name',
+        'last_name',
+        'id_number',
+        'passport',
+        'email',
+        'birthdate',
+        'emergency_contact',
+        'emergency_phone',
+        'address',
+        'has_disability',
+        'social_security',
+        'has_driver_license',
+        'has_died',
+        'uniform_size',
+        'medical_history',
+        'payroll_license_degree_id',
+        'payroll_blood_type_id',
+        'parish_id',
+        'payroll_nationality_id',
+        'payroll_gender_id',
+        'payroll_disability_id',
+        'rif',
+        'payroll_age_group_id',
+        'locality_id',
+        'region_id'
     ];
 
     /**
@@ -137,7 +161,17 @@ class PayrollStaff extends Model implements Auditable
     {
         return $this->belongsTo(Gender::class);
     }
-
+    /**
+     * Método que obtiene la información personal del trabajador asociada a una nacionalidad
+     *
+     * @author    William Páez <wpaez@cenditel.gob.ve>
+     *
+     * @return    \Illuminate\Database\Eloquent\Relations\HasOne
+     */
+    public function payrollSurvivor()
+    {
+        return $this->hasOne(PayrollSurvivor::class);
+    }
     /**
      * Método que obtiene la información personal del trabajador asociada a una nacionalidad
      *
@@ -256,6 +290,17 @@ class PayrollStaff extends Model implements Auditable
         return $this->morphMany(PayrollConceptAssignOption::class, 'assignable');
     }
 
+    /**
+     * Método que obtiene la información de las solicitudes de vacaciones asociadas al trabajador
+     *
+     * @author   F escala <fescala@cenditel.gob.ve>
+
+     * @return    \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function payrollWageGarnishmentRegisters()
+    {
+        return $this->hasMany(PayrollWageGarnishments::class);
+    }
     /**
      * Método que obtiene la información de las solicitudes de vacaciones asociadas al trabajador
      *
@@ -427,6 +472,15 @@ class PayrollStaff extends Model implements Auditable
     {
         return $this->hasMany(PayrollAriRegister::class);
     }
+    /**
+     * Registro ARI pertenciente al trabajador
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function payrollSavingsFundRegisters()
+    {
+        return $this->hasMany(PayrollSavingsFund::class);
+    }
 
     /**
      * Obtiene la relación con la responsabilidad del trabajador
@@ -436,6 +490,36 @@ class PayrollStaff extends Model implements Auditable
     public function payrollResponsibility()
     {
         return $this->hasOne(PayrollResponsibility::class);
+    }
+
+    /**
+     * Obtiene la relación con el grupo etario del trabajador
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\belongsTo
+     */
+    public function payrollAgeGroup()
+    {
+        return $this->belongsTo(PayrollAgeGroup::class, 'payroll_age_group_id');
+    }
+
+    /**
+     * Obtiene la relación con el grupo etario del trabajador
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\belongsTo
+     */
+    public function locality()
+    {
+        return $this->belongsTo(Locality::class);
+    }
+
+    /**
+     * Obtiene la relación con el grupo etario del trabajador
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\belongsTo
+     */
+    public function region()
+    {
+        return $this->belongsTo(Region::class);
     }
 
     /**
@@ -944,5 +1028,353 @@ class PayrollStaff extends Model implements Auditable
                     });
             });
         });
+    }
+
+    /**
+     * Establece la relación con el modelo del historial de responsables.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\MorphMany
+     */
+    public function componentManagerHistory()
+    {
+        return (
+            Module::has('Budget') && Module::isEnabled('Budget')
+        ) ? $this->morphMany(\Modules\Budget\Models\BudgetComponentManagerHistory::class, 'managerable') : [];
+    }
+
+    // --- SCOPES PARA LAS REGLAS ---
+
+    /**
+     * Scope: Verifica si el trabajador está activo (tiene empleo activo).
+     * Es útil llamarlo desde otros scopes o como base.
+     */
+    public function scopeOnlyActive($query)
+    {
+        return $query->whereHas('payrollEmployment', fn ($q) => $q->where('active', true));
+    }
+
+    /**
+     * Scope: Trabajadores con hijos que tienen becas específicas.
+     * Rule ID: staff_with_sons_has_scholarships
+     */
+    public function scopeHasSonsWithScholarships($query, array $scholarshipTypeIds)
+    {
+        $relationshipSonId = $this->getSonRelationshipId();
+        return $query->whereHas('payrollSocioeconomic.payrollChildrens', function ($burdenQuery) use ($relationshipSonId, $scholarshipTypeIds) {
+            $burdenQuery->where('payroll_relationships_id', $relationshipSonId)
+                        ->where('has_scholarships', true)
+                        ->whereIn('payroll_scholarship_types_id', $scholarshipTypeIds);
+        })->onlyActive(); // Asegura que el trabajador esté activo
+    }
+
+    /**
+     * Scope: Trabajadores con hijos en un rango de edad específico.
+     * Rule ID: all_staff_with_sons
+     */
+    public function scopeHasSonsInAgeRange($query, int $minAge, int $maxAge, string $referenceDate)
+    {
+        $relationshipSonId = $this->getSonRelationshipId();
+
+        try {
+            // Calcula las fechas de nacimiento límite basadas en la fecha de referencia
+            $maxBirthDate = Carbon::parse($referenceDate)->subYears($minAge)->endOfDay()->toDateString();
+            $minBirthDate = Carbon::parse($referenceDate)->subYears($maxAge + 1)->addDay()->startOfDay()->toDateString(); // +1 para incluir el año completo
+        } catch (\Exception $e) {
+             // Manejar error de fecha inválida si es necesario, por ahora lanzamos excepción o devolvemos query vacía
+            \Log::error("Error calculando rango de fechas para hijos: " . $e->getMessage());
+             return $query->whereRaw('1 = 0'); // Devuelve query sin resultados
+        }
+
+
+        return $query->whereHas('payrollSocioeconomic.payrollChildrens', function ($burdenQuery) use ($relationshipSonId, $minBirthDate, $maxBirthDate) {
+            $burdenQuery->where('payroll_relationships_id', $relationshipSonId)
+                        ->whereNotNull('birthdate') // Asegurar que la fecha no sea nula
+                        ->whereBetween('birthdate', [$minBirthDate, $maxBirthDate]);
+        })->onlyActive();
+    }
+
+    /**
+     * Scope: Trabajadores con hijos que están estudiando.
+     * Rule ID: all_staff_with_sons_studying
+     */
+    public function scopeHasSonsStudying($query)
+    {
+        $relationshipSonId = $this->getSonRelationshipId();
+        return $query->whereHas('payrollSocioeconomic.payrollChildrens', function ($burdenQuery) use ($relationshipSonId) {
+            $burdenQuery->where('payroll_relationships_id', $relationshipSonId)
+                        ->where('is_student', true);
+        })->onlyActive();
+    }
+
+    /**
+     * Scope: Filtra trabajadores que son sobrevivientes.
+     * Rule ID: all_survivor_staff
+     * Asume un campo booleano 'is_survivor' en la tabla payroll_staffs.
+     * Ajusta el nombre del campo si es diferente.
+     * Nota: No se aplica ->onlyActive() aquí, asumiendo que 'sobreviviente'
+     * podría no requerir un estado laboral activo. Ajustar si es necesario.
+     */
+    public function scopeIsSurvivor($query)
+    {
+        $retiredId = PayrollInactivityType::where('name', 'ILIKE', 'jubilado')->value('id');
+
+        return $query->where('has_died', true)
+        ->whereHas('payrollSurvivor', function ($query) {
+            $query->whereNotNull('first_name')
+            ->whereNotNull('last_name')
+            ->whereNotNull('payroll_staff_id')
+            ->whereNotNull('id_number')
+            ->whereNotNull('finance_bank_id')
+            ->whereNotNull('finance_account_type_id')
+            ->whereNotNull('payroll_account_number');
+        })
+        ->whereHas('payrollEmployment', function ($query) use ($retiredId) {
+            $query->where('payroll_inactivity_type_id', $retiredId);
+        });
+    }
+
+    /**
+     * Scope: Filtra trabajadores activos que pertenecen a un sindicato.
+     * Rule ID: all_staff_who_belong_to_a_workers_union
+     * Asume un campo booleano 'workers_union' en la tabla payroll_employments.
+     */
+    public function scopeBelongsToUnion($query)
+    {
+        // Verifica el campo en la relación y que el empleado esté activo
+        return $query->whereHas('payrollEmployment', function ($empQuery) {
+            $empQuery->where('workers_union', true);
+        })
+        ->onlyActive();
+    }
+
+    /**
+     * Scope: Filtra trabajadores activos afiliados al fondo de ahorro.
+     * Rule ID: all_staff_affiliated_with_the_savings_fund
+     * Asume un campo booleano 'savings_fund' en la tabla payroll_employments.
+     */
+    public function scopeIsAffiliatedToSavingsFund($query)
+    {
+        // Verifica el campo en la relación y que el empleo esté activo
+        return $query->whereHas('payrollEmployment', function ($empQuery) {
+            $empQuery->where('savings_fund', true);
+        })
+        ->onlyActive();
+    }
+
+    /**
+     * Scope: Trabajadores con cargos específicos.
+     * Rule ID: staff_according_position
+     */
+    public function scopePositionInList($query, array $positionIds)
+    {
+        // Asume relación payrollEmployment->payrollPositions (muchos a muchos)
+        return $query->whereHas('payrollEmployment.payrollPositions', function ($posQuery) use ($positionIds) {
+            $posQuery->whereIn('payroll_positions.id', $positionIds);
+        })->onlyActive();
+        // Si la relación es directa (un solo cargo en payrollEmployment):
+        // return $query->whereHas('payrollEmployment', fn($q) => $q->whereIn('payroll_position_id', $positionIds)->where('active', true));
+    }
+
+    /**
+     * Scope: Trabajadores que NO están de vacaciones aprobadas durante el período.
+     * Rule ID: all_staff_not_in_vacation
+     */
+    public function scopeIsNotInApprovedVacationDuring($query, string $periodStart, string $periodEnd)
+    {
+         // Trabajador activo que NO tiene una solicitud APROBADA que se SOLAPE con el periodo
+        return $query->whereDoesntHave('payrollVacationRequests', function ($vacQuery) use ($periodStart, $periodEnd) {
+            $vacQuery->where('status', 'approved')
+                    // Solapamiento: La vacación empieza antes o cuando termina el periodo Y termina después o cuando empieza el periodo
+                    ->where('start_date', '<=', $periodEnd)
+                    ->where('end_date', '>=', $periodStart);
+        })->onlyActive();
+    }
+
+    /**
+     * Scope: Trabajadores que retornaron de vacaciones aprobadas durante el período.
+     * Rule ID: all_staff_vacation_return
+     */
+    public function scopeReturnedFromVacationDuring($query, string $periodStart, string $periodEnd)
+    {
+        // Trabajador activo que SÍ tiene una solicitud APROBADA cuya FECHA FIN cae DENTRO del periodo
+        return $query->whereHas('payrollVacationRequests', function ($vacQuery) use ($periodStart, $periodEnd) {
+            $vacQuery->where('status', 'approved')
+                    ->where('end_date', '>=', $periodStart)
+                    ->where('end_date', '<=', $periodEnd);
+        })->onlyActive();
+    }
+
+    public function scopeAllStaffInVacations($query, string $periodStart)
+    {
+        // Trabajador activo que SÍ tiene una solicitud APROBADA cuya FECHA FIN cae DENTRO del periodo
+        return $query->whereHas('payrollVacationRequests', function ($vacQuery) use ($periodStart) {
+            $vacQuery->where('status', 'approved')
+                    ->where('end_date', '>=', $periodStart);
+        })->onlyActive();
+    }
+
+    /**
+      * Scope: Trabajadores con o sin discapacidad.
+      * Rule IDs: all_disabled_staff, all_except_disabled_staff
+      */
+    public function scopeHasDisability($query, bool $hasDisability = true)
+    {
+        // Asume un campo 'has_disability' booleano en la tabla payroll_staffs
+        return $query->where('has_disability', $hasDisability)
+        ->onlyActive();
+    }
+
+    /**
+      * Scope: Trabajadores que están estudiando (ellos mismos).
+      * Rule ID: all_studying_staff
+      */
+    public function scopeIsStudying($query)
+    {
+        return $query->whereHas('payrollProfessional', function ($profQuery) {
+            $profQuery->where('is_student', true);
+        })->onlyActive();
+    }
+
+    /**
+     * Scope: Trabajadores que dominan más de un idioma.
+     * Rule ID: staff_master_the_languages
+     */
+    public function scopeMastersMoreThanOneLanguage($query)
+    {
+        return $query->whereHas('payrollProfessional.payrollLanguages', null, '>', 1) // Verifica que la cuenta de idiomas relacionados sea > 1
+                    ->onlyActive();
+    }
+
+    /**
+     * Scope: Trabajadores según tipo de contrato.
+     * Rule ID: staff_according_contract_type
+     */
+    public function scopeContractTypeInList($query, array $contractTypeIds)
+    {
+        return $query->whereHas('payrollEmployment', function ($empQuery) use ($contractTypeIds) {
+            $empQuery->whereIn('payroll_contract_type_id', $contractTypeIds);
+        })->onlyActive();
+    }
+
+    /**
+     * Scope: Trabajadores según departamento.
+     * Rule ID: staff_according_department
+     */
+    public function scopeDepartmentInList($query, array $departmentIds)
+    {
+        return $query->whereHas('payrollEmployment', function ($empQuery) use ($departmentIds) {
+            $empQuery->whereIn('department_id', $departmentIds);
+        })->onlyActive();
+    }
+
+    /**
+     * Scope: Trabajadores según tipo de cargo.
+     * Rule ID: staff_according_position_type
+     */
+    public function scopePositionTypeInList($query, array $positionTypeIds)
+    {
+        return $query->whereHas('payrollEmployment', function ($empQuery) use ($positionTypeIds) {
+            $empQuery->whereIn('payroll_position_type_id', $positionTypeIds);
+        })->onlyActive();
+    }
+
+    /**
+     * Scope: Trabajadores según tipo de personal.
+     * Rule ID: staff_according_staff_type
+     */
+    public function scopeStaffTypeInList($query, array $staffTypeIds)
+    {
+        return $query->whereHas('payrollEmployment', function ($empQuery) use ($staffTypeIds) {
+            $empQuery->whereIn('payroll_staff_type_id', $staffTypeIds);
+        })->onlyActive();
+    }
+
+    /**
+      * Scope: Trabajadores según rango de fecha de ingreso.
+      * Rule ID: all_staff_according_start_date
+      */
+    public function scopeStartDateBetween($query, ?string $maxDate, $periodStart, $periodEnd)
+    {
+        //convertir la fecha de inio y fin de periodo a un objero de datatime para poder usar la funcion modify
+        $now = ($periodEnd) ? new DateTime($periodEnd) : new DateTime();
+        return $query->whereHas('payrollEmployment', function ($empQuery) use ($maxDate, $now, $periodStart, $periodEnd) {
+            if (isset($maxDate)) {
+                $date = $now->modify('-' . ($maxDate) . 'year');
+                $empQuery->whereDate('start_date', '<=', $date);
+            }
+            if (($periodStart && $periodEnd)) {
+                $start = explode('-', $periodStart);
+                $end = explode('-', $periodEnd);
+
+                if ($start[1] > $end[1]) {
+                    $empQuery->whereBetween(
+                        DB::raw("to_char(" . 'start_date' . ", 'MM-DD')"),
+                        [$start[1] . '-' . $start[2], '12-31']
+                    )
+                        ->OrWhereBetween(
+                            DB::raw("to_char(" . 'start_date' . ", 'MM-DD')"),
+                            ['01-01', $end[1] . '-' . $end[2]]
+                        );
+                } elseif ($start[1] . '-' . $start[2] == $end[1] . '-' . $end[2]) {
+                    if ($start[0] != $end[0]) {
+                        $empQuery->WhereBetween(
+                            DB::raw("to_char(" . 'start_date' . ", 'MM-DD')"),
+                            ['01-01', '12-31']
+                        );
+                    } else {
+                        $empQuery->Where(
+                            DB::raw("to_char(" . 'start_date' . ", 'MM-DD')"),
+                            $start[1] . '-' . $start[2]
+                        );
+                    }
+                } else {
+                    $empQuery->whereBetween(
+                        DB::raw("to_char(" . 'start_date' . ", 'MM-DD')"),
+                        [$start[1] . '-' . $start[2], $end[1] . '-' . $end[2]]
+                    );
+                }
+            }
+        })->onlyActive();
+    }
+
+    /**
+      * Scope: Trabajadores según nivel de instrucción.
+      * Rule ID: staff_according_instruction_degree
+      */
+    public function scopeInstructionDegreeInList($query, array $degreeIds)
+    {
+        return $query->whereHas('payrollProfessional', function ($profQuery) use ($degreeIds) {
+            $profQuery->whereIn('payroll_instruction_degree_id', $degreeIds);
+        })->onlyActive();
+    }
+
+    /**
+     * Scope: Trabajadores según género.
+     * Rule ID: staff_according_gender
+     */
+    public function scopeGenderInList($query, array $genderIds)
+    {
+        return $query->whereIn('payroll_gender_id', $genderIds)
+        ->onlyActive();
+    }
+
+
+    // --- Métodos Auxiliares ---
+
+    /**
+     * Obtiene el ID de la relación 'Hijo(a)'.
+     */
+    protected function getSonRelationshipId(): ?int
+    {
+        static $sonId = null;
+        if ($sonId === null) {
+             // Asegúrate que el modelo PayrollRelationship exista en la ruta correcta
+            $sonId = \Modules\Payroll\Models\PayrollRelationship::where('name', 'Hijo(a)')->value('id');
+            if ($sonId === null) {
+                \Log::warning("No se encontró la relación 'Hijo(a)', usando ID 3 por defecto.");
+                 $sonId = 3; // Valor por defecto del código original
+            }
+        }
+        return $sonId;
     }
 }

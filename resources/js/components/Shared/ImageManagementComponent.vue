@@ -1,10 +1,14 @@
 <template>
     <div class="text-center">
-        <img :src="url" alt="Imagen" class="img-fluid default-image-style" id="showImage"
-             title="Click para cargar o modificar la imagen" data-toggle="tooltip" @click="selectImage('image')"
-             :style="{'width': imgWidth, 'height': imgHeight}">
-        <input type="file" id="image" name="image" class="hide-image-file" @change="uploadImage('image')"
-               accept="image/*">
+        <img
+            :src="url" alt="" class="img-fluid default-image-style" id="showImage"
+            title="Click para cargar o modificar la imagen" data-toggle="tooltip" @click="selectImage('image')"
+            :style="{'width': imgWidth, 'height': imgHeight}"
+        >
+        <input
+            type="file" id="image" name="image" class="hide-image-file" @change="uploadImage('image')"
+            accept="image/*"
+        >
         <div class="row" :class="{'row-delete-img': (!id)}" v-if="id !== ''">
             <div class="col-12">
                 <div class="text-center">
@@ -78,9 +82,9 @@
              */
             uploadImage: function(el, id) {
                 let vm = this;
-                var id = (typeof(id) !== "undefined") ? id : '';
-                var formData = new FormData();
-                var imagefile = document.querySelector(`#${el}`);
+                id = (typeof(id) !== "undefined") ? id : '';
+                let formData = new FormData();
+                let imagefile = document.querySelector(`#${el}`);
                 formData.append("image", imagefile.files[0]);
 
                 if (!id) {
@@ -127,8 +131,7 @@
              */
             deleteImage: function(force_delete) {
                 let vm = this;
-                var force_delete = (typeof(force_delete) !== undefined && force_delete)
-                       ? {force_delete: force_delete} : {};
+                force_delete = force_delete ? {force_delete: force_delete} : {};
                 if (vm.id) {
                     bootbox.confirm("Esta seguro de querer eliminar la imagen?", function(result) {
                         if (result) {

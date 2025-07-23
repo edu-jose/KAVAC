@@ -80,7 +80,13 @@ class PayrollWorkloadController extends Controller
      */
     public function index(): \Illuminate\Http\JsonResponse
     {
-        return response()->json(['records' => PayrollWorkload::with(['payrollWorkloadPositions.payrollPosition'])->get()], 200);
+        return response()->json([
+            'records' => PayrollWorkload::with(['payrollWorkloadPositions' => function ($query) {
+                $query->join('payroll_positions', 'payroll_workload_positions.payroll_position_id', '=', 'payroll_positions.id')
+                    ->orderBy('payroll_positions.name', 'asc')
+                    ->select('payroll_workload_positions.*'); // Selecciona solo las columnas de payroll_workload_positions para evitar conflictos
+            }])->get()
+        ], 200);
     }
 
     /**
@@ -179,6 +185,17 @@ class PayrollWorkloadController extends Controller
         PayrollWorkloadPosition::where('payroll_workload_id', $id)->delete();
 
         foreach ($request->payroll_workload_positions as $payrollPosition) {
+            $workloadPosition = PayrollWorkloadPosition::where([
+                'payroll_workload_id' => $payrollWorkload->id,
+                'payroll_position_id' => $payrollPosition['id'],
+            ])->withTrashed()->first();
+
+            if ($workloadPosition) {
+                // Si ya existe, restaurarlo en lugar de crear uno nuevo
+                $workloadPosition->restore();
+                continue;
+            }
+
             PayrollWorkloadPosition::create([
                 'payroll_workload_id' => $payrollWorkload->id,
                 'payroll_position_id' => $payrollPosition['id'],

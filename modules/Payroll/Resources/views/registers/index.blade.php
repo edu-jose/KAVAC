@@ -37,7 +37,8 @@
                         :employments="{{ $employments }}"
                         :moment_close_permission="{{ $momentClosePermission }}"
                         :budget_exist="{{ Module::has('Budget') && Module::isEnabled('Budget') ? 1 : 0 }}"
-                        :has_availability_request_permission="{{ $availabilityRequestPermission }}">
+                        :has_availability_request_permission="{{ $availabilityRequestPermission }}"
+                        :user-id="{{ Auth::user()->id }}">
                     </payroll-registers-list>
                 </div>
             </div>

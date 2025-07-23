@@ -160,7 +160,10 @@ class LoginController extends Controller
             $this->username() => ['required', 'exists:users', new LdapRule()],
             'password' => ['required', 'string'],
         ];
-        if (!env('TEST_UNIT', false)) {
+        if (
+            !config('active-directory.enabled', false) &&
+            !env('TEST_UNIT', false)
+        ) {
             $rules['captcha'] = ['required', 'captcha'];
         }
         $validateMessages = [

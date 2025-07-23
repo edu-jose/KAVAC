@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use OwenIt\Auditing\Contracts\Auditable;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use OwenIt\Auditing\Auditable as AuditableTrait;
+use Modules\Budget\Models\BudgetComponentManagerHistory;
 
 /**
  * @class BudgetCentralizedAction
@@ -114,5 +115,15 @@ class BudgetCentralizedAction extends Model implements Auditable
     public function getDate()
     {
         return $this->from_date;
+    }
+
+    /**
+     * Establece la relación con el modelo del historial de responsables.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\MorphMany
+     */
+    public function componentManagerHistory()
+    {
+        return $this->morphMany(BudgetComponentManagerHistory::class, 'componentable');
     }
 }

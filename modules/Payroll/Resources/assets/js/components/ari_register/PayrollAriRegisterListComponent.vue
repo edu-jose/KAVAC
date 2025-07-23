@@ -1,6 +1,24 @@
 <template>
     <div>
         <v-client-table :columns="columns" :data="records" :options="table_options" ref="tableResults">
+            <div slot="rif" slot-scope="props" class="text-center">
+                <span>
+                    {{
+                        props.row.rif ?
+                        props.row.rif :
+                        'N/A'
+                    }}
+                </span>
+            </div>
+            <div slot="nationality" slot-scope="props" class="text-center">
+                <span>
+                    {{
+                        props.row.payroll_nationality ?
+                        props.row.payroll_nationality.name :
+                        'N/A'
+                    }}
+                </span>
+            </div>
             <div slot="id" slot-scope="props" class="text-center">
                 <button @click.prevent="setDetails('AriRegisterInfo', props.row.id, 'PayrollAriRegisterInfo')"
                     class="btn btn-info btn-xs btn-icon btn-action btn-tooltip" title="Ver registro" data-toggle="tooltip"
@@ -28,7 +46,14 @@ export default {
         return {
             records: [],
             record: [],
-            columns: ['first_name', 'last_name', 'id_number', 'id'],
+            columns: [
+                'first_name',
+                'last_name',
+                'id_number',
+                'rif',
+                'nationality',
+                'id',
+            ],
         }
     },
 
@@ -37,6 +62,8 @@ export default {
             'first_name': 'Nombres',
             'last_name': 'Apellidos',
             'id_number': 'Cédula de Identidad',
+            'rif': 'RIF',
+            'nationality': 'Nacionalidad',
             'id': 'Acción'
         };
         this.table_options.sortable = ['first_name', 'last_name', 'id_number'];

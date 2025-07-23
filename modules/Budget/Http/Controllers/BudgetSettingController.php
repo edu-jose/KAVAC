@@ -37,7 +37,6 @@ class BudgetSettingController extends Controller
         // Establece permisos de acceso para cada método del controlador
         $this->middleware('permission:budget.setting.list', ['only' => 'index', 'vueList']);
         $this->middleware('permission:budget.setting.create', ['only' => ['create', 'store']]);
-        $this->middleware('permission:budget.setting.edit', ['only' => ['edit', 'update']]);
         $this->middleware('permission:budget.setting.delete', ['only' => 'destroy']);
     }
 

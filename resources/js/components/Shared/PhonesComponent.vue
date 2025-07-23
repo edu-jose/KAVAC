@@ -10,15 +10,14 @@
 		<div class="row phone-row" v-for="(phone, index) in phones" :key="index">
 			<div class="col-3">
 				<div class="form-group is-required">
-					<select
-                        data-toggle="tooltip" v-model="phone.type" name="phone_type[]" class="select2"
+                    <select2
+                        data-toggle="tooltip"
+                        v-model="phone.type"
+                        name="phone_type[]"
+                        class="select2"
                         title="Seleccione el tipo de número telefónico"
-                    >
-						<option value="">Seleccione...</option>
-						<option value="M">Móvil</option>
-						<option value="T">Teléfono</option>
-						<option value="F">Fax</option>
-					</select>
+                        :options="phoneTypes"
+                    ></select2>
 				</div>
 			</div>
 			<div class="col-2">
@@ -68,6 +67,12 @@
 		data() {
 			return {
 				phones: [],
+                phoneTypes: [
+                    { id: '', text: 'Seleccione...' },
+                    { id: 'M', text: 'Móvil' },
+                    { id: 'T', text: 'Teléfono' },
+                    { id: 'F', text: 'Fax' }
+                ]
 			}
 		},
 		watch: {
@@ -76,6 +81,7 @@
 				if (this.phones) {
 					localStorage.phones = JSON.stringify(this.phones);
 				}
+                this.syncParentPhones();
 			}
 		},
 		props: ['initial_data'],
@@ -94,12 +100,19 @@
 					number: '',
 					extension: ''
 				});
+                this.syncParentPhones();
 			},
+            syncParentPhones: function() {
+                let phones = this.phones;
+                this.$emit('syncPhones', phones);
+            },
 		},
 		mounted() {
-			if (this.initial_data) {
-				this.phones = JSON.parse(this.initial_data);
+            const _self = this;
+			if (_self.initial_data) {
+				_self.phones = JSON.parse(_self.initial_data);
 			}
+            _self.syncParentPhones();
 		}
 	};
 </script>

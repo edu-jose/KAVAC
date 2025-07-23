@@ -78,7 +78,7 @@ class VacationsRequestImport implements
      */
     public function chunkSize(): int
     {
-        return 25;
+        return 500;
     }
 
     /**
@@ -130,7 +130,7 @@ class VacationsRequestImport implements
         return $day;
     }
 
-    public function setVacationPeriodYear(int $daysRequested): string
+    public function setVacationPeriodYear(int $daysRequested): array
     {
         $finalVacationPeriodYear = [];
 
@@ -172,7 +172,7 @@ class VacationsRequestImport implements
             ->values()
             ->toArray();
 
-        return json_encode($finalVacationPeriodYear);
+        return $finalVacationPeriodYear;
     }
 
     public function generateRegistrationCode(): string
@@ -205,7 +205,7 @@ class VacationsRequestImport implements
         $payrollStaff = isset($data['cedula_del_trabajador']) ? PayrollStaff::query()
             ->withOnly(['payrollEmploymentNoAppends'])
             ->where('id_number', $data['cedula_del_trabajador'])
-            ->firstOrFail() : null;
+            ->first() : null;
 
         /** Fecha de la solicitud */
         $row['request_date'] = isset($data['fecha_de_la_solicitud']) ?
@@ -236,12 +236,12 @@ class VacationsRequestImport implements
         /** Fecha de inicio de vacaciones */
         $row['start_date'] = isset($data['fecha_de_inicio_de_vacaciones']) ? Carbon::parse(
             Date::excelToDateTimeObject($data['fecha_de_inicio_de_vacaciones'])
-        )->format('d-m-Y') : null;
+        ) : null;
 
         /** Fecha de culminación de vacaciones */
         $row['end_date'] = isset($data['fecha_de_culminacion_de_vacaciones']) ? Carbon::parse(
             Date::excelToDateTimeObject($data['fecha_de_culminacion_de_vacaciones'])
-        )->format('d-m-Y') : null;
+        ) : null;
 
         /** Nombre de la politica de vacaciones usarada para el trabajador */
         $row['vacational_policy'] = $data['politica'] ?? null;

@@ -28,6 +28,7 @@ class ProjectTrackingDatabaseSeeder extends Seeder
         $this->call([
             ProjectTrackingRoleAndPermissionsTableSeeder::class,
             ProjectTrackingTaskTypesTableSeeder::class,
+            ProjectTrackingActivityStatusesTableSeeder::class
         ]);
     }
 }

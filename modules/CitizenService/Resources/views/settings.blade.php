@@ -83,15 +83,39 @@
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        {{-- Configuración de tipos de solicitud --}}
-                        <citizenservice-request-types id="helpCitizenServiceRequestTypes"></citizenservice-request-types>
+                        {{-- Configuración de tipos de trámites --}}
+                        <citizenservice-procedure-types
+                            id="helpCitizenServiceProcedureTypes"
+                        ></citizenservice-procedure-types>
+                        {{-- Configuración de trámites --}}
+                        <citizenservice-procedures
+                            id="helpCitizenServiceProcedures"
+                        ></citizenservice-procedures>
                         {{-- Configuración de departamentos --}}
-                        <citizenservice-departments id="helpCitizenServiceDepartments"
-                            is-payroll-active="{{ Module::has('Payroll') && Module::isEnabled('Payroll') }}"></citizenservice-departments>
+                        <citizenservice-departments
+                            id="helpCitizenServiceDepartments"
+                            is-payroll-active="{{ Module::has('Payroll') && Module::isEnabled('Payroll') }}"
+                        ></citizenservice-departments>
                         {{-- Configuración de tipo de impacto --}}
-                        <citizenservice-effect-types id="helpCitizenServiceEffectTypes"></citizenservice-effect-types>
+                        <citizenservice-effect-types
+                            id="helpCitizenServiceEffectTypes"
+                        ></citizenservice-effect-types>
                         {{-- Configuración de tipo de impacto --}}
-                        <citizenservice-indicators id="helpCitizenServiceIndicators"></citizenservice-indicators>
+                        <citizenservice-indicators
+                            id="helpCitizenServiceIndicators"
+                        ></citizenservice-indicators>
+                        {{-- Configuración de comunidades --}}
+                        <citizenservice-communities
+                            id="helpCitizenServiceCommunities"
+                        ></citizenservice-communities>
+                        {{-- Configuración de Instituciones --}}
+                        <citizenservice-institutions
+                            id="helpCitizenServiceInstitutions"
+                        ></citizenservice-institutions>
+                        {{-- Configuración de tipo de transacción --}}
+                        <citizenservice-transaction-type
+                            id="helpCitizenServiceTransactionType"
+                        ></citizenservice-transaction-type>
                     </div>
                 </div>
             </div>

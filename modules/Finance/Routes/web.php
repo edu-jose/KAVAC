@@ -77,7 +77,7 @@ Route::group([
         [FinancePayOrderController::class, 'getSourceDocuments']
     );
 
-    /* Ruta para la gestión de Finanzas > Banco > Emisiones de pago */
+    /* Ruta para la gestión de Finanzas > Gestión de pagos > Emisiones de pago */
     Route::get(
         'payment-execute/list/get-receivers',
         [FinancePaymentExecuteController::class, 'getPayOrderReceivers']
@@ -91,6 +91,8 @@ Route::group([
         ->name('finance.payment-execute.change-document-status');
     Route::post('payment-execute/cancel', [FinancePaymentExecuteController::class, 'cancelPaymentExecute'])
         ->name('finance.payment-execute.cancel');
+    Route::get('payment-execute/get-permissions', [FinancePaymentExecuteController::class, 'getPermissionsPaymentExecute'])
+        ->name('finance.payment-execute.get-permissions');
     Route::resource('payment-execute', FinancePaymentExecuteController::class, ['as' => 'finance']);
     Route::get('payment-execute/bank/get-bank-accounting-account-id', [FinancePaymentExecuteController::class, 'getBankAccountingAccountId']);
 

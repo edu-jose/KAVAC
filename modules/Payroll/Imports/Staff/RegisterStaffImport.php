@@ -124,21 +124,17 @@ class RegisterStaffImport implements
                 Storage::disk('temporary')->delete($this->filePath);
 
                 if ($exception instanceof QueryException) {
-                    $bindingsString = implode(',', $exception->getBindings() ?? []);
-                    $message = str_replace("\n", "", $exception->getMessage());
-                    if (strpos($message, 'ERROR') !== false && strpos($message, 'DETAIL') !== false) {
-                        $pattern = '/ERROR:(.*?)DETAIL/';
-                        preg_match($pattern, $message, $matches);
-                        $errorMessage = trim($matches[1]);
+                    if ($user->hasRole('admin')) {
+                        $user->notify(new SystemNotification('Error - ' . $this->titleSheet, 'Importación fallida. No fue posible registrar la información en la base de datos. Por favor, consulte los logs del sistema para más detalles.'));
+                        $user->notify(new System('Error - ' . $this->titleSheet, 'Talento Humano', 'Importación fallida. No fue posible registrar la información en la base de datos. Por favor, consulte los logs del sistema para más detalles.', true));
                     } else {
-                        $errorMessage = $message;
+                        $user->notify(new SystemNotification('Error - ' . $this->titleSheet, 'Importación fallida. No fue posible registrar la información suministrada. Para obtener más detalles, por favor, contacte al administrador.'));
+                        $user->notify(new System('Error - ' . $this->titleSheet, 'Talento Humano', 'Importación fallida. No fue posible registrar la información suministrada. Para obtener más detalles, por favor, contacte al administrador.', true));
                     }
-                    $user->notify(new SystemNotification('Error - ' . $this->titleSheet, 'Importación fallida. ' . ucfirst($errorMessage) . ' ' . $bindingsString));
-                    $user->notify(new System('Error - ' . $this->titleSheet, 'Talento Humano', 'Importación fallida. ' . ucfirst($errorMessage) . ' ' . $bindingsString, true));
                 } else {
                     Log::error($event->getException());
-                    $user->notify(new SystemNotification('Error - ' . $this->titleSheet, 'Importación fallida. Para mas información comuniquese con el administrador'));
-                    $user->notify(new System('Error - ' . $this->titleSheet, 'Talento Humano', 'Importación fallida. Para mas información comuniquese con el administrador', true));
+                    $user->notify(new SystemNotification('Error - ' . $this->titleSheet, 'Importación fallida. No fue posible registrar la información suministrada. Para obtener más detalles, por favor, contacte al administrador.'));
+                    $user->notify(new System('Error - ' . $this->titleSheet, 'Talento Humano', 'Importación fallida. No fue posible registrar la información suministrada. Para obtener más detalles, por favor, contacte al administrador.', true));
                 }
             },
             AfterImport::class => function (AfterImport $event) {

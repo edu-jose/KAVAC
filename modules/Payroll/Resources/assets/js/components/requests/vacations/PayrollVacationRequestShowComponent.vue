@@ -227,7 +227,7 @@ export default {
             axios.get(url).then(response => {
                 if (typeof (response.data.record) !== "undefined") {
                     vm.record = response.data.record;
-                    vm.record.vacation_period_year = JSON.parse(vm.record.vacation_period_year);
+                    vm.record.vacation_period_year = vm.record.vacation_period_year;
                     vm.record.created_at = vm.format_date(response.data.record.created_at, 'DD-MM-YYYY');
                     vm.record.status_parameters = JSON.parse(vm.record.status_parameters);
                 }

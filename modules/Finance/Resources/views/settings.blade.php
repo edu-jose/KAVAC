@@ -135,7 +135,9 @@
                         <finance-account-types></finance-account-types>
                         <finance-bank-accounts accounting="{{ Module::has('Accounting') && Module::isEnabled('Accounting') }}"></finance-bank-accounts>
                         <!--finance-checkbooks></finance-checkbooks-->
+                        @permission('finance.payment.methods.list')
                         <finance-payment-methods></finance-payment-methods>
+                        @endpermission
                         {{-- <finance-bank-reconciliation-files></finance-bank-reconciliation-files> --}}
                         {{-- <div class="col-md-2 text-center">
                             <a class="btn-simplex btn-simplex-md btn-simplex-primary"

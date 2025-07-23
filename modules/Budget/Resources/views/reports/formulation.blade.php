@@ -52,11 +52,11 @@
         </tr>
         <tr>
             <td width="20%" style="font-weight: bold;">Monto del Financiamiento:</td>
-            <td width="80%">{{ $currency->symbol }}&#160; {{ convertCurrency($conversion_history, $formulation->financement_amount, $formulation->date, $currency->decimal_places, ",", ".") }}</td>
+            <td width="80%">{{ $currency->symbol }}&#160; {{ convertCurrency($conversion_history, $formulation->financement_amount, $formulation->date, $currency->decimal_places, ".", ",") }}</td>
         </tr>
         <tr>
             <td width="20%" style="font-weight: bold;">Total Formulado:</td>
-            <td width="80%">{{ $currency->symbol }}&#160;{{ convertCurrency($conversion_history, $formulation->total_formulated, $formulation->date, $currency->decimal_places, ",", ".") }}</td>
+            <td width="80%">{{ $currency->symbol }}&#160;{{ convertCurrency($conversion_history, $formulation->total_formulated, $formulation->date, $currency->decimal_places, ".", ",") }}</td>
         </tr>
     </tbody>
 </table>
@@ -94,7 +94,7 @@
                     {{ $accountOpen?->budgetAccount?->denomination }}
                 </td>
                 <td width="20%" align="right">
-                    {{ convertCurrency($conversion_history, $accountOpen->total_year_amount, $formulation->date, $currency->decimal_places, ",", ".") }}
+                    {{ convertCurrency($conversion_history, $accountOpen->total_year_amount, $formulation->date, $currency->decimal_places, ".", ",") }}
                 </td>
             </tr>
         @endforeach
@@ -104,7 +104,7 @@
                 {{ $currency->symbol }}
             </td>
             <td width="20%" style="font-weight: bold;" align="right">
-                {{ convertCurrency($conversion_history, $formulation->total_formulated, $formulation->date, $currency->decimal_places, ",", ".") }}
+                {{ convertCurrency($conversion_history, $formulation->total_formulated, $formulation->date, $currency->decimal_places, ".", ",") }}
             </td>
         </tr>
     </tbody>

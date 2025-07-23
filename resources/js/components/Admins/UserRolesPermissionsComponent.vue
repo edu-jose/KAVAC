@@ -14,7 +14,7 @@
                                         type="checkbox" class="custom-control-input" :id="'role_'+role.id" :value="role.id"
                                         v-model="record.roles" @click="setPermissionsToRole(role, $event)"
                                     >
-                                    <label class="custom-control-label" :for="'role_'+role.id"></label>
+                                    <label class="custom-control-label" :for="'role_'+role.id">&nbsp;</label>
                                 </div>
                             </div>
                         </div>
@@ -38,17 +38,31 @@
                             :key="idx"
                         >
                             <div class="form-group">
-                                <label for="" class="control-label">{{ perm.name }}</label>
-                                <div class="custom-control custom-switch">
-                                    <div class="custom-control custom-switch">
-                                        <input
-                                            type="checkbox" class="custom-control-input perm-switch"
-                                            :id="'perm_'+perm.id" :value="perm.id"
-                                            v-model="record.permissions" :checked="record.permissions.includes(perm.id)"
-                                            :disabled="disablePermissions()"
-                                        >
-                                        <label class="custom-control-label" :for="'perm_'+perm.id"></label>
-                                    </div>
+                                <label :for="'perm_'+perm.id" class="control-label">{{ perm.name }}</label>
+                                <div
+                                    class="custom-control custom-switch"
+                                    :title="(
+                                        disablePermissions() ||
+                                        userRoles.filter(r => r.permissions.filter(p => p.id === perm.id).length > 0).length > 0
+                                    ) ? 'No puede deshabilitar este permiso del usuario ya que esta asociado a un rol'
+                                    : perm.description"
+                                    data-toggle="tooltip"
+                                    v-has-tooltip
+                                >
+                                    <input
+                                        type="checkbox" class="custom-control-input perm-switch"
+                                        :id="'perm_'+perm.id" :value="perm.id"
+                                        v-model="record.permissions"
+                                        :checked="(
+                                            record.permissions.includes(perm.id) ||
+                                            userRoles.filter(r => r.permissions.filter(p => p.id === perm.id).length > 0).length > 0
+                                        )"
+                                        :disabled="(
+                                            disablePermissions() ||
+                                            userRoles.filter(r => r.permissions.filter(p => p.id === perm.id).length > 0).length > 0
+                                        )"
+                                    >
+                                    <label class="custom-control-label" :for="'perm_'+perm.id">&nbsp;</label>
                                 </div>
                             </div>
                         </div>
@@ -174,7 +188,15 @@
 
             vm.record.user = vm.user.id;
             vm.record.roles = await vm.userRoles.map(r => r.id);
-            vm.record.permissions = await vm.userPermissions.map(p => p.id);
+            if (vm.userRoles.length === 0) {
+                // Si el usuario no tiene roles asignados pero si tiene permisos asignados individualmente
+                vm.record.permissions = await vm.userPermissions.map(p => p.id);
+            } else {
+                // Si el usuario tiene roles asignados, se obtienen los permisos de los roles
+                vm.record.permissions = await vm.userRoles.reduce((acc, role) => {
+                    return acc.concat(role.permissions.map(p => p.id));
+                }, []);
+            }
             vm.modules = [...new Set(vm.permissions.map(m => m.model_prefix))];
         }
     }

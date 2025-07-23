@@ -13,8 +13,10 @@
                         :requeststate="props.row.state">
                     </citizenservice-add-indicators>
                     <citizenservice-request-info
+                        :infoData="props.row"
                         :route_list="app_url + '/citizenservice/requests/vue-info/' + props.row.id"
-                        >
+                        :requestId="props.row.id"
+                    >
                     </citizenservice-request-info>
                     <template v-if="(lastYear && format_date(props.row.date, 'YYYY') <= lastYear)">
                         <button class="btn btn-warning btn-xs btn-icon btn-action" type="button" disabled>
@@ -31,6 +33,11 @@
                         </button>
                     </template>
                     <template v-else>
+                        <citizenservice-request-team-modal
+                            :requestId="props.row.id"
+                            :teams="props.row.teams"
+                            :state="props.row.state"
+                        ></citizenservice-request-team-modal>
                         <button @click="editForm(props.row.id)"
                                 class="btn btn-warning btn-xs btn-icon btn-action"
                                 title="Modificar registro" data-toggle="tooltip" type="button" v-has-tooltip
@@ -79,15 +86,23 @@ export default {
     },
     created() {
         this.table_options.headings = {
-            'code': 'Código de la solicitud',
-            'date': 'Fecha de la solicitud',
+            'code': 'Código',
+            'date': 'Fecha',
             'motive_request': 'Motivo',
-            'state': 'Estado de la solicitud',
-            'observation':'Observación de la solicitud',
+            'state': 'Estatus',
+            'observation':'Observación',
             'id': 'Acción'
         };
         this.table_options.sortable = ['code', 'date', 'motive_request', 'state', 'observation'];
         this.table_options.filterable = ['code', 'date', 'motive_request', 'state', 'observation'];
+        this.table_options.columnsClasses = {
+            'code': 'col-md-1',
+            'date': 'col-md-1 text-center',
+            'motive_request': 'col-md-3',
+            'state': 'col-md-2 text-center',
+            'observation': 'col-md-3',
+            'id': 'col-md-2'
+        };
     },
     async mounted () {
         this.initRecords(this.route_list, '');
@@ -104,10 +119,10 @@ export default {
 
         },
         deleteRecord(index, url) {
-            var url = (url)?url:this.route_delete;
-            var records = this.records;
-            var confirmated = false;
-            var index = index - 1;
+            url = url || this.route_delete;
+            let records = this.records;
+            let confirmated = false;
+            index = index - 1;
             const vm = this;
             url = vm.setUrl(url);
 
@@ -135,6 +150,13 @@ export default {
                             vm.showMessage('destroy');
                         }).catch(error => {
                             vm.logs('mixins.js', 498, error, 'deleteRecord');
+                            if (error.response.status == 403) {
+                            vm.showMessage(
+                                'custom', 'Acceso Denegado', 'danger', 'screen-error', error.response.data.message
+                            );
+                            }else{
+                                vm.showMessage('custom', 'Alerta!', 'warning', 'screen-error', error.response.data.message);
+                            }
                         });
                     }
                 }
@@ -147,8 +169,8 @@ export default {
         },
         acceptRequest(index) {
             const vm = this;
-            var fields = this.records[index-1];
-            var id = this.records[index-1].id;
+            let fields = this.records[index-1];
+            let id = this.records[index-1].id;
 
             axios.put('/'+this.route_update+'/request-approved/'+id, fields).then(response => {
                 if (typeof(response.data.redirect) !== "undefined") {
@@ -163,7 +185,7 @@ export default {
                 vm.errors = [];
 
                 if (typeof(error.response) !="undefined") {
-                    for (var index in error.response.data.errors) {
+                    for (let index in error.response.data.errors) {
                         if (error.response.data.errors[index]) {
                             vm.errors.push(error.response.data.errors[index][0]);
                         }
@@ -173,8 +195,8 @@ export default {
         },
         rejectedRequest(index) {
             const vm = this;
-            var fields = this.records[index-1];
-            var id = this.records[index-1].id;
+            let fields = this.records[index-1];
+            let id = this.records[index-1].id;
 
             axios.put('/'+this.route_update+'/request-rejected/'+id, fields).then(response => {
                 if (typeof(response.data.redirect) !== "undefined") {
@@ -189,7 +211,7 @@ export default {
                 vm.errors = [];
 
                 if (typeof(error.response) !="undefined") {
-                    for (var index in error.response.data.errors) {
+                    for (let index in error.response.data.errors) {
                         if (error.response.data.errors[index]) {
                             vm.errors.push(error.response.data.errors[index][0]);
                         }

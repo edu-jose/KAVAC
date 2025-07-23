@@ -24,6 +24,24 @@ use Modules\Asset\Models\AssetAdjustmentAsset;
  */
 class AssetAdjustmentController extends Controller
 {
+        /**
+     * Define la configuración de la clase
+     *
+     * @author Yennifer Ramirez <yramirez@cenditel.gob.ve>
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        /**
+         * Establece permisos de acceso para cada método del controlador
+        */
+        //$this->middleware('permission:asset.setting.depreciation-method');
+        $this->middleware('permission:asset.adjustment.index', ['only' => 'index']);
+        $this->middleware('permission:asset.adjustment.create', ['only' => 'store']);
+        $this->middleware('permission:asset.adjustment.edit', ['only' => 'update']);
+        $this->middleware('permission:asset.adjustment.delete', ['only' => 'destroy']);
+    }
     /**
      * Método que regresa una vista con la lista de ajustes de bienes
      *

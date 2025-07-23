@@ -18,7 +18,7 @@
 
 
 @section('content')
-    @role(['admin', 'finance'])
+    @permission('finance.movements.list')
         <div class="row">
             <div class="col-12">
                 <div class="card" id="cardFinanceMovementsForm">
@@ -43,5 +43,5 @@
                 </div>
             </div>
         </div>
-    @endrole
+    @endpermission  
 @stop

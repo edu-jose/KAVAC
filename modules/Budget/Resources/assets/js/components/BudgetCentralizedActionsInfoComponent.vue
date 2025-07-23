@@ -101,16 +101,27 @@
                                             </div>
                                         </div>
                                     </div>
+                                    <!-- Responsable -->
                                     <div class="col-md-4">
                                         <div class="form-group">
-                                            <strong>Nombre del Responsable:</strong>
+                                            <strong v-if="history.length === 1">Responsable:</strong>
+                                            <strong v-else>Responsables:</strong>
                                             <div class="row">
                                                 <span class="col-md-12">
-                                                    {{ personal.fullname }}
+                                                    <!-- Lista de responsables -->
+                                                    <ul>
+                                                        <li v-for="item in history" :key="item.id">
+                                                            {{ item.first_name }}
+                                                            {{ item.last_name }}
+                                                            | Fecha de asignación:
+                                                            {{ format_date(item.created_at) }}
+                                                        </li>
+                                                    </ul>
                                                 </span>
                                             </div>
                                         </div>
                                     </div>
+                                    <!-- Cargo del Responsable -->
                                     <div class="col-md-4">
                                         <div class="form-group">
                                             <strong>Cargo de Responsable:</strong>
@@ -151,6 +162,8 @@ export default {
             records: [],
             budget: [],
             departments: [],
+            // Historial de responsables asociados a la AC.
+            history: [],
             institution: [],
             personal: [],
             position: [],
@@ -160,6 +173,7 @@ export default {
     created() {},
     methods: {
         reset() {},
+
         initRecords(url, modal_id) {
             this.errors = [];
             this.reset();
@@ -172,6 +186,7 @@ export default {
                     vm.budget.custom_date = this.format_date(vm.budget.custom_date);
                     vm.personal = response.data.cargo;
                     vm.departments = response.data.departments;
+                    vm.history = response.data.history;
                     vm.institution = response.data.departments.institution;
                     vm.personal.fullname =
                         response.data.cargo.first_name +

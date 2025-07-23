@@ -57,7 +57,6 @@ class ProjectTrackingDependenciesTypeController extends Controller
         /* Define las reglas de validación para el formulario */
         $this->validateRules = [
             'name'                                  => ['required'],
-            'description'                           => ['nullable', 'max:250'],
         ];
 
         /* Define los mensajes de validación para las reglas del formulario */
@@ -85,7 +84,7 @@ class ProjectTrackingDependenciesTypeController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function getDependencies()
+    public function getDependenciesType()
     {
         $dependenciesTypeList = ProjectTrackingDependenciesType::all();
         $dependenciesType = [];
@@ -96,7 +95,7 @@ class ProjectTrackingDependenciesTypeController extends Controller
             'text' => 'Seleccione...'
             ]
         );
-        foreach ($dependenciesTypeList->all() as $dependencyType) {
+        foreach ($dependenciesTypeList as $dependencyType) {
             array_push(
                 $dependenciesType,
                 [
@@ -132,13 +131,15 @@ class ProjectTrackingDependenciesTypeController extends Controller
         $this->validate(
             $request,
             [
-            'name' => ['required', 'max:100', 'unique:project_tracking_dependencies_types,name']
+                'name' => ['required', 'max:100', 'unique:project_tracking_dependencies_types,name']
             ]
         );
+
         $projecttrackingDependenciesType = ProjectTrackingDependenciesType::create([
             'name' => $request->name,
             'description' => $request->description
         ]);
+
         return response()->json(['record' => $projecttrackingDependenciesType, 'message' => 'Success'], 200);
     }
 
@@ -178,12 +179,11 @@ class ProjectTrackingDependenciesTypeController extends Controller
         $this->validate(
             $request,
             [
-            'name' => [
-                'required',
-                'max:100',
-                'unique:project_tracking_dependencies_types,name,' . $projecttrackingDependenciesType->id
-            ],
-            'description' => ['nullable', 'max:200']
+                'name' => [
+                    'required',
+                    'max:100',
+                    'unique:project_tracking_dependencies_types,name,' . $projecttrackingDependenciesType->id
+                ],
             ]
         );
         $projecttrackingDependenciesType->name  = $request->name;

@@ -211,6 +211,9 @@ class PayrollPaymentTypeController extends Controller
             'is_trust' => !empty($request->is_trust)
                 ? $request->is_trust
                 : false,
+            'is_survivor' => !empty($request->is_survivor)
+                ? $request->is_survivor
+                : false,
             'start_date' => $request->start_date,
             'finance_bank_account_id' => $request->finance_bank_account_id ?? null,
             'finance_payment_method_id' => $request->finance_payment_method_id ?? null,
@@ -303,6 +306,9 @@ class PayrollPaymentTypeController extends Controller
             : false;
         $payrollPaymentType->is_trust = !empty($request->is_trust)
             ? $request->is_trust
+            : false;
+        $payrollPaymentType->is_survivor = !empty($request->is_survivor)
+            ? $request->is_survivor
             : false;
 
         $payrollPaymentType->start_date = $request->start_date;
@@ -402,11 +408,24 @@ class PayrollPaymentTypeController extends Controller
      */
     public function getPayrollPaymentTypes()
     {
+        $periodicities = [
+            "daily" => "Diario",
+            "weekly" => "Semanal",
+            "biweekly" => "Quincenal",
+            "monthly" => "Mensual",
+            "bimonthly" => "Bimensual",
+            "three-onthly" => "Trimestral",
+            "four-onthly" => "Cuatrimestral",
+            "biannual" => "Semestral",
+            "annual" => "Anual",
+        ];
+
         $payrollPaymentTypes = PayrollPaymentType::query()
-            ->get(['id', 'code', 'name', 'receipt'])
+            ->get(['id', 'code', 'name', 'receipt', 'payment_periodicity'])
             ->map(fn ($model) => [
                 'id' => $model->id,
                 'text' => $model->code . ' - ' . $model->name,
+                'periodicity' => $periodicities[$model->payment_periodicity],
                 'payroll_ids' => $model->payrollPaymentPeriods
                     ->whereIn('payment_status', ['pending', 'approved'])
                     ->map(fn(PayrollPaymentPeriod $period) => $period?->payroll?->id)
@@ -515,7 +534,14 @@ class PayrollPaymentTypeController extends Controller
                     'id' => $payrollPaymentPeriod->id,
                     'payroll_id' => $payrollPaymentPeriod?->payroll?->id,
                     'text' => date("d/m/Y", strtotime($payrollPaymentPeriod->start_date)),
-                    'payment_status' => $payrollPaymentPeriod->payment_status
+                    'payment_status' => $payrollPaymentPeriod->payment_status,
+                    'period' => [
+                        'start_date' => $payrollPaymentPeriod->start_date,
+                        'end_date' => $payrollPaymentPeriod->end_date,
+                        'start_day' => $payrollPaymentPeriod->start_day,
+                        'end_day' => $payrollPaymentPeriod->end_day,
+                        'number_of_days_monday' => $payrollPaymentPeriod->number_of_days_monday,
+                    ]
                 ]);
             }
             return response()->json([

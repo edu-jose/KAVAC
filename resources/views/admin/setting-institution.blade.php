@@ -38,6 +38,11 @@
                                         ? $model_institution->logo->url
                                         : null;
                             @endphp
+                            @if (old('logo_id'))
+                                @php
+                                    $img_logo = App\Models\Image::find(old('logo_id'))->url;
+                                @endphp
+                            @endif
                             <img
                                 src="{{ asset($img_logo ?? 'images/no-image2.png') }}" alt="{{ __('Logotipo') }}"
                                 class="img-fluid institution-logo" style="cursor:pointer" id="institution-logo"
@@ -60,7 +65,12 @@
                     </div>
                     <div class="col-md-8">
                         <div class="form-group">
-                            <label for="">{{ __('Banner o Cintillo') }}</label>
+                            <label for="">
+                                {{ __('Banner o Cintillo') }}
+                                @if (!is_null($paramReportBanner) && $paramReportBanner->p_value === 'true')
+                                    <label for="" class="text-danger"><h4>*</h4></label>
+                                @endif
+                            </label>
                             {!! Form::open([
                                 'id' => 'formImgBanner',
                                 'method' => 'POST',
@@ -77,6 +87,11 @@
                                         ? $model_institution->banner->url
                                         : null;
                             @endphp
+                            @if (old('banner_id'))
+                                @php
+                                    $img_banner = App\Models\Image::find(old('banner_id'))->url;
+                                @endphp
+                            @endif
                             <img
                                 src="{{ asset($img_banner ?? 'images/no-image3.png') }}"
                                 alt="{{ __('Banner / Cintillo') }}" class="img-fluid institution-banner"
@@ -102,10 +117,10 @@
                     </div>
                 </div>
             </div>
-            {!! Form::model($model_institution, $header_institution) !!}
             <div class="card-body">
-                {!! Form::hidden('logo_id', null, ['readonly' => 'readonly', 'id' => 'logo_id']) !!}
-                {!! Form::hidden('banner_id', null, ['readonly' => 'readonly', 'id' => 'banner_id']) !!}
+                {!! Form::model($model_institution, $header_institution) !!}
+                {!! Form::hidden('logo_id', old('logo_id'), ['readonly' => 'readonly', 'id' => 'logo_id']) !!}
+                {!! Form::hidden('banner_id', old('banner_id'), ['readonly' => 'readonly', 'id' => 'banner_id']) !!}
                 {!! Form::hidden('institution_id', isset($model_institution) ? $model_institution->id : '', [
                     'readonly' => 'readonly',
                     'id' => 'institution_id',
@@ -130,172 +145,226 @@
                         @endif
                         <div class="col-md-4" id="helpInstitutionRif">
                             <div class="form-group{{ $errors->has('rif') ? ' has-error' : '' }} is-required">
-                                {!! Form::label('rif', __('R.I.F.'), []) !!}
-                                {!! Form::text('rif', isset($model_institution) ? $model_institution->rif : old('rif'), [
-                                    'class' => 'form-control input-sm',
-                                    'id' => 'rif',
-                                    'data-toggle' => 'tooltip',
-                                    'placeholder' => __('X000000000'),
-                                    'title' => __(
-                                        'Indique el número de registro de identificación fiscal (requerido). Debe estar formado por 10 caracteres, el primer carácter debe ser una letra: J,V,E,G o P (en mayúscula); los otros nueve carácteres deben ser números.',
-                                    ),
-                                ]) !!}
+                                <label for="rif">{{ __('R.I.F.') }}</label>
+                                <input
+                                    type="text" name="rif" id="rif"
+                                    class="form-control input-sm"
+                                    data-toggle="tooltip"
+                                    placeholder="{{ __('X000000000') }}"
+                                    title="{{
+                                        __(
+                                            'Indique el número de registro de identificación fiscal (requerido). Debe estar formado por 10 caracteres, el primer carácter debe ser una letra: J,V,E,G o P (en mayúscula); los otros nueve carácteres deben ser números.',
+                                        )
+                                    }}"
+                                    value="{{ isset($model_institution) ? $model_institution->rif : old('rif') }}"
+                                >
                             </div>
                         </div>
                         <div class="col-md-{{ config('institution.use_onapre') ? '4' : '8' }}">
                             <div class="form-group is-required{{ $errors->has('name') ? ' has-error' : '' }}">
-                                {!! Form::label('name', __('Nombre'), []) !!}
-                                {!! Form::text('name', isset($model_institution) ? $model_institution->name : old('name'), [
-                                    'class' => 'form-control input-sm',
-                                    'id' => 'institutionName',
-                                    'data-toggle' => 'tooltip',
-                                    'title' => __('Introduzca el nombre de la organización (requerido)'),
-                                ]) !!}
+                                <label for="name">{{ __('Nombre') }}</label>
+                                <input
+                                    type="text" name="name" id="name"
+                                    class="form-control input-sm"
+                                    data-toggle="tooltip"
+                                    title="{{ __('Indique el nombre de la organización (requerido)') }}"
+                                    value="{{ isset($model_institution) ? $model_institution->name : old('name') }}"
+                                >
                             </div>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-md-4">
                             <div class="form-group is-required{{ $errors->has('acronym') ? ' has-error' : '' }}">
-                                {!! Form::label('acronym', __('Acrónimo (Nombre corto)'), []) !!}
-                                {!! Form::text('acronym', isset($model_institution) ? $model_institution->acronym : old('acronym'), [
-                                    'class' => 'form-control input-sm',
-                                    'id' => 'acronym',
-                                    'data-toggle' => 'tooltip',
-                                    'title' => __('Introduzca el nombre corto de la organización'),
-                                ]) !!}
+                                <label for="acronym">{{ __('Acronimo (Nombre corto)') }}</label>
+                                <input
+                                    type="text" name="acronym" id="acronym"
+                                    class="form-control input-sm"
+                                    data-toggle="tooltip"
+                                    title="{{ __('Introduzca el nombre corto de la organización (requerido)') }}"
+                                    value="{{ isset($model_institution) ? $model_institution->acronym : old('acronym') }}"
+                                >
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="form-group is-required">
-                                {!! Form::label('business_name', __('Razón Social'), []) !!}
-                                {!! Form::text(
-                                    'business_name',
-                                    isset($model_institution) ? $model_institution->business_name : old('business_name'),
-                                    [
-                                        'class' => 'form-control input-sm',
-                                        'id' => 'business_name',
-                                        'data-toggle' => 'tooltip',
-                                        'title' => __('Introduzca la razón social'),
-                                    ],
-                                ) !!}
+                                <label for="business_name">{{ __('Razón Social') }}</label>
+                                <input
+                                    type="text" name="business_name" id="business_name"
+                                    class="form-control input-sm"
+                                    data-toggle="tooltip"
+                                    title="{{ __('Introduzca la razón social') }}"
+                                    value="{{ isset($model_institution) ? $model_institution->business_name : old('business_name') }}"
+                                >
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="form-group is-required">
-                                {!! Form::label('country_id', __('País'), []) !!}
-                                {!! Form::select(
-                                    'country_id',
-                                    isset($countries) ? $countries : [],
-                                    isset($model_institution) ? $model_institution->city->estate->country->id : null,
-                                    [
-                                        'class' => 'form-control select2 input-sm',
-                                        'id' => 'country_id'
-                                    ],
-                                ) !!}
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="form-group is-required">
-                                {!! Form::label('estate_id', __('Estado'), []) !!}
-                                {!! Form::select(
-                                    'estate_id',
-                                    isset($estates) ? $estates : [],
-                                    isset($model_institution) ? $model_institution->city->estate->id : old('estate_id'),
-                                    [
-                                        'class' => 'form-control select2',
-                                        'id' => 'estate_id'
-                                    ],
-                                ) !!}
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group is-required">
-                                {!! Form::label('municipality_id', __('Municipio'), []) !!}
-                                {!! Form::select(
-                                    'municipality_id',
-                                    isset($municipalities) ? $municipalities : [],
-                                    isset($model_institution) ? $model_institution->municipality_id : old('municipality_id'),
-                                    [
-                                        'class' => 'form-control select2',
-                                        'id' => 'municipality_id',
-                                    ],
-                                ) !!}
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group is-required">
-                                {!! Form::label('city_id', __('Ciudad'), []) !!}
-                                {!! Form::select(
-                                    'city_id',
-                                    isset($cities) ? $cities : [],
-                                    isset($model_institution) ? $model_institution->city_id : old('city_id'),
-                                    [
-                                        'class' => 'form-control select2',
-                                        'id' => 'city_id',
-                                    ],
-                                ) !!}
+                                <label for="country_id">{{ __('País') }}</label>
+                                <select
+                                    name="country_id" id="country_id"
+                                    class="form-control select2 input-sm"
+                                >
+                                    @foreach ($countries ?? [] as $countryId => $countryName)
+                                        <option
+                                            value="{{ $countryId }}"
+                                            {{
+                                                (old('country_id') == $countryId || (isset($model_institution) && $model_institution->municipality->estate->country_id == $countryId)) ?
+                                                'selected' : ''
+                                            }}
+                                        >
+                                            {{ $countryName }}
+                                        </option>
+                                    @endforeach
+                                </select>
                             </div>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-md-4">
                             <div class="form-group is-required">
-                                {!! Form::label('postal_code', __('Código Postal'), []) !!}
-                                {!! Form::text('postal_code', isset($model_institution) ? $model_institution->postal_code : old('postal_code'), [
-                                    'class' => 'form-control input-sm',
-                                    'id' => 'postal_code',
-                                    'data-toggle' => 'tooltip',
-                                    'title' => __('Indique el código postal (requerido)'),
-                                ]) !!}
+                                <label for="estate_id">{{ __('Estado') }}</label>
+                                <select
+                                    name="estate_id" id="estate_id"
+                                    class="form-control select2 input-sm"
+                                >
+                                    @foreach ($estates ?? [] as $estateId => $estateName)
+                                        <option
+                                            value="{{ $estateId }}"
+                                            {{
+                                                (old('estate_id') == $estateId || (isset($model_institution) && $model_institution->municipality->estate_id == $estateId)) ?
+                                                'selected' : ''
+                                            }}
+                                        >
+                                            {{ $estateName }}
+                                        </option>
+                                    @endforeach
+                                </select>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="form-group is-required">
-                                {!! Form::label('start_operations_date', __('Fecha de inicio de operaciones'), []) !!}
-                                {!! Form::date(
-                                    'start_operations_date',
-                                    isset($model_institution) ? $model_institution->start_operations_date : old('start_operations_date'),
-                                    [
-                                        'class' => 'form-control input-sm',
-                                        'id' => 'start_operations_date',
-                                        'data-toggle' => 'tooltip',
-                                        'title' => __('Indique la fecha de inicio de operaciones (requerido)'),
-                                    ],
-                                ) !!}
+                                <label for="municipality_id">{{ __('Municipio') }}</label>
+                                <select
+                                    name="municipality_id" id="municipality_id"
+                                    class="form-control select2 input-sm"
+                                >
+                                    @foreach ($municipalities ?? [] as $municipalityId => $municipalityName)
+                                        <option
+                                            value="{{ $municipalityId }}"
+                                            {{
+                                                (old('municipality_id') == $municipalityId || (isset($model_institution) && $model_institution->municipality_id == $municipalityId)) ?
+                                                'selected' : ''
+                                            }}
+                                        >
+                                            {{ $municipalityName }}
+                                        </option>
+                                    @endforeach
+                                </select>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="form-group is-required">
-                                {!! Form::label('institution_sector_id', __('Sectores Económicos'), []) !!}
-                                {!! Form::select('institution_sector_id', isset($sectors) ? $sectors : [], null, [
-                                    'class' => 'form-control select2',
-                                    'id' => 'institution_sector_id',
-                                ]) !!}
+                                <label for="city_id">{{ __('Ciudad') }}</label>
+                                <select
+                                    name="city_id" id="city_id"
+                                    class="form-control select2 input-sm"
+                                >
+                                    @foreach ($cities ?? [] as $cityId => $cityName)
+                                        <option
+                                            value="{{ $cityId }}"
+                                            {{
+                                                (old('city_id') == $cityId || (isset($model_institution) && $model_institution->city_id == $cityId)) ?
+                                                'selected' : ''
+                                            }}
+                                        >
+                                            {{ $cityName }}
+                                        </option>
+                                    @endforeach
+                                </select>
                             </div>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-md-4">
                             <div class="form-group is-required">
-                                {!! Form::label('institution_type_id', __('Tipo de organización'), []) !!}
-                                {!! Form::select('institution_type_id', isset($types) ? $types : [], null, [
-                                    'class' => 'form-control select2',
-                                    'id' => 'institution_type_id',
-                                ]) !!}
+                                <label for="postal_code">{{ __('Código Postal') }}</label>
+                                <input
+                                    type="text" name="postal_code" id="postal_code"
+                                    class="form-control input-sm"
+                                    data-toggle="tooltip"
+                                    title="{{ __('Indique el código postal (requerido)') }}"
+                                    value="{{ isset($model_institution) ? $model_institution->postal_code : old('postal_code') }}"
+                                >
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group is-required">
+                                <label for="start_operations_date">
+                                    {{ __('Fecha de inicio de operaciones') }}
+                                </label>
+                                <input
+                                    type="date" name="start_operations_date" id="start_operations_date"
+                                    class="form-control input-sm"
+                                    data-toggle="tooltip"
+                                    title="{{ __('Indique la fecha de inicio de operaciones (requerido)') }}"
+                                    value="{{ isset($model_institution) ? $model_institution->start_operations_date : old('start_operations_date') }}"
+                                >
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group is-required">
+                                <label for="institution_sector_id">{{ __('Sector Económico') }}</label>
+                                <select
+                                    name="institution_sector_id" id="institution_sector_id"
+                                    class="form-control select2"
+                                >
+                                    @foreach ($sectors ?? [] as $sectorId => $sectorName)
+                                        <option
+                                            value="{{ $sectorId }}"
+                                            {{
+                                                (old('institution_sector_id') == $sectorId || (isset($model_institution) && $model_institution->institution_sector_id == $sectorId)) ?
+                                                'selected' : ''
+                                            }}
+                                        >
+                                            {{ $sectorName }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group is-required">
+                                <label for="institution_type_id">{{ __('Tipo de Organización') }}</label>
+                                <select
+                                    name="institution_type_id" id="institution_type_id"
+                                    class="form-control select2"
+                                >
+                                    @foreach ($types ?? [] as $typeId => $typeName)
+                                        <option
+                                            value="{{ $typeId }}"
+                                            {{
+                                                (old('institution_type_id') == $typeId || (isset($model_institution) && $model_institution->institution_type_id == $typeId)) ?
+                                                'selected' : ''
+                                            }}
+                                        >
+                                            {{ $typeName }}
+                                        </option>
+                                    @endforeach
+                                </select>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
-                                {!! Form::label('web', __('Sitio Web'), []) !!}
-                                {!! Form::text('web', isset($model_institution) ? $model_institution->web : old('web'), [
-                                    'class' => 'form-control input-sm',
-                                    'id' => 'web',
-                                    'data-toggle' => 'tooltip',
-                                    'title' => __('Indique la URL del sitio web'),
-                                ]) !!}
+                                <label for="web">{{ __('Sitio Web') }}</label>
+                                <input
+                                    type="text" name="web" id="web"
+                                    class="form-control input-sm"
+                                    value="{{ isset($model_institution) ? $model_institution->web : old('web') }}"
+                                    data-toggle="tooltip" title="{{ __('Indique la URL del sitio web') }}"
+                                >
                             </div>
                         </div>
                         <div class="col-md-4">
@@ -312,13 +381,25 @@
                     <div class="row">
                         <div class="col-md-8">
                             <div class="form-group is-required">
-                                {!! Form::label('legal_address', __('Dirección Fiscal'), []) !!}
+                                <label for="legal_address">{{ __('Dirección Fiscal') }}</label>
                                 <div id="legal_address_editor">
-                                    <ckeditor :editor="ckeditor.editor" id="legal_address" data-toggle="tooltip"
-                                        title="{!! __('Indique la dirección fiscal de la organización (requerido)') !!}" :config="ckeditor.editorConfig"
-                                        class="form-control" name="legal_address" tag-name="textarea" rows="4"
-                                        value="{!! isset($model_institution) ? $model_institution->legal_address : old('legal_address') !!}">
-                                    </ckeditor>
+                                    <ckeditor
+                                        :editor="ckeditor.editor"
+                                        :config="ckeditor.editorConfig"
+                                        id="legal_address"
+                                        name="legal_address"
+                                        ref="legal_address"
+                                        data-toggle="tooltip"
+                                        title="{!! __('Indique la dirección fiscal de la organización (requerido)') !!}"
+                                        class="form-control"
+                                        tag-name="textarea"
+                                        rows="4"
+                                        value="{!!
+                                            isset($model_institution) ?
+                                            $model_institution->legal_address :
+                                            old('legal_address')
+                                        !!}"
+                                    ></ckeditor>
                                 </div>
                             </div>
                         </div>
@@ -326,60 +407,51 @@
                             <div class="row">
                                 <div class="col-md-6 text-center">
                                     <div class="form-group">
-                                        {!! Form::label('active', __('Activa'), []) !!}
-                                        <div class="custom-control custom-switch" data-toggle="tooltip"
-                                            title="Establece si el organismo esta activo">
-                                            {!! Form::checkbox(
-                                                'active',
-                                                true,
-                                                old('active') ?? (isset($model_institution) && $model_institution->active ? true : false),
-                                                [
-                                                    'id' => 'active',
-                                                    'class' => 'custom-control-input',
-                                                    'disabled' =>
-                                                        isset($canDesactivate) &&
-                                                        !$canDesactivate &&
-                                                        isset($model_institution) &&
-                                                        $model_institution->default &&
-                                                        $model_institution->active,
-                                                ],
-                                            ) !!}
-                                            <label class="custom-control-label" for="active">&#160;</label>
+                                        <label for="active">{{ __('Activa') }}</label>
+                                        <div
+                                            class="custom-control custom-switch" data-toggle="tooltip"
+                                            title="Establece si el organismo esta activo"
+                                        >
+                                            <input
+                                                type="checkbox" name="active" id="active"
+                                                class="custom-control-input"
+                                                value="true"
+                                                {{ old('active') ?? (isset($model_institution) && $model_institution->active ? 'checked' : '') }}
+                                            >
+                                            <label class="custom-control-label" for="active">&nbsp;</label>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="col-md-6 text-center">
                                     <div class="form-group">
-                                        {!! Form::label('default', __('Organización por defecto'), []) !!}
-                                        <div class="custom-control custom-switch" data-toggle="tooltip"
-                                            title="Establece el organismo por defecto">
-                                            {!! Form::checkbox(
-                                                'default',
-                                                true,
-                                                old('default') ?? isset($model_institution) && $model_institution->default ? true : false,
-                                                [
-                                                    'id' => 'default',
-                                                    'class' => 'custom-control-input',
-                                                ],
-                                            ) !!}
-                                            <label class="custom-control-label" for="default">&#160;</label>
+                                        <label for="default">{{ __('Organización por defecto') }}</label>
+                                        <div
+                                            class="custom-control custom-switch" data-toggle="tooltip"
+                                            title="Establece el organismo por defecto"
+                                        >
+                                            <input
+                                                type="checkbox" name="default" id="default"
+                                                class="custom-control-input"
+                                                value="true"
+                                                {{ old('default') ?? (isset($model_institution) && $model_institution->default ? 'checked' : '') }}
+                                            >
+                                            <label class="custom-control-label" for="default">&nbsp;</label>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="col-md-6 text-center">
                                     <div class="form-group">
-                                        {!! Form::label('retention_agent', __('Agente de Retención'), []) !!}
-                                        <div class="custom-control custom-switch" data-toggle="tooltip"
-                                            title="Establece si el organismo es agente de retención">
-                                            {!! Form::checkbox(
-                                                'retention_agent',
-                                                true,
-                                                old('retention_agent') ?? isset($model_institution) && $model_institution->retention_agent ? true : false,
-                                                [
-                                                    'id' => 'retention_agent',
-                                                    'class' => 'custom-control-input',
-                                                ],
-                                            ) !!}
+                                        <label for="retention_agent">{{ __('Agente de Retención') }}</label>
+                                        <div
+                                            class="custom-control custom-switch" data-toggle="tooltip"
+                                            title="Establece si el organismo es agente de retención"
+                                        >
+                                            <input
+                                                type="checkbox" name="retention_agent" id="retention_agent"
+                                                class="custom-control-input"
+                                                value="true"
+                                                {{ old('retention_agent') ?? (isset($model_institution) && $model_institution->retention_agent ? 'checked' : '') }}
+                                            >
                                             <label class="custom-control-label" for="retention_agent">&nbsp;</label>
                                         </div>
                                     </div>
@@ -390,6 +462,7 @@
                     <div class="row">
                         <div class="col-12 mt-2">
                             <phones
+                                ref="institutionPhones"
                                 @if (isset($model_institution) && $model_institution->phones)
                                     initial_data="{{ json_encode($model_institution->phones) }}"
                                 @endif
@@ -403,68 +476,140 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                {!! Form::label('legal_base', __('Base Legal'), []) !!}
-                                <ckeditor :editor="ckeditor.editor" id="legal_base" data-toggle="tooltip"
-                                    title="{!! __('Indique la base legal constitutiva de la organización') !!}" :config="ckeditor.editorConfig"
-                                    class="form-control" name="legal_base" tag-name="textarea" rows="4"
-                                    value="{!! isset($model_institution) ? $model_institution->legal_base : old('legal_base') !!}"></ckeditor>
+                                <label for="legal_base">{{ __('Base Legal') }}</label>
+                                <ckeditor
+                                    :editor="ckeditor.editor"
+                                    :config="ckeditor.editorConfig"
+                                    id="legal_base"
+                                    name="legal_base"
+                                    ref="legal_base"
+                                    data-toggle="tooltip"
+                                    title="{!! __('Indique la base legal constitutiva de la organización') !!}"
+                                    class="form-control"
+                                    tag-name="textarea"
+                                    rows="4"
+                                    value="{!!
+                                        isset($model_institution) ?
+                                        $model_institution->legal_base :
+                                        old('legal_base')
+                                    !!}"
+                                ></ckeditor>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                {!! Form::label('legal_form', __('Forma Jurídica'), []) !!}
-                                <ckeditor :editor="ckeditor.editor" id="legal_form" data-toggle="tooltip"
-                                    title="{!! __('Indique la forma jurídica de la organización') !!}" :config="ckeditor.editorConfig"
-                                    class="form-control" name="legal_form" tag-name="textarea" rows="4"
-                                    value="{!! isset($model_institution) ? $model_institution->legal_form : old('legal_form') !!}"></ckeditor>
+                                <label for="legal_form">{{ __('Forma Jurídica') }}</label>
+                                <ckeditor
+                                    :editor="ckeditor.editor"
+                                    :config="ckeditor.editorConfig"
+                                    id="legal_form"
+                                    name="legal_form"
+                                    ref="legal_form"
+                                    data-toggle="tooltip"
+                                    title="{!! __('Indique la forma jurídica de la organización') !!}"
+                                    class="form-control"
+                                    tag-name="textarea"
+                                    rows="4"
+                                    value="{!!
+                                        isset($model_institution) ?
+                                        $model_institution->legal_form :
+                                        old('legal_form')
+                                    !!}"
+                                ></ckeditor>
                             </div>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                {!! Form::label('main_activity', __('Actividad Principal'), []) !!}
-                                <ckeditor :editor="ckeditor.editor" id="main_activity" data-toggle="tooltip"
-                                    title="{!! __('Indique la actividad principal a la cual se dedica la organización') !!}" :config="ckeditor.editorConfig"
-                                    class="form-control" name="main_activity" tag-name="textarea" rows="4"
-                                    value="{!! isset($model_institution) ? $model_institution->main_activity : old('main_activity') !!}">
-                                </ckeditor>
+                                <label for="main_activity">{{ __('Actividad Principal') }}</label>
+                                <ckeditor
+                                    :editor="ckeditor.editor"
+                                    :config="ckeditor.editorConfig"
+                                    id="main_activity"
+                                    name="main_activity"
+                                    ref="main_activity"
+                                    data-toggle="tooltip"
+                                    class="form-control"
+                                    title="{!! __(
+                                        'Indique la actividad principal a la cual se dedica la organización'
+                                    ) !!}"
+                                    tag-name="textarea"
+                                    rows="4"
+                                    value="{!!
+                                        isset($model_institution) ?
+                                        $model_institution->main_activity :
+                                        old('main_activity')
+                                    !!}"
+                                ></ckeditor>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                {!! Form::label('mission', __('Misión'), []) !!}
-                                <ckeditor :editor="ckeditor.editor" id="mission" data-toggle="tooltip"
-                                    title="{!! __('Indique la misión de la organización') !!}" :config="ckeditor.editorConfig"
-                                    class="form-control" name="mission" tag-name="textarea" rows="4"
-                                    value="{!! isset($model_institution) ? $model_institution->mission : old('mission') !!}"></ckeditor>
+                                <label for="mission">{{ __('Misión') }}</label>
+                                <ckeditor
+                                    :editor="ckeditor.editor"
+                                    :config="ckeditor.editorConfig"
+                                    id="mission"
+                                    name="mission"
+                                    ref="mission"
+                                    data-toggle="tooltip"
+                                    title="{!! __('Indique la misión de la organización') !!}"
+                                    class="form-control"
+                                    tag-name="textarea"
+                                    rows="4"
+                                    value="{!! isset($model_institution) ? $model_institution->mission : old('mission') !!}"
+                                ></ckeditor>
                             </div>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                {!! Form::label('vision', __('Visión'), []) !!}
-                                <ckeditor :editor="ckeditor.editor" id="vision" data-toggle="tooltip"
-                                    title="{!! __('Indique la visión de la organización') !!}" :config="ckeditor.editorConfig"
-                                    class="form-control" name="vision" tag-name="textarea" rows="4"
-                                    value="{!! isset($model_institution) ? $model_institution->vision : old('vision') !!}"></ckeditor>
+                                <label for="vision">{{ __('Visión') }}</label>
+                                <ckeditor
+                                    :editor="ckeditor.editor"
+                                    :config="ckeditor.editorConfig"
+                                    id="vision"
+                                    name="vision"
+                                    ref="vision"
+                                    tag-name="textarea"
+                                    rows="4"
+                                    data-toggle="tooltip"
+                                    title="{!! __('Indique la visión de la organización') !!}"
+                                    class="form-control"
+                                    value="{!! isset($model_institution) ? $model_institution->vision : old('vision') !!}"
+                                ></ckeditor>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                {!! Form::label('composition_assets', __('Composición de Patrimonio'), []) !!}
-                                <ckeditor :editor="ckeditor.editor" id="composition_assets" data-toggle="tooltip"
-                                    title="{!! __('Indique la composición patrimonial de la organización') !!}" :config="ckeditor.editorConfig"
-                                    class="form-control" name="composition_assets" tag-name="textarea"
-                                    rows="4" value="{!! isset($model_institution) ? $model_institution->composition_assets : old('composition_assets') !!}">
-                                </ckeditor>
+                                <label for="composition_assets">{{ __('Composición de Patrimonio') }}</label>
+                                <ckeditor
+                                    id="composition_assets"
+                                    name="composition_assets"
+                                    ref="composition_assets"
+                                    :editor="ckeditor.editor"
+                                    :config="ckeditor.editorConfig"
+                                    class="form-control"
+                                    data-toggle="tooltip"
+                                    title="{!! __('Indique la composición patrimonial de la organización') !!}"
+                                    tag-name="textarea"
+                                    rows="4"
+                                    value="{!!
+                                        isset($model_institution) ?
+                                        $model_institution->composition_assets :
+                                        old('composition_assets')
+                                    !!}"
+                                ></ckeditor>
                             </div>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-md-3 offset-md-9 text-right mt-4 mb-4" id="helpInstitutionButtons">
-                            @include('layouts.form-buttons')
+                            @include('layouts.form-buttons', [
+                                'btnClearId' => "btnClearInstitution"
+                            ])
                         </div>
                     </div>
                 </div>
@@ -484,9 +629,12 @@
                         </div>
                     @endif
                 </div>
+                {!! Form::close() !!}
 
-                <table class="table table-hover table-striped dt-responsive nowrap datatable"
-                    id="helpInstitutionList">
+                <table
+                    class="table table-hover table-striped dt-responsive nowrap datatable"
+                    id="helpInstitutionList"
+                >
                     <thead>
                         <tr>
                             <th class="col-md-1">{{ __('Logo') }}</th>
@@ -504,8 +652,11 @@
                             <tr>
                                 <td class="text-center">
                                     @if (!is_null($institution->logo))
-                                        <img src="{{ url($institution->logo->url) }}" alt="{{ __('logo') }}"
-                                            class="img-fluid" style="max-height:50px;">
+                                        <img
+                                            src="{{ url($institution->logo->url) }}"
+                                            alt="{{ __('logo') }}"
+                                            class="img-fluid" style="max-height:50px;"
+                                        >
                                     @endif
                                 </td>
                                 <td>
@@ -535,7 +686,8 @@
                                     </a>
                                     <a class="btn btn-warning btn-xs btn-icon btn-action" data-toggle="tooltip"
                                         title="Modificar registro" v-has-tooltip
-                                        href='{{ route('admin.settings.edit', $institution->id) }}'>
+                                        href='{{ route('admin.settings.edit', $institution->id) }}'
+                                    >
                                         <i class="fa fa-edit"></i>
                                     </a>
                                 </td>
@@ -543,9 +695,7 @@
                         @endforeach
                     </tbody>
                 </table>
-
             </div>
-            {!! Form::close() !!}
         </div>
     </div>
 </div>
@@ -901,23 +1051,23 @@
                 {{-- Imágenes --}}
                 <div class="row justify-content-center">
                     <div class="col-8 col-lg-3">
-                        <p class="text-center mb-1 font-weight-bold">Logotipo</p>
+                        <p class="text-center mb-1 font-weight-bold">{{ __('Logotipo') }}</p>
                         <img
                             id="modal-logo" class="w-100" alt=""
                             src="{{ asset('/images/no-image2.png', Request::secure()) }}"
                         >
                     </div>
                     <div class="col-8 col-lg-7">
-                        <p class="text-center mb-1 font-weight-bold">Banner o Cintillo</p>
+                        <p class="text-center mb-1 font-weight-bold">{{ __('Banner o Cintillo') }}</p>
                         <img id="modal-banner" class="w-100" src="{{ asset('/images/no-image3.png') }}" alt="">
                     </div>
                 </div>
                 {{-- Detalles --}}
-                <h6 class="">DATOS BÁSICOS:</h6>
+                <h6 class="">{{ __('DATOS BÁSICOS') }}:</h6>
                 <div class="row justify-content-center">
                     @if (config('institution.use_onapre'))
                         <div class="col-4">
-                            <span class="font-weight-bold">Código ONAPRE</span>
+                            <span class="font-weight-bold">{{ __('Código ONAPRE') }}</span>
                             <br>
                             <input
                                 type="text" data-toggle="tooltip" class="form-control input-sm"
@@ -926,7 +1076,7 @@
                         </div>
                     @endif
                     <div class="col-4">
-                        <span class="font-weight-bold">R.I.F.</span>
+                        <span class="font-weight-bold">{{ __('R.I.F.') }}</span>
                         <br>
                         <input
                             type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
@@ -935,7 +1085,7 @@
 
                     </div>
                     <div class="col-{{ config('institution.use_onapre') ? '4' : '8' }}">
-                        <span class="font-weight-bold">Nombre</span>
+                        <span class="font-weight-bold">{{ __('Nombre') }}</span>
                         <br>
                         <input
                             type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
@@ -947,7 +1097,7 @@
                 <hr>
                 <div class="row justify-content-center">
                     <div class="col-4">
-                        <span class="font-weight-bold">Acrónimo (Nombre corto)</span>
+                        <span class="font-weight-bold">{{ __('Acrónimo (Nombre corto)') }}</span>
                         <br>
                         <input
                             type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
@@ -956,7 +1106,7 @@
 
                     </div>
                     <div class="col-4">
-                        <span class="font-weight-bold">Razón Social</span>
+                        <span class="font-weight-bold">{{ __('Razón Social') }}</span>
                         <br>
                         <input
                             type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
@@ -964,7 +1114,7 @@
                         >
                     </div>
                     <div class="col-4">
-                        <span class="font-weight-bold">País</span>
+                        <span class="font-weight-bold">{{ __('País') }}</span>
                         <br>
                         <input
                             type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
@@ -975,7 +1125,7 @@
                 <hr>
                 <div class="row justify-content-center">
                     <div class="col-4">
-                        <span class="font-weight-bold">Estado</span>
+                        <span class="font-weight-bold">{{ __('Estado') }}</span>
                         <br>
                         <input
                             type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
@@ -983,7 +1133,7 @@
                         >
                     </div>
                     <div class="col-4">
-                        <span class="font-weight-bold">Municipio</span>
+                        <span class="font-weight-bold">{{ __('Municipio') }}</span>
                         <br>
                         <input
                             type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
@@ -991,7 +1141,7 @@
                         >
                     </div>
                     <div class="col-4">
-                        <span class="font-weight-bold">Ciudad</span>
+                        <span class="font-weight-bold">{{ __('Ciudad') }}</span>
                         <br>
                         <input
                             type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
@@ -1002,7 +1152,7 @@
                 <hr>
                 <div class="row justify-content-center">
                     <div class="col-4">
-                        <span class="font-weight-bold">Código Postal</span>
+                        <span class="font-weight-bold">{{ __('Código Postal') }}</span>
                         <br>
                         <input
                             type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
@@ -1010,7 +1160,7 @@
                         >
                     </div>
                     <div class="col-4">
-                        <span class="font-weight-bold">Fecha de inicio de operaciones</span>
+                        <span class="font-weight-bold">{{ __('Fecha de inicio de operaciones') }}</span>
                         <br>
                         <input
                             type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
@@ -1018,7 +1168,7 @@
                         >
                     </div>
                     <div class="col-4">
-                        <span class="font-weight-bold">Sectores Económicos</span>
+                        <span class="font-weight-bold">{{ __('Sectores Económicos') }}</span>
                         <br>
                         <input
                             type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
@@ -1029,7 +1179,7 @@
                 <hr>
                 <div class="row ">
                     <div class="col-4">
-                        <span class="font-weight-bold">Tipo de Organización</span>
+                        <span class="font-weight-bold">{{ __('Tipo de Organización') }}</span>
                         <br>
                         <input
                             type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
@@ -1040,7 +1190,7 @@
                 <hr>
                 <div class="row justify-content-center">
                     <div class="col-12">
-                        <span class="font-weight-bold">Dirección Fiscal</span>
+                        <span class="font-weight-bold">{{ __('Dirección Fiscal') }}</span>
                         <br>
                         <textarea id="modal-legal_address" rows="4" cols="40" disabled></textarea>
                     </div>
@@ -1048,7 +1198,7 @@
                 <hr>
                 <div class="row justify-content-center">
                     <div class="col-4">
-                        <span class="font-weight-bold">Activa</span>
+                        <span class="font-weight-bold">{{ __('Activa') }}</span>
                         <br>
                         <input
                             type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
@@ -1056,7 +1206,7 @@
                         >
                     </div>
                     <div class="col-4">
-                        <span class="font-weight-bold">Organización por defecto</span>
+                        <span class="font-weight-bold">{{ __('Organización por defecto') }}</span>
                         <br>
                         <input
                             type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
@@ -1064,7 +1214,7 @@
                         >
                     </div>
                     <div class="col-4">
-                        <span class="font-weight-bold">Agente de Retención</span>
+                        <span class="font-weight-bold">{{ __('Agente de Retención') }}</span>
                         <br>
                         <input
                             type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
@@ -1075,7 +1225,7 @@
                 <hr>
                 <div class="row justify-content-center">
                     <div class="col-4">
-                        <span class="font-weight-bold">Sitio web</span>
+                        <span class="font-weight-bold">{{ __('Sitio web') }}</span>
                         <br>
                         <input
                             type="text" data-toggle="tooltip" class="form-control input-sm" disabled="true"
@@ -1086,15 +1236,19 @@
                     <div class="col-4"></div>
                 </div>
                 <hr>
-                <h6 class="">DATOS COMPLEMENTARIOS:</h6>
+                <h6>{{ __('DATOS COMPLEMENTARIOS') }}:</h6>
                 <div class="row justify-content-center">
                     <div class="col-6">
-                        <span class="font-weight-bold">Base Legal</span>
+                        <span class="font-weight-bold">
+                            {{ __('Base Legal') }}
+                        </span>
                         <br>
                         <textarea id="modal-legal_base" rows="4" cols="40" disabled></textarea>
                     </div>
                     <div class="col-6">
-                        <span class="font-weight-bold">Forma Jurídica</span>
+                        <span class="font-weight-bold">
+                            {{ __('Forma Jurídica') }}
+                        </span>
                         <br>
                         <textarea id="modal-legal_form" rows="4" cols="40" disabled></textarea>
                     </div>
@@ -1102,12 +1256,16 @@
                 <hr>
                 <div class="row justify-content-center">
                     <div class="col-6">
-                        <span class="font-weight-bold">Actividad Principal</span>
+                        <span class="font-weight-bold">
+                            {{ __('Actividad Principal') }}
+                        </span>
                         <br>
                         <textarea id="modal-main_activity" rows="4" cols="40" disabled></textarea>
                     </div>
                     <div class="col-6">
-                        <span class="font-weight-bold">Misión</span>
+                        <span class="font-weight-bold">
+                            {{ __('Misión') }}
+                        </span>
                         <br>
                         <textarea id="modal-mission" rows="4" cols="40" disabled></textarea>
                     </div>
@@ -1115,12 +1273,16 @@
                 <hr>
                 <div class="row justify-content-center">
                     <div class="col-6">
-                        <span class="font-weight-bold">Visión</span>
+                        <span class="font-weight-bold">
+                            {{ __('Visión') }}
+                        </span>
                         <br>
                         <textarea id="modal-vision" rows="4" cols="40" disabled></textarea>
                     </div>
                     <div class="col-6">
-                        <span class="font-weight-bold">Composición de Patrimonio</span>
+                        <span class="font-weight-bold">
+                            {{ __('Composición de Patrimonio') }}
+                        </span>
                         <br>
                         <textarea id="modal-composition_assets" rows="4" cols="40" disabled></textarea>
                     </div>
@@ -1136,7 +1298,7 @@
 
 @section('extra-js')
     @parent
-    {!! Html::script('js/ckeditor.js', [], Request::secure()) !!}
+    <script src="{{ asset('js/ckeditor.js') }}" nonce="{{ session()->get('nonce') }}"></script>
     <script nonce="{{ session()->get('nonce') }}">
         $(document).ready(function() {
             $('#country_id').on('change', function() {
@@ -1174,6 +1336,9 @@
             $('#banner_image').on('change', function() {
                 uploadSingleImage('formImgBanner', 'banner_image', 'banner_id', 'institution-banner');
             });
+            $('#btnClearInstitution').on('click', function() {
+                clearInstitutionForm();
+            });
             if (typeof CkEditor !== 'undefined') {
                 $.each([
                     'legal_address', 'legal_base', 'legal_form', 'main_activity',
@@ -1196,35 +1361,71 @@
             }
             @if (!is_null($paramMultiInstitution))
                 $(".btn-new-institution").on('click', function() {
-                    var form = $("#card_config_institution form");
-                    var clearEl = {
-                        val: [
-                            'input[type=text]',
-                            'input[type=date]',
-                            'textarea',
-                            "#logo_id",
-                            "#banner_id"
-                        ],
-                        attr: [
-
-                        ]
-                    };
-                    $.each(clearEl.val, function(index, el) {
-                        form.find(el).val('');
-                    });
-                    form.find('.select2').trigger('change');
-                    form.find('input[type=checkbox]').attr('checked', false);
-                    form.find('input[type=radio]').attr('checked', false);
-                    form.find('.bootstrap-switch').removeClass('bootstrap-switch-on');
-                    form.find('.bootstrap-switch').addClass('bootstrap-switch-off');
-                    form.find(".institution-logo").attr('src',
-                        "{{ asset('/images/no-image2.png', Request::secure()) }}");
-                    form.find(".institution-banner").attr('src',
-                        "{{ asset('/images/no-image3.png', Request::secure()) }}");
-                    form.find("#onapre_code").focus();
+                    clearInstitutionForm();
                 });
             @endif
+
+            @if (old('country_id') !== '')
+                console.log({{ old('country_id') }});
+                $('#estate_id').prop('disable', false);
+                $("#country_id").click();
+            @endif
+            @if (old('estate_id') !== '')
+                $('#estate_id').val({{ old('estate_id') }});
+                $('#municipality_id').prop('disable', false);
+                $("#estate_id").click();
+            @endif
+            @if (old('municipality_id') !== '')
+                $('#municipality_id').val({{ old('municipality_id') }});
+                $('#city_id').prop('disable', false);
+                $('#city_id').val({{ old('city_id') }});
+                $("#municipality_id").click();
+            @endif
         });
+
+        const clearInstitutionForm = () => {
+            const form = $("#card_config_institution form");
+            const clearEl = {
+                val: [
+                    'input[type=text]',
+                    'input[type=date]',
+                    'select',
+                    'textarea',
+                    "#logo_id",
+                    "#banner_id"
+                ],
+                attr: [
+
+                ]
+            };
+            $.each(clearEl.val, function(index, el) {
+                form.find(el).val('');
+            });
+            document.getElementById('rif').removeAttribute('value');
+            document.getElementById('name').removeAttribute('value');
+            document.getElementById('acronym').removeAttribute('value');
+            document.getElementById('business_name').removeAttribute('value');
+            document.getElementById('postal_code').removeAttribute('value');
+            document.getElementById('start_operations_date').removeAttribute('value');
+            document.getElementById('web').removeAttribute('value');
+            document.getElementById('email').removeAttribute('value');
+            document.getElementById('legal_address').innerText = '';
+            document.getElementById('legal_address').textContent = '';
+            form.find('.select2').trigger('change');
+            form.find('input[type=checkbox]').attr('checked', false);
+            form.find('input[type=radio]').attr('checked', false);
+
+            form.find(".institution-logo").attr(
+                'src',
+                "{{ asset('/images/no-image2.png', Request::secure()) }}"
+            );
+            form.find(".institution-banner").attr(
+                'src',
+                "{{ asset('/images/no-image3.png', Request::secure()) }}"
+            );
+            app.$refs.institutionPhones._data.phones = [];
+            $('#form_institution .ck-content').children().html('<p>&nbsp;</p>');
+        }
 
         /**
          * Carga datos de la organización seleccionada
@@ -1345,15 +1546,6 @@
                 logs('setting-institution', 594, error, 'loadInstitution');
             });
         }
-        @if (old('country_id') !== '')
-            $("#country_id").click();
-        @endif
-        @if (old('estate_id') !== '')
-            $("#estate_id").click();
-        @endif
-        @if (old('municipality_id') !== '')
-            $("#municipality_id").click();
-        @endif
     </script>
     <script nonce="{{ session()->get('nonce') }}">
         /**
@@ -1489,10 +1681,6 @@
                                 `<option value="${record['id']}" >${record['name']}</option>`);
 
                         }
-                        target_element.append(
-
-
-                        );
                     });
                 }
             }).catch(error => {

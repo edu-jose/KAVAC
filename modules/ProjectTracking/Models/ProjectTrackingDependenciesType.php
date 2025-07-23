@@ -60,4 +60,14 @@ class ProjectTrackingDependenciesType extends Model implements Auditable
     {
         return $this->belongsToMany(ProjectTrackingProduct::class);
     }
+
+    /**
+     * Establece la relación con las tareas
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
+     */
+    public function tasks()
+    {
+        return $this->belongsToMany(ProjectTrackingTask::class);
+    }
 }

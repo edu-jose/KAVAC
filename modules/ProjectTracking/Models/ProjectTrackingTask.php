@@ -2,11 +2,13 @@
 
 namespace Modules\ProjectTracking\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use OwenIt\Auditing\Contracts\Auditable;
-use OwenIt\Auditing\Auditable as AuditableTrait;
+use App\Models\User;
 use App\Traits\ModelsTrait;
+use Illuminate\Database\Eloquent\Model;
+use OwenIt\Auditing\Contracts\Auditable;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use OwenIt\Auditing\Auditable as AuditableTrait;
+use Modules\ProjectTracking\Models\ProjectTrackingTaskTimer;
 
 /**
  * @class ProjectTrackingTask
@@ -46,9 +48,19 @@ class ProjectTrackingTask extends Model implements Auditable
         'priority_id',
         'start_date',
         'end_date',
+        'new_end_date',
+        'cut_off_time',
         'activity_status_id',
         'depending_task_id',
-        'weight'
+        'dependency_type_id',
+        'task_type_id',
+        'weight',
+        'percentage',
+        'reviewer_id',
+        'approver_id',
+        'is_private',
+        'payroll_staffs',
+        'tags'
     ];
 
     /**
@@ -122,6 +134,26 @@ class ProjectTrackingTask extends Model implements Auditable
     }
 
     /**
+     * Establece la relación con el aprobador de la tarea
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function approver()
+    {
+        return $this->belongsTo(ProjectTrackingActivityPlanTeam::class, 'approver_id', 'id');
+    }
+
+    /**
+     * Establece la relación con el revisor de la tarea
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function reviewer()
+    {
+        return $this->belongsTo(ProjectTrackingActivityPlanTeam::class, 'reviewer_id', 'id');
+    }
+
+    /**
      * Establece la relación con la prioridad
      *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
@@ -135,9 +167,33 @@ class ProjectTrackingTask extends Model implements Auditable
     {
         return $this->hasMany(ProjectTrackingSubTask::class, 'task_id', 'id');
     }
+    public function taskTimers()
+    {
+        return $this->hasMany(ProjectTrackingTaskTimer::class, 'project_tracking_task_id', 'id');
+    }
 
     public function dependingTask()
     {
         return $this->belongsTo(ProjectTrackingTask::class);
+    }
+
+    public function dependenciesType()
+    {
+        return $this->belongsTo(ProjectTrackingDependenciesType::class, 'dependency_type_id', 'id');
+    }
+
+    public function taskType()
+    {
+        return $this->belongsTo(ProjectTrackingTaskTypes::class, 'task_type_id', 'id');
+    }
+
+    public function tags()
+    {
+        return $this->belongsToMany(ProjectTrackingTags::class, 'project_tracking_tag_task')->withTimestamps();
+    }
+
+    public function taskComments()
+    {
+        return $this->hasMany(ProjectTrackingTaskComment::class, 'task_comment_id', 'id');
     }
 }

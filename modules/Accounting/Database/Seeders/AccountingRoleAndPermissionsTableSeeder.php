@@ -42,34 +42,34 @@ class AccountingRoleAndPermissionsTableSeeder extends Seeder
             * cuentas patrimoniales
             */
             [
-                'name'              => 'Ver cuentas patrimoniales',
+                'name'              => 'Visualizar registro de cuentas patrimoniales',
                 'slug'              => 'accounting.account.list',
-                'description'       => 'Acceso para ver cuentas patrimoniales',
+                'description'       => 'Acceso para Visualizar registro cuentas patrimoniales',
                 'model'             => 'Modules\Accounting\Models\AccountingAccount',
                 'model_prefix'      => 'contabilidad',
                 'slug_alt'          => 'cuentas_patrimoniales.ver',
                 'short_description' => 'listar cuentas patrimoniales'
             ],
             [
-                'name'              => 'Crear cuenta patrimonial',
+                'name'              => 'Crear registro de cuenta patrimonial',
                 'slug'              => 'accounting.account.create',
-                'description'       => 'Acceso para crear cuenta patrimonial',
+                'description'       => 'Acceso para Crear registro cuenta patrimonial',
                 'model'             => 'Modules\Accounting\Models\AccountingAccount',
                 'model_prefix'      => 'contabilidad',
                 'slug_alt'          => 'cuentas_patrimoniales.crear',
                 'short_description' => 'agregar cuentas patrimoniales'
             ],
             [
-                'name'              => 'Editar cuenta patrimonial',
+                'name'              => 'Modificar registro de cuenta patrimonial',
                 'slug'              => 'accounting.account.edit',
-                'description'       => 'Acceso para editar cuenta patrimonial',
+                'description'       => 'Acceso para Modificar registro cuenta patrimonial',
                 'model'             => 'Modules\Accounting\Models\AccountingAccount',
                 'model_prefix'      => 'contabilidad',
                 'slug_alt'          => 'cuentas_patrimoniales.editar',
                 'short_description' => 'editar cuentas patrimoniales'
             ],
             [
-                'name'              => 'Eliminar cuenta patrimonial',
+                'name'              => 'Eliminar registro de cuenta patrimonial',
                 'slug'              => 'accounting.account.delete',
                 'description'       => 'Acceso para eliminar cuenta patrimonial',
                 'model'             => 'Modules\Accounting\Models\AccountingAccount',
@@ -82,25 +82,25 @@ class AccountingRoleAndPermissionsTableSeeder extends Seeder
             * Convertidor de cuentas
             */
             [
-                'name'              => 'Vista principal de consulta del convertidor de cuentas',
+                'name'              => 'Visualizar registro convertidor de cuentas',
                 'slug'              => 'accounting.converter.index',
-                'description'       => 'Acceso para listar conversiones',
+                'description'       => 'Acceso para Visualizar registro conversiones',
                 'model'             => 'Modules\Accounting\Models\Accountable',
                 'model_prefix'      => 'contabilidad',
                 'slug_alt'          => 'conversion.ver',
-                'short_description' => 'listar conversion'
+                'short_description' => 'Visualizar registro conversion'
             ],
             [
-                'name'              => 'Crear nueva conversión',
+                'name'              => 'Crear registro nueva conversión',
                 'slug'              => 'accounting.converter.create',
-                'description'       => 'Acceso para crear nuevas conversiones',
+                'description'       => 'Acceso para crear registro nuevas conversiones',
                 'model'             => 'Modules\Accounting\Models\Accountable',
                 'model_prefix'      => 'contabilidad',
                 'slug_alt'          => 'conversion.crear',
                 'short_description' => 'agregar conversion'
             ],
             [
-                'name'              => 'Editar conversiones',
+                'name'              => 'Modificar registro de conversiones',
                 'slug'              => 'accounting.converter.edit',
                 'description'       => 'Acceso para editar registro conversiones',
                 'model'             => 'Modules\Accounting\Models\Accountable',
@@ -109,7 +109,7 @@ class AccountingRoleAndPermissionsTableSeeder extends Seeder
                 'short_description' => 'editar conversion'
             ],
             [
-                'name'              => 'Eliminar conversión',
+                'name'              => 'Eliminar registro de conversión',
                 'slug'              => 'accounting.converter.delete',
                 'description'       => 'Acceso para eliminar registro de conversiones',
                 'model'             => 'Modules\Accounting\Models\Accountable',
@@ -122,25 +122,25 @@ class AccountingRoleAndPermissionsTableSeeder extends Seeder
             * Asientos Contables
             */
             [
-                'name' => 'Listar asientos contables aprobados y no aprobados',
+                'name' => 'Visualizar registros asientos contables aprobados y no aprobados',
                 'slug'              => 'accounting.entries.list',
-                'description'       => 'Acceso para listar asientos contable',
+                'description'       => 'Acceso para visualizar registro asientos contable',
                 'model'             => 'Modules\Accounting\Models\AccountingEntry',
                 'model_prefix'      => 'contabilidad',
                 'slug_alt'          => 'asiento_contable.ver',
                 'short_description' => 'listar asientos contables'
             ],
             [
-                'name'              => 'Crear asiento contable',
+                'name'              => 'Crear registro asiento contable',
                 'slug'              => 'accounting.entries.create',
-                'description'       => 'Acceso para crear asiento contable',
+                'description'       => 'Acceso para crear registro asiento contable',
                 'model'             => 'Modules\Accounting\Models\AccountingEntry',
                 'model_prefix'      => 'contabilidad',
                 'slug_alt'          => 'asiento_contable.crear',
                 'short_description' => 'crear asientos contables'
             ],
             [
-                'name'              => 'Editar asientos contables',
+                'name'              => 'Modificar registro de asientos contables',
                 'slug'              => 'accounting.entries.edit',
                 'description'       => 'Acceso para editar registro de asientos contables',
                 'model'             => 'Modules\Accounting\Models\AccountingEntry',
@@ -149,7 +149,7 @@ class AccountingRoleAndPermissionsTableSeeder extends Seeder
                 'short_description' => 'editar asientos contables'
             ],
             [
-                'name'              => 'Eliminar asientos contables',
+                'name'              => 'Eliminar registro de asientos contables',
                 'slug'              => 'accounting.entries.delete',
                 'description'       => 'Acceso para eliminar asiento contable',
                 'model'             => 'Modules\Accounting\Models\AccountingEntry',
@@ -176,7 +176,7 @@ class AccountingRoleAndPermissionsTableSeeder extends Seeder
                 'short_description' => 'generar reverso asientos contables'
             ],
             [
-                'name'              => 'Reporte pdf de asientos contables',
+                'name'              => 'Generar Reporte pdf de asientos contables',
                 'slug'              => 'accounting.entries.report',
                 'description'       => 'Acceso para generar reporte pdf de asiento contable',
                 'model'             => 'Modules\Accounting\Models\AccountingEntry',
@@ -198,7 +198,16 @@ class AccountingRoleAndPermissionsTableSeeder extends Seeder
                 'short_description' => 'Visualizar configuraciones'
             ],
             [
-                'name'              => 'Crear nueva categoría',
+                'name' => 'Modificar registro cuenta institucional ',
+                'slug'              => 'accounting.setting.updateinstitutionparameters',
+                'description'       => 'Modificar registro cuenta institucional',
+                'model'             => '',
+                'model_prefix'      => 'contabilidad',
+                'slug_alt'          => 'configuracion.updateInstitutionParameters',
+                'short_description' => 'modificar registro cuenta institucional'
+            ],
+            [
+                'name'              => 'Crear registro nueva categoría',
                 'slug'              => 'accounting.setting.category.store',
                 'description'       => 'Acceso para guardar nueva categoría',
                 'model'             => 'Modules\Accounting\Models\AccountingEntryCategory',
@@ -207,7 +216,7 @@ class AccountingRoleAndPermissionsTableSeeder extends Seeder
                 'short_description' => 'guardar categoría'
             ],
             [
-                'name'              => 'Actualizar categoría',
+                'name'              => 'Modificar registro de categoría',
                 'slug'              => 'accounting.setting.category.update',
                 'description'       => 'Acceso para actualizar categoría',
                 'model'             => 'Modules\Accounting\Models\AccountingEntryCategory',
@@ -216,7 +225,7 @@ class AccountingRoleAndPermissionsTableSeeder extends Seeder
                 'short_description' => 'actualizar categoría'
             ],
             [
-                'name'              => 'Eliminar categoría',
+                'name'              => 'Eliminar registro de categoría',
                 'slug'              => 'accounting.setting.category.delete',
                 'description'       => 'Acceso para eliminar categoría',
                 'model'             => 'Modules\Accounting\Models\AccountingEntryCategory',
@@ -248,7 +257,7 @@ class AccountingRoleAndPermissionsTableSeeder extends Seeder
             ],
 
             [
-                'name'              => 'Reporte pdf de libro diario',
+                'name'              => 'Generar Reporte pdf de libro diario',
                 'slug'              => 'accounting.report.dailybook',
                 'description'       => 'Acceso para generar reporte pdf de libro diario',
                 'model'             => '',
@@ -257,7 +266,7 @@ class AccountingRoleAndPermissionsTableSeeder extends Seeder
                 'short_description' => 'reporte pdf de libro diario'
             ],
             [
-                'name'              => 'Reporte pdf balance de comprobación',
+                'name'              => 'Generar Reporte pdf balance de comprobación',
                 'slug'              => 'accounting.report.checkupbalance',
                 'description'       => 'Acceso para generar reporte pdf balance de comprobación',
                 'model'             => '',
@@ -266,7 +275,7 @@ class AccountingRoleAndPermissionsTableSeeder extends Seeder
                 'short_description' => 'reporte pdf balance de comprobación'
             ],
             [
-                'name'              => 'Reporte pdf de Mayor analítico',
+                'name'              => 'Generar Reporte pdf de Mayor analítico',
                 'slug'              => 'accounting.report.analiticalmajor',
                 'description'       => 'Acceso para generar reporte pdf de Mayor analítico',
                 'model'             => '',
@@ -275,7 +284,7 @@ class AccountingRoleAndPermissionsTableSeeder extends Seeder
                 'short_description' => 'reporte pdf de Mayor analítico'
             ],
             [
-                'name'              => 'Reporte pdf de Libro Auxiliar',
+                'name'              => 'Generar Reporte pdf de Libro Auxiliar',
                 'slug'              => 'accounting.report.auxiliarybook',
                 'description'       => 'Acceso para generar reporte pdf de Libro Auxiliar',
                 'model'             => '',
@@ -284,7 +293,7 @@ class AccountingRoleAndPermissionsTableSeeder extends Seeder
                 'short_description' => 'reporte pdf de Libro Auxiliar'
             ],
             [
-                'name'              => 'Reporte pdf de Balance General',
+                'name'              => 'Generar Reporte pdf de Balance General',
                 'slug'              => 'accounting.report.balancesheet',
                 'description'       => 'Acceso para generar reporte pdf de Balance General',
                 'model'             => '',
@@ -293,7 +302,7 @@ class AccountingRoleAndPermissionsTableSeeder extends Seeder
                 'short_description' => 'reporte pdf de Balance General'
             ],
             [
-                'name'              => 'Reporte pdf de Flujo de Efectivo',
+                'name'              => 'Generar Reporte pdf de Flujo de Efectivo',
                 'slug'              => 'accounting.report.cashflowstatement',
                 'description'       => 'Acceso para generar reporte pdf de Flujo de Efectivo',
                 'model'             => '',
@@ -302,7 +311,7 @@ class AccountingRoleAndPermissionsTableSeeder extends Seeder
                 'short_description' => 'reporte pdf de Flujo de Efectivo'
             ],
             [
-                'name'              => 'Reporte pdf de Estado de Resultados',
+                'name'              => 'Generar Reporte pdf de Estado de Resultados',
                 'slug'              => 'accounting.report.stateofresults',
                 'description'       => 'Acceso para generar reporte pdf de Estado de Resultados',
                 'model'             => '',
@@ -311,7 +320,7 @@ class AccountingRoleAndPermissionsTableSeeder extends Seeder
                 'short_description' => 'reporte pdf de Estado de Resultados'
             ],
             [
-                'name'              => 'Reporte pdf de Movimiento de Patrimonio',
+                'name'              => 'Generar Reporte pdf de Movimiento de Patrimonio',
                 'slug'              => 'accounting.report.patrimonialmovement',
                 'description'       => 'Acceso para generar reporte pdf de Movimiento de Patrimonio',
                 'model'             => '',
@@ -338,7 +347,7 @@ class AccountingRoleAndPermissionsTableSeeder extends Seeder
 
         foreach ($permissions as $permission) {
             $per = Permission::updateOrCreate(
-                ['slug' => $permission['slug']],
+                ['slug' => strtolower($permission['slug'])],
                 [
                     'name' => $permission['name'], 'description' => $permission['description'],
                     'model' => $permission['model'], 'model_prefix' => $permission['model_prefix'],

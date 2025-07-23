@@ -22,7 +22,7 @@
         </tr>
         <tr>
             <td width="25%" style="font-weight: bold;">Fecha de ingreso:</td>
-            <td width="75%">{{ date('d-m-Y', strtotime($data["payroll_staff"]["payroll_employment"]["start_date"])) }}</td>
+            <td width="75%">{{ isset($data["payroll_staff"]["payroll_employment"]["start_date"]) ? date('d-m-Y', strtotime($data["payroll_staff"]["payroll_employment"]["start_date"])) : "" }}</td>
         </tr>
         <tr>
             <td>
@@ -53,8 +53,9 @@
         @foreach ($data['concept_type'] as $concept_name => $concept_type_arr)
             @php
                 $current_total = 0.0;
+                $firstPositionConceptTypeArr = array_key_first($concept_type_arr);
             @endphp
-            @if(isset($concept_type_arr[0]) && ($concept_type_arr[0]["sign"] == '+'))
+            @if(isset($concept_type_arr[$firstPositionConceptTypeArr]) && ($concept_type_arr[$firstPositionConceptTypeArr]["sign"] == '+'))
                 <tr style="font-weight: bold;">
                     <th>
                         {{ $concept_name }}
@@ -127,8 +128,9 @@
         @foreach ($data['concept_type'] as $concept_name => $concept_type_arr)
             @php
                 $current_total = 0.0;
+                $firstPositionConceptTypeArr = array_key_first($concept_type_arr);
             @endphp
-            @if(isset($concept_type_arr[0]) && ($concept_type_arr[0]["sign"] == '-'))
+            @if(isset($concept_type_arr[$firstPositionConceptTypeArr]) && ($concept_type_arr[$firstPositionConceptTypeArr]["sign"] == '-'))
                 <tr style="font-weight: bold;">
                     <th>
                         {{ $concept_name }}
@@ -160,7 +162,7 @@
                                         @endforeach
                                     @endforeach
                                 @endif
-                                </ul>    
+                                </ul>
                             </td>
                             <td width="20%" align="left">
                                 <ul style="list-style-type: none">
@@ -173,7 +175,7 @@
                                         @endforeach
                                     @endforeach
                                 @endif
-                                </ul>    
+                                </ul>
                             </td>
                             <td width="25%" align="center">
                                 {{ $function($concept_type["value"], $decimals) . ' ' . $currency["symbol"] }}
@@ -230,7 +232,7 @@
         @foreach ($data['concept_type'] as $concept_name => $concept_type_arr)
             @php
                 $current_total = 0.0;
-                $allowed_concept_names = ["asignaciones", "deducciones"]
+                $allowed_concept_names = ["asignacion", "asignaciones", "deduccion", "deducciones"];
             @endphp
             @if(in_array(strtolower($concept_name), $allowed_concept_names ))
                 <tr style="font-weight: bold;">

@@ -1,8 +1,11 @@
 <?php
 
+use Faker\Provider\Base;
 use Illuminate\Support\Facades\DB;
 use Modules\Payroll\Models\PayrollStaff;
+use Illuminate\Database\Eloquent\Builder;
 use Modules\Payroll\Models\PayrollRelationship;
+use Modules\Payroll\Models\PayrollInactivityType;
 use Modules\Payroll\Models\PayrollSalaryTabulator;
 use Modules\Payroll\Models\PayrollSalaryTabulatorScale;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -87,7 +90,7 @@ if (!function_exists('str_eval')) {
     }
 }
 
-if (!function_exists('verify_assignment')) {
+if (!function_exists('verify_assignment_old')) {
     /**
      * Evalua si un trabajador cumple con los parámetros establecidos
      *
@@ -105,7 +108,7 @@ if (!function_exists('verify_assignment')) {
      *
      * @return    boolean
      */
-    function verify_assignment(
+    function verify_assignment_old(
         $filters = [],
         $assignTo = [],
         $assignOptions = [],
@@ -226,6 +229,25 @@ if (!function_exists('verify_assignment')) {
                         })
                         ->whereHas('payrollEmployment', fn($q) => $q->where('active', true))
                         ->get();
+                } elseif ($rule['id'] === 'all_survivor_staff') {
+                    $options = [];
+                    $id_retired = PayrollInactivityType::where('name', 'ILIKE', 'jubilado')->first();
+                    $records = PayrollStaff::query()
+                    ->where('has_died', true)
+                    ->whereHas('payrollSurvivor', function ($query) use ($options) {
+                        $query->whereNotNull('first_name')
+                        ->whereNotNull('last_name')
+                        ->whereNotNull('payroll_staff_id')
+                        ->whereNotNull('id_number')
+                        ->whereNotNull('finance_bank_id')
+                        ->whereNotNull('finance_account_type_id')
+                        ->whereNotNull('payroll_account_number');
+                    })
+                    ->whereHas('payrollEmployment', function ($query) use ($id_retired) {
+                        $query->where('active', false)
+                        ->where('payroll_inactivity_type_id', $id_retired->id);
+                    })
+                    ->get();
                 } elseif ($rule['id'] === 'staff_according_position') {
                     $options = [];
 
@@ -442,6 +464,409 @@ if (!function_exists('verify_assignment')) {
     }
 }
 
+if (!function_exists('verify_assignment')) {
+    /**
+     * Evalua si un trabajador cumple con los parámetros establecidos usando Scopes.
+     *
+     * @param array     $filters        Arreglo de objetos filtro (ej. [{ "id": "staff_according_position" }])
+     * @param array     $assignToRules  Mapeo de ID de regla a su definición (como el array $this->assignTo)
+     * @param EloquentCollection|Collection $assignOptions Colección de PayrollConceptAssignOption para el concepto actual.
+     * @param integer   $staffId        Identificador único del trabajador.
+     * @param string|null $period_start Fecha de inicio del período.
+     * @param string|null $period_end   Fecha de fin del período.
+     * @param array     $exceptions     IDs de trabajadores explícitamente incluidos (para la regla 'staff').
+     *
+     * @return boolean
+     */
+    function verify_assignment(
+        array $filters,
+        array $assignToRules,
+        $assignOptions, // Colección de PayrollConceptAssignOption
+        int $staffId,
+        ?string $period_start = null,
+        ?string $period_end = null,
+        array $exceptions = []
+    ): bool {
+        $now = $period_end ? \Carbon\Carbon::parse($period_end) : now(); // Usar Carbon para facilidad
+
+        // Mapeo de ID de Regla a Nombre de Scope (simplificado)
+        // Puedes generar esto dinámicamente o mantenerlo explícito
+        $scopeMap = [
+            'all_staff_in_vacations' => 'allStaffInVacations',
+            'staff_with_sons_has_scholarships' => 'hasSonsWithScholarships',
+            'all_staff_with_sons' => 'hasSonsInAgeRange',
+            'all_staff_with_sons_studying' => 'hasSonsStudying',
+            'staff_according_position' => 'positionInList',
+            'all_staff_not_in_vacation' => 'isNotInApprovedVacationDuring',
+            'all_staff_vacation_return' => 'returnedFromVacationDuring',
+            'all_disabled_staff' => ['hasDisability', [true]], // Scope + parámetros fijos
+            'all_except_disabled_staff' => ['hasDisability', [false]],// Scope + parámetros fijos
+            'all_studying_staff' => 'isStudying',
+            'staff_master_the_languages' => 'mastersMoreThanOneLanguage',
+            'staff_according_contract_type' => 'contractTypeInList',
+            'staff_according_department' => 'departmentInList',
+            'staff_according_position_type' => 'positionTypeInList',
+            'staff_according_staff_type' => 'staffTypeInList',
+            'all_staff_according_start_date' => 'startDateBetween',
+            'staff_according_instruction_degree' => 'instructionDegreeInList',
+            'staff_according_gender' => 'genderInList',
+            'all_survivor_staff' => 'isSurvivor',
+            'all_staff_who_belong_to_a_workers_union' => 'belongsToUnion',
+            'all_staff_affiliated_with_the_savings_fund' => 'isAffiliatedToSavingsFund',
+            'all_active_staff' => 'onlyActive', // Podría ser una base
+            // 'staff' y 'all' se manejan especialmente
+        ];
+
+        // Buscar el definition array ($assignToRules) por ID para fácil acceso
+        $rulesById = collect($assignToRules)->keyBy('id');
+
+        foreach ($filters as $filter) {
+            $ruleId = $filter->id ?? null;
+            if (!$ruleId) {
+                continue;
+            }
+
+            // --- Casos Especiales ---
+            if ($ruleId === 'all') {
+                return true; // Si 'all' está presente, siempre coincide
+            }
+            if ($ruleId === 'staff') {
+                // La regla 'staff' depende *solo* de las excepciones pasadas
+                return in_array($staffId, $exceptions);
+            }
+             // La regla 'staff_except_specified' requiere los IDs excluidos
+            if ($ruleId === 'staff_except_specified') {
+                $ruleDefinition = $rulesById->get($ruleId);
+                $excludedIds = extractAssignOptions($assignOptions, $ruleId, $ruleDefinition['type'] ?? 'list');
+                return !in_array($staffId, $excludedIds); // Coincide si NO está en la lista de excepciones
+            }
+
+            // --- Mapeo a Scope y Parámetros ---
+            if (!isset($scopeMap[$ruleId])) {
+                \Log::warning("Scope no mapeado para la regla de asignación: {$ruleId}");
+                continue; // Saltar regla no mapeada
+            }
+
+            $scopeInfo = $scopeMap[$ruleId];
+            $scopeName = is_array($scopeInfo) ? $scopeInfo[0] : $scopeInfo;
+            $fixedParams = is_array($scopeInfo) ? ($scopeInfo[1] ?? []) : []; // Parámetros fijos del mapeo
+
+            $ruleDefinition = $rulesById->get($ruleId);
+            if (!$ruleDefinition) {
+                \Log::warning("Definición no encontrada para la regla de asignación: {$ruleId}");
+                continue;
+            }
+
+            // Extraer opciones (IDs, rangos) de $assignOptions para esta regla
+            $options = extractAssignOptions($assignOptions, $ruleId, $ruleDefinition['type'] ?? null);
+
+            // Construir parámetros para el scope
+            $scopeParams = [];
+            // Añadir opciones extraídas según el scope
+            switch ($scopeName) {
+                case 'onlyActive':
+                case 'hasSonsWithScholarships':
+                case 'positionInList':
+                case 'contractTypeInList':
+                case 'departmentInList':
+                case 'positionTypeInList':
+                case 'staffTypeInList':
+                case 'instructionDegreeInList':
+                case 'genderInList':
+                     $scopeParams = [$options]; // Espera un array de IDs
+                    break;
+                case 'hasSonsInAgeRange':
+                    $minAge = $options->minimum ?? 0;
+                    $maxAge = $options->maximum ?? 30;
+                    $scopeParams = [$minAge, $maxAge, $period_end ?? now()->toDateString()];
+                    break;
+                case 'startDateBetween':
+                    // Asumiendo que el rango viene como {minimum: 'YYYY-MM-DD', maximum: 'YYYY-MM-DD'}
+                    $maxDate = $options->maximum ?? null;
+                    $scopeParams = [$maxDate, $period_start, $period_end ?? now()];
+                    break;
+                case 'isNotInApprovedVacationDuring':
+                case 'returnedFromVacationDuring':
+                    if (!$period_start || !$period_end) {
+                        \Log::error("Fechas de periodo requeridas para scope {$scopeName} no proporcionadas.");
+                         continue 2; // Saltar este filtro si faltan fechas
+                    }
+                    $scopeParams = [$period_start, $period_end];
+                    break;
+                // Scopes sin parámetros adicionales desde options (o con fijos)
+                case 'hasSonsStudying':
+                case 'isStudying':
+                case 'mastersMoreThanOneLanguage':
+                case 'hasDisability': // Los parámetros fijos se añaden después
+                case 'isSurvivor':
+                case 'belongsToUnion':
+                case 'isAffiliatedToSavingsFund':
+                    // No necesitan $options
+                    break;
+                default:
+                    \Log::warning("Parámetros no definidos para scope {$scopeName} (Regla: {$ruleId})");
+                    return false;
+            }
+
+            // Combinar parámetros extraídos con parámetros fijos
+            $finalScopeParams = array_merge($scopeParams, $fixedParams);
+
+
+            // --- Ejecutar la Verificación con Scope ---
+            try {
+                $match = PayrollStaff::where('id', $staffId)
+                                    ->$scopeName(...$finalScopeParams) // Llamada dinámica al scope
+                                    ->exists();
+
+                if ($match) {
+                    return true; // Coincidencia encontrada, no necesita seguir verificando
+                }
+            } catch (\BadMethodCallException $e) {
+                \Log::error("Error llamando al scope '{$scopeName}' para la regla '{$ruleId}': {$e->getMessage()}");
+                continue;
+            } catch (\Exception $e) {
+                \Log::error("Error verificando scope '{$scopeName}' para la regla '{$ruleId}' y trabajador ID {$staffId}: {$e->getMessage()}");
+                throw $e;
+            }
+        } // Fin foreach $filters
+
+        // Si se recorrieron todos los filtros y ninguno coincidió
+        return false;
+    }
+}
+
+if (!function_exists('findAssignableStaff')) {
+    /**
+     * Encuentra los IDs de los trabajadores que cumplen con al menos una de las reglas de filtro.
+     * Utiliza Query Scopes definidos en el modelo PayrollStaff.
+     *
+     * @param array     $filters        Arreglo de objetos filtro (ej. [{ "id": "staff_according_position" }])
+     * @param array     $assignToRules  Mapeo de ID de regla a su definición (como el array $this->assignTo)
+     * @param EloquentCollection|Collection $assignOptions Colección de PayrollConceptAssignOption para el concepto actual.
+     * @param string|null $period_start Fecha de inicio del período.
+     * @param string|null $period_end   Fecha de fin del período.
+     * @param array     $exceptions     IDs de trabajadores explícitamente incluidos (para la regla 'staff').
+     * @param boolean   $isRestricted   Indica si la búsqueda es restringida (Si se aplican todas las reglas de filtrado).
+     *
+     * @return Illuminate\Database\Eloquent\Builder
+     */
+    function findAssignableStaff(
+        array $filters = [],
+        array $assignToRules = [],
+        $assignOptions = null,
+        ?string $period_start = null,
+        ?string $period_end = null,
+        array $exceptions = [],
+        bool $isRestricted = false
+    ): Builder {
+        // Extraer los IDs de los filtros activos
+        $activeFilterIds = collect($filters)->pluck('id')->filter()->unique()->all();
+
+         // --- Construcción de la Consulta Principal ---
+         $query = PayrollStaff::query(); // Empezar consulta base
+
+        if (empty($activeFilterIds)) {
+            return $query->whereRaw('1 = 0'); // No hay filtros, no hay trabajadores asignables
+        }
+
+        // --- Manejo de Casos Especiales que Anulan Otros Filtros si isRestricted es false---
+        if (in_array('staff', $activeFilterIds)) {
+            // Si 'staff' está presente, SOLO devuelve los IDs en $exceptions
+            $query->whereIn('id', $exceptions ?? []);
+        }
+        if (in_array('all', $activeFilterIds)) {
+             // Si 'all' está presente (y 'staff' no), devuelve todos los trabajadores sin importar su estado
+            $query->whereRaw('1 = 1');
+        }
+
+        if (!$isRestricted) {
+            return $query;
+        }
+
+        // Mapeo de ID de Regla a Nombre de Scope
+        $scopeMap = [
+            'all_staff_in_vacations' => 'allStaffInVacations',
+            'all_active_staff' => 'onlyActive',
+            'staff_with_sons_has_scholarships' => 'hasSonsWithScholarships',
+            'all_staff_with_sons' => 'hasSonsInAgeRange',
+            'all_staff_with_sons_studying' => 'hasSonsStudying',
+            'staff_according_position' => 'positionInList',
+            'all_staff_not_in_vacation' => 'isNotInApprovedVacationDuring',
+            'all_staff_vacation_return' => 'returnedFromVacationDuring',
+            'all_disabled_staff' => ['hasDisability', [true]], // Scope + parámetros fijos
+            'all_except_disabled_staff' => ['hasDisability', [false]],// Scope + parámetros fijos
+            'all_studying_staff' => 'isStudying',
+            'staff_master_the_languages' => 'mastersMoreThanOneLanguage',
+            'staff_according_contract_type' => 'contractTypeInList',
+            'staff_according_department' => 'departmentInList',
+            'staff_according_position_type' => 'positionTypeInList',
+            'staff_according_staff_type' => 'staffTypeInList',
+            'all_staff_according_start_date' => 'startDateBetween',
+            'staff_according_instruction_degree' => 'instructionDegreeInList',
+            'staff_according_gender' => 'genderInList',
+            'all_survivor_staff' => 'isSurvivor',
+            'all_staff_who_belong_to_a_workers_union' => 'belongsToUnion',
+            'all_staff_affiliated_with_the_savings_fund' => 'isAffiliatedToSavingsFund',
+            // 'staff_except_specified' se maneja al final
+        ];
+
+        // Buscar el definition array ($assignToRules) por ID para fácil acceso
+        $rulesById = collect($assignToRules)->keyBy('id');
+
+        // --- Construcción de la Consulta ---
+
+        // Definir si es una consulta where o orWhere a partir de $isRestricted
+        $scopeMethod = $isRestricted ? 'where' : 'orWhere';
+
+        // Construir cláusulas para cada regla activa
+        $query->where(function ($subQuery) use (
+            $activeFilterIds,
+            $scopeMap,
+            $assignOptions,
+            $rulesById,
+            $period_start,
+            $period_end,
+            $scopeMethod,
+        ) {
+            foreach ($activeFilterIds as $ruleId) {
+                if (!isset($scopeMap[$ruleId]) || in_array($ruleId, ['staff_except_specified', 'all', 'staff'])) {
+                    // Saltar reglas sin scope mapeado o la de exclusión (se aplica después), all y staff ya han sido manejados.
+                    if (!isset($scopeMap[$ruleId]) && (!in_array($ruleId, ['staff_except_specified', 'all', 'staff']))) {
+                        \Log::warning("Scope no mapeado o regla no soportada en OR: {$ruleId}");
+                    }
+                    continue;
+                }
+
+                $scopeInfo = $scopeMap[$ruleId];
+                $scopeName = is_array($scopeInfo) ? $scopeInfo[0] : $scopeInfo;
+                $fixedParams = is_array($scopeInfo) ? ($scopeInfo[1] ?? []) : [];
+
+                $ruleDefinition = $rulesById->get($ruleId) ?? null;
+                if (!$ruleDefinition) {
+                    \Log::warning("Definición no encontrada para la regla: {$ruleId}");
+                    continue;
+                }
+
+                $options = extractAssignOptions($assignOptions, $ruleId, $ruleDefinition['type'] ?? null);
+
+                // Construir parámetros para el scope
+                $scopeParams = [];
+                try {
+                    switch ($scopeName) {
+                        case 'onlyActive':
+                        case 'hasSonsWithScholarships':
+                        case 'positionInList':
+                        case 'contractTypeInList':
+                        case 'departmentInList':
+                        case 'positionTypeInList':
+                        case 'staffTypeInList':
+                        case 'instructionDegreeInList':
+                        case 'genderInList':
+                            $scopeParams = [$options]; // Espera un array de IDs
+                            break;
+                        case 'allStaffInVacations':
+                            $scopeParams = [$period_start];
+                            break;
+                        case 'hasSonsInAgeRange':
+                            $minAge = $options->minimum ?? 0;
+                            $maxAge = $options->maximum ?? 30;
+                            $scopeParams = [$minAge, $maxAge, $period_end ?? now()->toDateString()];
+                            break;
+                        case 'startDateBetween':
+                            // Asumiendo que el rango viene como {minimum: 'YYYY-MM-DD', maximum: 'YYYY-MM-DD'}
+                            $maxDate = $options->maximum ?? null;
+                            $scopeParams = [$maxDate, $period_start, $period_end ?? now()];
+                            break;
+                        case 'isNotInApprovedVacationDuring':
+                        case 'returnedFromVacationDuring':
+                            if (!$period_start || !$period_end) {
+                                \Log::error("Fechas de periodo requeridas para scope {$scopeName} no proporcionadas.");
+                                continue 2; // Saltar este filtro si faltan fechas
+                            }
+                            $scopeParams = [$period_start, $period_end];
+                            break;
+                        // Scopes sin parámetros adicionales desde options (o con fijos)
+                        case 'hasSonsStudying':
+                        case 'isStudying':
+                        case 'mastersMoreThanOneLanguage':
+                        case 'hasDisability': // Los parámetros fijos se añaden después
+                        case 'isSurvivor':
+                        case 'belongsToUnion':
+                        case 'isAffiliatedToSavingsFund':
+                            // No necesitan $options
+                            break;
+                        default:
+                            \Log::warning("Parámetros no definidos para scope {$scopeName} (Regla: {$ruleId})");
+                            return false;
+                    }
+
+                    // Combinar parámetros calculados y fijos
+                    $finalScopeParams = array_merge($scopeParams, $fixedParams);
+
+                    // Aplicar el scope dentro
+                    $subQuery->$scopeMethod(function ($q) use ($scopeName, $finalScopeParams) {
+                        $q->$scopeName(...$finalScopeParams);
+                    });
+                } catch (\InvalidArgumentException $e) {
+                    \Log::error("Error preparando parámetros para scope {$scopeName} (Regla {$ruleId}): " . $e->getMessage());
+                     continue; // Saltar este filtro si hay error
+                } catch (\Exception $e) {
+                    \Log::error("Error aplicando scope {$scopeName} (Regla {$ruleId}): " . $e->getMessage());
+                     continue; // Saltar este filtro si hay error
+                }
+            } // end foreach
+        }); // end $query->where (grupo OR)
+
+        // --- Aplicar Exclusiones Finales ---
+        if (in_array('staff_except_specified', $activeFilterIds)) {
+            $ruleId = 'staff_except_specified';
+            $ruleDefinition = $rulesById->get($ruleId) ?? null;
+            if ($ruleDefinition) {
+                $excludedIds = extractAssignOptions($assignOptions, $ruleId, $ruleDefinition['type'] ?? 'list');
+                if (!empty($excludedIds)) {
+                    $query->whereNotIn('id', $excludedIds);
+                }
+            }
+        }
+
+        return $query;
+    }
+}
+
+/**
+ * Extrae las opciones de asignación para una regla específica
+ * @param Collection $assignOptions Colección de opciones de asignación
+ * @param string $ruleId ID de la regla
+ * @param string|null $ruleType Tipo de regla (ej. 'range', 'list')
+ * @return mixed
+ */
+if (!function_exists('extractAssignOptions')) {
+    function extractAssignOptions($assignOptions, string $ruleId, ?string $ruleType)
+    {
+        $optionsData = ($ruleType === 'range') ? (object)['minimum' => null, 'maximum' => null] : [];
+        $filteredOptions = $assignOptions->where('key', $ruleId); // $assignOptions es una colección
+
+        switch ($ruleType) {
+            case 'range':
+                $rangeData = json_decode($filteredOptions->first()['value']);
+                if (isset($rangeData->minimum)) {
+                    $optionsData->minimum = $rangeData->minimum;
+                }
+                if (isset($rangeData->maximum)) {
+                    $optionsData->maximum = $rangeData->maximum;
+                }
+                break;
+            case 'list':
+                $optionsData = $filteredOptions->pluck('assignable_id')->filter()->all(); // Filtrar IDs no nulos
+                break;
+            default:
+                break;
+        }
+        // Si no se encuentra el tipo de regla, se devuelve un array vacío o un objeto vacío
+        return $optionsData;
+    }
+}
+
 if (!function_exists('expression_format')) {
     /**
      * Convierte los parámetros de una expresión matemática en su representacion flotante
@@ -510,14 +935,14 @@ if (!function_exists('getPayrollSalaryTabulators')) {
     {
         $salaryTabulatorIds = [];
         foreach ($concepts as $concept) {
-            $formula = $concept['formula'];
+            $conceptId = $concept['field']->id;
             /* Se hace la busqueda de los tabuladores */
-            $matchs = [];
-            preg_match_all("/tabulator\([0-9]+\)/", $formula, $matchs);
-            foreach ($matchs[0] as $match) {
-                $salaryTabulatorIds[] = substr($match, (strpos($match, '(') + 1), strpos($match, ')') - (strpos($match, '(') + 1));
+            $results = DB::select("SELECT tabulator_id FROM payroll_concept_tabulators_view WHERE id = $conceptId");
+            foreach ($results as $row) {
+                $salaryTabulatorIds[] = $row->tabulator_id;
             }
         }
+
         $salaryTabulatorIds = array_unique($salaryTabulatorIds);
         $payrollSalaryTabulators = PayrollSalaryTabulatorResource::collection(
             PayrollSalaryTabulator::query()

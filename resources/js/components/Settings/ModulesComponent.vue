@@ -44,7 +44,7 @@
                                         </div>
                                         <div class="col-8 col-lg-4">
                                             <button
-                                                type="button" class="btn btn-primary btn-simple btn-block" @click="disableModule(details.lowerName)" 
+                                                type="button" class="btn btn-primary btn-simple btn-block" @click="disableModule(details.lowerName)"
                                                 v-if="details.enabled"
                                             >
                                                 Deshabilitar
@@ -102,7 +102,7 @@
                     >
                         Todos
                     </button>
-                    <!-- TODO: Listar módulos a partir de repositorio de módulos -->
+                    <!-- PENDIENTE: Listar módulos a partir de repositorio de módulos -->
                     <!--<button
                         type="button" class="btn btn-primary btn-simple btn-sm" data-toggle="tooltip"
                         title="Listar sólo los módulos que no están instalados en la aplicación"
@@ -124,9 +124,11 @@
                 </div>
                 <div class="col-12 col-md-4">
                     <div class="input-group input-sm">
-                        <input placeholder="Buscar módulo..." data-toggle="tooltip" type="text"
-                        data-original-title="Escriba el nombre o descripción del módulo que desea buscar"
-                        class="form-control">
+                        <input
+                            placeholder="Buscar módulo..." data-toggle="tooltip" type="text"
+                            data-original-title="Escriba el nombre o descripción del módulo que desea buscar"
+                            class="form-control"
+                        >
                         <span class="input-group-addon">
                             <i class="now-ui-icons ui-1_zoom-bold"></i>
                         </span>
@@ -144,7 +146,7 @@
                         >
                             <div class="media">
                                 <div class="media-left">
-                                    <img :src="moduleLogo(module)" alt="logotipo / imagen" class="img-fluid">
+                                    <img :src="moduleLogo(module)" alt="logotipo" class="img-fluid">
                                 </div>
                                 <div class="media-middle media-body">
                                     <h5 class="media-heading">{{ module.name }}</h5>

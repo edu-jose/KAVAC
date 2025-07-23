@@ -6,23 +6,27 @@
                 <div class="col-12">
                     <b>Filtros</b>
                 </div>
-                <div class="form-group col-md-2">
-                    <label for="from_date">Desde</label>
-                    <input
-                        type="date" name="from_date" id="from_date"
-                        class="form-control" v-model="filters.from_date"
-                        title="Indique la fecha inicial a consultar"
-                        data-toggle="tooltip"
-                    >
+                <div class="col-md-2">
+                    <div class="form-group is-required">
+                        <label for="from_date">Desde</label>
+                        <input
+                            type="date" name="from_date" id="from_date"
+                            class="form-control" v-model="filters.from_date"
+                            title="Indique la fecha inicial a consultar"
+                            data-toggle="tooltip"
+                        >
+                    </div>
                 </div>
-                <div class="form-group col-md-2">
-                    <label for="to_date">Hasta</label>
-                    <input
-                        type="date" name="to_date" id="to_date"
-                        class="form-control" v-model="filters.to_date"
-                        title="Indique la fecha final a consultar"
-                        data-toggle="tooltip"
-                    >
+                <div class="col-md-2">
+                    <div class="form-group is-required">
+                        <label for="to_date">Hasta</label>
+                        <input
+                            type="date" name="to_date" id="to_date"
+                            class="form-control" v-model="filters.to_date"
+                            title="Indique la fecha final a consultar"
+                            data-toggle="tooltip"
+                        >
+                    </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group is-required">
@@ -97,9 +101,13 @@
             <div class="col-md-6 mt-4" v-if="show_table">
                 <h6 class="h6 table-title mb-4">Tabla de registros</h6>
                 <div class="row">
-                    <div class="col-md-4 offset-md-8">
+                    <div class="col-md-6 offset-md-6">
                         <table class="table table-bordered">
                             <tbody>
+                                <tr>
+                                    <th class="text-left">Total Horas Trabajadas</th>
+                                    <td class="text-right">{{ totalWorkedTime }}</td>
+                                </tr>
                                 <tr>
                                     <th class="text-left">Total % Asistencia</th>
                                     <td class="text-right">{{ parseFloat(total_attendance_percent).toFixed(2) }} %</td>
@@ -162,6 +170,7 @@
                 show_graph: true,
                 total_attendance_percent: 0,
                 total_absence_percent: 0,
+                totalWorkedTime: 0,
                 graph_type: 'bar',
                 graph_types: [
                     {id: '', text: 'Seleccione...'},
@@ -251,6 +260,15 @@
             async searchData() {
                 const _self = this;
                 _self.errors = [];
+                if (_self.filters.from_date == '') {
+                    _self.errors.push('La fecha inicial es obligatoria.')
+                };
+                if (_self.filters.to_date == '') {
+                    _self.errors.push('La fecha final es obligatoria.')
+                };
+                if (_self.filters.to_date && _self.filters.from_date && _self.filters.from_date > _self.filters.to_date) {
+                    _self.errors.push('La fecha inicial no puede ser mayor a la fecha final.')
+                };
                 if (_self.filters.position_id == '') {
                     _self.errors.push('El cargo es obligatorio.')
                 };
@@ -270,6 +288,23 @@
                             .then(response => {
                                 _self.records = response.data.records ?? [];
                                 _self.workingDays = response.data.workingDays ?? [];
+                                const totalTime = _self.records.reduce((total, record) => {
+                                    // Separar horas y minutos
+                                    const [horas, minutos] = record.work_time_formated.split(':').map(Number);
+                                    // Convertir a minutos para poder realizar el cálculo
+                                    return total + (horas * 60 + minutos);
+                                }, 0);
+                                _self.totalWorkedTime = '00:00';
+
+                                if (totalTime > 0) {
+                                    // Convertir el total de minutos de nuevo a formato "00:00"
+                                    const totalHours = Math.floor(totalTime / 60);
+                                    const totalMinutes = totalTime % 60;
+
+                                    // Formatear a "00:00"
+                                    _self.totalWorkedTime = `${String(totalHours).padStart(2, '0')}:${String(totalMinutes).padStart(2, '0')}`;
+                                }
+
                                 if (_self.records.length == 0) {
                                     _self.showMessage(
                                         'custom', 'Info', 'warning', 'screen-warning', 'No se encontraron registros.'

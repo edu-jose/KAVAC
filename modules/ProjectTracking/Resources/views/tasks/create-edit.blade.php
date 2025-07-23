@@ -32,7 +32,11 @@
                         @include('buttons.minimize')
                     </div>
                 </div>
-                <project-tracking-tasks route_list="{{ url('projecttracking/tasks') }}" :task_id="{!! isset($projecttrackingTask) ? $projecttrackingTask->id : 'null' !!}">
+                <project-tracking-tasks
+                    route_list="{{ url('projecttracking/tasks') }}"
+                    :task_id="{!! isset($projecttrackingTask) ? $projecttrackingTask->id : 'null' !!}"
+                    :dates-to-validate="{{ $datesToValidate }}"
+                >
                 </project-tracking-tasks>
             </div>
         </div>

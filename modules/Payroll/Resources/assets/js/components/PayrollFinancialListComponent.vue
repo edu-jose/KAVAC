@@ -127,7 +127,13 @@ export default {
                             }
                         }).catch(error => {
                             vm.logs('mixins.js', 498, error, 'deleteRecord');
-                            vm.showMessage('custom', 'Alerta!', 'warning', 'screen-error', error.response.data.message);
+                            if (error.response.status == 403) {
+                            vm.showMessage(
+                                'custom', 'Acceso Denegado', 'danger', 'screen-error', error.response.data.message
+                            );
+                            }else{
+                                vm.showMessage('custom', 'Alerta!', 'warning', 'screen-error', error.response.data.message);
+                            }
                         });
                         vm.loading = false;
                         vm.$refs.tableResults.refresh();

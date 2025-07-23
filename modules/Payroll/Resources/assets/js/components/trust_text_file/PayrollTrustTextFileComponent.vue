@@ -180,7 +180,9 @@ export default {
                 vm.errors = [];
                 for (let index in error.response.data.errors) {
                     if (error.response.data.errors[index]) {
-                        vm.errors.push(error.response.data.errors[index][0]);
+                        for (let errorIndex in error.response.data.errors[index]) {
+                            vm.errors.push(error.response.data.errors[index][errorIndex]);
+                        }
                     }
                 }
 

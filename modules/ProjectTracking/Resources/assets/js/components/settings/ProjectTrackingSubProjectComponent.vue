@@ -49,11 +49,11 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group is-required" name="category">
-                                    <label>Tipos de Producto:</label>
-                                    <v-multiselect :options="product_types_list" track_by="text" :hide_selected="false"
-                                        data-toggle="tooltip" title="Indique los tipos de productos"
-                                        v-model="record.product_types">
-                                    </v-multiselect>
+                                    <label>Dependencia:</label>
+                                    <select2 :options="dependencies_list" id="dependency" data-toggle="tooltip"
+                                        title="Seleccione la dependencia del Proyecto (requerido)"
+                                        v-model="record.dependency_id">
+                                    </select2>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -110,6 +110,15 @@
                                     <input type="date" id="end_date" placeholder="Fecha Fin"
                                         class="form-control input-sm no-restrict" v-model="record.end_date"
                                         data-toggle="tooltip" title="Indique la fecha fin">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group is-required" name="category">
+                                    <label>Tipos de Producto:</label>
+                                    <v-multiselect :options="product_types_list" track_by="text" :hide_selected="false"
+                                        data-toggle="tooltip" title="Indique los tipos de productos"
+                                        v-model="record.product_types">
+                                    </v-multiselect>
                                 </div>
                             </div>
                         </div>
@@ -268,6 +277,16 @@
                                                             </div>
                                                         </div>
                                                     </div>
+                                                    <div class="col-md-4">
+                                                        <div class="form-group">
+                                                            <strong>Dependencia:</strong>
+                                                            <div class="row">
+                                                                <span class="col-md-12">
+                                                                    <a id="dependency_id"></a>
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -303,10 +322,12 @@ export default {
                 currency: '',
                 currency_id: '',
                 start_date: '',
-                end_date: ''
+                end_date: '',
+                dependency_id: "",
             },
             dataInfo: '',
             payroll_staffs: [],
+            dependencies_list: [],
             projects_list: [],
             product_types_list: [],
             currencies: [],
@@ -358,6 +379,7 @@ export default {
                 end_date: '',
                 financement_amount: '',
                 product_types: '',
+                dependency_id: '',
             };
         },
         getPersonal() {
@@ -378,6 +400,14 @@ export default {
                 vm.currencies = response.data;
             });
         },
+        getDependencies() {
+            const vm = this;
+            axios
+                .get(`${window.app_url}/projecttracking/get-dependencies`)
+                .then((response) => {
+                    vm.dependencies_list = response.data;
+                });
+        },
         formatDate(date) {
             const newdate = new Date(date);
             const yyyy = newdate.getFullYear();
@@ -393,6 +423,7 @@ export default {
         /**
          * Método que abre el modal, realiza la consulta y pasa los datos.
         */
+        
         show_info(id) {
             // Transformar formato de fecha apropiado para la vista de la información del registro
             const formatDate = (date) => {
@@ -420,6 +451,8 @@ export default {
                         typeProducts.push(productType.text);
                     }
 
+                    this.dataInfodDpartment = response.data.department;
+                    
                     $('#project').html(this.dataInfo.project.name);
                     $('#name_id').html(this.dataInfo.name);
                     $('#description_id').html(this.dataInfo.description);
@@ -429,6 +462,7 @@ export default {
                     $('#financement_amount_id').html((this.dataInfo.financement_amount && this.dataInfo.currency_id) ? this.dataInfo.currency.symbol + '. ' + this.dataInfo.financement_amount : 'N/A');
                     $('#start_date_id').html(formatted_start_date);
                     $('#end_date_id').html(formatted_end_date);
+                    $('#dependency_id').html(this.dataInfodDpartment.name);
                 });
             $('#show_subproject').modal('show');
         },
@@ -483,30 +517,33 @@ export default {
             project_name: 'Proyecto',
             responsable_name: 'Responsable',
             end_date: 'Fecha Fin',
-            id: 'Acción'
+            id: 'Acción',
+            dependency_id: 'Dependencia'
         };
-        this.table_options.sortable = ['code', 'name', 'project_name', 'responsable_name', 'end_date'];
-        this.table_options.filterable = ['code', 'name', 'project_name', 'responsable_name', 'end_date'];
+        this.table_options.sortable = ['code', 'name', 'project_name', 'responsable_name', 'end_date','col-md-2.5 text-center'];
+        this.table_options.filterable = ['code', 'name', 'project_name', 'responsable_name', 'end_date', 'col-md-2.5 text-center'];
         this.table_options.columnsClasses = {
             code: 'col-md-1.5 text-center',
             name: 'col-md-2.5 text-center',
             project_name: 'col-md-2.5 text-center',
             responsable_name: 'col-md-2 text-center',
             end_date: 'col-md-2 text-center',
-            id: 'col-md-1.5 text-center'
+            id: 'col-md-1.5 text-center',
+            dependency_id: 'col-md-2.5 text-center'
         };
     },
     mounted() {
         const vm = this;
         $("#add_projecttracking_subproject").on('show.bs.modal', function () {
             vm.reset();
+            vm.getPersonal();
+            vm.getProject();
+            vm.getDependencies();
+            vm.getCurrencies();
             $('.closeModal').click(function () {
                 $('#show_subproject').modal('hide');
             })
         });
-        vm.getPersonal();
-        vm.getProject();
-        vm.getCurrencies();
     },
 } 
 </script>

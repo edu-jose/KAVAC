@@ -188,7 +188,8 @@ class PayrollSalaryTabulatorsSheet implements
                                 $payrollSalaryTabulatorScale->value + $payrollSalaryAdjustment->value;
                         } elseif ($payrollSalaryAdjustment->increase_of_type == 'percentage') {
                             $fields[$horizontalScale->name] =
-                                $payrollSalaryTabulatorScale->value * $payrollSalaryAdjustment->value / 100;
+                                $payrollSalaryTabulatorScale->value
+                                + ($payrollSalaryTabulatorScale->value * $payrollSalaryAdjustment->value / 100);
                         } else {
                             $fields[$horizontalScale->name] =
                                 $salary_values ? $salary_values[$count]->value : $payrollSalaryTabulatorScale->value;
@@ -204,7 +205,8 @@ class PayrollSalaryTabulatorsSheet implements
                                 $payrollSalaryTabulatorScale->value + $payrollSalaryAdjustment->value;
                         } elseif ($payrollSalaryAdjustment->increase_of_type == 'percentage') {
                             $fields[$verticalScale->name] =
-                                $payrollSalaryTabulatorScale->value * $payrollSalaryAdjustment->value / 100;
+                                $payrollSalaryTabulatorScale->value
+                                + ($payrollSalaryTabulatorScale->value * $payrollSalaryAdjustment->value / 100);
                         } else {
                             $fields[$verticalScale->name] =
                                 $salary_values && isset($salary_values[$count])

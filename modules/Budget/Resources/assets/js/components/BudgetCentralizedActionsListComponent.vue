@@ -1,4 +1,4 @@
-    <template>
+<template>
     <v-client-table :columns="columns" :data="records" :options="table_options">
         <div slot="id" slot-scope="props" class="text-center">
             <div class="d-inline-flex">
@@ -14,6 +14,7 @@
                         title="Modificar registro"
                         data-toggle="tooltip"
                         @click="editForm(props.row.id)"
+                        :disabled="format_date(props.row.to_date, 'YYYY') < props.row.activeFiscalYear"
                     >
                         <i class="fa fa-edit"></i>
                     </button>
@@ -28,6 +29,7 @@
                         title="Modificar registro"
                         data-toggle="tooltip"
                         @click="editForm(props.row.id)"
+                        :disabled="format_date(props.row.to_date, 'YYYY') < props.row.activeFiscalYear"
                     >
                         <i class="fa fa-edit"></i>
                     </button>
@@ -42,8 +44,6 @@
                         <i class="fa fa-trash-o"></i>
                     </button>
                 </template>
-
-
             </div>
         </div>
         <div class="text-center" slot="active" slot-scope="props">

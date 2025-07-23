@@ -179,7 +179,9 @@
                     <div class="col-md-3" id="general_bank_reference">
                         <div class="form-group is-required">
                             <label for="">Nro. de Referencia bancaria</label>
-                            <input type="number" min="0" class="form-control text-right" v-model="record.general_bank_reference"  >
+                            <input type="text" class="form-control text-right" maxlength="10"
+                                v-input-mask data-inputmask-regex="^([0-9]*)$"
+                                v-model="record.general_bank_reference" >
                         </div>
                     </div>
                 </div>
@@ -730,6 +732,11 @@
                                 if (error.response.data.errors[index]) {
                                     vm.errors.push(error.response.data.errors[index][0]);
                                 }
+                            }
+                            if (error.response.status == 403) {
+                                    vm.showMessage(
+                                        'custom', 'Acceso Denegado', 'danger', 'screen-error', error.response.data.message
+                                    );
                             }
                         }
                     });

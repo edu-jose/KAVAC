@@ -9,8 +9,11 @@ use Modules\Warehouse\Models\WarehouseInventoryProduct;
 use Modules\Warehouse\Models\WarehouseInstitutionWarehouse;
 use App\Models\Institution;
 use App\Models\Parameter;
-use Modules\Warehouse\Pdf\WarehouseReport as ReportRepository;
+use Modules\Warehouse\Pdf\WarehouseReport as WarehouseReportRepository;
+use App\Repositories\ReportRepository;
 use Carbon\Carbon;
+use Modules\Warehouse\Models\WarehouseMovement;
+use Modules\Warehouse\Models\WarehouseRequest;
 
 /**
  * @class WarehousePDFController
@@ -211,6 +214,179 @@ class WarehousePDFController extends Controller
     }
 
     /**
+     * Crea un informe de la recepción de almacén.
+     *
+     * @param integer $id ID del registro para el cual se creará el informe
+     *
+     * @return void
+     */
+    public function receptionsPdf(int $id): void
+    {
+        $record = WarehouseMovement::where('id', $id)
+            ->with(
+                [
+                    'warehouseInventoryProductMovements' => function ($query) {
+                        $query->with(['warehouseInventoryProduct' => function ($query) {
+                            $query->with(['warehouseProduct' => function ($query) {
+                                $query->with('measurementUnit');
+                            }, 'warehouseProductValues' => function ($query) {
+                                $query->with('warehouseProductAttribute');
+                            }, 'currency', 'warehouseInventoryRule']);
+                        }]);
+                    }, 'warehouseInstitutionWarehouseInitial', 'warehouseInstitutionWarehouseEnd',
+                        'user', 'purchaseDirectHire', 'purchaseSupplier'
+                ]
+            )->first();
+
+        $institution = Institution::where('default', true)
+            ->where('active', true)->first();
+        $pdf = new ReportRepository();
+
+        $config = [
+            'institution' => $institution,
+            'orientation' => 'P',
+            'urlVerify' => url(''),
+        ];
+        $pdf->setConfig($config);
+
+        $pdf->setHeader('Reporte de Recepción de Productos de Almacén');
+        $pdf->setFooter();
+
+        $bodyData = [
+            'pdf' => $pdf,
+            'record' => $record,
+        ];
+        $pdf->setBody('warehouse::pdf.warehouse-receptions-pdf', true, $bodyData);
+    }
+
+    public function requestsPdf($id)
+    {
+        $record = WarehouseRequest::where('id', $id)->with(
+            [
+                'budgetSpecificAction',
+                'payrollStaff',
+                'department',
+                'warehouseInventoryProductRequests' => function ($query) {
+                    $query->with(['warehouseInventoryProduct' => function ($query) {
+                        $query->with(['warehouseProduct' => function ($query) {
+                            $query->with('measurementUnit');
+                        }, 'currency']);
+                    }]);
+                }
+            ]
+        )->first();
+
+        $institution = Institution::where('default', true)
+            ->where('active', true)->first();
+        $pdf = new ReportRepository();
+
+        /* Definicion de las caracteristicas generales de la página */
+        $pdf->setConfig(
+            [
+                'institution' => $institution,
+                'urlVerify'   => url(''),
+                'orientation' => 'L',
+                'filename'    => 'warehouse-report-' . Carbon::now() . '.pdf'
+            ]
+        );
+
+        $pdf->setHeader('Solicitudes de Almacén por departamento');
+        $pdf->setFooter();
+        $pdf->setBody(
+            'warehouse::pdf.warehouse-requests-pdf',
+            true,
+            [
+                'pdf'    => $pdf,
+                'record' => $record
+            ]
+        );
+    }
+
+    public function requestStaffsPdf($id)
+    {
+        $record = WarehouseRequest::where('id', $id)->with(
+            [
+                'budgetSpecificAction',
+                'payrollStaff',
+                'department',
+                'warehouseInventoryProductRequests' => function ($query) {
+                    $query->with(['warehouseInventoryProduct' => function ($query) {
+                        $query->with(['warehouseProduct' => function ($query) {
+                            $query->with('measurementUnit');
+                        }, 'currency']);
+                    }]);
+                }
+            ]
+        )->first();
+
+        $institution = Institution::where('default', true)
+            ->where('active', true)->first();
+        $pdf = new ReportRepository();
+
+        /* Definicion de las caracteristicas generales de la página */
+        $pdf->setConfig(
+            [
+                'institution' => $institution,
+                'urlVerify'   => url(''),
+                'orientation' => 'L',
+                'filename'    => 'warehouse-report-' . Carbon::now() . '.pdf'
+            ]
+        );
+
+        $pdf->setHeader('Solicitudes de Almacén por usuario');
+        $pdf->setFooter();
+        $pdf->setBody(
+            'warehouse::pdf.warehouse-request-staffs-pdf',
+            true,
+            [
+                'pdf'    => $pdf,
+                'record' => $record
+            ]
+        );
+    }
+
+    public function warehouseMovementsPdf($id)
+    {
+        $record = WarehouseMovement::where('id', $id)
+                ->with(
+                    ['warehouseInventoryProductMovements' => function ($query) {
+                        $query->with(['warehouseInventoryProduct' => function ($query) {
+                            $query->with(['warehouseProduct' => function ($query) {
+                                $query->with('measurementUnit');
+                            }, 'warehouseProductValues' => function ($query) {
+                                $query->with('warehouseProductAttribute');
+                            }, 'currency']);
+                        }]);
+                    }, 'warehouseInstitutionWarehouseInitial', 'warehouseInstitutionWarehouseEnd']
+                )->first();
+
+        $institution = Institution::where('default', true)
+            ->where('active', true)->first();
+        $pdf = new ReportRepository();
+
+        /* Definicion de las caracteristicas generales de la página */
+        $pdf->setConfig(
+            [
+                'institution' => $institution,
+                'urlVerify'   => url(''),
+                'orientation' => 'P',
+                'filename'    => 'warehouse-report-' . Carbon::now() . '.pdf'
+            ]
+        );
+
+        $pdf->setHeader('Reporte de Movimiento de Productos de Almacén');
+        $pdf->setFooter();
+        $pdf->setBody(
+            'warehouse::pdf.warehouse-movements-pdf',
+            true,
+            [
+                'pdf'    => $pdf,
+                'record' => $record
+            ]
+        );
+    }
+
+    /**
      * Genera un informe de productos en almacén en formato PDF.
      *
      * @param mixed $inventory_product Colección de productos en almacén
@@ -223,7 +399,7 @@ class WarehousePDFController extends Controller
             ->where('active', true)->first();
         $institution = Institution::where('default', true)
             ->where('active', true)->first();
-        $pdf = new ReportRepository();
+        $pdf = new WarehouseReportRepository();
 
         /* Definicion de las caracteristicas generales de la página */
         $pdf->setConfig(

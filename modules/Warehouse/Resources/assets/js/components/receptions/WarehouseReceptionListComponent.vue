@@ -26,60 +26,70 @@
                     :route_list="app_url + '/warehouse/receptions/info/'+ props.row.id">
                 </warehouse-rec-info>
                 <template v-if="(lastYear && format_date(props.row.created_at, 'YYYY') <= lastYear)">
-                    <button class="btn btn-warning btn-xs btn-icon btn-action" type="button" disabled>
-                        <i class="fa fa-edit"></i>
-                    </button>
-                    <button class="btn btn-danger btn-xs btn-icon btn-action" type="button" disabled>
-                        <i class="fa fa-trash-o"></i>
-                    </button>
                     <button class="btn btn-success btn-xs btn-icon btn-action" type="button" disabled>
                         <i class="fa fa-check"></i>
                     </button>
                     <button class="btn btn-danger btn-xs btn-icon btn-action" type="button" disabled>
                         <i class="fa fa-ban"></i>
                     </button>
-                </template>
-                <template v-else>
-                    <button
-                        class="btn btn-warning btn-xs btn-icon btn-action"
-                        type="button"
-                        data-toggle="tooltip"
-                        title="Modificar registro"
-                        :disabled="props.row.state != 'Pendiente'"
-                        @click="editForm(props.row.id)"
-                    >
+                    <button class="btn btn-warning btn-xs btn-icon btn-action" type="button" disabled>
                         <i class="fa fa-edit"></i>
                     </button>
-                    <button
-                        class="btn btn-danger btn-xs btn-icon btn-action"
-                        type="button"
-                        data-toggle="tooltip"
-                        title="Eliminar registro"
-                        :disabled="props.row.state != 'Pendiente'"
-                        @click="deleteRecord(props.index, '')"
-                    >
+                    <button class="btn btn-danger btn-xs btn-icon btn-action" type="button" disabled>
                         <i class="fa fa-trash-o"></i>
                     </button>
-                    <button
-                        class="btn btn-success btn-xs btn-icon btn-action"
-                        type="button"
-                        title="Aceptar solicitud"
+                </template>
+                <template v-else>
+                    <a
+                        class="btn btn-primary btn-xs btn-icon"
+                        title="Imprimir registro"
                         data-toggle="tooltip"
-                        :disabled="props.row.state != 'Pendiente'"
-                        @click="approvedRequest(props.index)"
+                        target="_blank"
+                        :href="warehouse_receptions_pdf + props.row.id"
+                        v-has-tooltip
                     >
-                        <i class="fa fa-check"></i>
-                    </button>
+                        <i class="fa fa-print"></i>
+                    </a>
                     <button
-                        class="btn btn-danger btn-xs btn-icon btn-action"
-                        type="button"
-                        data-toggle="tooltip"
-                        title="Rechazar solicitud"
-                        :disabled="props.row.state != 'Pendiente'"
-                        @click="rejectedRequest(props.index)"
+                    class="btn btn-success btn-xs btn-icon btn-action"
+                    type="button"
+                    title="Aceptar solicitud"
+                    data-toggle="tooltip"
+                    :disabled="props.row.state != 'Pendiente'"
+                    @click="approvedRequest(props.index)"
                     >
-                        <i class="fa fa-ban"></i>
-                    </button>
+                    <i class="fa fa-check"></i>
+                </button>
+                <button
+                    class="btn btn-danger btn-xs btn-icon btn-action"
+                    type="button"
+                    data-toggle="tooltip"
+                    title="Rechazar solicitud"
+                    :disabled="props.row.state != 'Pendiente'"
+                    @click="rejectedRequest(props.index)"
+                    >
+                    <i class="fa fa-ban"></i>
+                </button>
+                <button
+                    class="btn btn-warning btn-xs btn-icon btn-action"
+                    type="button"
+                    data-toggle="tooltip"
+                    title="Modificar registro"
+                    :disabled="props.row.state != 'Pendiente'"
+                    @click="editForm(props.row.id)"
+                >
+                    <i class="fa fa-edit"></i>
+                </button>
+                <button
+                    class="btn btn-danger btn-xs btn-icon btn-action"
+                    type="button"
+                    data-toggle="tooltip"
+                    title="Eliminar registro"
+                    :disabled="props.row.state != 'Pendiente'"
+                    @click="deleteRecord(props.index, '')"
+                >
+                    <i class="fa fa-trash-o"></i>
+                </button>
                 </template>
             </div>
         </div>
@@ -91,6 +101,7 @@ export default {
     data() {
         return {
             records: [],
+            warehouse_receptions_pdf: `${window.app_url}/warehouse/receptions/pdf/`,
             lastYear: "",
             columns: ['code', 'description', 'warehouse', 'reception_date', 'state', 'id']
         }

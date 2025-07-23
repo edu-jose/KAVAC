@@ -208,6 +208,7 @@
                 :custom_components="custom_components"
                 :columns="draggableColumns"
                 :data="draggableData"
+                :totalGroups="totalGroups"
             >
             </v-draggable-table>
             <!-- ./Tabla con los datos para la hoja de tiempo -->
@@ -291,6 +292,7 @@ export default {
                     column: "Observación",
                 },
             ],
+            totalGroups: [],
         };
     },
     methods: {
@@ -391,6 +393,8 @@ export default {
                             );
                         }
                     );
+
+                    vm.totalGroups = params.total_groups;
 
                     Object.values(params.parameters).forEach(
                         (param, index, array) => {
@@ -786,6 +790,7 @@ export default {
                 });
 
             vm.record = recordEdit;
+            vm.totalGroups = recordEdit.total_groups;
         },
 
         /**

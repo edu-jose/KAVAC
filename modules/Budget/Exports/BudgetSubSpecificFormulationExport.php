@@ -160,8 +160,8 @@ class BudgetSubSpecificFormulationExport implements WithHeadings, ShouldAutoSize
                 $accountOpen->total_year_amount,
                 $row->date,
                 $this->currency->decimal_places,
-                ",",
-                "."
+                ".",
+                ","
             );
 
             $array[] = [$code, $denomination, $total_year];
@@ -172,8 +172,8 @@ class BudgetSubSpecificFormulationExport implements WithHeadings, ShouldAutoSize
             $row->total_formulated,
             $row->date,
             $this->currency->decimal_places,
-            ",",
-            "."
+            ".",
+            ","
         );
 
         $array[] = ['Total Formulado', '', $total_formulated];
@@ -227,8 +227,8 @@ class BudgetSubSpecificFormulationExport implements WithHeadings, ShouldAutoSize
                         $records[0]->financement_amount,
                         $records[0]->date,
                         $this->currency->decimal_places,
-                        ',',
-                        '.'
+                        '.',
+                        ','
                     ));
 
                 $sheet->setCellValue('B11', $this->currency->symbol . ' ' .
@@ -237,8 +237,8 @@ class BudgetSubSpecificFormulationExport implements WithHeadings, ShouldAutoSize
                         $records[0]->total_formulated,
                         $records[0]->date,
                         $this->currency->decimal_places,
-                        ',',
-                        '.'
+                        '.',
+                        ','
                     ));
 
                 $sheet->getStyle('B5')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT);

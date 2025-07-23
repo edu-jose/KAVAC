@@ -6,8 +6,8 @@
 			<i class="icofont icofont-chart-line-alt ico-3x"></i>
 			<span>Unidades Tributarias</span>
 		</a>
-		<div class="modal fade text-left" tabindex="-1" role="dialog" id="add_tax_unit">
-			<div class="modal-dialog vue-crud" role="document">
+		<div class="modal fade text-left" tabindex="-1" id="add_tax_unit">
+			<div class="modal-dialog vue-crud">
 				<div class="modal-content">
 					<div class="modal-header">
 						<button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -23,37 +23,50 @@
 						<div class="row">
 							<div class="col-12 col-md-6 col-md-3">
 								<div class="form-group is-required">
-									<label>Fecha Inicio:</label>
-									<input type="date" placeholder="dd/mm/yyyy" data-toggle="tooltip"
-										   title="Seleccione una fecha del calendario (requerido)"
-										   class="form-control input-sm" v-model="record.start_date">
+									<label for="taxUnitStartDate">Fecha Inicio:</label>
+									<input
+                                        id="taxUnitStartDate"
+                                        type="date" placeholder="dd/mm/yyyy" data-toggle="tooltip"
+                                        title="Seleccione una fecha del calendario (requerido)"
+                                        class="form-control input-sm" v-model="record.start_date"
+                                    >
 			                    </div>
 							</div>
 							<div class="col-12 col-md-6 col-md-3">
 								<div class="form-group">
-									<label>Fecha fin:</label>
-									<input type="date" placeholder="dd/mm/yyyy" data-toggle="tooltip"
-										   title="Seleccione una fecha del calendario"
-										   class="form-control input-sm" v-model="record.end_date">
+									<label for="taxUnitEndDate">Fecha fin:</label>
+									<input
+                                        id="taxUnitEndDate"
+                                        type="date" placeholder="dd/mm/yyyy" data-toggle="tooltip"
+                                        title="Seleccione una fecha del calendario"
+                                        class="form-control input-sm" v-model="record.end_date"
+                                    >
 			                    </div>
 							</div>
                             <div class="col-12 col-md-6 col-md-3">
                                 <div class="form-group is-required">
-                                    <label>Valor:</label>
-                                    <input type="number" placeholder="0.00" data-toggle="tooltip" step="0.01"
-                                           title="Indique el valor de la unidad tributaria (requerido)"
-                                           class="form-control input-sm" v-model="record.value">
+                                    <label for="taxUnitValue">Valor:</label>
+                                    <input
+                                        id="taxUnitValue"
+                                        type="number" placeholder="0.00" data-toggle="tooltip" step="0.01"
+                                        title="Indique el valor de la unidad tributaria (requerido)"
+                                        class="form-control input-sm" v-model="record.value"
+                                    >
                                     <input type="hidden" v-model="record.id">
                                 </div>
                             </div>
 							<div class="col-12 col-md-2">
 								<div class="form-group is-required">
-									<label class="col-12">Activo:</label>
-									<div class="custom-control custom-switch ml-2" data-toggle="tooltip"
-										 title="Indique si la unidad tributaria esta o no activa">
-										<input type="checkbox" class="custom-control-input"
-											   id="taxUnitActive" v-model="record.active" :value="true">
-										<label class="custom-control-label" for="taxUnitActive"></label>
+									<label class="col-12" for="taxUnitActive">Activo:</label>
+									<div
+                                        class="custom-control custom-switch ml-2" data-toggle="tooltip"
+										title="Indique si la unidad tributaria esta o no activa"
+                                    >
+										<input
+                                            type="checkbox" class="custom-control-input"
+											id="taxUnitActive" v-model="record.active" :value="true"
+                                        >
+										<label class="custom-control-label" for="taxUnitActive">&nbsp;</label>
 									</div>
 			                    </div>
 							</div>
@@ -61,16 +74,22 @@
 	                </div>
 	                <div class="modal-footer">
 	                	<div class="form-group">
-	                		<button type="button" class="btn btn-default btn-sm btn-round btn-modal-close"
-									@click="clearFilters" data-dismiss="modal">
+	                		<button
+                                type="button" class="btn btn-default btn-sm btn-round btn-modal-close"
+								@click="clearFilters" data-dismiss="modal"
+                            >
 								Cerrar
 							</button>
-							<button type="button" class="btn btn-warning btn-sm btn-round btn-modal btn-modal-clear"
-									@click="reset()">
+							<button
+                                type="button" class="btn btn-warning btn-sm btn-round btn-modal btn-modal-clear"
+								@click="reset()"
+                            >
 								Cancelar
 							</button>
-							<button type="button" @click="createRecord('tax-units')"
-									class="btn btn-primary btn-sm btn-round btn-modal-save">
+							<button
+                                type="button" @click="createRecord('tax-units')"
+								class="btn btn-primary btn-sm btn-round btn-modal-save"
+                            >
 								Guardar
 							</button>
 	                	</div>
@@ -92,15 +111,19 @@
 								<span v-else class="text-bold text-danger">NO</span>
 	                		</div>
 	                		<div slot="id" slot-scope="props" class="text-center">
-	                			<button @click="initUpdate(props.row.id, $event)"
-		                				class="btn btn-warning btn-xs btn-icon btn-action"
-		                				title="Modificar registro" data-toggle="tooltip" type="button">
+	                			<button
+                                    @click="initUpdate(props.row.id, $event)"
+		                			class="btn btn-warning btn-xs btn-icon btn-action"
+		                			title="Modificar registro" data-toggle="tooltip" type="button"
+                                >
 		                			<i class="fa fa-edit"></i>
 		                		</button>
-		                		<button @click="deleteRecord(props.row.id, 'tax-units')"
-										class="btn btn-danger btn-xs btn-icon btn-action"
-										title="Eliminar registro" data-toggle="tooltip"
-										type="button">
+		                		<button
+                                    @click="deleteRecord(props.row.id, 'tax-units')"
+									class="btn btn-danger btn-xs btn-icon btn-action"
+									title="Eliminar registro" data-toggle="tooltip"
+									type="button"
+                                >
 									<i class="fa fa-trash-o"></i>
 								</button>
 	                		</div>

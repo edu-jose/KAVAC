@@ -107,7 +107,7 @@
             </tr>
         </tbody>
     </table>
-    <table>
+    <table cellspacing="0" cellpadding="1" border="0">
         <tr>
             <td align="center">CÓDIGO</td>
             <td align="center">DENOMINACIÓN</td>
@@ -157,12 +157,12 @@
                             <td>&nbsp;{{ $p['code'] }}</td>
                             <td>&nbsp;{{ $p['denomination'] }}</td>
                             <td align="right">
-                                &nbsp;{{ number_format($p['lastMonthBalance'], (int) $currency->decimal_places, ',', '.') }}
+                                &nbsp;{{ str_replace(',', '', number_format($p['lastMonthBalance'], (int) $currency->decimal_places, '.', '')) }}
                             </td>
                             <td align="right">
-                                &nbsp;{{ number_format($p['balance'], (int) $currency->decimal_places, ',', '.') }}</td>
+                                &nbsp;{{ str_replace(',', '', number_format($p['balance'], (int) $currency->decimal_places, '.', '')) }}</td>
                             <td align="right">
-                                &nbsp;{{ number_format($p['balance'] + $p['lastMonthBalance'], (int) $currency->decimal_places, ',', '.') }}
+                                &nbsp;{{ str_replace(',', '', number_format($p['balance'] + $p['lastMonthBalance'], (int) $currency->decimal_places, '.', '')) }}
                             </td>
                         </tr>
                     @endif
@@ -180,19 +180,19 @@
                             TOTAL CUENTAS DE ORDEN
                         @endif
                     </td>
-                    <td>
+
                         @if ($key == 1)
-                            {{ number_format($lastTotAmount, (int) $currency->decimal_places, ',', '.') }}
+                            <td>{{ str_replace(',', '', number_format($lastTotAmount, (int) $currency->decimal_places, '.', '')) }}</td>
                         @elseif($key == 2)
-                            {{ number_format($lastTotAmount, (int) $currency->decimal_places, ',', '.') }}
+                            <td>{{ str_replace(',', '', number_format($lastTotAmount, (int) $currency->decimal_places, '.', '')) }}</td>
                         @elseif($key == 3)
-                            {{ number_format($lastTotAmount, (int) $currency->decimal_places, ',', '.') }}
+                            <td>{{ str_replace(',', '', number_format($lastTotAmount, (int) $currency->decimal_places, '.', '')) }}</td>
                         @elseif($key == 4)
-                            {{ number_format($lastTotAmount, (int) $currency->decimal_places, ',', '.') }}
+                            <td>{{ str_replace(',', '', number_format($lastTotAmount, (int) $currency->decimal_places, '.', '')) }}</td>
                         @endif
-                    </td>
+
                     <td>
-                        {{ number_format($totAmount, (int) $currency->decimal_places, ',', '.') }}
+                        {{ str_replace(',', '', number_format($totAmount, (int) $currency->decimal_places, '.', '')) }}
                         @if ($key == 2 || $key == 3)
                             @php
                                 $totPasivePatrimonial += $totAmount;
@@ -202,13 +202,13 @@
                     </td>
                     <td>
                         @if ($key == 1)
-                            {{ number_format($lastTotAmount + $totAmount, (int) $currency->decimal_places, ',', '.') }}
+                            {{ str_replace(',', '', number_format($lastTotAmount + $totAmount, (int) $currency->decimal_places, '.', '')) }}
                         @elseif($key == 2)
-                            {{ number_format($lastTotAmount + $totPasivePatrimonial, (int) $currency->decimal_places, ',', '.') }}
+                            {{ str_replace(',', '', number_format($lastTotAmount + $totPasivePatrimonial, (int) $currency->decimal_places, '.', '')) }}
                         @elseif($key == 3)
-                            {{ number_format($lastTotAmount + $totAmount, (int) $currency->decimal_places, ',', '.') }}
+                            {{ str_replace(',', '', number_format($lastTotAmount + $totAmount, (int) $currency->decimal_places, '.', '')) }}
                         @elseif($key == 4)
-                            {{ number_format($lastTotAmount + $totAmount, (int) $currency->decimal_places, ',', '.') }}
+                            {{ str_replace(',', '', number_format($lastTotAmount + $totAmount, (int) $currency->decimal_places, '.', '')) }}
                         @endif
                     </td>
                 </tr>
@@ -228,7 +228,7 @@
                         <td>TOTAL PASIVO + PATRIMONIO</td>
                         <td></td>
                         <td></td>
-                        <td>{{ number_format($totPasivePatrimonialLast, (int) $currency->decimal_places, ',', '.') }}
+                        <td>{{ str_replace(',', '', number_format($totPasivePatrimonialLast, (int) $currency->decimal_places, '.', '')) }}
                         </td>
                     </tr>
                     <tr>

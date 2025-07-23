@@ -36,9 +36,9 @@
                             <div class="form-group is-required" style="z-index: unset;">
                                 <label for="date_request">Fecha de suspensión:</label>
                                 <input type="date" id="date_request" data-toggle="tooltip" title="Fecha de suspensión"
-                                    class="form-control input-sm no-restrict" v-model="record.date_request" @input="calculateDaysEnjoyed()">
-                                    <!--
-                                    :min="record.payroll_vacation_request?.start_date" :max="record.payroll_vacation_request?.end_date"-->
+                                    class="form-control input-sm no-restrict" v-model="record.date_request" @input="calculateDaysEnjoyed()"
+                                    :min="record.payroll_vacation_request.start_date" :max="record.payroll_vacation_request?.end_date"
+                                >
                             </div>
                         </div>
                         <div class="col-md-4">

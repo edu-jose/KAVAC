@@ -87,7 +87,6 @@
                             <v-multiselect id="payroll_concepts"
                                            :options="payroll_concepts" track_by="text"
                                            :hide_selected="false"
-                                           @input="getPayrollParameters()"
                                            v-model="record.payroll_concepts">
                             </v-multiselect>
                         </div>
@@ -109,55 +108,33 @@
                 <section v-show="record.payroll_payment_type_id > 0">
                     <hr>
                     <div class="row">
-                        <div class="col-md-12" v-if="payroll_parameters.length > 0">
+                        <div class="col-md-12">
                             <h6 class="card-title"> Parámetros de nómina </h6>
-                            <div class="row" style="margin: 1px 0">
-                                <div class="col-md-12" :key="concept['id']"
-                                    v-for="concept in payroll_parameters">
-                                    <div class="form-group">
-                                        <h6 class="card-title"> {{ concept['name'] }} </h6>
-                                        <div class="row" style="margin: 1px 0">
-                                            <div class="col-md-6" :key="staff['id']"
-                                                v-for="staff in concept['staffs']">
-                                                <div class="form-group">
-                                                    <strong>{{ staff['name'] }}</strong>
-                                                    <div class="row" style="margin: 1px 0">
-                                                        <div class="col-md-12" :key="parameter['id']"
-                                                            v-for="parameter in concept['parameters']">
-                                                            <div class="form-group is-required">
-                                                                <label>{{ parameter['name'] }}:</label>
-                                                                <input :id="concept['id'] + '_parameter_' + parameter['id'] + '_' + staff['id']"
-                                                                    class="form-control input-sm"
-                                                                    type="text"
-                                                                    data-toggle="tooltip"
-                                                                    :disabled="parameter['name'] == 'Numero de lunes del mes'"
-                                                                    :value="number_of_days_monday"
-                                                                    v-if="parameter['name'] == 'Numero de lunes del mes'">
-
-                                                                <input :id="concept['id'] + '_parameter_' + parameter['id'] + '_' + staff['id']"
-                                                                    class="form-control input-sm"
-                                                                    type="text"
-                                                                    data-toggle="tooltip"
-                                                                    :disabled="('object' !== typeof(parameter['value'])) ? parameter['value'] != '' : false"
-                                                                    :value="('object' === typeof(parameter['value'])) ? parameter['value'][staff['id']] : parameter['value']"
-                                                                    v-input-mask
-                                                                    data-inputmask="'alias': 'numeric', 'allowMinus': 'false', 'rightAlign': 'false'"
-                                                                    v-else-if="parameter['value']">
-
-                                                                <input v-else :id="concept['id'] + '_parameter_' + parameter['id'] + '_' + staff['id']"
-                                                                    type="text" data-toggle="tooltip"
-                                                                    :title="'Indique el parámetro '+ parameter['name'] + ' de ' + staff['name'] + ' (requerido)'"
-                                                                    class="form-control input-sm"
-                                                                    v-input-mask
-                                                                    data-inputmask="'alias': 'numeric', 'allowMinus': 'false'"
-                                                                    >
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
+                            <div class="float-left">
+                                <div class="form-group" v-if="formatFileIsValid()">
+                                    <div class="row" style="margin: 1px 0">
+                                        <span class="col-md-12">
+                                            <div class ="row">
+                                                <label @click=exportParameters()
+                                                    style="color: red; text-transform: capitalize; cursor: pointer;"
+                                                    >{{ file.name }}</label>
                                             </div>
-                                        </div>
+                                        </span>
                                     </div>
+                                </div>
+                                <div class="form-group">
+                                    <button class="btn btn-sm btn-primary btn-custom" data-toggle="tooltip" type="button"
+                                        title="Exportar hoja de cálculo" @click="exportParameters()">
+                                        <i class="fa fa-download"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-primary btn-custom" data-toggle="tooltip" type="button"
+                                        accept=".xls,.xlsx"
+                                        title="Importar hoja de cálculo" @click="setFile('import_data')">
+                                        <i class="fa fa-upload"></i>
+                                    </button>
+                                    <input type="file" id="import_data" ref="fileInput" class="nodisplay"
+                                        accept=".xls,.xlsx"
+                                        @change="loadParameters()" />
                                 </div>
                             </div>
                         </div>
@@ -232,8 +209,10 @@
                     payroll_payment_type_id:   '',
                     payroll_payment_period_id: '',
                     payroll_concepts:          [],
-                    payroll_parameters:        []
+                    payroll_parameters:        [],
+                    file_parameters: false
                 },
+                file:                          null,
                 number_of_days_monday:         '',
                 userPermission:                '',
                 pending_concepts:              [],
@@ -291,7 +270,7 @@
                                 vm.record.payroll_payment_period_id = field['id'];
                                 $("#paymentPeriod_select").val(field['id']).select2();
                                 /** Calcular las fechas de información general con moment */
-                                vm.getGeneralInformation(field['text']);
+                                vm.getGeneralInformation(field['period']);
                             }
                         });
                     }
@@ -312,8 +291,10 @@
                     payroll_payment_type_id:   '',
                     payroll_payment_period_id: '',
                     payroll_concepts:          [],
-                    payroll_parameters:        []
+                    payroll_parameters:        [],
+                    file_parameters: false,
                 };
+                vm.file = null;
                 vm.pending_concepts = [];
                 vm.payroll_assigned_periods = [];
                 vm.number_of_days_monday = '';
@@ -345,7 +326,7 @@
                                     if (vm.record.payroll_payment_period.id == field['id']) {
                                         vm.record.payroll_payment_period_id = field['id'];
                                         $("#paymentPeriod_select").val(field['id']).select2();
-                                        vm.getGeneralInformation(field['text']);
+                                        vm.getGeneralInformation(field['period']);
                                     }
                                 }
                             });
@@ -437,42 +418,48 @@
                     if (result) {
                         vm.record.payroll_parameters = payroll_parameters;
                         setTimeout(function () {
-                            vm.createRecord(url);
-                        }, 2000);
+                            if (vm.formatFileIsValid()) {
+                                vm.importParameters(url);
+                            } else {
+                                vm.createRecord(url);
+                            }
+                        }, 1000);
                     }
                 } else {
                     if (result) {
                         vm.record.payroll_parameters = payroll_parameters;
                         setTimeout(function () {
-                            vm.createRecord(url);
-                        }, 2000);
+                            if (vm.formatFileIsValid()) {
+                                vm.importParameters(url);
+                            } else {
+                                vm.createRecord(url);
+                            }
+                        }, 1000);
                     }
                 }
             },
-            getGeneralInformation(date) {
+            getGeneralInformation(period = {}) {
                 const vm = this;
                 let mondays = [];
-                let number_of_days_monday = '';
-                let monday = vm.start_day(date, "DD/MM/YYYY", 'month', 'Monday');
-                let i = 0;
-                let month_init = vm.start_day(date, "DD/MM/YYYY", 'month', i);
-                while(month_init.date() != 1) {
-                    i++;
-                    month_init = vm.start_day(date, "DD/MM/YYYY", 'month', i);
-                }
-                if (monday.date() > 7) {
-                    monday.add(7,'d');
-                }
-                let month = monday.month();
-                while(month === monday.month()) {
-                    mondays.push(monday.toString());
-                    monday.add(7,'d');
+
+                let startDate = moment(period['start_date'], "YYYY-MM-DD");
+                let startMonDate = moment(period['start_date'], "YYYY-MM-DD");
+                let endDate = moment(period['end_date'], "YYYY-MM-DD");
+
+                let monday = null;
+                let format = "DD/MM/YYYY";
+                while (startMonDate.isSameOrBefore(endDate)) {
+                    if (startMonDate.day() === 1) { // 1 representa lunes en moment.js
+                            monday = startMonDate;
+                            break;
+                    }
+                    startMonDate.add(1, 'day');
                 }
                 vm.number_of_days_monday = mondays.length;
-                document.getElementById('number_of_days_monday').innerText = mondays.length;
-                document.getElementById('first_monday').innerText = mondays[0];
-                document.getElementById('start_month').innerText = month_init.toString();
-                document.getElementById('start_month_day').innerText = vm.days[i]
+                document.getElementById('number_of_days_monday').innerText = period['number_of_days_monday'];
+                document.getElementById('first_monday').innerText = (new Date (monday)).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+                document.getElementById('start_month').innerText = (new Date (startDate)).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+                document.getElementById('start_month_day').innerText = period['start_day'];
             },
 
             /**
@@ -601,7 +588,112 @@
                     });
                 }
                 return assigned;
-            }
+            },
+
+            /**
+             * Metodo que permite exportar la hoja de parametros de nomina
+             *
+             * @author  Henry Paredes <hp@cenditel.gob.ve>
+             *
+             */
+            async exportParameters() {
+                const vm = this;
+                try {
+                    const response = await axios.post(
+                        `${window.app_url}/payroll/registers/parameters/export`,
+                        vm.record,
+                        { responseType: "blob" }
+                    );
+
+                    if (response.data instanceof Blob) {
+                        vm.downloadFile(response.data, "payroll-parameters.xlsx");
+                    } else {
+                        throw new Error("Invalid response format.");
+                    }
+                } catch (error) {
+                    console.error("Error exporting parameters:", error);
+                }
+            },
+
+            downloadFile(blob, filename) {
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement("a");
+
+                link.href = url;
+                link.setAttribute("download", filename);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+            },
+
+            loadParameters() {
+                const vm = this;
+                const inputFile = document.getElementById("import_data");
+
+                vm.file = inputFile.files[0];
+                vm.record.file_parameters = true;
+                vm.$forceUpdate();
+            },
+            formatFileIsValid() {
+                const vm = this;
+
+                return vm.file && vm.file instanceof File;
+            },
+            async importParameters(url) {
+                const vm = this;
+                var fields = {
+                    id:                        vm.record.id,
+                    name:                      vm.record.name,
+                    file:                      vm.file,
+                    created_at:                vm.record.created_at,
+                    payroll_concepts:          JSON.stringify(vm.record.payroll_concepts),
+                    payroll_payment_type_id:   vm.record.payroll_payment_type_id,
+                    payroll_payment_period_id: vm.record.payroll_payment_period_id
+                };
+                const formData = new FormData();
+                for (let index in fields) {
+                    const value = fields[index];
+                    if (value !== null && value !== undefined) {
+                        if (typeof value === 'object' && !(value instanceof File)) {
+                            formData.append(index, JSON.stringify(value));
+                        } else {
+                            formData.append(index, value);
+                        }
+                    }
+                }
+                await axios.post(
+                    `${window.app_url}/payroll/registers/parameters/import`,
+                    formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                    },
+                }).then(response => {
+                    if (response.data.result === true) {
+                        vm.errors = [];
+                        vm.record.id = response.data.payroll_id;
+                        setTimeout(function () {
+                            vm.createRecord(url);
+                        }, 1000);
+                    }
+                }).catch(error => {
+                    vm.errors = [];
+
+                    if (typeof (error.response) != "undefined") {
+                        if (error.response.status == 403) {
+                            vm.showMessage(
+                                'custom', 'Acceso Denegado', 'danger', 'screen-error', error.response.data.message
+                            );
+                        }
+                        for (var index in error.response.data.errors) {
+                            if (error.response.data.errors[index]) {
+                                vm.errors.push(error.response.data.errors[index][0]);
+                            }
+                        }
+                    }
+
+                });
+            },
         }
     };
 </script>

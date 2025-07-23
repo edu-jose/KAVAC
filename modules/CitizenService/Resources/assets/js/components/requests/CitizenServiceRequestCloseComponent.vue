@@ -3,7 +3,6 @@
         <div
             class="modal fade text-left"
             tabindex="-1"
-            role="dialog"
             id="citizenserviceRequestViewClose"
         >
             <div class="modal-dialog modal-lg">
@@ -158,127 +157,126 @@
 </template>
 
 <script>
-var formData = new FormData();
-export default {
-    data() {
-        return {
-            record: {
-                id: "",
-                date_verification: "",
+    let formData = new FormData();
+    export default {
+        data() {
+            return {
+                record: {
+                    id: "",
+                    date_verification: "",
+                },
+
+                records: [],
+                errors: [],
+                columns: ["file", "state", "id"],
+            };
+        },
+        mounted() {
+            const vm = this;
+            $("#citizenserviceRequestViewClose").on("show.bs.modal", function () {
+                $(".modal-body #id").val(vm.record["id"]);
+                vm.readRecords(
+                    "/citizenservice/get-documents/" + vm.record["id"] + "/1"
+                );
+                if (
+                    vm.record.date_verification == null ||
+                    vm.record.date_verification == ""
+                ) {
+                    vm.record.date_verification = moment(String(new Date())).format(
+                        "YYYY-MM-DD"
+                    );
+                }
+            });
+        },
+        created() {
+            const vm = this;
+            vm.table_options.headings = {
+                file: "Archivo",
+                state: "Estado",
+                id: "Acción",
+            };
+            vm.table_options.sortable = ["file", "state"];
+            vm.table_options.filterable = ["file", "state"];
+        },
+        methods: {
+            /**
+             * Método que borra todos los datos del formulario
+             */
+            reset() {
+                const vm = this;
+                vm.record = {
+                    id: "",
+                    date_verification: "",
+                };
+                vm.records = [];
             },
 
-            records: [],
-            errors: [],
-            columns: ["file", "state", "id"],
-        };
-    },
-    mounted() {
-        const vm = this;
-        $("#citizenserviceRequestViewClose").on("show.bs.modal", function () {
-            $(".modal-body #id").val(vm.record["id"]);
-            vm.readRecords(
-                "/citizenservice/get-documents/" + vm.record["id"] + "/1"
-            );
-            if (
-                vm.record.date_verification == null ||
-                vm.record.date_verification == ""
-            ) {
-                vm.record.date_verification = moment(String(new Date())).format(
-                    "YYYY-MM-DD"
-                );
-            }
-        });
-    },
-    created() {
-        const vm = this;
-        vm.table_options.headings = {
-            file: "Archivo",
-            state: "Estado",
-            id: "Acción",
-        };
-        vm.table_options.sortable = ["file", "state"];
-        vm.table_options.filterable = ["file", "state"];
-    },
-    methods: {
-        /**
-         * Método que borra todos los datos del formulario
-         */
-        reset() {
-            const vm = this;
-            vm.record = {
-                id: "",
-                date_verification: "",
-            };
-            vm.records = [];
-        },
+            deleteRecord(index, url) {
+                url = url || this.route_delete;
+                let records = this.records;
+                let confirmated = false;
+                index = index - 1;
+                const vm = this;
+                url = vm.setUrl(url);
 
-        deleteRecord(index, url) {
-            var url = url ? url : this.route_delete;
-            var records = this.records;
-            var confirmated = false;
-            var index = index - 1;
-            const vm = this;
-            url = vm.setUrl(url);
-
-            bootbox.confirm({
-                title: "¿Eliminar registro?",
-                message: "¿Está seguro de eliminar este registro?",
-                buttons: {
-                    cancel: {
-                        label: '<i class="fa fa-times"></i> Cancelar',
+                bootbox.confirm({
+                    title: "¿Eliminar registro?",
+                    message: "¿Está seguro de eliminar este registro?",
+                    buttons: {
+                        cancel: {
+                            label: '<i class="fa fa-times"></i> Cancelar',
+                        },
+                        confirm: {
+                            label: '<i class="fa fa-check"></i> Confirmar',
+                        },
                     },
-                    confirm: {
-                        label: '<i class="fa fa-check"></i> Confirmar',
-                    },
-                },
-                callback: function (result) {
-                    if (result) {
-                        confirmated = true;
-                        axios
-                            .delete(url + "/" + records[index].id)
-                            .then((response) => {
-                                if (
-                                    typeof response.data.error !== "undefined"
-                                ) {
-                                    /** Muestra un mensaje de error si sucede algún evento en la eliminación */
-                                    vm.showMessage(
-                                        "custom",
-                                        "Alerta!",
-                                        "warning",
-                                        "screen-error",
-                                        response.data.message
+                    callback: function (result) {
+                        if (result) {
+                            confirmated = true;
+                            axios
+                                .delete(url + "/" + records[index].id)
+                                .then((response) => {
+                                    if (
+                                        typeof response.data.error !== "undefined"
+                                    ) {
+                                        /** Muestra un mensaje de error si sucede algún evento en la eliminación */
+                                        vm.showMessage(
+                                            "custom",
+                                            "Alerta!",
+                                            "warning",
+                                            "screen-error",
+                                            response.data.message
+                                        );
+                                        return false;
+                                    }
+                                    records.splice(index, 1);
+                                    vm.showMessage("destroy");
+                                })
+                                .catch((error) => {
+                                    vm.logs(
+                                        "mixins.js",
+                                        498,
+                                        error,
+                                        "deleteRecord"
                                     );
-                                    return false;
-                                }
-                                records.splice(index, 1);
-                                vm.showMessage("destroy");
-                            })
-                            .catch((error) => {
-                                vm.logs(
-                                    "mixins.js",
-                                    498,
-                                    error,
-                                    "deleteRecord"
-                                );
-                            });
-                    }
-                },
-            });
+                                });
+                        }
+                    },
+                });
 
-            if (confirmated) {
-                this.records = records;
-                this.showMessage("destroy");
-            }
-        },
+                if (confirmated) {
+                    this.records = records;
+                    this.showMessage("destroy");
+                }
+            },
 
-        processFiles() {
-            const vm = this;
-            var inputFile = document.querySelector("#file");
-            formData.append("file", inputFile.files[0]);
-            formData.append("date_verification", vm.record.date_verification);
-            formData.append("request_id", vm.record["id"]);
-            axios
-                .post(
+            processFiles() {
+                const vm = this;
+                let inputFile = document.querySelector("#file");
+                formData.append("file", inputFile.files[0]);
+                formData.append("date_verification", vm.record.date_verification);
+                formData.append("request_id", vm.record["id"]);
+                axios.post(
                     `${window.app_url}/citizenservice/requests/validate-document`,
                     formData,
                     {
@@ -286,24 +284,9 @@ export default {
                             "Content-Type": "multipart/form-data",
                         },
                     }
-                )
-                .then((response) => {
-                    let field = {
-                        id: response.data.file_id,
-                        url: response.data.file_url,
-                        file: response.data.file_name
-                            ? response.data.file_name
-                            : "No definido",
-                        size: response.data.file_size
-                            ? response.data.file_size
-                            : "No definido",
-                        state: "Completado",
-                    };
-                    vm.readRecords(
-                        "/citizenservice/get-documents/" +
-                            vm.record["id"] +
-                            "/1"
-                    );
+                ).then((response) => {
+                    const id = vm.record["id"];
+                    vm.readRecords(`${window.app_url}/citizenservice/get-documents/${id}/1`);
                     vm.showMessage(
                         "custom",
                         "Éxito",
@@ -311,12 +294,11 @@ export default {
                         "screen-ok",
                         "Documento cargado de manera existosa."
                     );
-                })
-                .catch((error) => {
+                }).catch((error) => {
                     vm.errors = [];
 
                     if (typeof error.response != "undefined") {
-                        for (var index in error.response.data.errors) {
+                        for (let index in error.response.data.errors) {
                             if (error.response.data.errors[index]) {
                                 vm.errors.push(
                                     error.response.data.errors[index][0]
@@ -325,7 +307,7 @@ export default {
                         }
                     }
                 });
+            },
         },
-    },
-};
+    };
 </script>

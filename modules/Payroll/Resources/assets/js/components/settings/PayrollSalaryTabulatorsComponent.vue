@@ -4,7 +4,7 @@
 		   href="#" title="Registros Tabuladores de Nómina" data-toggle="tooltip"
 		   @click="addRecord('add_payroll_salary_tabulator', 'payroll/salary-tabulators', $event)">
 			<i class="icofont icofont-table ico-3x"></i>
-			<span>Tabuladores de Nónima</span>
+			<span>Tabuladores de Nómina</span>
 		</a>
 		<div class="modal fade text-left" tabindex="-1" role="dialog" id="add_payroll_salary_tabulator">
 			<div class="modal-dialog modal-lg vue-crud" role="document">
@@ -353,6 +353,7 @@
                                     <button type="button" @click="loadSalaryScales()"
                                             class="btn btn-primary btn-wd btn-sm"
                                             :disabled="isDisableNext()"
+                                            id="next"
                                             data-toggle="tooltip" title="">
                                         Siguiente
                                     </button>
@@ -596,6 +597,12 @@
                 }
                 if (complete == true) {
                     vm.panel    = panel;
+                    if (panel == 'Show') {
+                    let bt = document.getElementById('next');
+                        if (bt) {
+                        bt.click();
+                        }
+                    } 
                     let element = document.getElementById('tabulador' + panel);
                     if (element) {
                         element.click();

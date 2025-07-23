@@ -204,9 +204,9 @@ class PayrollStaffController extends Controller
                 ],
                 [],
                 [
-                    'phones.' . $i . '.type' => 'tipo #' . ($i + 1),
-                    'phones.' . $i . '.area_code' => 'código de area #' . ($i + 1),
-                    'phones.' . $i . '.number' => 'número #' . ($i + 1),
+                    'phones.' . $i . '.type' => 'tipo de teléfono #' . ($i + 1),
+                    'phones.' . $i . '.area_code' => 'código de area del teléfono #' . ($i + 1),
+                    'phones.' . $i . '.number' => 'El número telefónico #' . ($i + 1),
                     'phones.' . $i . '.extension' => 'extensión #' . ($i + 1),
                 ]
             );
@@ -246,6 +246,7 @@ class PayrollStaffController extends Controller
             'payroll_gender_id' => $request->payroll_gender_id,
             'has_disability' => ($request->has_disability) ? $request->has_disability : false,
             'payroll_disability_id' => ($request->has_disability) ? $request->payroll_disability_id : null,
+            'has_died' => ($request->has_died) ? $request->has_died : false,
             'has_driver_license' => ($request->has_driver_license) ? $request->has_driver_license : false,
             'payroll_license_degree_id' => ($request->has_driver_license) ? $request->payroll_license_degree_id : null,
             'social_security' => $request->social_security,
@@ -255,11 +256,14 @@ class PayrollStaffController extends Controller
             'parish_id' => $request->parish_id,
             'address' => $request->address,
             'medical_history' => $request->medical_history,
+            'payroll_age_group_id' => ($request->payroll_age_group_id) ? $request->payroll_age_group_id : null,
+            'locality_id' => $request->locality_id,
+            'region_id' => $request->region_id,
         ]);
 
         if ($request->uniform_sizes && !empty($request->uniform_sizes)) {
             foreach ($request->uniform_sizes as $size) {
-                $uniformSize = PayrollStaffUniformSize::create([
+                PayrollStaffUniformSize::create([
                     'name' => $size['name'],
                     'size' => $size['size'],
                     'payroll_staff_id' => $payrollStaff->id,
@@ -293,15 +297,23 @@ class PayrollStaffController extends Controller
     public function show($id)
     {
         $payrollStaff = PayrollStaff::where('id', $id)->with([
-            'payrollNationality', 'payrollGender', 'payrollLicenseDegree', 'payrollBloodType', 'payrollDisability',
+            'payrollNationality',
+            'payrollGender',
+            'payrollLicenseDegree',
+            'payrollBloodType',
+            'payrollDisability',
+            'locality',
+            'region',
+            'payrollAgeGroup',
             'parish' => function ($query) {
-                $query->with(['municipality' => function ($query) {
+                $query->with(['localities', 'municipality' => function ($query) {
                     $query->with(['estate' => function ($query) {
-                        $query->with('country');
+                        $query->with('regions', 'country');
                     }]);
                 }]);
             }, 'phones',
         ])->first();
+
         return response()->json(['record' => $payrollStaff, 'age' => age($payrollStaff->birthdate)], 200);
     }
 
@@ -405,9 +417,10 @@ class PayrollStaffController extends Controller
         $payrollStaff->payroll_gender_id = $request->payroll_gender_id;
         $payrollStaff->has_disability = ($request->has_disability) ? ($request->has_disability) : false;
         $payrollStaff->payroll_disability_id = ($request->has_disability) ? $request->payroll_disability_id : null;
+        $payrollStaff->has_died = ($request->has_died) ? ($request->has_died) : false;
         $payrollStaff->has_driver_license = ($request->has_driver_license) ? ($request->has_driver_license) : false;
         $payrollStaff->payroll_license_degree_id = ($request->has_driver_license) ?
-            $request->payroll_license_degree_id : null;
+        $request->payroll_license_degree_id : null;
         $payrollStaff->social_security = $request->social_security;
         $payrollStaff->payroll_blood_type_id = $request->payroll_blood_type_id;
         $payrollStaff->emergency_contact = $request->emergency_contact;
@@ -415,14 +428,17 @@ class PayrollStaffController extends Controller
         $payrollStaff->parish_id = $request->parish_id;
         $payrollStaff->address = $request->address;
         $payrollStaff->medical_history = $request->medical_history;
+        $payrollStaff->payroll_age_group_id = ($request->payroll_age_group_id) ? $request->payroll_age_group_id : null;
+        $payrollStaff->locality_id = $request->locality_id;
+        $payrollStaff->region_id = $request->region_id;
         $payrollStaff->save();
 
         foreach ($payrollStaff->payrollStaffUniformSize as $uniformSize) {
             $uniformSize->delete();
         }
-        if ($payrollStaff->payrollStaffUniformSize == true) {
+        if ($payrollStaff->payrollStaffUniformSize) {
             foreach ($request->uniform_sizes as $size) {
-                $uniformSize = PayrollStaffUniformSize::create([
+                PayrollStaffUniformSize::create([
                     'name' => $size['name'],
                     'size' => $size['size'],
                     'payroll_staff_id' => $payrollStaff->id,
@@ -507,6 +523,9 @@ class PayrollStaffController extends Controller
                 $query->select('id', 'name');
             },
             'parish',
+            'region',
+            'locality',
+            'payrollAgeGroup',
             'payrollLicenseDegree' => function ($query) {
                 $query->select('id', 'name', 'description');
             },

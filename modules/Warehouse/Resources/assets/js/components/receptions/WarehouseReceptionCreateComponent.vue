@@ -19,6 +19,71 @@
                 </div>
             </div>
 
+            <div class="row">
+                <div class="col-md-12">
+                    <b>Entrega</b>
+                </div>
+                <div v-if="purchase_existing == 1" class="col-md-2" id="helpInstitution">
+                    <div class="form-group">
+                        <label>Traer información de compras:</label>
+                        <div class="custom-control custom-switch" data-toggle="tooltip"
+                            title="Establecer los atributos del insumo para gestionar las variantes">
+                            <input type="checkbox" class="custom-control-input" id="bring_purchase_info"
+                                    :value="true" v-model="bring_purchase_info" @click="resetPurchaseFields">
+                            <label class="custom-control-label" for="bring_purchase_info"></label>
+                        </div>
+                    </div>
+                </div>
+                <div v-if="bring_purchase_info == true" class="col-md-3" id="helpInstitution">
+                    <div class="form-group is-required">
+                        <label for="purchase_direct_hire_id">Código:</label>
+                        <select2
+                            id="purchase_direct_hire_id"
+                            :options="purchase_direct_hires"
+                            v-model="record.purchase_direct_hire_id"
+                            @input="getDirectHireSupplier()">
+                        </select2>
+                    </div>
+                </div>
+                <div v-else class="col-md-3" id="helpWarehouse">
+                    <div class="form-group is-required">
+                        <label for="direct_hire">Código:</label>
+                        <input type="text" class="form-control input-sm"
+                               maxlength="20" v-model="record.direct_hire" placeholder="Código"
+                               data-toggle="tooltip" title="Código"
+                               v-input-mask data-inputmask-regex="^([A-Za-z0-9]*)$">
+                    </div>
+                </div>
+                <div v-if="bring_purchase_info == true" class="col-md-3" id="helpInstitution">
+                    <div class="form-group">
+                        <label for="purchase_supplier_id">Proveedor:</label>
+                        <select2
+                            id="purchase_supplier_id"
+                            :options="purchase_suppliers"
+                            v-model="record.purchase_supplier_id">
+                        </select2>
+                    </div>
+                </div>
+                <div v-else class="col-md-3" id="helpWarehouse">
+                    <div class="form-group">
+                        <label for="supplier">Proveedor:</label>
+                        <input type="text" class="form-control input-sm"
+                               v-model="record.supplier" placeholder="Proveedor del insumo"
+                               data-toggle="tooltip" title="Proveedor del insumo">
+                    </div>
+                </div>
+                <div class="col-md-4" id="helpWarehouseRequestDate">
+                    <div class="form-group">
+                        <label>Observaciones generales:</label>
+						<ckeditor :editor="ckeditor.editor"
+                            :config="ckeditor.editorConfig"
+                            class="form-control" tag-name="textarea"
+                            rows="3" v-model="record.general_observations">
+                        </ckeditor>
+					</div>
+				</div>
+            </div>
+
             <div class="row" v-if="record.id == ''">
                 <div class="col-md-12">
                     <b>Seleccione el destino de los insumos</b>
@@ -95,7 +160,10 @@
                 <div class="col-md-3" id="helpProductName">
                     <div class="form-group is-required">
                         <label>Nombre del insumo:</label>
-                        <select2 :options="warehouse_products" @input="getWarehouseProductAttributes();getWarehouseProductRules();" v-model="warehouse_inventory_product.warehouse_product_id"></select2>
+                        <select2 :options="warehouse_products"
+                            @input="getWarehouseProductAttributes();getWarehouseProductRules();"
+                            v-model="warehouse_inventory_product.warehouse_product_id">
+                        </select2>
                     </div>
                 </div>
                 <div class="col-md-3" id="helpProductQuantity">
@@ -134,6 +202,21 @@
                                  v-model="warehouse_inventory_product.currency_id"></select2>
                     </div>
                 </div>
+                <div class="col-md-3" id="helpWarehouseRequestDate">
+                    <div class="form-group is-required">
+                        <label>Fecha de vencimiento</label>
+						<input type="date" data-toggle="tooltip" title="Fecha de vencimiento" class="form-control input-sm no-restrict"
+                        v-model="warehouse_inventory_product.expiration_date">
+					</div>
+				</div>
+                <div class="col-md-3" id="helpWarehouseRequestDate">
+                    <div class="form-group is-required">
+                        <label>Lote</label>
+						<input type="text" data-toggle="tooltip" title="Lote" class="form-control input-sm"
+                        maxlength="20" v-model="warehouse_inventory_product.batch_number"
+                        v-input-mask data-inputmask-regex="^([A-Za-z0-9]*)$">
+					</div>
+				</div>
             </div>
             <div class="row">
                 <hr>
@@ -214,6 +297,12 @@
                         <div v-if="props.row.maximum != ''">
                             <b>Máximo:</b> {{ props.row.maximum }}
                         </div>
+                        <div v-if="props.row.batch_number != ''">
+                            <b>Lote:</b> {{ props.row.batch_number }}
+                        </div>
+                        <div v-if="props.row.expiration_date != ''">
+                            <b>Fecha de vencimiento:</b> {{ format_date(props.row.expiration_date) }}
+                        </div>
                     </span>
                 </div>
                 <div slot="id" slot-scope="props" class="text-center">
@@ -271,13 +360,19 @@
                     institution_id: '',
                     warehouse_id: '',
                     reception_date: '',
+                    purchase_supplier_id: '',
+                    supplier: '',
+                    direct_hire: '',
+                    purchase_direct_hire_id: '',
+                    general_observations: '',
                     warehouse_inventory_products: [],
-
-
                 },
+                bring_purchase_info: false,
                 warehouse_inventory_product: {
                     id: '',
                     quantity: '',
+                    expiration_date: '',
+                    batch_number: '',
                     unit_value:'',
                     currency_id: '',
                     minimum: '',
@@ -305,7 +400,23 @@
             }
         },
         props: {
-        receptionid: Number,
+            receptionid: Number,
+            purchase_suppliers: {
+                type: Array,
+                default: function() {
+                    return [];
+                }
+            },
+            purchase_direct_hires: {
+                type: Array,
+                default: function() {
+                    return [];
+                }
+            },
+            purchase_existing: {
+                type: Number,
+                default: false
+            }
         },
         methods: {
             reset(all = true) {
@@ -316,15 +427,22 @@
                         warehouse_id: '',
                         reception_date: '',
                         warehouse_inventory_products: [],
-
-
+                        purchase_supplier_id: '',
+                        supplier: '',
+                        direct_hire: '',
+                        purchase_direct_hire_id: '',
+                        general_observations: '',
                     };
+                    this.bring_purchase_info = false;
                     this.records = [];
 
                 }
                 this.warehouse_inventory_product = {
                     id: '',
                     quantity: '',
+
+                    expiration_date: '',
+                    batch_number: '',
 
                     unit_value:'',
                     currency_id: '',
@@ -345,6 +463,13 @@
                         element.value = '';
                 });
                 this.getCurrencies();
+            },
+
+            resetPurchaseFields() {
+                this.record.purchase_direct_hire_id = '';
+                this.record.direct_hire = '';
+                this.record.supplier = '';
+                this.record.purchase_supplier_id = '';
             },
 
             getWarehouseProducts() {
@@ -406,12 +531,26 @@
                 }
             },
 
+            isDuplicateProduct(product, editIndex = null) {
+                return this.records.some((p, idx) =>
+                    String(p.warehouse_product_id) === String(product.warehouse_product_id) &&
+                    p.batch_number.trim().toLowerCase() === product.batch_number.trim().toLowerCase() &&
+                    idx !== editIndex
+                );
+            },
+
             addProduct(event) {
                 const vm = this;
 
                 var att = [];
                 var currency_name = '';
                 var warehouse_product_name = '';
+
+                if (this.isDuplicateProduct(this.warehouse_inventory_product, this.editIndex)) {
+                    this.errors.push('Ya existe un insumo registrado con ese mismo lote. Por favor, modifique la cantidad.');
+                    this.reset(false);
+                    return;
+                }
 
                 vm.warehouse_product_attributes.map(function(campo, index) {
                     var element = document.getElementById(campo.name);
@@ -447,8 +586,7 @@
                     vm.reset(false);
                 }
                 else if (this.editIndex >= 0 ) {
-                    vm.records.splice(this.editIndex, 1);
-                    vm.records.push(vm.warehouse_inventory_product);
+                    vm.records.splice(this.editIndex, 1, vm.warehouse_inventory_product);
                     vm.reset(false);
                 }
             },
@@ -471,6 +609,17 @@
                 this.records.splice(index-1, 1);
             },
 
+            async getDirectHireSupplier() {
+                const vm = this;
+                var direct_hire_id = vm.record.purchase_direct_hire_id;
+                if (vm.record.purchase_direct_hire_id != '') {
+                    await axios.get('/warehouse/receptions/directhire/supplier/' + direct_hire_id)
+                        .then(response => {
+                           vm.record.purchase_supplier_id = response.data.records.id;
+                        });
+                }
+            },
+
             validateErrors(field) {
                 const vm = this;
                 vm.errors = [];
@@ -483,6 +632,10 @@
                     vm.errors.push('El campo cantidad debe ser mayor que cero.');
                 if (!field["currency_id"])
                     vm.errors.push('El campo moneda es obligatorio.');
+                if (!field["expiration_date"])
+                    vm.errors.push('El campo fecha de vencimiento es obligatorio.');
+                if (!field["batch_number"])
+                    vm.errors.push('El campo lote es obligatorio.');
 
                 if (vm.errors.length > 0)
                     return false;
@@ -502,6 +655,12 @@
                     vm.record = response.data.records;
                     vm.record.institution_id = vm.record.warehouse_institution_warehouse_end.institution_id;
                     vm.record.reception_date = vm.record.reception_date;
+                    vm.record.direct_hire = vm.record.direct_hire;
+                    vm.bring_purchase_info = vm.record.purchase_direct_hire_id ? true : false;
+                    vm.record.purchase_direct_hire_id = vm.record.purchase_direct_hire_id;
+                    vm.record.purchase_supplier_id = vm.record.purchase_supplier_id;
+                    vm.record.supplier = vm.record.supplier;
+                    vm.record.general_observations = vm.record.general_observations;
                     const timeOpen = setTimeout(addWarehouseId, 1000);
                     function addWarehouseId () {
                         vm.record.warehouse_id = vm.record.warehouse_institution_warehouse_end.warehouse_id;
@@ -519,6 +678,8 @@
                             id: '',
                             quantity: campo.quantity,
                             unit_value: campo.new_value,
+                            batch_number: campo.batch_number,
+                            expiration_date: campo.expiration_date,
                             minimum: campo.warehouse_inventory_product.warehouse_inventory_rule ? campo.warehouse_inventory_product.warehouse_inventory_rule.minimum : '',
                             maximum: campo.warehouse_inventory_product.warehouse_inventory_rule ? campo.warehouse_inventory_product.warehouse_inventory_rule.maximum : '',
                             currency_id: campo.warehouse_inventory_product.currency_id,
@@ -540,7 +701,7 @@
             this.table_options.headings = {
                 'name':                         'Insumo',
                 'quantity':                     'Cantidad',
-                'warehouse_product_attributes': 'Detalles',
+                'warehouse_product_attributes': 'Descripción',
                 'id':                           'Acción'
             };
             this.table_options.sortable   = ['name', 'quantity'];

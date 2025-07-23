@@ -17,6 +17,7 @@
 @stop
 
 @section('content')
+    @permission('budget.aditionalcredit.list')    
     <div class="row">
         <div class="col-12">
             <div class="card">
@@ -43,7 +44,8 @@
             </div>
         </div>
     </div>
-
+    @endpermission
+    @permission('budget.reduction.list')    
     <div class="row">
         <div class="col-12">
             <div class="card">
@@ -68,7 +70,8 @@
             </div>
         </div>
     </div>
-
+    @endpermission
+    @permission('budget.transfer.list')                          
     <div class="row">
         <div class="col-12">
             <div class="card">
@@ -93,4 +96,5 @@
             </div>
         </div>
     </div>
+    @endpermission
 @stop

@@ -42,35 +42,37 @@
                 </p>
             @endif
         </div>
-        <div class="form-group">
-            <div class="login-captcha-grid">
-                <div class="captcha-addon text-right">{!! Captcha::img() !!}</div>
-                <div class="text-left text-light mb-0">
-                    <i
-                        class="now-ui-icons arrows-1_refresh-69 cursor-pointer captcha-reload vertical-middle my-0 pt-1"
-                        data-toggle="tooltip" data-placement="right"
-                        title="{{ __('Presione este botón para generar una nueva imagen de captcha') }}"
-                    ></i>
+        @if (!config('active-directory.enabled', false))
+            <div class="form-group">
+                <div class="login-captcha-grid">
+                    <div class="captcha-addon text-right">{!! Captcha::img() !!}</div>
+                    <div class="text-left text-light mb-0">
+                        <i
+                            class="now-ui-icons arrows-1_refresh-69 cursor-pointer captcha-reload vertical-middle my-0 pt-1"
+                            data-toggle="tooltip" data-placement="right"
+                            title="{{ __('Presione este botón para generar una nueva imagen de captcha') }}"
+                        ></i>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="mb-2 form-group{{ $errors->has('captcha') ? ' has-error' : '' }}">
-            <div class="input-group form-group-no-border input-sm">
-                <span class="input-group-addon">
-                    <i class="now-ui-icons design_image"></i>
-                </span>
-                {!! Form::text('captcha', old('captcha'), [
-                    'class' => 'form-control', 'placeholder' => __('Captcha'),
-                    'id' => 'captcha', 'data-toggle' => 'tooltip',
-                    'title' => __('Introduzca los carácteres de la imagen'), 'data-placement' => 'right'
-                ]) !!}
+            <div class="mb-2 form-group{{ $errors->has('captcha') ? ' has-error' : '' }}">
+                <div class="input-group form-group-no-border input-sm">
+                    <span class="input-group-addon">
+                        <i class="now-ui-icons design_image"></i>
+                    </span>
+                    {!! Form::text('captcha', old('captcha'), [
+                        'class' => 'form-control', 'placeholder' => __('Captcha'),
+                        'id' => 'captcha', 'data-toggle' => 'tooltip',
+                        'title' => __('Introduzca los carácteres de la imagen'), 'data-placement' => 'right'
+                    ]) !!}
+                </div>
+                @if ($errors->has('captcha'))
+                    <p class="text-center text-light mb-0">
+                        <strong>{{ $errors->first('captcha') }}</strong>
+                    </p>
+                @endif
             </div>
-            @if ($errors->has('captcha'))
-                <p class="text-center text-light mb-0">
-                    <strong>{{ $errors->first('captcha') }}</strong>
-                </p>
-            @endif
-        </div>
+        @endif
         <div class="footer text-center">
             <label class="mb-2">
                 <div class="row">

@@ -47,14 +47,23 @@ final class GetPayrollArcAction
     public function all(Request $request): JsonResponse
     {
         $fiscalYear = $request->fiscal_year;
-        $inicioAnho = Carbon::createFromDate($fiscalYear)->startOfYear()->format('Y-m-d');
         $finAnho = Carbon::createFromDate($fiscalYear)->endOfYear()->format('Y-m-d');
 
-        $responsibleArc = $this->getPayrollArcResponsible($inicioAnho, $finAnho);
+        $responsibleArc = $this->getPayrollArcResponsible($fiscalYear);
 
         if (is_null($responsibleArc)) {
             return response()->json(['result' => false, 'message' => 'Debe configurar previamente el responsable de ARC para el período seleccionado'], 400);
         };
+
+        $payrollArcResponsible = PayrollArcResponsible::query()
+            ->where([
+                'fiscal_year' => $fiscalYear,
+                'blocked_at' => null
+            ])?->first();
+
+        if ($payrollArcResponsible) {
+            $payrollArcResponsible->update(['blocked_at' => now()]);
+        }
 
         $nameResponsibleArc = $responsibleArc->payrollStaff->last_name . ' ' . $responsibleArc->payrollStaff->first_name;
         $rifResponsibleArc = $responsibleArc->payrollStaff->rif ?? '';
@@ -139,14 +148,24 @@ final class GetPayrollArcAction
     public function getFormated(array $data, bool $encoded = true)
     {
         $fiscalYear = $data['fiscal_year'];
-        $inicioAnho = Carbon::createFromDate($fiscalYear)->startOfYear()->format('Y-m-d');
         $finAnho = Carbon::createFromDate($fiscalYear)->endOfYear()->format('Y-m-d');
+
+        $payrollArcResponsible = PayrollArcResponsible::query()
+            ->where([
+                'fiscal_year' => $fiscalYear,
+                'blocked_at' => null
+            ])?->first();
+
+        if ($payrollArcResponsible) {
+            $payrollArcResponsible->update(['blocked_at' => now()]);
+        }
+
         $payrollStaffs = $encoded
             ? (json_decode($data['payroll_staffs'] ?? '') ?? [])
             : $data['payroll_staffs'] ?? [];
         $arcConceptIds = PayrollConcept::where('arc', true)->toBase()->pluck('id')->toArray();
 
-        $responsibleArc = $this->getPayrollArcResponsible($inicioAnho, $finAnho);
+        $responsibleArc = $this->getPayrollArcResponsible($fiscalYear);
         $nameResponsibleArc = $responsibleArc->payrollStaff->last_name . ' ' . $responsibleArc->payrollStaff->first_name;
         $rifResponsibleArc = $responsibleArc->payrollStaff->rif ?? '';
 
@@ -296,12 +315,11 @@ final class GetPayrollArcAction
     /**
      * Obtiene el responsable de la nómina de acuerdo a las fechas proporcionadas.
      *
-     * @param string $inicioAnho Fecha de inicio del año.
-     * @param string $finAnho Fecha de fin del año.
+     * @param string $fiscalYear A#o fiscal
      *
      * @return ?PayrollArcResponsible El responsable de la nómina o null si no se encuentra.
      */
-    public function getPayrollArcResponsible($inicioAnho, $finAnho): ?PayrollArcResponsible
+    public function getPayrollArcResponsible($fiscalYear): ?PayrollArcResponsible
     {
         return PayrollArcResponsible::query()
             ->with(['payrollStaff' => function ($query) {
@@ -319,10 +337,7 @@ final class GetPayrollArcAction
                     'payrollResponsibility'
                 );
             }])
-            ->where('start_date', '<=', $finAnho)
-            ->where(function ($query) use ($inicioAnho) {
-                $query->where('end_date', '>=', $inicioAnho)
-                    ->orWhereNull('end_date');
-            })->orderBy('start_date', 'desc')->first();
+            ->where('fiscal_year', $fiscalYear)
+            ->first();
     }
 }

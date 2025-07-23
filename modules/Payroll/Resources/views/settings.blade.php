@@ -385,6 +385,12 @@
                         {{-- Responsables de ARC --}}
                         <payroll-arc-responsibles></payroll-arc-responsibles>
 
+                        {{-- Grupo Etario --}}
+                        <payroll-age-groups></payroll-age-groups>
+
+                        {{-- Antiguedad --}}
+                        <payroll-seniority></payroll-seniority>
+
                         {{-- Códigos de procesos --}}
                         <payroll-process-codes></payroll-process-codes>
 

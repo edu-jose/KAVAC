@@ -42,7 +42,7 @@ class PayrollPaymentType extends Model implements Auditable
         'code', 'name', 'payment_periodicity', 'correlative', 'start_date',
         'payment_relationship', 'associated_records', 'finance_bank_account_id', 'accounting_account_id',
         'order', 'individual', 'accounting_entry_category_id', 'finance_payment_method_id', 'receipt', 'skip_moments',
-        'ordinary_payment', 'is_trust'
+        'ordinary_payment', 'is_survivor', 'is_trust'
     ];
 
     /**
@@ -171,5 +171,17 @@ class PayrollPaymentType extends Model implements Auditable
         return (
             Module::has('Finance') && Module::isEnabled('Finance')
         ) ? $this->belongsTo(\Modules\Finance\Models\FinancePaymentMethods::class, 'finance_payment_method_id') : null;
+    }
+
+    /**
+     * Método que obtiene la información de los datos laborales asociados a un tipo de pago
+     *
+     * @author    Pedro Contreras <pmcontreras@cenditel.gob.ve>
+     *
+     * @return    \Illuminate\Database\Eloquent\Relations\belongsToMany
+     */
+    public function payrollEmployments()
+    {
+        return $this->belongsToMany(PayrollEmployment::class);
     }
 }

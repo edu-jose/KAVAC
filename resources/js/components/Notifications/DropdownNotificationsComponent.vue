@@ -12,8 +12,8 @@
             <a class="dropdown-header text-center">Notificaciones</a>
             <div class="dropdown-item">
                 <ul class="media-list msg-list" v-if="notifications.length">
-                    <li class="media unread" v-for="(notify, index) in notifications" :key="index">
-                        <div class="media-body" v-if="notify.data.title && notify.data.message && index < 5">
+                    <li class="media unread" v-for="(notify, index) in previewNotifications" :key="index">
+                        <div class="media-body">
                             <strong>
                                 <i class="fa fa-envelope-o cursor-pointer" title="Marcar como leído"
                                    data-toggle="tooltip" @click.prevent="markAsReaded(notify.id)"></i>
@@ -85,16 +85,26 @@
         },
         mounted() {
             let vm = this;
-            window.Echo.private(`App.User.${vm.userId}`).notification((notification) => {
+            window.Echo.private(`App.Models.User.${vm.userId}`).notification((notification) => {
                 let newNotifications = {
                     id: notification.id,
+                    created_at: notification.currentTimestamp,
                     data: {
                         title: notification.title,
-                        message: notification.message
+                        message: notification.message,
                     }
                 };
-                vm.notifications.push(newNotifications);
+                vm.notifications.unshift(newNotifications);
             });
+        },
+        computed: {
+            previewNotifications() {
+                const vm = this;
+                return vm.notifications
+                    .filter(n => n.data && n.data.title && n.data.message)
+                    .slice(0, 5);
+            }
         }
+
     };
 </script>

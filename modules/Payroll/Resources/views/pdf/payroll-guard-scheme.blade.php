@@ -42,7 +42,7 @@
             <th width="5%" rowspan="3">
                 <div style="width: 100%;">
                     <div style="width: 100%;">
-                        <span style="text-transform: uppercase;">Código</span>
+                        <span style="text-transform: uppercase;">Ficha</span>
                     </div>
                 </div>
             </th>
@@ -86,7 +86,7 @@
             $usableHeight = 115;
             $currentHeight = 0;
             $charWidth = 2;
-            $charHeight = 3;
+            $charHeight = 3.3;
             $cellWidth = ($pageWidth * 0.86) / count($daysPerMonth[$month]);
             $cellWidthStaff = $pageWidth * 0.10;
         @endphp
@@ -97,9 +97,9 @@
                 $maxCellCharacters = 0;
                 $maxStaffCharacters = 0;
 
-                $maxStaffCharacters = max($maxStaffCharacters, strlen($staff['name']));
+                $maxStaffCharacters = max($maxStaffCharacters, strlen($staff['id_number'] . ' - ' . $staff['name']));
 
-                $totalStaffCharacters = strlen($staff['name']);
+                $totalStaffCharacters = strlen($staff['id_number'] . ' - ' . $staff['name']);
                 $charsPerLineStaff = floor($cellWidthStaff / $charWidth);
                 $LineCountStaff = ($charsPerLineStaff > 0) ? ceil($totalStaffCharacters / $charsPerLineStaff) : 1;
                 $cellStaffHeight = $LineCountStaff * $charHeight;
@@ -147,7 +147,7 @@
             <tr>
                 <td width="5%">
                     <span style="text-transform: uppercase;">
-                        {{ $currentHeight }}
+                        {{ ('' != $staff['worksheet_code']) ? $staff['worksheet_code'] : $staff['id_number'] }}
                     </span>
                 </td>
                 <td width="10%">
@@ -182,3 +182,60 @@
         @endforeach
     </tbody>
 </table>
+
+<div>
+    <table style="font-size: 8rem; margin-top: 100px" cellpadding="3">
+        <tr>
+            <td>
+                &nbsp;
+            </td>
+        </tr>
+        <tr>
+            <td>
+                &nbsp;
+            </td>
+        </tr>
+        <tr>
+            <td>
+                &nbsp;
+            </td>
+        </tr>
+        <tr>
+            <td>
+                &nbsp;
+            </td>
+        </tr>
+        <tr>
+            <td>
+                &nbsp;
+            </td>
+        </tr>
+        <tr>
+            <td>
+                &nbsp;
+            </td>
+        </tr>
+        <tr>
+            <td align="center" width="30%" style="border-top: solid 1px #000;">
+                Elaborado por:
+            </td>
+            <td width="35%">
+                &nbsp;
+            </td>
+            <td align="center" width="30%" style="border-top: solid 1px #000;">
+                Aprobado por:
+            </td>
+        </tr>
+        <tr>
+            <td align="center" width="30%">
+                {{ $profile_name  }}
+            </td>
+            <td width="35%">
+                &nbsp;
+            </td>
+            <td align="center" width="30%">
+                {{ $approver }}
+            </td>
+        </tr>
+    </table>
+</div>

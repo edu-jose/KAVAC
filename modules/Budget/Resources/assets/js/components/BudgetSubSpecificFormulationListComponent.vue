@@ -99,7 +99,7 @@
             </div>
             <div slot="default_currency_amount" slot-scope="props" class="text-right">
                 {{
-                    formatToCurrency(parseFloat(props.row.default_currency_amount), currencyDefaultSymbol)
+                    formatToCurrency(parseFloat(props.row.default_currency_amount.toString().replace(',', '.')), currencyDefaultSymbol)
                 }}
             </div>
             <div slot="assigned" slot-scope="props">

@@ -136,7 +136,9 @@
                         <div v-for="(att, index) in props.row.warehouse_product_values" :key="index">
                             <b>{{att.warehouse_product_attribute.name +":"}}</b> {{ att.value}}
                         </div>
-                            <b>Valor:</b> {{props.row.unit_value}} {{(props.row.currency)?props.row.currency.name:''}}
+                        <b>Valor:</b> {{props.row.unit_value}} {{(props.row.currency)?props.row.currency.name:''}} <br>
+                        <b>Fecha de vencimiento:</b> {{ props.row.expiration_date ? format_date(props.row.expiration_date) : '' }} <br>
+                        <b>Lote:</b> {{ props.row.batch_number }}
                     </span>
                 </div>
                 <div slot="inventory" slot-scope="props">
@@ -145,7 +147,7 @@
                             props.row.warehouse_institution_warehouse.warehouse.name
                             }} <br>
                         <b>Existencia:</b> {{ props.row.real }}<br>
-                        <b>Reservados:</b> {{ (props.row.reserved === null)? '0':props.row.reserved }}
+                        <b>Entregados:</b> {{ (props.row.reserved === null)? '0' : props.row.reserved }}
                         <br>
                         <b>Solicitados:</b> {{ quantityProductRequests(props.row.code) }}
                         <br>

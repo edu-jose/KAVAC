@@ -72,6 +72,7 @@ class InstitutionController extends Controller
      */
     public function store(Request $request)
     {
+        $maxInput = 'max:100';
         $validations = [
             'rif' => [
                 'required',
@@ -82,9 +83,9 @@ class InstitutionController extends Controller
                 ? Rule::unique('institutions', 'rif')->ignore($request->institution_id)
                 : Rule::unique('institutions', 'rif')
             ],
-            'acronym' => ['required', 'max:100'],
-            'name' => ['required', 'max:100'],
-            'business_name' => ['required', 'max:100'],
+            'acronym' => ['required', $maxInput],
+            'name' => ['required', $maxInput],
+            'business_name' => ['required', $maxInput],
             'start_operations_date' => ['required', 'date'],
             'legal_address' => ['required'],
             'postal_code' => ['required', 'max:10'],
@@ -128,26 +129,15 @@ class InstitutionController extends Controller
             $validations['banner_id'] = ['required'];
             $errorMessages['banner_id.required'] = __('El banner o cintillo es obligatorio.');
         }
-
-        $validator = Validator::make($request->all(), $validations, $errorMessages);
-
-        if ($validator->fails()) {
-            return redirect()->route('settings.index')->withErrors($validator);
-        }
-
-        /*
-         * TODO: Validación para múltiples organizaciones para cuando se establece en verdadero en la configuración de
-         * la aplicación
-         */
+        $this->validate($request, $validations, $errorMessages);
 
         // Identificador del logo del organismo a registrar
         $logo = (!empty($request->logo_id)) ? $request->logo_id : null;
         // Identificador del banner del organismo a registrar
         $banner = (!empty($request->banner_id)) ? $request->banner_id : null;
 
-        // Objeto con información de la configuración de la aplicación
-        $setting = Setting::where('active', true)->first();
-        $Parameter = Parameter::where('p_key', "multi_institution")->first();
+        // Información que indica si esta configurado para multiples organismos
+        $parameter = Parameter::where('p_key', "multi_institution")->first();
 
         // Arreglo con los datos del organismo a registrar
         $data = [
@@ -164,7 +154,10 @@ class InstitutionController extends Controller
             'municipality_id' => $request->municipality_id,
             'city_id' => $request->city_id,
             'default' => ($request->default !== null),
-            'active' => (($request->active === null && Institution::where('active', true)->get()->count() <= 1) || $request->active),
+            'active' => (
+                ($request->active === null && Institution::where('active', true)->get()->count() <= 1) ||
+                $request->active
+            ),
             'legal_base' => ($request->legal_base) ? $request->legal_base : null,
             'legal_form' => ($request->legal_form) ? $request->legal_form : null,
             'main_activity' => ($request->main_activity) ? $request->main_activity : null,
@@ -178,7 +171,8 @@ class InstitutionController extends Controller
             'banner_id' => $banner,
         ];
 
-        $multi_institution = !is_null($Parameter) ? ($Parameter->p_value == 'true' ? true : false) : false;
+        $parameterValue = ($parameter->p_value == 'true' ? true : false);
+        $multi_institution = !is_null($parameter) ? $parameterValue : false;
 
         if (!$multi_institution) {
             /*
@@ -192,8 +186,7 @@ class InstitutionController extends Controller
                 $institutions = Institution::first();
 
                 if ($institutions) {
-                    $institution = Institution::where('default', true)
-                      ->update(['default' => false]);
+                    Institution::where('default', true)->update(['default' => false]);
                 }
             }
 

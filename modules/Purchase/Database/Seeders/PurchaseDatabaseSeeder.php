@@ -35,5 +35,7 @@ class PurchaseDatabaseSeeder extends Seeder
         $this->call(PurchaseProcessesTableSeeder::class);
         $this->call(PurchaseTypeOperationsTableSeeder::class);
         $this->call(PurchaseProductTableSeeder::class);
+        $this->call(PurchasePriorityOrdersTableSeeder::class);
+        $this->call(PurchasePrioritiesTableSeeder::class);
     }
 }

@@ -102,7 +102,6 @@
                <b>Nro.Factura:</b><span class="ml-2">{{ $financePaymentExecute->payment_number }}</span>
             </td>
         </tr>
-
     </tbody>
 </table>
 <table>
@@ -134,6 +133,11 @@
             <td style="text-align: center;">{{ $financePaymentExecute->financeBankAccount->formatedCccNumber}}</td>
             <td style="text-align: center;">
                 {{ $payOrder[0]->currency->symbol }} {{ number_format($financePaymentExecute->paid_amount, $payOrder[0]->currency->decimal_places, ",", ".") }}
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: center;">
+                <strong>Nro. de Referencia bancaria</strong> {{ $financePaymentExecute->general_bank_reference ?? "No definido" }}
             </td>
         </tr>
         <tr>

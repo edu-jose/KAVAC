@@ -805,6 +805,19 @@ Vue.component('payroll-report-historical-position', () =>
 );
 
 /**
+ * Componentes para gestionar la creación de los reportes de talento humano
+ * Reporte de promedio de conceptos de vacaciones
+ *
+ * @author Daniel Contreras <dcontreras@cenditel.gob.ve>
+ */
+Vue.component('payroll-report-average-concept', () =>
+    import(
+        /* webpackChunkName: "payroll-report-average-concept" */
+        './components/reports/PayrollReportAverageConceptsComponent.vue'
+    )
+);
+
+ /**
  * Componentes para gestionar la creación de los reportes de talento humano / Reporte de Trabajadores por nómina
  *
  * @author Juan Rosas <juan.rosasr01@gmail.com>
@@ -1027,6 +1040,17 @@ Vue.component('payroll-trust-text-file', () =>
 );
 
 /**
+ * Componente para crear un archivo txt de nómina
+ *
+ * @author Daniel Contreras <dcontreras@cenditel.gob.ve>
+ */
+Vue.component('payroll-trust-file-staff', () =>
+    import(
+        /* webpackChunkName: "payroll-trust-text-file" */
+        './components/trust_file_staff/PayrollTrustFileStaffComponent.vue')
+);
+
+/**
  * Componente para listar, crear, actualizar y borrar datos de grupos de supervisados
  *
  * @author Daniel Contreras <dcontreras@cenditel.gob.ve>
@@ -1111,7 +1135,51 @@ Vue.component('payroll-ari-register-info', () =>
         /* webpackChunkName: "payroll-ari-register-info" */
         './components/ari_register/PayrollAriRegisterInfoComponent.vue')
 );
+/**
+ * Componentes para la gestión de los fondo de ahorros
+ *
+ * @author FjEscala <fescala@cenditel.gob.ve>
+ */
+Vue.component('payroll-garnishments-form', () =>
+    import(
+        /* webpackChunkName: "payroll-garnishments-form" */
+        './components/wage_garnishments/PayrollGarnishmentsFormComponent.vue')
+);
 
+Vue.component('payroll-garnishments-list', () =>
+    import(
+        /* webpackChunkName: "payroll-garnishments-list" */
+        './components/wage_garnishments/PayrollGarnishmentsListComponent.vue')
+);
+
+Vue.component('payroll-garnishments-info', () =>
+    import(
+        /* webpackChunkName: "payroll-garnishments-info" */
+        './components/wage_garnishments/PayrollGarnishmentsInfoComponent.vue')
+);
+
+/**
+ * Componentes para la gestión de los fondo de ahorros
+ *
+ * @author FjEscala <fescala@cenditel.gob.ve>
+ */
+Vue.component('payroll-savings-form', () =>
+    import(
+        /* webpackChunkName: "payroll-savings-form" */
+        './components/savings_fund/PayrollSavingsFormComponent.vue')
+);
+
+Vue.component('payroll-savings-list', () =>
+    import(
+        /* webpackChunkName: "payroll-savings-list" */
+        './components/savings_fund/PayrollSavingsListComponent.vue')
+);
+
+Vue.component('payroll-savings-info', () =>
+    import(
+        /* webpackChunkName: "payroll-savings-info" */
+        './components/savings_fund/PayrollSavingsInfoComponent.vue')
+);
 /**
  * Componentes para la gestión de los esquemas de guardias
  *
@@ -1221,6 +1289,30 @@ Vue.component('payroll-arc-info', () =>
     import(
         /* webpackChunkName: "payroll-arc-info" */
         './components/arc/PayrollArcInfoComponent.vue')
+);
+
+/**
+ * Componente para crear, listar, actualizar y borrar datos de grupo etario
+ *
+ * @author Pedro Contreras <pmcontreras@cenditel.gob.ve>
+ */
+Vue.component('payroll-age-groups', () =>
+    import(
+        /* webpackChunkName: "payroll-age-groups" */
+        './components/settings/PayrollAgeGroupsComponent.vue'
+    )
+);
+
+/**
+ * Componente para crear, listar, actualizar y borrar datos de antiguedad
+ *
+ * @author Pedro Contreras <pmcontreras@cenditel.gob.ve>
+ */
+Vue.component('payroll-seniority', () =>
+    import(
+        /* webpackChunkName: "payroll-seniority" */
+        './components/settings/PayrollSeniorityComponent.vue'
+    )
 );
 
 /**
@@ -1689,5 +1781,31 @@ Vue.mixin({
                 vm.payroll_time_parameters = Object.values(response.data);
             });
         },
+                /**
+         * Método que obtiene un arreglo con los grupos etarios
+         *
+         * @author    Pedro Contreras <pmcontreras@cenditel.gob.ve>
+         */
+                async getPayrollAgeGroups() {
+                    const vm = this;
+                    vm.payroll_age_groups = [];
+                    await axios.get(`${window.app_url}/payroll/get-age-groups`).then(response => {
+                        vm.payroll_age_groups = response.data;
+                    });
+                },
+        
+                /**
+                 * Método que obtiene un arreglo con las antiguedades
+                 *
+                 * @author    Pedro Contreras <pmcontreras@cenditel.gob.ve>
+                 */
+                async getPayrollSeniorities() {
+                    const vm = this;
+                    vm.payroll_seniorities = [];
+                    await axios.get(`${window.app_url}/payroll/get-seniorities`).then(response => {
+                        vm.payroll_seniorities = response.data;
+                    });
+                },
+        
     }
 });

@@ -39,5 +39,15 @@ class PayrollProcessCode extends Model implements Auditable
      */
     protected $fillable = ['code', 'name'];
 
-    /** Los métodos con relaciones a otros métodos se debe indicar el tipo de relación a retornar, Ej. public function myRelation(): BelongsTo */
+    /**
+     * Método que obtiene la información de los datos personales asociados a un grupo etario
+     *
+     * @author    Pedro Contreras <pmcontreras@cenditel.gob.ve>
+     *
+     * @return    \Illuminate\Database\Eloquent\Relations\belongsToMany
+     */
+    public function payrollStaffs()
+    {
+        return $this->belongsToMany(PayrollStaff::class);
+    }
 }

@@ -69,6 +69,14 @@
                                     <input type="hidden" v-model="record.id">
                                 </div>
                             </div>
+                            <div class="col-md-4">
+                                <div class="form-group is-required">
+                                    <label>Unidad de medida:</label>
+                                    <select2 :options="measurement_units" v-model="record.measurement_unit_id"></select2>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
 
                             <div class="col-md-6">
                                 <div class="form-group is-required" data-toggle="tooltip" v-has-tooltip
@@ -80,50 +88,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="form-group is-required">
-                                    <label>Unidad de medida:</label>
-                                    <select2 :options="measurement_units" v-model="record.measurement_unit_id"></select2>
-                                </div>
-                            </div>
-                            <!-- cuenta contables -->
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label>Cuenta Contables</label>
-                                    <select2 :options="budget_accounts"
-                                             v-model="record.accounting_account_id"></select2>
-                                </div>
-                            </div>
-                            <!-- ./cuenta contables -->
-                            <!-- impuesto -->
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label>Impuesto:</label>
-                                    <select2 :options="taxes" v-model="record.history_tax_id"></select2>
-                                </div>
-                            </div>
-                            <!-- ./impuesto -->
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label for="" class="control-label">Atributos personalizados</label>
-                                    <div class="col-12">
-                                        <div class="custom-control custom-switch" data-toggle="tooltip"
-                                             title="Establecer los atributos del insumo para gestionar las variantes">
-                                            <input type="checkbox" class="custom-control-input" id="define_attributes"
-                                                   :value="true" v-model="record.define_attributes">
-                                            <label class="custom-control-label" for="define_attributes"></label>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                         <div v-show="this.record.define_attributes">
-                            <div class="row" style="margin: 10px 0">
-                                <h6 class="card-title cursor-pointer" @click="addAttribute()" >
-                                    Gestionar nuevo atributo <i class="fa fa-plus-circle"></i>
-                                </h6>
-                            </div>
                             <div class="row" style="margin: 20px 0">
 
                                 <div class="col-6" v-for="(attribute, index) in record.warehouse_product_attributes"
@@ -171,14 +136,10 @@
                     <div class="modal-body modal-table">
                         <hr>
                         <v-client-table :columns="columns" :data="records" :options="table_options">
-                            <div slot="attributes" slot-scope="props">
-                                <div v-if="props.row.define_attributes">
-                                    <div v-for="(att, index) in props.row.warehouse_product_attributes" :key="index">
-                                        <span>
-                                            {{ att.name }}
-                                        </span>
-                                    </div>
-                                </div>
+                            <div slot="measurement_unit" slot-scope="props">
+                                <span v-if="props.row.measurement_unit">
+                                    {{ props.row.measurement_unit.name || props.row.measurement_unit.acronym }}
+                                </span>
                                 <div v-else>
                                     <span>N/A</span>
                                 </div>
@@ -226,7 +187,7 @@
 
                 errors: [],
                 records: [],
-                columns: ['name', 'description', 'attributes', 'id'],
+                columns: ['name', 'description', 'measurement_unit', 'id'],
                 measurement_units: [],
                 budget_accounts: [],
                 taxes: [],
@@ -252,16 +213,6 @@
                     history_tax_id:                       '',
                     warehouse_product_attributes: []
                 };
-            },
-            /**
-             * Método que agrega un nuevo campo de atributo al formulario
-             *
-             * @author Henry Paredes <hparedes@cenditel.gob.ve>
-             */
-            addAttribute()
-            {
-                var field = {id: '', name: '', warehouse_product_id: ''};
-                this.record.warehouse_product_attributes.push(field);
             },
             /**
              * Método que obtiene las unidades de medida del insumo
@@ -364,7 +315,7 @@
             vm.table_options.headings = {
                 'name':        'insumo',
                 'description': 'Descripción',
-                'attributes':  'Atributos',
+                'measurement_unit':  'Unidad',
                 'id':          'Acción'
             };
             vm.table_options.sortable       = ['name', 'description'];
@@ -372,7 +323,7 @@
             vm.table_options.columnsClasses = {
                 'name':        'col-xs-2',
                 'description': 'col-xs-4',
-                'attributes':  'col-xs-4',
+                'measurement_unit':  'col-xs-4',
                 'id':          'col-xs-2'
             };
         },

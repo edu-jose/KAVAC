@@ -63,6 +63,46 @@
                                     />
                                 </div>
                             	<!-- ./valor máximo -->
+								<div class="form-group ml-1 mt-3">
+									<h6
+										class="card-title"
+										id="classification"
+									>
+										Clasificación:
+										<i
+											class="fa fa-plus-circle cursor-pointer"
+											@click="addClassification()"
+										></i>
+									</h6>
+								</div>
+								<div class="row" v-for="(classification, index) in record.classifications" :key="index">
+									<div class="col-md-11">
+										<div class="form-group is-required">
+											<label>Nombre:</label>
+											<input
+												type="text"
+												:disabled="disableClassifications.includes(classification.name)"
+												class="form-control input-sm"
+												v-model="classification.name"
+												@input="classification.name = classification.name.toUpperCase()"
+											>
+										</div>
+									</div>
+									<div class="col-1">
+										<div class="form-group">
+											<button
+												style="margin-top: 1.9rem !important;"
+												class=" btn btn-sm btn-danger btn-action"
+												type="button"
+												v-if="!disableClassifications.includes(classification.name)"
+												@click="removeRow(index, record.classifications)"
+												title="Eliminar este dato" data-toggle="tooltip"
+											>
+												<i class="fa fa-minus-circle"></i>
+											</button>
+										</div>
+									</div>
+								</div>
                             </div>
                             <div class="col-md-6">
                                 <!-- descripción -->
@@ -131,7 +171,11 @@
 					sign:        '',
 					affect_id:   '',
 					value_max:   '',
+					classifications: [],
 				},
+				disableClassifications: [
+					'DESCANSOS', 'DOMINGOS', 'FERIADOS', 'TURNOS SENCILLOS'
+				],
 				exception_types: [],
 				exceptionTypes: [],
 				signs:   [
@@ -175,13 +219,28 @@
 					sign:        '',
 					affect_id:   '',
 					value_max:   '',
+					classifications: [],
 				};
 				vm.getPayrollExceptionTypes();
 			},
+
 			async getPayrollExceptionTypes() {
 				const vm = this;
 				await axios.get(`${window.app_url}/payroll/get-exception-types`).then(response => {
 					vm.exceptionTypes = vm.exception_types = response.data;
+				});
+			},
+
+			/**
+			 * Método que agregar una nueva clasificación al formulario
+			 *
+			 * @author  Daniel Contreras <dcontreras@cenditel.gob.ve>
+			 */
+			addClassification() {
+				const vm = this;
+
+				vm.record.classifications.push({
+					name: '',
 				});
 			},
 		},

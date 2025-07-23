@@ -108,6 +108,16 @@
                                         </div>
                                     </div>
                                 </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <strong>Grupo Etario:</strong>
+                                        <div class="row" style="margin: 1px 0">
+                                            <span class="col-md-12">
+                                                {{ record.payroll_age_group ? record.payroll_age_group.name : 'NO REGISTRADO' }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                             <hr>
                             <h6 class="text-center">Datos de la persona de contacto</h6><br>
@@ -222,6 +232,16 @@
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group">
+                                        <strong>Región:</strong>
+                                        <div class="row" style="margin: 1px 0">
+                                            <span class="col-md-12">
+                                                {{ record.region ? record.region.name : 'NO REGISTRADO' }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
                                         <strong>Municipio:</strong>
                                         <div class="row" style="margin: 1px 0">
                                             <span class="col-md-12">
@@ -236,6 +256,16 @@
                                         <div class="row" style="margin: 1px 0">
                                             <span class="col-md-12">
                                                 {{ record.parish ? record.parish.name : 'NO REGISTRADO' }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <strong>Localidad:</strong>
+                                        <div class="row" style="margin: 1px 0">
+                                            <span class="col-md-12">
+                                                {{ record.locality ? record.locality.name : 'NO REGISTRADO' }}
                                             </span>
                                         </div>
                                     </div>
@@ -355,11 +385,15 @@
                     estate_id: '',
                     municipality_id: '',
                     parish_id: '',
+                    region_id: '',
+                    locality_id: '',
                     address: '',
                     medical_history: '',
                     uniform_sizes: [],
                     phones: [],
                     parish: {},
+                    locality: {},
+                    region: {},
                 },
                 errors: [],
                 payroll_nationalities: [],

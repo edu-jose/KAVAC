@@ -180,4 +180,28 @@ class ProjectTrackingTagsController extends Controller
         $projectTrackingTags->delete();
         return response()->json(['message' => 'Success'], 200);
     }
+
+    /**
+     * Retorna un json con todas las etiquetas registradas para ser usado en un componente <select2>
+     *
+     * @author    Pedro Contreras <pmcontreras@cenditel.gob.ve>
+     *
+     * @return    \Illuminate\Http\JsonResponse
+     */
+    public function getTags()
+    {
+        $tagsList = ProjectTrackingTags::all();
+        $tags = [];
+        array_push($tags, [
+            'id' => '',
+            'text' => 'Seleccione...'
+        ]);
+        foreach ($tagsList as $tag) {
+            array_push($tags, [
+                'id' => $tag->id,
+                'text' => $tag->name
+            ]);
+        }
+        return response()->json($tags);
+    }
 }

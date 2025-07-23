@@ -87,8 +87,9 @@ class StaffImport implements
             ])->id;
         }
         if (!empty($row['parroquia'])) {
+            $parishName = explode(' - ', $row['parroquia']);
             $parish_id = Parish::firstOrCreate([
-                'name' => $row['parroquia'],
+                'name' => trim($parishName[2]),
             ])->id;
         }
         /* Datos del personal */

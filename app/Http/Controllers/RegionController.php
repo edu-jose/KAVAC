@@ -141,7 +141,7 @@ class RegionController extends Controller
                 'text' => $estate->name
             ];
         })->toArray();
-        array_unshift($regions, ['id' => '0', 'text' => 'Seleccione...']);
+        array_unshift($regions, ['id' => '', 'text' => 'Seleccione...']);
         return response()->json(['records' => $regions], 200);
     }
 

@@ -2,9 +2,11 @@
 
 namespace Modules\Payroll\Database\Seeders;
 
+use Illuminate\Support\Str;
 use Illuminate\Database\Seeder;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Database\Eloquent\Model;
 use Modules\Payroll\Models\PayrollInactivityType;
 
 /**
@@ -49,9 +51,18 @@ class PayrollInactivityTypesTableSeeder extends Seeder
 
         DB::transaction(function () use ($payrollInactivityTypes) {
             foreach ($payrollInactivityTypes as $payrollInactivityType) {
-                PayrollInactivityType::updateOrCreate(
-                    ['name' => $payrollInactivityType['name']]
-                );
+                // 1. Busca el registro, incluyendo los soft-deleted
+                $existingType = PayrollInactivityType::withTrashed()
+                    ->where('name', $payrollInactivityType['name'])
+                    ->first();
+
+                if (empty($existingType)) {
+                    PayrollInactivityType::create([
+                        'name' => $payrollInactivityType['name']
+                    ]);
+                } elseif ($existingType && $existingType->trashed()) {
+                    $existingType->restore();
+                }
             }
         });
     }

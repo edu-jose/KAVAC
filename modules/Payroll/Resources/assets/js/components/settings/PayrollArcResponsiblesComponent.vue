@@ -47,24 +47,12 @@
 									<input type="hidden" v-model="record.id">
 								</div>
 							</div>
-							<div class="col-md-4">
-								<div class="form-group is-required">
-									<label>Desde:</label>
-									<input class="form-control input-sm"
-										type="date"
-										v-model="record.start_date"
-										:max="fiscal_date"/>
-								</div>
-							</div>
-							<div class="col-md-4">
+							<div class="col-md-4" id="helpFiscalYear">
 								<div class="form-group">
-									<label>Hasta:</label>
-									<input class="form-control input-sm"
-										type="date"
-										v-model="record.end_date"
-										:disabled="record.start_date == ''"
-										:min="record.start_date"
-										:max="fiscal_date"/>
+									<label>Período fiscal:</label>
+									<select2
+										:options="fiscal_years"
+										v-model="record.fiscal_year"></select2>
 								</div>
 							</div>
                         </div>
@@ -98,11 +86,13 @@
 							</div>
 	                		<div slot="id" slot-scope="props" class="text-center">
 	                			<button @click="initUpdate(props.row.id, $event)"
+										:disabled="props.row.blocked_at ? 'disabled' : null"
 		                				class="btn btn-warning btn-xs btn-icon btn-action"
 		                				title="Modificar registro" data-toggle="tooltip" type="button">
 		                			<i class="fa fa-edit"></i>
 		                		</button>
 		                		<button @click="deleteRecord(props.row.id, 'payroll/arc-responsible')"
+										:disabled="props.row.blocked_at ? 'disabled' : null"
 										class="btn btn-danger btn-xs btn-icon btn-action"
 										title="Eliminar registro" data-toggle="tooltip"
 										type="button">
@@ -124,14 +114,13 @@
 				record: {
 					id: '',
 					payroll_staff_id: '',
-                    start_date: '',
-                    end_date: ''
+					fiscal_year: '',
 				},
-				fiscal_date: '',
+				fiscal_years: [],
 				payroll_staffs: [],
 				errors: [],
 				records: [],
-				columns: ['payroll_staff', 'start_date', 'end_date', 'id'],
+				columns: ['payroll_staff', 'fiscal_year', 'id'],
 			}
 		},
 		methods: {
@@ -144,10 +133,93 @@
 				this.record = {
 					id: '',
 					payroll_staff_id: '',
-                    start_date: '',
-                    end_date: ''
+					fiscal_year: '',
 				};
 				this.errors = [];
+			},
+			/**
+			 * Listado de años fiscales
+			 *
+			 * @author     Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
+			 */
+			async getFiscalYears() {
+				const vm = this;
+				const url = vm.setUrl('fiscal-years/closed/list');
+				await axios.get(url).then(response => {
+					vm.fiscal_years = response.data.records;
+					vm.fiscal_years.unshift({"id": "", "text": "Seleccione..."});
+				}).catch(error => {
+					console.error(error);
+				});
+			},
+			/**
+			 * Método para la eliminación de registros
+			 *
+			 * @author  Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
+			 *
+			 * @param  {integer} id    ID del Elemento seleccionado para su eliminación
+			 * @param  {string}  url   Ruta que ejecuta la acción para eliminar un registro
+			 */
+			deleteRecord(id, url) {
+				const vm = this;
+				/** @type {string} URL que atiende la petición de eliminación del registro */
+				var url = vm.setUrl((url) ? url : vm.route_delete);
+
+				bootbox.confirm({
+					title: "¿Eliminar registro?",
+					message: "¿Está seguro de eliminar este registro?",
+					buttons: {
+						cancel: {
+							label: '<i class="fa fa-times"></i> Cancelar'
+						},
+						confirm: {
+							label: '<i class="fa fa-check"></i> Confirmar'
+						}
+					},
+					callback: async function (result) {
+						if (result) {
+							vm.loading = true;
+							/** @type {object} Objeto con los datos del registro a eliminar */
+							let recordDelete = JSON.parse(JSON.stringify(vm.records.filter((rec) => {
+								return rec.id === id;
+							})[0]));
+
+							await axios.delete(`${url}${url.endsWith('/') ? '' : '/'}${recordDelete.id}`).then(response => {
+								if (typeof (response.data.error) !== "undefined") {
+									/** Muestra un mensaje de error si sucede algún evento en la eliminación */
+									vm.showMessage('custom', 'Alerta!', 'warning', 'screen-error', response.data.message);
+									return false;
+								}
+								/** @type {array} Arreglo de registros filtrado sin el elemento eliminado */
+								vm.records = JSON.parse(JSON.stringify(vm.records.filter((rec) => {
+									return rec.id !== id;
+								})));
+								if (typeof (vm.$refs.tableResults) !== "undefined") {
+									vm.$refs.tableResults.refresh();
+								}
+								vm.showMessage('destroy');
+							}).catch(error => {
+								if (typeof (error.response) != "undefined") {
+									if (error.response.status == 403) {
+										vm.showMessage(
+											'custom', 'Acceso Denegado', 'danger', 'screen-error', error.response.data.message
+										);
+									}
+									if (error.response.status == 422) {
+										vm.errors = [];
+										for (var index in error.response.data.errors) {
+											if (error.response.data.errors[index]) {
+												vm.errors.push(error.response.data.errors[index][0]);
+											}
+										}
+									}
+								}
+								vm.logs('mixins.js', 498, error, 'deleteRecord');
+							});
+							vm.loading = false;
+						}
+					}
+				});
 			},
 		},
 		created() {
@@ -169,8 +241,8 @@
 		mounted () {
 			const vm = this;
 			$("#add_payroll_arc_responsible").on('show.bs.modal', function() {
-				vm.fiscal_date = window.execution_year + '-12-31';
 				vm.getPayrollStaffs();
+				vm.getFiscalYears();
                 vm.reset();
             });
 		},

@@ -9,6 +9,8 @@ use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithDrawings;
 use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use Maatwebsite\Excel\Concerns\WithColumnFormatting;
+use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 
 /**
  * @class AccountingBalanceCheckUpSheetExport
@@ -21,7 +23,7 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
  * @license
  *     [LICENCIA DE SOFTWARE CENDITEL](http://conocimientolibre.cenditel.gob.ve/licencia-de-software-v-1-3/)
  */
-class AccountingBalanceCheckUpSheetExport implements WithDrawings, FromView, WithStyles
+class AccountingBalanceCheckUpSheetExport implements WithDrawings, FromView, WithStyles, WithColumnFormatting
 {
     /**
      * Listado de datos a exportar
@@ -117,5 +119,26 @@ class AccountingBalanceCheckUpSheetExport implements WithDrawings, FromView, Wit
         $sheet->mergeCells('E6:F6');
         $sheet->mergeCells('G6:H6');
         $sheet->getStyle('A6:H6')->getAlignment()->setHorizontal('center');
+    }
+
+    /**
+     * Establece los estilos en la exportación de excel para evitar apostrofe en celdas numericas
+     *
+     * @param \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet
+     *
+     * @author Tsu. Miguel Narvaez <mnarvaez@cenditel.gob.ve> | <miguelnarvaez31@gmail.com>
+     *
+     * @return void
+     */
+    public function columnFormats(): array
+    {
+        return [
+            'C' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, // Columna "deudor"
+            'D' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, // Columna "Acreedor"
+            'E' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, // Columna "Debe"
+            'F' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, // Columna "Haber"
+            'G' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, // Columna "Saldo Final Deudor"
+            'H' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1  // Columna "Saldo Final Acreedor"
+        ];
     }
 }

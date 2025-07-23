@@ -102,7 +102,7 @@ class ProjectTrackingTaskTypesController extends Controller
     public function store(Request $request)
     {
         $this->validate($request, $this->validateRules, $this->messages);
-        $projectTrackingTaskType = ProjectTrackingTaskTypes::create([
+        $projectTrackingTaskTypes = ProjectTrackingTaskTypes::create([
             'name' => $request->input('name'),
             'color' => $request->input('color'),
             'description' => $request->input('description'),
@@ -158,11 +158,13 @@ class ProjectTrackingTaskTypesController extends Controller
     public function update(Request $request, $id)
     {
         $this->validate($request, $this->validateRules, $this->messages);
+
         $projectTrackingTaskTypes = ProjectTrackingTaskTypes::find($id);
         $projectTrackingTaskTypes->name = $request->input('name');
         $projectTrackingTaskTypes->color = $request->input('color');
         $projectTrackingTaskTypes->description = $request->input('description');
         $projectTrackingTaskTypes->save();
+
         return response()->json(['message' => 'Success'], 200);
     }
 
@@ -181,6 +183,33 @@ class ProjectTrackingTaskTypesController extends Controller
     {
         $projectTrackingTaskTypes = ProjectTrackingTaskTypes::find($id);
         $projectTrackingTaskTypes->delete();
+
         return response()->json(['message' => 'Success'], 200);
+    }
+
+        /**
+     * Retorna un json con todos los tipos de actividades registrados para ser usado en un componente <select2>
+     *
+     * @author    Pedro Contreras <pmcontreras@cenditel.gob.ve>
+     *
+     * @return    \Illuminate\Http\JsonResponse
+     */
+    public function getTaskTypes()
+    {
+        $taskTypesList = ProjectTrackingTaskTypes::all();
+        $taskTypes = [];
+        array_push($taskTypes, [
+            'id' => '',
+            'text' => 'Seleccione...'
+        ]);
+
+        foreach ($taskTypesList as $taskType) {
+            array_push($taskTypes, [
+                'id' => $taskType->id,
+                'text' => $taskType->name
+            ]);
+        }
+
+        return response()->json($taskTypes);
     }
 }

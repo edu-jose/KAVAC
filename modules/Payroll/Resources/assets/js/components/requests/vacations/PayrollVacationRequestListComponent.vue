@@ -34,6 +34,9 @@
                 <span v-else-if="props.row.status == 'rescheduled'">
                     Replanificado
                 </span>
+                <span v-else-if="props.row.status == 'paid'">
+                    Pagado
+                </span>
                 <span v-else> Rechazado </span>
             </div>
             <div slot="reincorporation_date" slot-scope="props">

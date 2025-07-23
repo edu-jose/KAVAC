@@ -110,7 +110,7 @@
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <strong>Tipo de cargo :</strong>
+                                        <strong>Tipo de cargo:</strong>
                                         <div class="row" style="margin: 1px 0">
                                             <span class="col-md-12">
                                                 {{ record.payroll_position_type.name }}
@@ -138,7 +138,7 @@
                                         <div class="row" style="margin: 1px 0">
                                             <span class="col-md-12">
                                                 {{
-                                                    record.payroll_positions.length > 0
+                                                    record.payroll_positions.length > 0 && record.payroll_positions[0].payroll_workload_positions.length > 0
                                                     ? record.payroll_positions[0].payroll_workload_positions[0].payroll_workload.hours
                                                     : 'Sin carga horaria asignada'
                                                 }}
@@ -218,6 +218,78 @@
                                         </div>
                                     </div>
                                 </div>
+                                <div class="col-md-4">
+                                   <div class="form-group">
+                                       <strong>Tabulador salario básico:</strong>
+                                       <div class="row" style="margin: 1px 0">
+                                           <span class="col-md-12">
+                                               {{ record.payroll_salary_tabulator ? record.payroll_salary_tabulator.name : '' }}
+                                           </span>
+                                       </div>
+                                   </div>
+                               </div>
+                               <div class="col-md-4">
+                                   <div class="form-group">
+                                       <strong>Salario básico:</strong>
+                                       <div class="row" style="margin: 1px 0">
+                                           <span class="col-md-12">
+                                               {{ record.payroll_salary_tabulator ? record.payroll_basic_salary : '' }}
+                                           </span>
+                                       </div>
+                                   </div>
+                               </div>
+                               <div class="col-md-4">
+                                   <div class="form-group">
+                                       <strong>Tipo de nómina:</strong>
+                                       <div class="row" style="margin: 1px 0">
+                                           <span class="col-md-12">
+                                               {{ record.payroll_payment_type ? record.payroll_payment_type.name : '' }}
+                                           </span>
+                                       </div>
+                                   </div>
+                               </div>
+                               <div class="col-md-4">
+                                   <div class="form-group">
+                                       <strong>Frecuencia de nómina:</strong>
+                                       <div class="row" style="margin: 1px 0">
+                                           <span class="col-md-12">
+                                               {{ record.payroll_payment_type ? periodicities[record.payroll_payment_type.payment_periodicity] : '' }}
+                                           </span>
+                                       </div>
+                                   </div>
+                               </div>
+                               <div class="col-md-4">
+                                   <div class="form-group">
+                                       <strong>Rango de antigüedad:</strong>
+                                       <div class="row" style="margin: 1px 0">
+                                           <span class="col-md-12">
+                                               {{ record.payroll_seniority_name || '' }}
+                                           </span>
+                                       </div>
+                                   </div>
+                               </div>
+                               <div class="col-md-4">
+                                   <div class="form-group">
+                                       <strong>¿Pertenece al Sindicato de trabajadores?:</strong>
+                                       <div class="row" style="margin: 1px 0">
+                                           <span class="col-md-12"
+                                               :class="{'text-success': record.workers_union, 'text-danger': !record.workers_union}">
+                                               {{ record.workers_union == true ? 'Si' : 'No' }}
+                                           </span>
+                                       </div>
+                                   </div>
+                               </div>
+                               <div class="col-md-4">
+                                   <div class="form-group">
+                                       <strong>Fondo de Ahorro:</strong>
+                                       <div class="row" style="margin: 1px 0">
+                                           <span class="col-md-12"
+                                               :class="{'text-success': record.savings_fund, 'text-danger': !record.savings_fund}">
+                                               {{ record.savings_fund == true ? 'Si' : 'No' }}
+                                           </span>
+                                       </div>
+                                   </div>
+                               </div>
                             </div>
                             <hr>
                             <div>
@@ -377,10 +449,16 @@
                     start_date: '',
                     end_date: '',
                     active: '',
+                    workers_union: '',
+                    savings_fund: '',
                     institution_email: '',
                     function_description: '',
+                    payroll_basic_salary: 0,
                     payroll_position_type: {},
                     payroll_positions: {},
+                    payroll_salary_tabulator: {},
+                    payroll_payment_type: {},
+                    payroll_seniority: {},
                     payroll_coordination: {},
                     payroll_staff_type: {},
                     institution: {},
@@ -393,6 +471,17 @@
                     worksheet_code: '',
                 },
                 errors: [],
+                periodicities: {
+                   "daily": "Diario",
+                   "weekly": "Semanal",
+                   "biweekly": "Quincenal",
+                   "monthly": "Mensual",
+                   "bimonthly": "Bimensual",
+                   "three-onthly": "Trimestral",
+                   "four-onthly": "Cuatrimestral",
+                   "biannual": "Semestral",
+                   "annual": "Anual",
+               },
             }
         },
         methods: {

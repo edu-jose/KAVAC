@@ -43,6 +43,7 @@ class AccountingSettingController extends Controller
     {
         // Establece permisos de acceso para cada método del controlador
         $this->middleware('permission:accounting.setting.index', ['only' => 'index']);
+        $this->middleware('permission:accounting.setting.updateinstitutionparameters', ['only' => 'updateInstitutionParameters']);
     }
 
     /**

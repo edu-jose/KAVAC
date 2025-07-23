@@ -3,6 +3,7 @@
 namespace Modules\CitizenService\Models;
 
 use App\Models\City as BaseCity;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @class City
@@ -22,8 +23,18 @@ class City extends BaseCity
      *
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
-    public function citizenServiceRequests()
+    public function citizenServiceRequests(): HasMany
     {
         return $this->hasMany(CitizenServiceRequest::class);
+    }
+
+    /**
+     * Get all of the citizenServiceCommunities for the City
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function citizenServiceCommunities(): HasMany
+    {
+        return $this->hasMany(CitizenServiceCommunity::class);
     }
 }

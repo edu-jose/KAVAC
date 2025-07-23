@@ -290,16 +290,20 @@ class SendReceiptJob implements ShouldQueue
                 $payrollStaff['payroll_staff']['payroll_employment']['institution_email'] ??
                 $payrollStaff['payroll_staff']['email'];
 
-            PayrollSendReceiptsEmailJob::dispatch(
-                $email,
-                new SendReceipts(
-                    $pdfPath,
-                    $this->month,
-                    $this->year,
-                    date('d-m-Y', strtotime($startDate)) . ' / ' . date('d-m-Y', strtotime($endDate))
-                ),
-                $pdfPath
-            );
+            if (!$email) {
+                unlink($pdfPath);
+            } else {
+                PayrollSendReceiptsEmailJob::dispatch(
+                    $email,
+                    new SendReceipts(
+                        $pdfPath,
+                        $this->month,
+                        $this->year,
+                        date('d-m-Y', strtotime($startDate)) . ' / ' . date('d-m-Y', strtotime($endDate))
+                    ),
+                    $pdfPath
+                );
+            }
         }
     }
 }

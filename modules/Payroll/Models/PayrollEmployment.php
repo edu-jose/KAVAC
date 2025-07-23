@@ -71,6 +71,12 @@ class PayrollEmployment extends Model implements Auditable
         'payroll_staff_type_id',
         'payroll_contract_type_id',
         'payroll_staff_id',
+        'workers_union',
+        'savings_fund',
+        'payroll_salary_tabulator_id',
+        'payroll_basic_salary',
+        'payroll_payment_type_id',
+        'payroll_seniority_id',
         'worksheet_code'
     ];
 
@@ -149,6 +155,41 @@ class PayrollEmployment extends Model implements Auditable
     public function payrollPositionType()
     {
         return $this->belongsTo(PayrollPositionType::class);
+    }
+       /**
+        * Método que obtiene el dato laboral del trabajador asociado a un tabulador de nomina
+        *
+        * @author  Pedro Contreras <pmcontreras@cenditel.gob.ve>
+        *
+        * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+        */
+    public function payrollSalaryTabulator()
+    {
+        return $this->belongsTo(PayrollSalaryTabulator::class);
+    }
+
+       /**
+        * Método que obtiene el dato laboral del trabajador asociado a un tipo de nomina
+        *
+        * @author  Pedro Contreras <pmcontreras@cenditel.gob.ve>
+        *
+        * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+        */
+    public function payrollPaymentType()
+    {
+        return $this->belongsTo(PayrollPaymentType::class);
+    }
+
+        /**
+        * Método que obtiene el dato laboral del trabajador asociado a una antiguedad
+        *
+        * @author  Pedro Contreras <pmcontreras@cenditel.gob.ve>
+        *
+        * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+        */
+    public function payrollSeniority()
+    {
+        return $this->belongsTo(PayrollSeniority::class);
     }
 
     /**

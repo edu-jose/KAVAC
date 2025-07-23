@@ -836,6 +836,10 @@ if (!function_exists('check_max_upload_size')) {
     {
         // Tamaño en bytes del archivo a verificar
         $fileSize = filesize($file);
+        if (!$fileSize) {
+            // El archivo no existe o no se puede leer
+            return false;
+        }
         // Tamaño del archivo con el factor en Bytes, kilo Bytes, Mega Bytes, etc...
         $humanFileSize = convert_filesize($fileSize);
         preg_match_all('/\d+/', ini_get('upload_max_filesize'), $uploadMaxFilesize);

@@ -44,177 +44,188 @@
                         <div class="row">
                             <div class="col-md-4">
                                 <div class="form-group">
-                                    <label>{{ projects_budget }}</label>
+                                    <label for="budget">Cargar informacion de proyectos desde el modulo de
+                                        Presupuesto</label>
                                     <div class="col-md-12">
                                         <div class="custom-control custom-switch" data-toggle="tooltip"
-                                            title="Indique si el trabajador está activo o no">
+                                            title="Cargar informacion de proyectos desde el modulo de Presupuesto">
                                             <input type="checkbox" class="custom-control-input" id="budget"
-                                                name="budget" v-model="budget" :value="true">
-                                            <label class="custom-control-label" for="active"></label>
+                                                name="budget" v-model="budget" :value="true" @click="getBudgetProjects"
+                                                :disabled="editMode">
+                                            <label class="custom-control-label" for="budget"></label>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="form-group is-required" v-if="!budget">
-                                    <label>Nombre:</label>
+                            <div class="col-md-6" v-if="!budget">
+                                <div class="form-group is-required">
+                                    <label for="name">Nombre:</label>
                                     <input type="text" id="name" placeholder="Nombre" data-toggle="tooltip"
                                         title="Ingrese el nombre del Proyecto (requerido)" class="form-control input-sm"
                                         v-model="record.name" />
                                 </div>
-                                <div class="form-group" v-else>
-                                    <label>Seleccione un proyecto:</label>
-                                    <select2 :options="projects_budget" id="name" data-toggle="tooltip"
-                                        title="Seleccione el proyecto (requerido)" v-model="record.name">
+                            </div>
+                            <div class="col-md-6" v-else>
+                                <div class="form-group is-required">
+                                    <label for="project_budget_id">Seleccione un proyecto:</label>
+                                    <select2 :options="projects_budget" id="project_budget_id" data-toggle="tooltip"
+                                        title="Seleccione un proyecto (requerido)" v-model="record.project_budget_id"
+                                        @input="getBudgetProjectInfo">
                                     </select2>
                                 </div>
                             </div>
-
-                        </div>
-                        <div class="col-md-6">
-                            <div>
-                                <label for="description">Descripción:</label>
-                                <input type="text" id="description" placeholder="Descripción"
-                                    class="form-control input-sm" data-toggle="tooltip"
-                                    title="Ingrese la descripción del Proyecto" v-model="record.description" />
+                            <div class="col-md-6">
+                                <div>
+                                    <label for="description">Descripción:</label>
+                                    <input type="text" id="description" placeholder="Descripción"
+                                        class="form-control input-sm" data-toggle="tooltip"
+                                        title="Ingrese la descripción del Proyecto" v-model="record.description" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group is-required" name="category">
+                                    <label>Tipo de proyecto:</label>
+                                    <select2 :options="projects_list" id="project_type" data-toggle="tooltip"
+                                        title="Seleccione el tipo de proyecto (requerido)"
+                                        v-model="record.project_type_id">
+                                    </select2>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group is-required" name="category">
+                                    <label>Dependencia:</label>
+                                    <select2 :options="dependencies_list" id="dependency" data-toggle="tooltip"
+                                        title="Seleccione la dependencia del Proyecto (requerido)"
+                                        v-model="record.dependency_id">
+                                    </select2>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group is-required" name="category">
+                                    <label>Tipos de Producto:</label>
+                                    <v-multiselect :options="products_list" track_by="text" :hide_selected="false"
+                                        data-toggle="tooltip" title="Indique los tipos de productos"
+                                        v-model="record.product_types">
+                                    </v-multiselect>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group is-required" name="category">
+                                    <label>Responsable del Proyecto {{ record.responsable_id }}:</label>
+                                    <select2 :options="payroll_staffs" id="responsable" data-toggle="tooltip"
+                                        title="Seleccione la persona responsable del Proyecto (requerido)"
+                                        v-model="record.responsable_id">
+                                    </select2>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="amount">Monto de financiamiento:</label>
+                                    <input type="numeric" id="financing_amount" placeholder="Monto de financiamiento"
+                                        class="form-control input-sm" data-toggle="tooltip"
+                                        title="Indique el monto de financiamiento" v-model="record.financing_amount" />
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group is-required" name="category">
+                                    <label>Moneda:</label>
+                                    <select2 :options="currencies" id="currencyy" data-toggle="tooltip"
+                                        title="Seleccione el tipo de moneda (requerido)" v-model="record.currency_id">
+                                    </select2>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group is-required">
+                                    <label for="start_date">Fecha de inicio:</label>
+                                    <input type="date" id="start_date" placeholder="Fecha inicial"
+                                        class="form-control input-sm" data-toggle="tooltip"
+                                        title="Indique el monto de financiamiento" v-model="record.start_date" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group is-required">
+                                    <label for="end_date">Fecha de culminación:</label>
+                                    <input type="date" id="end_date" placeholder="Fecha final"
+                                        class="form-control input-sm no-restrict" data-toggle="tooltip"
+                                        title="Indique el monto de financiamiento" v-model="record.end_date" />
+                                </div>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-group is-required" name="category">
-                                <label>Tipo de proyecto:</label>
-                                <select2 :options="projects_list" id="project_type" data-toggle="tooltip"
-                                    title="Seleccione el tipo de proyecto (requerido)" v-model="record.project_type_id">
-                                </select2>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group is-required" name="category">
-                                <label>Dependencia:</label>
-                                <select2 :options="dependencies_list" id="dependency" data-toggle="tooltip"
-                                    title="Seleccione la dependencia del Proyecto (requerido)"
-                                    v-model="record.dependency_id">
-                                </select2>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group is-required" name="category">
-                                <label>Tipos de Producto:</label>
-                                <v-multiselect :options="products_list" track_by="text" :hide_selected="false"
-                                    data-toggle="tooltip" title="Indique los tipos de productos"
-                                    v-model="record.product_types">
-                                </v-multiselect>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group is-required" name="category">
-                                <label>Responsable del Proyecto:</label>
-                                <select2 :options="payroll_staffs" id="responsable" data-toggle="tooltip"
-                                    title="Seleccione la persona responsable del Proyecto (requerido)"
-                                    v-model="record.responsable_id">
-                                </select2>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
+                        <div class="modal-footer">
                             <div class="form-group">
-                                <label for="amount">Monto de financiamiento:</label>
-                                <input type="numeric" id="financing_amount" placeholder="Monto de financiamiento"
-                                    class="form-control input-sm" data-toggle="tooltip"
-                                    title="Indique el monto de financiamiento" v-model="record.financing_amount" />
+                                <button type="button" class="btn btn-default btn-sm btn-round btn-modal-close"
+                                    @click="clearFilters" data-dismiss="modal">
+                                    Cerrar
+                                </button>
+                                <button type="button" class="btn btn-warning btn-sm btn-round btn-modal btn-modal-clear"
+                                    @click="reset()">
+                                    Cancelar
+                                </button>
+                                <button type="button" @click="
+                                    !editMode ?
+                                        createProject('projecttracking/projects') :
+                                        updateProject('projecttracking/projects')
+                                    " class="btn btn-primary btn-sm btn-round btn-modal-save">
+                                    Guardar
+                                </button>
                             </div>
                         </div>
-                        <div class="col-md-3">
-                            <div class="form-group is-required" name="category">
-                                <label>Moneda:</label>
-                                <select2 :options="currencies" id="currencyy" data-toggle="tooltip"
-                                    title="Seleccione el tipo de moneda (requerido)" v-model="record.currency_id">
-                                </select2>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group is-required">
-                                <label for="start_date">Fecha de inicio:</label>
-                                <input type="date" id="start_date" placeholder="Fecha inicial"
-                                    class="form-control input-sm" data-toggle="tooltip"
-                                    title="Indique el monto de financiamiento" v-model="record.start_date" />
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group is-required">
-                                <label for="end_date">Fecha de culminación:</label>
-                                <input type="date" id="end_date" placeholder="Fecha final"
-                                    class="form-control input-sm no-restrict" data-toggle="tooltip"
-                                    title="Indique el monto de financiamiento" v-model="record.end_date" />
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <div class="form-group">
-                            <button type="button" class="btn btn-default btn-sm btn-round btn-modal-close"
-                                @click="clearFilters" data-dismiss="modal">
-                                Cerrar
-                            </button>
-                            <button type="button" class="btn btn-warning btn-sm btn-round btn-modal btn-modal-clear"
-                                @click="reset()">
-                                Cancelar
-                            </button>
-                            <button type="button" @click="
-                                createRecord('projecttracking/projects')
-                                " class="btn btn-primary btn-sm btn-round btn-modal-save">
-                                Guardar
-                            </button>
-                        </div>
-                    </div>
-                    <div class="modal-body modal-table text-center">
-                        <v-client-table :columns="columns" :data="records" :options="table_options">
-                            <div slot="description" slot-scope="props" class="text-justify">
-                                <div class="mt-3" v-html="props.row.description"></div>
-                            </div>
-                            <div slot="responsable_name" slot-scope="props">
-                                {{
-                                    props.row?.responsable?.first_name
-                                        ? props.row?.responsable?.first_name
-                                        : props.row?.responsable?.name
-                                }}
-                                {{ props.row?.responsable?.last_name }}
-                            </div>
-                            <div slot="id" slot-scope="props">
-                                <div class="d-inline-flex">
-                                    <project-tracking-project-info :modal_id="props.row.id" :url="'projecttracking/get-project-info/' +
-                                        props.row.id
-                                        ">
-                                    </project-tracking-project-info>
-                                    <button @click="
+                        <div class="modal-body modal-table text-center">
+                            <v-client-table :columns="columns" :data="records" :options="table_options">
+                                <div slot="description" slot-scope="props" class="text-justify">
+                                    <div class="mt-3" v-html="props.row.description"></div>
+                                </div>
+                                <div slot="responsable_name" slot-scope="props">
+                                    {{
+                                        props.row.responsable.first_name
+                                            ? props.row.responsable.first_name
+                                            : props.row.responsable.name
+                                    }}
+                                    {{ props.row.responsable.last_name }}
+                                </div>
+                                <div slot="id" slot-scope="props">
+                                    <div class="d-inline-flex">
+                                        <project-tracking-project-info :modal_id="props.row.id" :url="'projecttracking/get-project-info/' +
+                                            props.row.id
+                                            ">
+                                        </project-tracking-project-info>
+                                        <button @click="
+                                            editMode = true;
+                                        budget = false;
                                         initUpdate(
                                             props.row.id,
                                             'projecttracking/projects'
                                         )
-                                        " class="btn btn-warning btn-xs btn-icon btn-action" v-has-tooltip
-                                        title="Modificar registro" aria-label="Modificar registro" data-toggle="tooltip"
-                                        type="button">
-                                        <i class="fa fa-edit"></i>
-                                    </button>
-                                    <button @click="
-                                        deleteRecord(
-                                            props.row.id,
-                                            'projecttracking/projects'
-                                        )
-                                        " class="btn btn-danger btn-xs btn-icon btn-action" v-has-tooltip
-                                        title="Eliminar registro" aria-label="Eliminar registro" data-toggle="tooltip"
-                                        type="button">
-                                        <i class="fa fa-trash-o"></i>
-                                    </button>
+                                            " class="btn btn-warning btn-xs btn-icon btn-action" v-has-tooltip
+                                            title="Modificar registro" aria-label="Modificar registro"
+                                            data-toggle="tooltip" type="button">
+                                            <i class="fa fa-edit"></i>
+                                        </button>
+                                        <button @click="
+                                            deleteRecord(
+                                                props.row.id,
+                                                'projecttracking/projects'
+                                            )
+                                            " class="btn btn-danger btn-xs btn-icon btn-action" v-has-tooltip
+                                            title="Eliminar registro" aria-label="Eliminar registro"
+                                            data-toggle="tooltip" type="button">
+                                            <i class="fa fa-trash-o"></i>
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
-                        </v-client-table>
+                            </v-client-table>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    </div>
 </template>
 
 <script>
+import axios from 'axios';
+import { param } from 'jquery';
+
 export default {
     data() {
         return {
@@ -232,21 +243,106 @@ export default {
                 start_date: "",
                 end_date: "",
                 product_types: "",
+                project_budget_id: '',
             },
+            editMode: false,
             payroll_staffs: [],
             dependencies_list: [],
             projects_list: [],
-            projects_budget: '',
+            projects_budget: [],
             products_list: [],
             currencies: [],
             errors: [],
             records: [],
-            columns: ["code", "name", "responsable_name", "end_date", "id"],
+            columns: [
+                "code",
+                "name",
+                "responsable_name",
+                "end_date",
+                "id"
+            ],
             payroll: "",
-            budget: "",
+            budget: false,
+            // project_budget_id: '',
         };
     },
     methods: {
+        /**
+         * Crea un ProjectTrackingProject
+         * @author Natanael Rojo <ndrojo@cnditel.gob.ve> | <rojonatanael99@gmail.com>
+         * @param {string} url
+        */
+        async createProject(url) {
+            const vm = this;
+
+            url = vm.setUrl(url);
+            vm.createRecord(url);
+        },
+        async updateProject(url) {
+            const vm = this;
+
+            url = vm.setUrl(url);
+            vm.createRecord(url);
+        },
+        getBudgetProjects() {
+            const vm = this;
+            const url = this.setUrl("projecttracking/get-budget-projects");
+
+            axios.get(url).then(response => {
+                vm.projects_budget = response.data.records;
+            });
+        },
+        getBudgetProjectInfo() {
+            const vm = this;
+
+            const foundProjectBudget = vm.projects_budget.find(project => vm.project_budget_id == project.id);
+
+            if (foundProjectBudget) {
+                vm.record.name = foundProjectBudget.text;
+                vm.record.description = foundProjectBudget.description;
+                vm.record.start_date = foundProjectBudget.start_date;
+                vm.record.end_date = foundProjectBudget.end_date;
+            }
+        },
+        /**
+        * Inicializa los registros base del formulario
+        *
+        * @author Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
+        *
+        * @param {string}  url       Ruta que obtiene los datos a ser mostrado en listados
+        * @param {string}  modal_id  Identificador del modal a mostrar con la información solicitada
+        */
+        initRecords(url, modal_id) {
+            this.errors = [];
+            if (typeof this.reset === 'function') {
+                this.reset();
+            }
+            const vm = this;
+            url = this.setUrl(url);
+
+            axios.get(url).then(response => {
+                if (typeof (response.data.records) !== "undefined") {
+                    vm.records = response.data.records;
+                    vm.projects_budget = response.data.projects_budget;
+                    vm.payroll = response.data.payroll;
+                    vm.budget = response.data.budget;
+                }
+                if (modal_id) {
+                    $(`#${modal_id}`).modal('show');
+                }
+            }).catch(error => {
+                if (typeof (error.response) !== "undefined") {
+                    if (error.response.status == 403) {
+                        vm.showMessage(
+                            'custom', 'Acceso Denegado', 'danger', 'screen-error', error.response.data.message
+                        );
+                    }
+                    else {
+                        vm.logs('resources/js/all.js', 343, error, 'initRecords');
+                    }
+                }
+            });
+        },
         async initUpdate(project_id, url) {
             const vm = this;
             try {
@@ -254,6 +350,7 @@ export default {
                 const response = await axios.get(url);
                 vm.record = response.data.record;
                 vm.record.product_types = response.data.selected_product_types;
+                vm.editMode = true;
             } catch (error) {
                 console.error(error);
             }
@@ -278,7 +375,12 @@ export default {
                 start_date: "",
                 end_date: "",
                 product_types: "",
+                project_budget_id: '',
             };
+            this.editMode = false;
+            this.budget = false;
+            this.project_budget_id = '';
+            this.projects_budget = [];
         },
         getPersonal() {
             const vm = this;
@@ -375,6 +477,15 @@ export default {
             }
         },
     },
+    watch: {
+        'budget'(value) {
+            if (value) {
+                this.getBudgetProjects();
+                return;
+            }
+            this.reset();
+        },
+    },
     created() {
         this.table_options.headings = {
             code: "Código",
@@ -405,14 +516,13 @@ export default {
     },
     mounted() {
         const vm = this;
-        $("#add_projecttracking_projects").on("show.bs.modal", function () {
+        $("#add_projects").on("show.bs.modal", function () {
             vm.reset();
+            vm.getProjectTypes();
+            vm.getProductTypes();
+            vm.getDependencies();
+            vm.getCurrencies();
         });
-
-        vm.getProjectTypes();
-        vm.getProductTypes();
-        vm.getDependencies();
-        vm.getCurrencies();
     },
 };
 </script>

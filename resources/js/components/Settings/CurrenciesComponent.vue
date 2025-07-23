@@ -6,8 +6,8 @@
 			<i class="icofont icofont-cur-dollar ico-3x"></i>
 			<span>Monedas</span>
 		</a>
-		<div class="modal fade text-left" tabindex="-1" role="dialog" id="add_currency">
-			<div class="modal-dialog vue-crud" role="currency">
+		<div class="modal fade text-left" tabindex="-1" id="add_currency">
+			<div class="modal-dialog vue-crud">
 				<div class="modal-content">
 					<div class="modal-header">
 						<button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -23,31 +23,41 @@
 						<div class="row">
 							<div class="col-12 col-md-4">
 								<div class="form-group">
-									<label>Pais:</label>
-									<select2 :options="countries" v-model="record.country_id"></select2>
-									<input type="hidden" v-model="record.id">
+									<label for="urrencyCountry">Pais:</label>
+									<select2
+                                        id="currencyCountry"
+                                        :options="countries" v-model="record.country_id"
+                                    ></select2>
 			                    </div>
 							</div>
 							<div class="col-12 col-md-4">
 								<div class="form-group is-required">
-									<label>Nombre:</label>
-									<input type="text" placeholder="Nombre de la moneda" data-toggle="tooltip"
-										   title="Indique el nombre de la moneda (requerido)"
-										   class="form-control input-sm" v-model="record.name" v-is-text>
+									<label for="currencyName">Nombre:</label>
+									<input
+                                        id="currencyName"
+                                        type="text" placeholder="Nombre de la moneda"
+                                        data-toggle="tooltip"
+                                        title="Indique el nombre de la moneda (requerido)"
+                                        class="form-control input-sm" v-model="record.name" v-is-text
+                                    >
 			                    </div>
 							</div>
 							<div class="col-12 col-md-4">
 								<div class="form-group is-required">
-									<label>Nombre en plural:</label>
-									<input type="text" placeholder="Nombre de la moneda en plural" data-toggle="tooltip"
-										   title="Indique el nombre de la moneda en plural (requerido)"
-										   class="form-control input-sm" v-model="record.plural_name" v-is-text>
+									<label for="currencyPluralName">Nombre en plural:</label>
+									<input
+                                        id="currencyPluralName"
+                                        type="text" placeholder="Nombre de la moneda en plural" data-toggle="tooltip"
+                                        title="Indique el nombre de la moneda en plural (requerido)"
+                                        class="form-control input-sm" v-model="record.plural_name" v-is-text
+                                    >
 			                    </div>
 							</div>
 							<div class="col-12 col-md-2">
 								<div class="form-group is-required">
-									<label>Símbolo:</label>
+									<label for="currencySymbol">Símbolo:</label>
 									<input
+                                        id="currencySymbol"
 										type="text" placeholder="Símbolo" data-toggle="tooltip"
 										title="Indique el símbolo de la moneda (requerido). Ejemplo: Bs., $, €, £, ₽, o en su defecto, las siglas de la moneda. Ejemplo: USD, EUR, GBP, etc."
 										class="form-control input-sm" v-model="record.symbol"
@@ -57,21 +67,28 @@
 							</div>
 							<div class="col-12 col-md-2">
 								<div class="form-group is-required">
-									<label>Decimales</label>
-									<input type="number" data-toggle="tooltip"
-										   title="Indique la cantidad de decimales para la moneda a registrar"
-                                           class="form-control input-sm" v-model="record.decimal_places" step="1"
-										   min="2">
+									<label for="currencyDecimal">Decimales</label>
+									<input
+                                        id="currencyDecimal"
+                                        type="number" data-toggle="tooltip"
+                                        title="Indique la cantidad de decimales para la moneda a registrar"
+                                        class="form-control input-sm" v-model="record.decimal_places" step="1"
+                                        min="2"
+                                    >
 								</div>
 							</div>
 							<div class="col-12 col-md-2">
 								<div class="form-group is-required">
-									<label>Por defecto:</label>
-									<div class="custom-control custom-switch" data-toggle="tooltip"
-											title="Indique si es la moneda por defecto en la aplicación">
-										<input type="checkbox" class="custom-control-input"
-												id="defaultCurrency" v-model="record.default" :value="true">
-										<label class="custom-control-label" for="defaultCurrency"></label>
+									<label for="currencyDefault">Por defecto:</label>
+									<div
+                                        class="custom-control custom-switch" data-toggle="tooltip"
+										title="Indique si es la moneda por defecto en la aplicación"
+                                    >
+										<input
+                                            type="checkbox" class="custom-control-input"
+											id="currencyDefault" v-model="record.default" :value="true"
+                                        >
+										<label class="custom-control-label" for="currencyDefault">&nbsp;</label>
 									</div>
 								</div>
 							</div>
@@ -79,16 +96,22 @@
 					</div>
 					<div class="modal-footer">
 	                	<div class="form-group">
-	                		<button type="button" class="btn btn-default btn-sm btn-round btn-modal-close"
-									@click="clearFilters" data-dismiss="modal">
+	                		<button
+                                type="button" class="btn btn-default btn-sm btn-round btn-modal-close"
+								@click="clearFilters" data-dismiss="modal"
+                            >
 								Cerrar
 							</button>
-							<button type="button" class="btn btn-warning btn-sm btn-round btn-modal btn-modal-clear"
-									@click="reset()">
+							<button
+                                type="button" class="btn btn-warning btn-sm btn-round btn-modal btn-modal-clear"
+								@click="reset()"
+                            >
 								Cancelar
 							</button>
-							<button type="button" @click="createRecord('currencies')"
-									class="btn btn-primary btn-sm btn-round btn-modal-save">
+							<button
+                                type="button" @click="createRecord('currencies')"
+								class="btn btn-primary btn-sm btn-round btn-modal-save"
+                            >
 								Guardar
 							</button>
 	                	</div>
@@ -96,15 +119,19 @@
 					<div class="modal-body modal-table">
 	                	<v-client-table :columns="columns" :data="records" :options="table_options">
 	                		<div slot="id" slot-scope="props" class="text-center">
-	                			<button @click="initUpdate(props.row.id, $event)"
-		                				class="btn btn-warning btn-xs btn-icon btn-action"
-		                				title="Modificar registro" data-toggle="tooltip" type="button">
+	                			<button
+                                    @click="initUpdate(props.row.id, $event)"
+		                			class="btn btn-warning btn-xs btn-icon btn-action"
+		                			title="Modificar registro" data-toggle="tooltip" type="button"
+                                >
 		                			<i class="fa fa-edit"></i>
 		                		</button>
-		                		<button @click="deleteRecord(props.row.id, 'currencies')"
-										class="btn btn-danger btn-xs btn-icon btn-action"
-										title="Eliminar registro" data-toggle="tooltip"
-										type="button">
+		                		<button
+                                    @click="deleteRecord(props.row.id, 'currencies')"
+									class="btn btn-danger btn-xs btn-icon btn-action"
+									title="Eliminar registro" data-toggle="tooltip"
+									type="button"
+                                >
 									<i class="fa fa-trash-o"></i>
 								</button>
 	                		</div>

@@ -97,6 +97,10 @@
 <script>
 export default {
     props: {
+        type_report: {
+            type: String,
+            default: "",
+        },
         year_old: {
             type: String,
             default: "",
@@ -188,6 +192,21 @@ export default {
                         url += "/" + response.data.id;
                     }
                     window.open(url, type);
+                }
+                vm.loading = false;
+            }).catch((error) => {
+                if (error.response && error.response.status === 403) {
+                    vm.showMessage(
+                        "custom",
+                        "Acceso Denegado",
+                        "danger",
+                        "screen-error",
+                        "No dispone de permisos para acceder a esta funcionalidad."
+                    );
+                } else {
+                    // Puedes agregar un mensaje de error genérico aquí
+                    vm.showMessage("error", "Ocurrió un error", "danger");
+                    console.error(error); // para debuggear
                 }
                 vm.loading = false;
             });
