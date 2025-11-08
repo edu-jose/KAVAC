@@ -20,6 +20,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use Modules\Payroll\Models\Institution;
 use Modules\Payroll\Models\PayrollStaff;
 use App\Notifications\SystemNotification;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\Validator;
 use Modules\Payroll\Models\PayrollConcept;
 use Modules\Payroll\Models\PayrollTimeSheet;
@@ -36,6 +37,7 @@ use Modules\Payroll\Models\PayrollVacationRequest;
 use Modules\Payroll\Repositories\ReportRepository;
 use Modules\Payroll\Exports\PayrollReportStaffsExport;
 use Illuminate\Foundation\Validation\ValidatesRequests;
+use Modules\Payroll\Actions\ExportPayrollAverageConceptReportAction;
 use Modules\Payroll\Jobs\PayrollReportConceptExportJob;
 use Modules\Payroll\Models\PayrollSupervisedGroupStaff;
 use Modules\Payroll\Jobs\PayrollStaffPdfReportExportJob;
@@ -44,6 +46,7 @@ use Modules\Payroll\Jobs\PayrollFamilyBurdenPdfReportJob;
 use Modules\Payroll\Jobs\PayrollSendRequestedReceiptsJob;
 use Modules\Payroll\Jobs\PayrollSendStaffPdfReportEmailJob;
 use Modules\Payroll\Jobs\PayrollSendFamilyBurdenPdfReportEmailJob;
+use Modules\Payroll\Models\PayrollVacationPolicyPaymentConcept;
 
 /**
  * @class      PayrollReportController
@@ -58,6 +61,7 @@ use Modules\Payroll\Jobs\PayrollSendFamilyBurdenPdfReportEmailJob;
  */
 class PayrollReportController extends Controller
 {
+    use AuthorizesRequests;
     use ValidatesRequests;
 
     protected $periods;
@@ -732,6 +736,40 @@ class PayrollReportController extends Controller
     public function paymentReceipt(): View
     {
         return view('payroll::reports.payroll-report-payment-receipt');
+    }
+
+    /**
+     * Reporte de promedio de conceptos de vacaciones
+     *
+     * @return \Illuminate\View\View
+     */
+    public function averageConcept(): View
+    {
+        $this->authorize('averageView', PayrollConcept::class);
+
+        return view('payroll::reports.payroll-report-average-concept');
+    }
+
+    /**
+     * Genera el reporte promedio de concepts de vacaciones
+     *
+     * @param \Illuminate\Http\Request $request Datos de la petición
+     *
+     * @return JsonResponse
+     */
+    public function averageConceptsCreate(Request $request, ExportPayrollAverageConceptReportAction $export)
+    {
+        $data = [
+            'payroll_payment_types' => collect(json_decode($request->payroll_payment_types, true))->pluck('text', 'id')->toArray(),
+            'periods_by_payment_type' => json_decode($request->periods_by_payment_type, true),
+            'payroll_staffs' => collect(json_decode($request->payroll_staffs, true))->pluck('id')->toArray() ?? [],
+            'payroll_concepts' => collect(json_decode($request->payroll_concepts, true))->pluck('id')->toArray() ?? [],
+        ];
+
+        return $export->invoke(
+            $data,
+            now()->format('d-m-Y') . '_Reporte_Promedio_Conceptos'
+        );
     }
 
     /**
@@ -2236,5 +2274,44 @@ class PayrollReportController extends Controller
     public function familyBurden()
     {
         return view('payroll::reports.payroll-report-family-burden');
+    }
+
+    /**
+     * Método para cargar los conceptos utilizados en el reporte de promedio de conceptos de vacaciones.
+     *
+     * @author Daniel Contreras <dcontreras@cenditel.gob.ve>
+     */
+    public function getPayrollVacationPolicyConcepts()
+    {
+        /* Obtiene el usuario */
+        $user = User::without(['roles', 'permissions'])->where('id', auth()->user()->id)->first();
+
+        /* Obtiene el perfil del usuario */
+        $profileUser = $user->profile;
+
+        /* Obtiene la institución por defecto */
+        if (($profileUser) && isset($profileUser->institution_id)) {
+            $institution = Institution::find($profileUser->institution_id);
+        } else {
+            $institution = Institution::where('active', true)->where('default', true)->first();
+        }
+
+        $payrollVacationPolicyConcepts = PayrollVacationPolicyPaymentConcept::query()
+            ->whereHas('payrollVacationPolicyPayment', function ($query) use ($institution) {
+                $query->whereHas('payrollVacationPolicy', function ($query) use ($institution) {
+                    $query
+                        ->where('active', true)
+                        ->where('institution_id', $institution->id);
+                });
+            })
+            ->get()
+            ->map(function ($payrollVacationPolicyConcept) {
+                return [
+                    'id' => $payrollVacationPolicyConcept->payroll_concept_id,
+                    'text' => $payrollVacationPolicyConcept->payrollConcept->name,
+                ];
+            });
+
+        return response()->json($payrollVacationPolicyConcepts, 200);
     }
 }

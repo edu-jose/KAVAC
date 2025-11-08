@@ -124,9 +124,9 @@ export default {
             if (vm.module == 'payroll') {
                 var url = `${window.app_url}/payroll/registers/availability/${vm.id}`;
             } else {
-                var url = `${window.app_url}/purchase/budgetary_availability/${vm.id}/edit`;
+                var url = `${window.app_url}/budget/budgetary_availability/${vm.id}/edit`;
             }
-            await axios.post(`${window.app_url}/purchase/send_notify`, {
+            await axios.post(`${window.app_url}/budget/send_notify`, {
                 id: vm.id,
                 user_id: vm.record.userId,
                 module: vm.module,

@@ -237,8 +237,9 @@
              *
              * @author  Daniel Contreras <dcontreras@cenditel.gob.ve>
              */
-             setTimeSheetData() {
+            async setTimeSheetData() {
                 const vm = this;
+                let id = vm.record.payroll_supervised_group_id;
                 let draggableData = []
                 vm.draggableData = [];
 
@@ -247,7 +248,9 @@
                         return vm.record.payroll_supervised_group_id == $group['id'];
                     })
                     let index = 1;
-
+                await axios.get(`${window.app_url}/payroll/get-supervised-groups-staff`, { params: { id } }).then(response => {
+                    group.payroll_staffs = response.data;
+                });
                     group.payroll_staffs.forEach(staff => {
                         draggableData.push({
                             'id': index,

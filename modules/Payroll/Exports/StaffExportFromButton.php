@@ -110,7 +110,7 @@ class StaffExportFromButton extends DataExport implements
             $data['has_driver_license'] ? 'Si' : 'No',
             $license?->name ?? '',
             $parishName,
-            $data['address'],
+            str_starts_with($data['address'], '=') ? '' : $data['address'],
             strip_tags($data['medical_history']),
         ];
     }

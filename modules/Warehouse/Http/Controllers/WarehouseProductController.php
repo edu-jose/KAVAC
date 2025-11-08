@@ -6,18 +6,24 @@
 
 namespace Modules\Warehouse\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Maatwebsite\Excel\Facades\Excel;
 use Modules\Warehouse\Models\WarehouseProduct;
 use Modules\Warehouse\Models\WarehouseProductValue;
 use Modules\Warehouse\Exports\WarehouseProductExport;
-use Modules\Warehouse\Imports\WarehouseProductImport;
 use Illuminate\Foundation\Validation\ValidatesRequests;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Modules\Warehouse\Imports\WarehouseProductImport;
 use Modules\Warehouse\Models\WarehouseInventoryProduct;
 use Modules\Warehouse\Models\WarehouseProductAttribute;
-use Modules\Accounting\Models\AccountingAccount;
+use Modules\Warehouse\Jobs\WarehouseProductsImportJob;
+use Modules\Warehouse\Models\Warehouse;
 use Modules\Warehouse\Models\WarehouseInstitutionWarehouse;
+use Nwidart\Modules\Facades\Module;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /**
@@ -70,7 +76,10 @@ class WarehouseProductController extends Controller
         $this->validateRules = [
             'name' => ['required', 'unique:warehouse_products,name', 'titlecase'],
             'description' => ['required'],
-            'measurement_unit_id' => ['required']
+            'measurement_unit_id' => ['required'],
+            'product.id' => (Module::has('Purchase') && Module::isEnabled('Purchase'))
+                ? ['required', 'exists:purchase_products,id']
+                : ['nullable'],
         ];
 
         /* Define los mensajes de validación para las reglas del formulario */
@@ -79,7 +88,8 @@ class WarehouseProductController extends Controller
             'name.unique:warehouse_products,name' => 'El campo nombre ya ha sido registrado anteriormente',
             'name.titlecase' => 'El campo nombre debe ser escrito en mayusculas',
             'description.required' => 'El campo descripción es obligatorio.',
-            'measurement_unit_id.required' => 'El campo unidad de medida es obligatorio.'
+            'measurement_unit_id.required' => 'El campo unidad de medida es obligatorio.',
+            'product.id.required' => 'El campo catálogo SNC es obligatorio.'
         ];
     }
 
@@ -92,7 +102,7 @@ class WarehouseProductController extends Controller
      */
     public function index()
     {
-        return response()->json(['records' => WarehouseProduct::with('measurementUnit')->get()], 200);
+        return response()->json(['records' => WarehouseProduct::with('measurementUnit', 'purchaseProduct')->get()], 200);
     }
 
     /**
@@ -111,14 +121,15 @@ class WarehouseProductController extends Controller
 
         $product = WarehouseProduct::create(
             [
-            'name' => $request->input('name'),
-            'description' => $request->input('description'),
-            'define_attributes' => !empty($request->define_attributes)
-            ? $request->input('define_attributes')
-            : false,
-            'accounting_account_id' => $request->accounting_account_id,
-            'measurement_unit_id' => $request->input('measurement_unit_id'),
-            'history_tax_id' => $request->input('history_tax_id'),
+                'name' => $request->input('name'),
+                'description' => $request->input('description'),
+                'define_attributes' => !empty($request->define_attributes)
+                ? $request->input('define_attributes')
+                : false,
+                'accounting_account_id' => $request->accounting_account_id,
+                'measurement_unit_id' => $request->input('measurement_unit_id'),
+                'history_tax_id' => $request->input('history_tax_id'),
+                'purchase_product_id' => $request?->product['id'] ?? null
             ]
         );
 
@@ -160,18 +171,20 @@ class WarehouseProductController extends Controller
             'name.required' => 'El campo nombre del insumo es obligatorio.',
             'name.titlecase' => 'El campo nombre debe ser escrito en mayusculas',
             'description.required' => 'El campo descripción es obligatorio.',
-            'measurement_unit_id.required' => 'El campo unidad de medida es obligatorio.'
+            'measurement_unit_id.required' => 'El campo unidad de medida es obligatorio.',
+            'purchase_product_id.required' => 'El campo catálogo SNC es obligatorio.'
         ];
 
-        $this->validate(
-            $request,
-            [
+        $rules = [
             'name' => ['required', 'titlecase'],
             'description' => ['required'],
-            'measurement_unit_id' => ['required']
-            ],
-            $this->messages
-        );
+            'measurement_unit_id' => ['required'],
+            'product.id' => (Module::has('Purchase') && Module::isEnabled('Purchase'))
+                ? ['required', 'exists:purchase_products,id']
+                : ['nullable'],
+        ];
+
+        $this->validate($request, $rules, $this->messages);
 
         $product->name = $request->input('name');
         $product->description = $request->input('description');
@@ -181,6 +194,7 @@ class WarehouseProductController extends Controller
         $product->accounting_account_id = $request->accounting_account_id;
         $product->measurement_unit_id = $request->input('measurement_unit_id');
         $product->history_tax_id = $request->input('history_tax_id');
+        $product->purchase_product_id = $request?->product['id'] ?? null;
         $product->save();
 
         $product_attributes = WarehouseProductAttribute::where('warehouse_product_id', $product->id)->get();
@@ -254,6 +268,48 @@ class WarehouseProductController extends Controller
     public function getWarehouseProducts()
     {
         return template_choices('Modules\Warehouse\Models\WarehouseProduct', 'name', '', true);
+    }
+
+    public function getWarehouseFullInfoProducts(Warehouse $warehouse): JsonResponse
+    {
+                $inventoryByWarehouse = WarehouseInventoryProduct::query()
+                    ->whereNotNull('exist')
+                    ->with([
+                        'warehouseProductValues' => function ($query) {
+                            $query->with('warehouseProductAttribute');
+                        },
+                        'currency',
+                        'warehouseProduct.measurementUnit',
+                        'warehouseInstitutionWarehouse' => function ($query) {
+                            $query->with('warehouse');
+                        },
+                        'warehouseInventoryRule',
+                        ])->where('warehouse_institution_warehouse_id', $warehouse->id)
+                        ->get();
+
+                        return response()->json(['records' => $inventoryByWarehouse], JsonResponse::HTTP_OK);
+    }
+
+    public function getWarehouseProductsVueSelect(Request $request, ?Warehouse $warehouse = null): JsonResponse
+    {
+        $inventoryByWarehouse = WarehouseInventoryProduct::query()
+        ->whereNotNull('exist')
+        ->when($warehouse, function ($query) use ($warehouse) {
+            $query->where('warehouse_institution_warehouse_id', $warehouse->id);
+        })->get()
+        ->map(function ($item) {
+            return [
+                'id' => $item->id,
+                'product_id' => $item->warehouseProduct->id,
+                'text' => $item->warehouseProduct->name,
+            ];
+        });
+
+        if ($inventoryByWarehouse->count() > 0) {
+            $inventoryByWarehouse->prepend(['id' => 'all', 'text' => 'Todos']);
+        }
+
+        return response()->json(['records' => $inventoryByWarehouse], JsonResponse::HTTP_OK);
     }
 
     /**
@@ -358,8 +414,26 @@ class WarehouseProductController extends Controller
      */
     public function import(Request $request)
     {
-        Excel::import(new WarehouseProductImport(), request()->file('file'));
-        return response()->json(['result' => true], 200);
+        request()->validate([
+            'file' => 'required|mimes:xlx,xls,xlsx'
+        ]);
+
+        $filePath = $request->file('file')->store('/tmp');
+        $user = User::find(auth()->user()->id);
+        /** Crea el nombre del archivo de errores para la importación */
+        $errorsFilePath = 'import_' . uniqid() . '_.errors' . '.xlsx';
+
+        /* Crea el archivo de errores en el disco temporal */
+        Storage::disk('temporary')->put($errorsFilePath, '');
+
+        try {
+            Excel::queueImport(new WarehouseProductImport($filePath, $user, $errorsFilePath), $filePath);
+        } catch (\Throwable $e) {
+            Log::error($e->getMessage());
+            return response()->json(['error' => true, 'message' => __($e->getMessage())], 200);
+        }
+
+        return response()->json(['message' => 'Success'], 200);
     }
 
     /**

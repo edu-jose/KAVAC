@@ -4,6 +4,7 @@ namespace Modules\Finance\Models;
 
 use App\Models\Currency;
 use App\Models\Receiver;
+use App\Models\FiscalYear;
 use App\Models\Institution;
 use App\Traits\ModelsTrait;
 use App\Models\DocumentStatus;
@@ -327,6 +328,18 @@ class FinancePayOrder extends Model implements Auditable
      */
     public function getDate()
     {
+        /**
+         * Si la orden de pago fue aprobada y el estatus de la ejecución es pendiente,
+         * Permite saltar la validación del cierre de ejercicio fiscal.
+         */
+        if ($this->documentStatus()->exists() && $this->documentStatus()->first()->action === 'AP' && $this->status_payment_execute === 'PE') {
+            $currentFiscalYear = FiscalYear::query()
+                    ->where(['active' => true, 'closed' => false, 'institution_id' => get_institution()->id])
+                    ->orderBy('year', 'desc')
+                    ->first();
+            $year = $currentFiscalYear->year;
+            return Date("$year-01-01");
+        }
         return $this->ordered_at;
     }
 

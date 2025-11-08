@@ -210,6 +210,8 @@ Luego, en el archivo .env, localizado en la raíz del sistema, se deben establec
     TELESCOPE_PATH
     TELESCOPE_PREFIX
 
+    EMAIL_VERIFIED_BY_DEFAULT=false
+
 El archivo .env.example contiene el listado de variables de configuración disponibles, así como una breve descripción.
 
 De igual manera se debe instalar los paquetes necesarios para la gestión reactiva de datos, para lo cual se debe ejecutar el siguiente comando (teniendo en cuenta que se debe contar con nodejs y npm previamente instalados):
@@ -590,7 +592,13 @@ TELESCOPE_ENABLED | Indica si esta activo o no el monitoreo del sistema
 
 TELESCOPE_PATH | Establece un path personalizado para acceder al panel de monitoreo
 
-TELESCOPE_PREFIX | Establece un prefijo personalizado para acceder al panel de monitoreo, en el caso de que la aplicacion este bajo un subdirecotrio
+TELESCOPE_PREFIX | Establece un prefijo personalizado para acceder al panel de monitoreo, en el caso de que la aplicacion este bajo un
+
+## Verificación de usuario por defecto
+
+Para habilitar la verificación automática de los usuarios es necesario establecer la variable EMAIL_VERIFIED_BY_DEFAULT en verdadero, esto permitirá que por defecto todos los usuarios registrados en el sistema sean marcados como verificados, de lo contrario, si esta variable es establecida como falso, cada usuario debe verificarse individualmente. Por lo tanto la variable debe definirse de la siguiente forma:
+
+    EMAIL_VERIFIED_BY_DEFAULT=true
 
 ## Websockets
 

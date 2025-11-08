@@ -24,18 +24,20 @@ class ProjectTrackingTaskTimer extends Migration
      */
     public function up()
     {
-        Schema::create('project_tracking_task_timers', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('project_tracking_task_id');
-            $table->datetime('start_time');
-            $table->datetime('end_time')->nullable();
-            $table->unsignedBigInteger('initial_status_id')->nullable();
-            $table->unsignedBigInteger('final_status_id')->nullable();
-            $table->string('time_spent')->nullable();
-            $table->foreign('project_tracking_task_id')->references('id')->on('project_tracking_tasks');
-            $table->timestamps();
-            $table->softDeletes()->comment('Fecha y hora en la que el registro fue eliminado');
-        });
+        if (!Schema::hasTable('project_tracking_task_timers')) {
+            Schema::create('project_tracking_task_timers', function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('project_tracking_task_id');
+                $table->datetime('start_time');
+                $table->datetime('end_time')->nullable();
+                $table->unsignedBigInteger('initial_status_id')->nullable();
+                $table->unsignedBigInteger('final_status_id')->nullable();
+                $table->string('time_spent')->nullable();
+                $table->foreign('project_tracking_task_id')->references('id')->on('project_tracking_tasks');
+                $table->timestamps();
+                $table->softDeletes()->comment('Fecha y hora en la que el registro fue eliminado');
+            });
+        }
     }
 
     /**
@@ -45,6 +47,6 @@ class ProjectTrackingTaskTimer extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('project_tracking_task_timer');
+        Schema::dropIfExists('project_tracking_task_timers');
     }
 }

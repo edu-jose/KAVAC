@@ -39,6 +39,26 @@
 
 									<div class="col-md-6">
 										<div class="form-group">
+											<strong>Institución</strong>
+											<div class="row" style="margin: 1px 0">
+												<span class="col-md-12" :id="'warehouse_institution_name' + infoid">
+												</span>
+											</div>
+											<input type="hidden" :id="'id' + infoid">
+										</div>
+									</div>
+									<div class="col-md-6">
+										<div class="form-group">
+											<strong>Almacén</strong>
+											<div class="row" style="margin: 1px 0">
+												<span class="col-md-12" :id="'warehouse_name' + infoid">
+												</span>
+											</div>
+											<input type="hidden" :id="'id' + infoid">
+										</div>
+									</div>
+									<div class="col-md-6">
+										<div class="form-group">
 											<strong>Fecha de registro</strong>
 											<div class="row" style="margin: 1px 0">
 												<span class="col-md-12" :id="'date_init' + infoid">
@@ -226,6 +246,8 @@
 						vm.payroll_staff_name = (fields.payroll_staff)?fields.payroll_staff.first_name + ' ' + fields.payroll_staff.last_name:'';
 
 						$(".modal-body #id").val(fields.id);
+						document.getElementById('warehouse_institution_name' + vm.infoid).innerText = (fields.institution) ? fields.institution.name : '';
+						document.getElementById('warehouse_name' + vm.infoid).innerText = (fields.warehouse) ? fields.warehouse.name : '';
 						document.getElementById('date_init' + vm.infoid).innerText = (fields.request_date)?vm.format_date(fields.request_date):vm.format_date(fields.created_at);
 						document.getElementById('department' + vm.infoid).innerText = (fields.department)?fields.department.name:'';
 						document.getElementById('payroll_staff' + vm.infoid).innerText = (fields.payroll_staff)?fields.payroll_staff.first_name + ' ' + fields.payroll_staff.last_name:'';

@@ -257,6 +257,7 @@ class PayrollController extends Controller
                 . $formatedEndDate;
         }
 
+
         $this->validate($request, $this->validateRules, $this->messages);
 
         $codeSetting = CodeSetting::where(['model' => Payroll::class, 'table' => 'payrolls'])->first();
@@ -796,7 +797,6 @@ class PayrollController extends Controller
                             if (count($totals['NA']) > 0) {
                                 $countAP = 0;
                                 foreach ($totals['NA'] ?? [] as $keyNA => $valuesNA) {
-                                    $countAP++;
                                     foreach ($valuesNA as $valNA) {
                                         if (array_key_exists('id', $valNA)) {
                                             $compromiseContribution = \Modules\Budget\Models\BudgetCompromise::query()
@@ -804,11 +804,17 @@ class PayrollController extends Controller
                                                 ->where('sourceable_id', $id)
                                                 ->where('compromiseable_type', PayrollConcept::class)
                                                 ->where('compromiseable_id', $valNA['id'])
-                                                ->with('budgetStages', function ($query) {
+                                                ->where('document_status_id', $documentStatusEL->id)
+                                                ->whereHas('budgetStages', function ($query) {
                                                     $query->where([
                                                         'type' => 'PRE',
                                                     ]);
                                                 })
+                                                ->with(['budgetStages' => function ($query) {
+                                                    $query->where([
+                                                        'type' => 'PRE',
+                                                    ]);
+                                                }])
                                                 ->first();
                                             if ($compromiseContribution != null) {
                                                 break;
@@ -819,6 +825,7 @@ class PayrollController extends Controller
                                     $compromiseContributionTotal = $compromiseContribution?->budgetStages[0]['amount'] ?? 0;
 
                                     if (isset($compromiseContribution)) {
+                                        $countAP++;
                                         $compromiseContribution->compromised_at = $date;
                                         $compromiseContribution->description = "Pago de aportes nómina AP - $countAP$reference correspondiente al período " .
                                             $payrollPaymentPeriod->start_date . ' - ' .
@@ -847,7 +854,7 @@ class PayrollController extends Controller
                                         $totalContributions += $value['valueTotal'];
                                     }
 
-                                    $compromiseContribution?->budgetStages()->update([
+                                    $compromiseContribution?->budgetStages()->where('type', 'PRE')->update([
                                         'type' => 'COM',
                                         'amount' => $compromiseContributionTotal
                                     ]);
@@ -883,91 +890,93 @@ class PayrollController extends Controller
                                                     }
                                                 }
 
-                                                /* @todo Se registra la orden de pago */
-                                                $financePayOrderContribution = \Modules\Finance\Models\FinancePayOrder::create([
-                                                    'code' => $newCode,
-                                                    'ordered_at' => $date,
-                                                    'type' => 'PR',
-                                                    'is_partial' => false,
-                                                    'pending_amount' => 0,
-                                                    'completed' => true,
-                                                    'document_type' => 'O',
-                                                    'document_number' => null,
-                                                    'source_amount' => $totalContributions,
-                                                    'amount' => $totalContributions,
-                                                    'concept' => "Pago de aportes de nómina AP - $countAP$reference correspondiente al período " .
-                                                        $payrollPaymentPeriod->start_date . ' - ' .
-                                                        $payrollPaymentPeriod->end_date,
-                                                    'observations' => '',
-                                                    'status' => 'PE',
-                                                    'budget_specific_action_id' => $contributionSpecificActionId,
-                                                    'institution_id' => $institution->id,
-                                                    'document_status_id' => $documentStatusPR->id,
-                                                    'currency_id' => $currency->id,
-                                                    'name_sourceable_type' => str_replace("modules", "Modules", Receiver::class),
-                                                    'name_sourceable_id' => $rec->id,
-                                                    'document_sourceable_id' => $compromiseContribution->id ?? null,
-                                                    'document_sourceable_type' => \Modules\Budget\Models\BudgetCompromise::class ?? null
-                                                ]);
-
-                                                /** @todo Validar segundo estado financiero */
-                                                $newCodeStage = generate_registration_code('STG', 8, 4, \Modules\Budget\Models\BudgetStage::class, 'code');
-
-                                                if (isset($compromiseContribution) && isset($newCodeStage)) {
-                                                    $compromiseContribution->budgetStages()->create([
-                                                        'code' => $newCodeStage,
-                                                        'registered_at' => $date,
-                                                        'type' => 'CAU',
-                                                        'amount' => $compromiseContributionTotal,
-                                                        'stageable_type' => \Modules\Finance\Models\FinancePayOrder::class,
-                                                        'stageable_id' => $financePayOrderContribution->id,
+                                                if (isset($compromiseContribution)) {
+                                                    /* @todo Se registra la orden de pago */
+                                                    $financePayOrderContribution = \Modules\Finance\Models\FinancePayOrder::create([
+                                                        'code' => $newCode,
+                                                        'ordered_at' => $date,
+                                                        'type' => 'PR',
+                                                        'is_partial' => false,
+                                                        'pending_amount' => 0,
+                                                        'completed' => true,
+                                                        'document_type' => 'O',
+                                                        'document_number' => null,
+                                                        'source_amount' => $totalContributions,
+                                                        'amount' => $totalContributions,
+                                                        'concept' => "Pago de aportes de nómina AP - $countAP$reference correspondiente al período " .
+                                                            $payrollPaymentPeriod->start_date . ' - ' .
+                                                            $payrollPaymentPeriod->end_date,
+                                                        'observations' => '',
+                                                        'status' => 'PE',
+                                                        'budget_specific_action_id' => $contributionSpecificActionId,
+                                                        'institution_id' => $institution->id,
+                                                        'document_status_id' => $documentStatusPR->id,
+                                                        'currency_id' => $currency->id,
+                                                        'name_sourceable_type' => str_replace("modules", "Modules", Receiver::class),
+                                                        'name_sourceable_id' => $rec->id,
+                                                        'document_sourceable_id' => $compromiseContribution->id ?? null,
+                                                        'document_sourceable_type' => \Modules\Budget\Models\BudgetCompromise::class ?? null
                                                     ]);
-                                                }
 
-                                                /** @todo Se registra el asiento contable de la orden de pago de los aportes si existe el módulo de contabilidad */
-                                                if (Module::has('Accounting') && Module::isEnabled('Accounting')) {
-                                                    $accountingAccountsContributions = [];
+                                                    /** @todo Validar segundo estado financiero */
+                                                    $newCodeStage = generate_registration_code('STG', 8, $year, \Modules\Budget\Models\BudgetStage::class, 'code');
 
-                                                    foreach ($valuesNA as $key => $value) {
-                                                        if ($value['accounting_account_id']) {
-                                                            array_push($accountingAccountsContributions, [
-                                                                'id' => $value['accounting_account_id'],
-                                                                'debit' => $nameDecimalFunction($value['value'], $number_decimals->p_value),
-                                                                'assets' => 0,
-                                                            ]);
-                                                        }
-                                                    }
-
-                                                    if ($value['receiver'] && $value['receiver']['associateable_id']) {
-                                                        array_push($accountingAccountsContributions, [
-                                                            'id' => $value['receiver']['associateable_id'],
-                                                            'debit' => 0,
-                                                            'assets' => $nameDecimalFunction($totalContributions, $number_decimals->p_value),
+                                                    if (isset($compromiseContribution) && isset($newCodeStage)) {
+                                                        $compromiseContribution->budgetStages()->create([
+                                                            'code' => $newCodeStage,
+                                                            'registered_at' => $date,
+                                                            'type' => 'CAU',
+                                                            'amount' => $compromiseContributionTotal,
+                                                            'stageable_type' => \Modules\Finance\Models\FinancePayOrder::class,
+                                                            'stageable_id' => $financePayOrderContribution->id,
                                                         ]);
                                                     }
 
-                                                    /* Asiento contable */
-                                                    $accountingCategory = \Modules\Accounting\Models\AccountingEntryCategory::findOrFail($payrollPaymentPeriod->payrollPaymentType->accounting_entry_category_id);
+                                                    /** @todo Se registra el asiento contable de la orden de pago de los aportes si existe el módulo de contabilidad */
+                                                    if (Module::has('Accounting') && Module::isEnabled('Accounting')) {
+                                                        $accountingAccountsContributions = [];
 
-                                                    \Modules\Accounting\Jobs\AccountingManageEntries::dispatch(
-                                                        [
-                                                            'date' => $date,
-                                                            'reference' => $newCode,
-                                                            'concept' => "Orden de pago de aportes AP - $countAP$reference de nómina correspondiente al período " .
-                                                                $payrollPaymentPeriod->start_date . ' - ' .
-                                                                $payrollPaymentPeriod->end_date,
-                                                            'observations' => '',
-                                                            'category' => $accountingCategory->id,
-                                                            'currency_id' => $currency->id,
-                                                            'totDebit' => $totalContributions,
-                                                            'totAssets' => $totalContributions,
-                                                            'module' => 'Finance',
-                                                            'model' => \Modules\Finance\Models\FinancePayOrder::class,
-                                                            'relatable_id' => $financePayOrderContribution->id,
-                                                            'accountingAccounts' => $accountingAccountsContributions
-                                                        ],
-                                                        $institution->id,
-                                                    );
+                                                        foreach ($valuesNA as $key => $value) {
+                                                            if ($value['accounting_account_id']) {
+                                                                array_push($accountingAccountsContributions, [
+                                                                    'id' => $value['accounting_account_id'],
+                                                                    'debit' => $nameDecimalFunction($value['value'], $number_decimals->p_value),
+                                                                    'assets' => 0,
+                                                                ]);
+                                                            }
+                                                        }
+
+                                                        if ($value['receiver'] && $value['receiver']['associateable_id']) {
+                                                            array_push($accountingAccountsContributions, [
+                                                                'id' => $value['receiver']['associateable_id'],
+                                                                'debit' => 0,
+                                                                'assets' => $nameDecimalFunction($totalContributions, $number_decimals->p_value),
+                                                            ]);
+                                                        }
+
+                                                        /* Asiento contable */
+                                                        $accountingCategory = \Modules\Accounting\Models\AccountingEntryCategory::findOrFail($payrollPaymentPeriod->payrollPaymentType->accounting_entry_category_id);
+
+                                                        \Modules\Accounting\Jobs\AccountingManageEntries::dispatch(
+                                                            [
+                                                                'date' => $date,
+                                                                'reference' => $newCode,
+                                                                'concept' => "Orden de pago de aportes AP - $countAP$reference de nómina correspondiente al período " .
+                                                                    $payrollPaymentPeriod->start_date . ' - ' .
+                                                                    $payrollPaymentPeriod->end_date,
+                                                                'observations' => '',
+                                                                'category' => $accountingCategory->id,
+                                                                'currency_id' => $currency->id,
+                                                                'totDebit' => $totalContributions,
+                                                                'totAssets' => $totalContributions,
+                                                                'module' => 'Finance',
+                                                                'model' => \Modules\Finance\Models\FinancePayOrder::class,
+                                                                'relatable_id' => $financePayOrderContribution->id,
+                                                                'accountingAccounts' => $accountingAccountsContributions
+                                                            ],
+                                                            $institution->id,
+                                                        );
+                                                    }
                                                 }
                                             }
                                         }
@@ -1011,95 +1020,97 @@ class PayrollController extends Controller
                             $financePaymentMethod = \Modules\Finance\Models\FinancePaymentMethods::query()
                                 ->findOrFail($payrollPaymentPeriod->payrollPaymentType->finance_payment_method_id);
 
-                            /** @todo Se registra la orden de pago */
-                            $financePayOrder = \Modules\Finance\Models\FinancePayOrder::create([
-                                'code' => $code,
-                                'ordered_at' => $date,
-                                'type' => 'PR',
-                                'is_partial' => false,
-                                'pending_amount' => 0,
-                                'completed' => true,
-                                'document_type' => 'O',
-                                'document_number' => null,
-                                'source_amount' => $total,
-                                'amount' => $total,
-                                'concept' => "Pago de nómina $reference correspondiente al período " .
-                                    $payrollPaymentPeriod->start_date . ' - ' .
-                                    $payrollPaymentPeriod->end_date,
-                                'observations' => '',
-                                'status' => 'PE',
-                                'budget_specific_action_id' => $specificActionId,
-                                'institution_id' => $institution->id,
-                                'document_status_id' => $documentStatus->id,
-                                'currency_id' => $currency->id,
-                                'name_sourceable_type' => str_replace("modules", "Modules", Receiver::class),
-                                'name_sourceable_id' => $receiver->id,
-                                'document_sourceable_id' => $compromise->id ?? null,
-                                'document_sourceable_type' => \Modules\Budget\Models\BudgetCompromise::class ?? null
-                            ]);
-
-                            /** @todo Validar segundo estado financiero */
-                            $codeStage = generate_registration_code('STG', 8, 4, \Modules\Budget\Models\BudgetStage::class, 'code');
-
-                            if (isset($compromise) && isset($codeStage)) {
-                                $compromise->budgetStages()->create([
-                                    'code' => $codeStage,
-                                    'registered_at' => $date,
-                                    'type' => 'CAU',
-                                    'amount' => $compromiseTotal - $totalDeduction,
-                                    'stageable_type' => \Modules\Finance\Models\FinancePayOrder::class,
-                                    'stageable_id' => $financePayOrder->id,
-                                ]);
-                            }
-
-                            /* Asiento contable de la orden de pago de nómina */
-                            $accountingCategory = \Modules\Accounting\Models\AccountingEntryCategory::findOrFail($payrollPaymentPeriod->payrollPaymentType->accounting_entry_category_id);
-
-                            $accountingAccountsToOrder = [];
-
-                            foreach ($compromise->budgetCompromiseDetails as $compromiseDetail) {
-                                $accountable = \Modules\Accounting\Models\Accountable::query()
-                                    ->where('accountable_type', \Modules\Accounting\Models\BudgetAccount::class)
-                                    ->where('accountable_id', $compromiseDetail->budget_account_id)
-                                    ->first();
-
-                                $accountingAccountsToOrder[] = [
-                                    'id' => $accountable->accounting_account_id,
-                                    'debit' => $compromiseDetail->amount,
-                                    'assets' => 0,
-                                ];
-                            }
-
-                            $accountingAccountsToOrder = array_merge(
-                                $accountingAccountsToOrder,
-                                [
-                                    [
-                                        'id' => (int)$idInstitutionAccount->p_value,
-                                        'debit' => 0,
-                                        'assets' => (string)$totalDebit,
-                                    ]
-                                ]
-                            );
-
-                            \Modules\Accounting\Jobs\AccountingManageEntries::dispatch(
-                                [
-                                    'date' => $date,
-                                    'reference' => $code,
-                                    'concept' => "Orden de pago de nómina $reference correspondiente al período " .
+                            if (isset($compromise)) {
+                                /** @todo Se registra la orden de pago */
+                                $financePayOrder = \Modules\Finance\Models\FinancePayOrder::create([
+                                    'code' => $code,
+                                    'ordered_at' => $date,
+                                    'type' => 'PR',
+                                    'is_partial' => false,
+                                    'pending_amount' => 0,
+                                    'completed' => true,
+                                    'document_type' => 'O',
+                                    'document_number' => null,
+                                    'source_amount' => $total,
+                                    'amount' => $total,
+                                    'concept' => "Pago de nómina $reference correspondiente al período " .
                                         $payrollPaymentPeriod->start_date . ' - ' .
                                         $payrollPaymentPeriod->end_date,
                                     'observations' => '',
-                                    'category' => $accountingCategory->id,
+                                    'status' => 'PE',
+                                    'budget_specific_action_id' => $specificActionId,
+                                    'institution_id' => $institution->id,
+                                    'document_status_id' => $documentStatus->id,
                                     'currency_id' => $currency->id,
-                                    'totDebit' => $totalDebit,
-                                    'totAssets' => $totalAsset + ($totalDebit - $totalAsset),
-                                    'module' => 'Finance',
-                                    'model' => \Modules\Finance\Models\FinancePayOrder::class,
-                                    'relatable_id' => $financePayOrder->id,
-                                    'accountingAccounts' => $accountingAccountsToOrder
-                                ],
-                                $institution->id,
-                            );
+                                    'name_sourceable_type' => str_replace("modules", "Modules", Receiver::class),
+                                    'name_sourceable_id' => $receiver->id,
+                                    'document_sourceable_id' => $compromise->id ?? null,
+                                    'document_sourceable_type' => \Modules\Budget\Models\BudgetCompromise::class ?? null
+                                ]);
+
+                                /** @todo Validar segundo estado financiero */
+                                $codeStage = generate_registration_code('STG', 8, $year, \Modules\Budget\Models\BudgetStage::class, 'code');
+
+                                if (isset($compromise) && isset($codeStage)) {
+                                    $compromise->budgetStages()->create([
+                                        'code' => $codeStage,
+                                        'registered_at' => $date,
+                                        'type' => 'CAU',
+                                        'amount' => $compromiseTotal - $totalDeduction,
+                                        'stageable_type' => \Modules\Finance\Models\FinancePayOrder::class,
+                                        'stageable_id' => $financePayOrder->id,
+                                    ]);
+                                }
+
+                                /* Asiento contable de la orden de pago de nómina */
+                                $accountingCategory = \Modules\Accounting\Models\AccountingEntryCategory::findOrFail($payrollPaymentPeriod->payrollPaymentType->accounting_entry_category_id);
+
+                                $accountingAccountsToOrder = [];
+
+                                foreach ($compromise->budgetCompromiseDetails as $compromiseDetail) {
+                                    $accountable = \Modules\Accounting\Models\Accountable::query()
+                                        ->where('accountable_type', \Modules\Accounting\Models\BudgetAccount::class)
+                                        ->where('accountable_id', $compromiseDetail->budget_account_id)
+                                        ->first();
+
+                                    $accountingAccountsToOrder[] = [
+                                        'id' => $accountable->accounting_account_id,
+                                        'debit' => $compromiseDetail->amount,
+                                        'assets' => 0,
+                                    ];
+                                }
+
+                                $accountingAccountsToOrder = array_merge(
+                                    $accountingAccountsToOrder,
+                                    [
+                                        [
+                                            'id' => (int)$idInstitutionAccount->p_value,
+                                            'debit' => 0,
+                                            'assets' => (string)$totalDebit,
+                                        ]
+                                    ]
+                                );
+
+                                \Modules\Accounting\Jobs\AccountingManageEntries::dispatch(
+                                    [
+                                        'date' => $date,
+                                        'reference' => $code,
+                                        'concept' => "Orden de pago de nómina $reference correspondiente al período " .
+                                            $payrollPaymentPeriod->start_date . ' - ' .
+                                            $payrollPaymentPeriod->end_date,
+                                        'observations' => '',
+                                        'category' => $accountingCategory->id,
+                                        'currency_id' => $currency->id,
+                                        'totDebit' => $totalDebit,
+                                        'totAssets' => $totalAsset + ($totalDebit - $totalAsset),
+                                        'module' => 'Finance',
+                                        'model' => \Modules\Finance\Models\FinancePayOrder::class,
+                                        'relatable_id' => $financePayOrder->id,
+                                        'accountingAccounts' => $accountingAccountsToOrder
+                                    ],
+                                    $institution->id,
+                                );
+                            }
 
                             $codeSetting = CodeSetting::where("model", \Modules\Finance\Models\FinancePaymentExecute::class)->first();
 
@@ -1112,7 +1123,7 @@ class PayrollController extends Controller
                                 strlen($codeSetting->format_digits),
                                 (strlen($codeSetting->format_year) == 2) ? (isset($currentFiscalYear) ?
                                     substr($currentFiscalYear->year, 2, 2) : date('y')) : (isset($currentFiscalYear) ?
-                                    $currentFiscalYear->year : date('Y')),
+                                    $currentFiscalYear->year : $year),
                                 \Modules\Finance\Models\FinancePaymentExecute::class,
                                 $codeSetting->field
                             );
@@ -1163,7 +1174,7 @@ class PayrollController extends Controller
                             ]);
 
                             if (isset($compromise)) {
-                                $codeStage = generate_registration_code('STG', 8, 4, \Modules\Budget\Models\BudgetStage::class, 'code');
+                                $codeStage = generate_registration_code('STG', 8, $year, \Modules\Budget\Models\BudgetStage::class, 'code');
 
                                 $compromise->budgetStages()->create([
                                     'code' => $codeStage,
@@ -1248,24 +1259,23 @@ class PayrollController extends Controller
                                     ]);
 
                                     /** @todo Validar segundo estado financiero */
-                                    $codeStage = generate_registration_code('STG', 8, 4, \Modules\Budget\Models\BudgetStage::class, 'code');
+
+                                    $documentStatusApproved = DocumentStatus::where('action', 'AP')->first();
+                                    $compromiseDeduction->compromised_at = $date;
+                                    $compromiseDeduction->document_status_id = $documentStatusApproved->id;
+                                    $compromiseDeduction->save();
+
+                                    $compromiseDeduction->budgetStages()->where('type', 'PRE')
+                                    ->update([
+                                        'registered_at' => $date,
+                                        'type' => 'COM',
+                                        'amount' => $dPayOrder['amount'],
+                                        'stageable_type' => \Modules\Finance\Models\FinancePayOrder::class,
+                                        'stageable_id' => $financePayOrderDeducction->id,
+                                    ]);
+
+                                    $codeStage = generate_registration_code('STG', 8, $year, \Modules\Budget\Models\BudgetStage::class, 'code');
                                     if (isset($codeStage)) {
-                                        $documentStatusApproved = DocumentStatus::where('action', 'AP')->first();
-                                        $compromiseDeduction->compromised_at = $date;
-                                        $compromiseDeduction->document_status_id = $documentStatusApproved->id;
-                                        $compromiseDeduction->save();
-                                        $compromiseDeduction->budgetStages()->where('type', 'PRE')->delete();
-                                        $compromiseDeduction->budgetStages()->create([
-                                            'code' => $codeStage,
-                                            'registered_at' => $date,
-                                            'type' => 'COM',
-                                            'amount' => $dPayOrder['amount'],
-                                            'stageable_type' => \Modules\Finance\Models\FinancePayOrder::class,
-                                            'stageable_id' => $financePayOrderDeducction->id,
-                                        ]);
-
-                                        $codeStage = generate_registration_code('STG', 8, 4, \Modules\Budget\Models\BudgetStage::class, 'code');
-
                                         $compromiseDeduction->budgetStages()->create([
                                             'code' => $codeStage,
                                             'registered_at' => $date,
@@ -1320,15 +1330,8 @@ class PayrollController extends Controller
                 }
             });
         } catch (\Exception $e) {
+            Log::error($e->getMessage());
             Log::error($e);
-            $message = str_replace("\n", "", $e->getMessage());
-            if (strpos($message, 'ERROR') !== false && strpos($message, 'DETAIL') !== false) {
-                $pattern = '/ERROR:(.*?)DETAIL/';
-                preg_match($pattern, $message, $matches);
-                $errorMessage = trim($matches[1]);
-            } else {
-                $errorMessage = $message;
-            }
 
             $request->session()->flash(
                 'message',
@@ -1337,7 +1340,22 @@ class PayrollController extends Controller
                     'title' => 'Alerta',
                     'icon' => 'screen-error',
                     'class' => 'growl-danger',
-                    'text' => 'No se pudo completar la operación. ' . ucfirst($errorMessage)
+                    'text' => 'No se pudo cerrar la nómina. ' . $e->getMessage()
+                ]
+            );
+            return response()->json(['redirect' => route('payroll.registers.index')], 200);
+        } catch (\Throwable $th) {
+            Log::error($th->getMessage());
+            Log::error($th);
+
+            $request->session()->flash(
+                'message',
+                [
+                    'type' => 'other',
+                    'title' => 'Alerta',
+                    'icon' => 'screen-error',
+                    'class' => 'growl-danger',
+                    'text' => 'No se pudo cerrar la nómina porque se ha presentado un error inesperado. Por favor contacte con el administrador del sistema.'
                 ]
             );
             return response()->json(['redirect' => route('payroll.registers.index')], 200);
@@ -1429,7 +1447,7 @@ class PayrollController extends Controller
             $payroll = Payroll::with([
                 'payrollPaymentPeriod.payrollPaymentType.payrollConcepts.currency',
                 'payrollPaymentPeriod.payrollPaymentType.payrollConcepts.budgetAccount',
-                'purchaseCommonBudgetaryAvailability'
+                'budgetCommonBudgetaryAvailability'
             ])->find($id);
 
             $round = Parameter::where('p_key', 'round')->where('required_by', 'payroll')->first();
@@ -1603,7 +1621,7 @@ class PayrollController extends Controller
             $payroll = Payroll::with([
                 'payrollPaymentPeriod.payrollPaymentType.payrollConcepts.currency',
                 'payrollPaymentPeriod.payrollPaymentType.payrollConcepts.budgetAccount',
-                'purchaseCommonBudgetaryAvailability'
+                'budgetCommonBudgetaryAvailability'
             ])->find($id);
 
             $round = Parameter::where('p_key', 'round')->where('required_by', 'payroll')->first();
@@ -1812,6 +1830,7 @@ class PayrollController extends Controller
             } else {
                 $institution = Institution::where(['active' => true, 'default' => true])->first();
             }
+
             $payroll = Payroll::with('payrollPaymentPeriod')->find($request->payroll_id);
             $availability = $request->availability == 1 ? 'available' : 'not_available';
             $payroll->payrollPaymentPeriod->availability_status = $availability;
@@ -1838,21 +1857,26 @@ class PayrollController extends Controller
                     'code'
                 );
 
-                $documentStatusAN = DocumentStatus::where('action', 'AN')->first();
-                $documentStatusEl = DocumentStatus::where('action', 'EL')->first();
-                $compromise = \Modules\Budget\Models\BudgetCompromise::where('document_number', $payroll->code)
+                $documentStatusAN = DocumentStatus::getStatus('AN');
+                $documentStatusEl = DocumentStatus::getStatus('EL');
+                $compromise = \Modules\Budget\Models\BudgetCompromise::query()
+                    ->where('document_number', $payroll->code)
+                    ->where(function ($query) use ($payroll, $documentStatusEl, $documentStatusAN) {
+                        $query->where('document_status_id', $documentStatusEl->id)
+                            ->orWhere('document_status_id', '!=', $documentStatusAN->id);
+                    })
                     ->get()
                     ->last();
 
-                if ($compromise != null && $compromise->document_status_id != $documentStatusAN->id) {
-                    \Modules\Budget\Models\BudgetCompromiseDetail::where('budget_compromise_id', $compromise->id)->delete();
-                    \Modules\Budget\Models\BudgetStage::where('budget_compromise_id', $compromise->id)->delete();
+                if ($compromise != null) {
+                    $compromise->budgetCompromiseDetails()->delete();
+                    $compromise->budgetStages()->delete();
                 } else {
                     $compromise = \Modules\Budget\Models\BudgetCompromise::create([
                         'sourceable_id' => $payroll->id,
                         'document_number' => $payroll->code,
                         'institution_id' => $institution->id,
-                        'compromised_at' => null,
+                        'compromised_at' => $payroll->created_at,
                         'sourceable_type' => Payroll::class,
                         'description' => $payroll->name,
                         'code' => $codeCompromise,
@@ -1891,10 +1915,9 @@ class PayrollController extends Controller
                     }
                 }
 
-                $compromise->budgetStages()->updateOrCreate([
-                    'code' => generate_registration_code('STG', 8, 4, \Modules\Budget\Models\BudgetStage::class, 'code'),
-                ], [
-                    'registered_at' => now(),
+                $compromise->budgetStages()->create([
+                    'code' => generate_registration_code('STG', 8, $currentFiscalYear->year, \Modules\Budget\Models\BudgetStage::class, 'code'),
+                    'registered_at' => $payroll->created_at,
                     'type' => 'PRE',
                     'amount' => $total
                 ]);
@@ -1903,34 +1926,39 @@ class PayrollController extends Controller
 
                 foreach ($accountsB as $budgetAccounts) {
                     $countAP++;
-                    $codeSettingCompromise = CodeSetting::where(
+                    $codeSettingCompromiseAP = CodeSetting::where(
                         "model",
                         \Modules\Budget\Models\BudgetCompromise::class
                     )->first();
-                    $codeCompromise = generate_registration_code(
-                        $codeSettingCompromise->format_prefix,
-                        strlen($codeSettingCompromise->format_digits),
-                        (strlen($codeSettingCompromise->format_year) == 2) ?
+                    $codeCompromiseAP = generate_registration_code(
+                        $codeSettingCompromiseAP->format_prefix,
+                        strlen($codeSettingCompromiseAP->format_digits),
+                        (strlen($codeSettingCompromiseAP->format_year) == 2) ?
                             substr($currentFiscalYear->year, 2, 2) : $currentFiscalYear->year,
                         \Modules\Budget\Models\BudgetCompromise::class,
                         'code'
                     );
-                    $compromise = \Modules\Budget\Models\BudgetCompromise::where('document_number', 'AP - ' . $countAP . $payroll->code)
+                    $compromiseAP = \Modules\Budget\Models\BudgetCompromise::query()
+                    ->where('document_number', 'AP - ' . $countAP . $payroll->code)
+                    ->where(function ($query) use ($documentStatusEl, $documentStatusAN) {
+                        $query->where('document_status_id', $documentStatusEl->id)
+                            ->orWhere('document_status_id', '!=', $documentStatusAN->id);
+                    })
                     ->get()
                     ->last();
 
-                    if ($compromise != null && $compromise->document_status_id != $documentStatusAN->id) {
-                        \Modules\Budget\Models\BudgetCompromiseDetail::where('budget_compromise_id', $compromise->id)->delete();
-                        \Modules\Budget\Models\BudgetStage::where('budget_compromise_id', $compromise->id)->delete();
+                    if ($compromiseAP != null) {
+                        $compromiseAP->budgetCompromiseDetails()->delete();
+                        $compromiseAP->budgetStages()->delete();
                     } else {
-                        $compromise = \Modules\Budget\Models\BudgetCompromise::create([
+                        $compromiseAP = \Modules\Budget\Models\BudgetCompromise::create([
                             'sourceable_id' => $payroll->id,
                             'document_number' => 'AP - ' . $countAP . $payroll->code,
                             'institution_id' => $institution->id,
-                            'compromised_at' => null,
+                            'compromised_at' => $payroll->created_at,
                             'sourceable_type' => Payroll::class,
                             'description' => $payroll->name,
-                            'code' => $codeCompromise,
+                            'code' => $codeCompromiseAP,
                             'document_status_id' => $documentStatusEl->id,
                             'compromiseable_id' => $budgetAccounts[0]['id'],
                             'compromiseable_type' => PayrollConcept::class
@@ -1958,7 +1986,7 @@ class PayrollController extends Controller
                             ->where('budget_specific_action_id', $budgetAccount['budget_specific_action_id'])
                             ->first();
 
-                        $compromise->budgetCompromiseDetails()->Create([
+                        $compromiseAP->budgetCompromiseDetails()->Create([
                             'description' => $budgetAccount['budget_specific_action_desc'],
                             'amount' => $budgetAccount['value'],
                             'tax_amount' => 0,
@@ -1981,10 +2009,9 @@ class PayrollController extends Controller
                         $total += $budgetAccount['value'];
                     }
 
-                    $compromise->budgetStages()->updateOrCreate([
-                        'code' => generate_registration_code('STG', 8, 4, \Modules\Budget\Models\BudgetStage::class, 'code'),
-                    ], [
-                        'registered_at' => now(),
+                    $compromiseAP->budgetStages()->create([
+                        'code' => generate_registration_code('STG', 8, $currentFiscalYear->year, \Modules\Budget\Models\BudgetStage::class, 'code'),
+                        'registered_at' => $payroll->created_at,
                         'type' => 'PRE',
                         'amount' => $total
                     ]);
@@ -1994,34 +2021,39 @@ class PayrollController extends Controller
 
                 foreach ($accountsC as $budgetAccounts) {
                     $countD++;
-                    $codeSettingCompromise = CodeSetting::where(
+                    $codeSettingCompromiseD = CodeSetting::where(
                         "model",
                         \Modules\Budget\Models\BudgetCompromise::class
                     )->first();
-                    $codeCompromise = generate_registration_code(
-                        $codeSettingCompromise->format_prefix,
-                        strlen($codeSettingCompromise->format_digits),
-                        (strlen($codeSettingCompromise->format_year) == 2) ?
+                    $codeCompromiseD = generate_registration_code(
+                        $codeSettingCompromiseD->format_prefix,
+                        strlen($codeSettingCompromiseD->format_digits),
+                        (strlen($codeSettingCompromiseD->format_year) == 2) ?
                             substr($currentFiscalYear->year, 2, 2) : $currentFiscalYear->year,
                         \Modules\Budget\Models\BudgetCompromise::class,
                         'code'
                     );
-                    $compromise = \Modules\Budget\Models\BudgetCompromise::where('document_number', 'DE - ' . $countD . $payroll->code)
+                    $compromiseD = \Modules\Budget\Models\BudgetCompromise::query()
+                    ->where('document_number', 'DE - ' . $countD . $payroll->code)
+                    ->where(function ($query) use ($documentStatusEl, $documentStatusAN) {
+                        $query->where('document_status_id', $documentStatusEl->id)
+                            ->orWhere('document_status_id', '!=', $documentStatusAN->id);
+                    })
                     ->get()
                     ->last();
 
-                    if ($compromise != null && $compromise->document_status_id != $documentStatusAN->id) {
-                        \Modules\Budget\Models\BudgetCompromiseDetail::where('budget_compromise_id', $compromise->id)->delete();
-                        \Modules\Budget\Models\BudgetStage::where('budget_compromise_id', $compromise->id)->delete();
+                    if ($compromiseD != null) {
+                        $compromiseD->budgetCompromiseDetails()->delete();
+                        $compromiseD->budgetStages()->delete();
                     } else {
-                        $compromise = \Modules\Budget\Models\BudgetCompromise::create([
+                        $compromiseD = \Modules\Budget\Models\BudgetCompromise::create([
                             'sourceable_id' => $payroll->id,
                             'document_number' => 'DE - ' . $countD . $payroll->code,
                             'institution_id' => $institution->id,
-                            'compromised_at' => null,
+                            'compromised_at' => $payroll->created_at,
                             'sourceable_type' => Payroll::class,
                             'description' => $payroll->name,
-                            'code' => $codeCompromise,
+                            'code' => $codeCompromiseD,
                             'document_status_id' => $documentStatusEl->id,
                             'compromiseable_id' => $budgetAccounts[0]['id'],
                             'compromiseable_type' => PayrollConcept::class
@@ -2049,7 +2081,7 @@ class PayrollController extends Controller
                             ->where('budget_specific_action_id', $budgetAccount['budget_specific_action_id'])
                             ->first();
 
-                        $compromise->budgetCompromiseDetails()->Create([
+                        $compromiseD->budgetCompromiseDetails()->Create([
                             'description' => $budgetAccount['budget_specific_action_desc'],
                             'amount' => $budgetAccount['value'],
                             'tax_amount' => 0,
@@ -2072,10 +2104,9 @@ class PayrollController extends Controller
                         $total += $budgetAccount['value'];
                     }
 
-                    $compromise->budgetStages()->updateOrCreate([
-                        'code' => generate_registration_code('STG', 8, 4, \Modules\Budget\Models\BudgetStage::class, 'code'),
-                    ], [
-                        'registered_at' => now(),
+                    $compromiseD->budgetStages()->create([
+                        'code' => generate_registration_code('STG', 8, $currentFiscalYear->year, \Modules\Budget\Models\BudgetStage::class, 'code'),
+                        'registered_at' => $payroll->created_at,
                         'type' => 'PRE',
                         'amount' => $total
                     ]);
@@ -2103,21 +2134,14 @@ class PayrollController extends Controller
             /** @todo Se valida la información de las cuentas asociadas */
             $this->payrollValidateAccounts($payroll);
 
-            $payroll->document_status_id = DocumentStatus::query()->where('action', 'AP')->value('id');
+            $payroll->document_status_id = DocumentStatus::getStatus('AP')?->id;
             $payroll->save();
             $payrollPaymentPeriod = $payroll->payrollPaymentPeriod;
             $payrollPaymentPeriod->payment_status = 'approved';
             $payrollPaymentPeriod->save();
         } catch (\Exception $e) {
             Log::error($e->getMessage());
-            $message = str_replace("\n", "", $e->getMessage());
-            if (strpos($message, 'ERROR') !== false && strpos($message, 'DETAIL') !== false) {
-                $pattern = '/ERROR:(.*?)DETAIL/';
-                preg_match($pattern, $message, $matches);
-                $errorMessage = trim($matches[1]);
-            } else {
-                $errorMessage = $message;
-            }
+            Log::error($e);
 
             $request->session()->flash(
                 'message',
@@ -2126,7 +2150,7 @@ class PayrollController extends Controller
                     'title' => 'Alerta',
                     'icon' => 'screen-error',
                     'class' => 'growl-danger',
-                    'text' => 'No se pudo completar la operación. ' . ucfirst($errorMessage)
+                    'text' => 'No se pudo completar la operación, ha ocurrido un error. Contacte al administrador del sistema.'
                 ]
             );
             return response()->json(['redirect' => route('payroll.registers.index')], 200);
@@ -2187,7 +2211,7 @@ class PayrollController extends Controller
             foreach ($concept['concept_type'] as $type => $values) {
                 // Iterar sobre los tipos de conceptos y acumular el valor correspondiente
                 foreach ($values as $value) {
-                    $concept = PayrollConcept::where('name', $value['name'])->first();
+                    $concept = PayrollConcept::find($value['id']);
                     $receiver = Receiver::query()
                         ->with('sources')
                         ->whereHas('sources', function ($query) use ($concept) {
@@ -2261,6 +2285,7 @@ class PayrollController extends Controller
             ]);
         }
 
+        $documentStatusEl = DocumentStatus::getStatus('EL');
         foreach ($totals['-'] ?? [] as $value) {
             $value['sum'] = true;
             $totalAsset += $nameDecimalFunction($value['value'], $number_decimals->p_value);
@@ -2278,6 +2303,12 @@ class PayrollController extends Controller
                     ->where('sourceable_id', $model->id)
                     ->where('compromiseable_type', PayrollConcept::class)
                     ->where('compromiseable_id', $value['id'])
+                    ->where('document_status_id', $documentStatusEl->id)
+                    ->whereHas('budgetStages', function ($query) {
+                        $query->where([
+                            'type' => 'PRE',
+                        ]);
+                    })
                     ->first() : null;
 
                 if ($compromiseToDeduction) {

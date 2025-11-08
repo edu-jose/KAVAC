@@ -429,6 +429,17 @@ Vue.mixin({
             return moment(String(value)).format('DD/MM/YYYY hh:mm:ss A');
         },
         /**
+         * Método que permite dar formato a una hora
+         *
+         * @param   {string}  time     Hora a ser formateada
+         * @param   {string}  format   Formato de la hora.
+         *
+         * @return  {string}           Hora con el formato establecido
+         */
+        formatTime(time, format = 'hh:mm A') {
+            return moment(time, 'HH:mm:ss').format(format);
+        },
+        /**
          * Método que calcula la diferencia entre dos fechas con marca de tiempo
          *
          * @method     diff_datetimes
@@ -1674,6 +1685,20 @@ Vue.mixin({
             await axios.get(`${window.app_url}/fiscal-years/last`)
                 .then(response => {
                     vm.lastYear = response.data.last_year;
+                })
+                .catch(error => {
+                    console.error(error);
+                });
+        },
+
+        /**
+         * Método que consulta el end point de los últimos $numYears años fiscales mas recientes
+         */
+        async getMostRecentFiscalYears(numYears = 1) {
+            const vm = this;
+            await axios.get(`${window.app_url}/fiscal-years/most-recent/${numYears}`)
+                .then(response => {
+                    vm.mostRecentYears = response.data.records;
                 })
                 .catch(error => {
                     console.error(error);

@@ -456,7 +456,7 @@ export default {
                         vm.recordAllSelected.forEach(newItem => {
                             const existingItem = vm.record.data_source[key].find(existingItem => existingItem.id === newItem.id);
                             if (existingItem) {
-                                existingItem.count += newItem.count;
+                                (existingItem.max > 0 && existingItem.count < existingItem.max) && (existingItem.count += newItem.count);
                             } else {
                                 vm.record.data_source[key].push(newItem);
                             }

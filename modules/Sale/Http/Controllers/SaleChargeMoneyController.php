@@ -37,6 +37,9 @@ class SaleChargeMoneyController extends Controller
     {
         // Establece permisos de acceso para cada método del controlador
         $this->middleware('permission:sale.setting.charge.money', ['only' => 'index']);
+        $this->middleware('permission:sale.setting.charge.store', ['only' => 'store']);
+        $this->middleware('permission:sale.setting.charge.update', ['only' => 'update']);
+        $this->middleware('permission:sale.setting.charge.destroy', ['only' => 'destroy']);
     }
 
     /**
@@ -49,21 +52,12 @@ class SaleChargeMoneyController extends Controller
         $data = [];
         $records = SaleChargeMoney::all();
         foreach ($records as $record) {
-            $list_attributes = [];
-            $attrib = json_decode($record->attributes_charge_money, true);
-
-            foreach ($attrib as $row) {
-                $list_attributes[] = ["attributes" => $row];
-            }
-
             $data[] = [
                 'id' => $record->id,
                 'name_charge_money' => $record->name_charge_money,
                 'description_charge_money' => $record->description_charge_money,
                 'created_at' => $record->created_at,
                 'updated_at' => $record->updated_at,
-                'name_attributes' => implode(", ", $attrib),
-                'list_attributes' => $list_attributes
             ];
         }
 
@@ -81,7 +75,7 @@ class SaleChargeMoneyController extends Controller
     }
 
     /**
-     * Almacena un nuevo cargo de dinero
+     * Almacena un nuevo metodo de cobro
      *
      * @param  Request $request Datos de la petición
      *
@@ -89,43 +83,30 @@ class SaleChargeMoneyController extends Controller
      */
     public function store(Request $request)
     {
-        $attributes = [];
-        if ($request->list_attributes && !empty($request->list_attributes)) {
-            foreach ($request->list_attributes as $attribute) {
-                $attributes[] = $attribute['attributes'];
-            }
-        }
-
-        $this->saleChargeMoneyValidate($request);
+        $this->validate(
+            $request,
+            [
+                'name_charge_money' => [
+                    'required',
+                    'max:200',
+                    'regex:/^[a-zA-ZáéíóúÁÉÍÓÚüÜ\s]+$/u'
+                ],
+                'description_charge_money' => [
+                    'max:200'
+                ],
+            ],
+            [
+                'name_charge_money.required' => 'El campo Nombre es obligatorio.',
+                'name_charge_money.regex' => 'El campo nombre no debe contener caracteres especiales.',
+            ]
+        );
 
         $charge_money = SaleChargeMoney::create([
             'name_charge_money' => $request->name_charge_money,
             'description_charge_money' => $request->description_charge_money,
-            'attributes_charge_money' => json_encode($attributes, JSON_FORCE_OBJECT)
         ]);
 
         return response()->json(['record' => $charge_money, 'message' => 'Success'], 200);
-    }
-
-    /**
-     * Validacion de los datos
-     *
-     * @author Ing. Jose Puentes <jpuentes@cenditel.gob.ve>
-     *
-     * @param     Request    $request Datos de la petición
-     *
-     * @return    void
-     */
-    public function saleChargeMoneyValidate(Request $request)
-    {
-        $attributes = [
-            'name_charge_money' => 'Nombre del método de cobro',
-            'description_charge_money' => 'Descripción del método de cobro'
-        ];
-        $validation = [];
-        $validation['name_charge_money'] = ['required', 'max:100'];
-        $validation['description_charge_money'] = ['required', 'max:100'];
-        $this->validate($request, $validation, [], $attributes);
     }
 
     /**
@@ -165,18 +146,26 @@ class SaleChargeMoneyController extends Controller
         /* Datos del metodo de cobro */
         $charge_money = SaleChargeMoney::find($id);
 
-        $this->saleChargeMoneyValidate($request);
-
-        $attributes = [];
-        if ($request->list_attributes && !empty($request->list_attributes)) {
-            foreach ($request->list_attributes as $attribute) {
-                $attributes[] = $attribute['attributes'];
-            }
-        }
+        $this->validate(
+            $request,
+            [
+                'name_charge_money' => [
+                    'required',
+                    'max:200',
+                    'regex:/^[a-zA-ZáéíóúÁÉÍÓÚüÜ\s]+$/u'
+                ],
+                'description_charge_money' => [
+                    'max:200'
+                ],
+            ],
+            [
+                'name_charge_money.required' => 'El campo Nombre es obligatorio.',
+                'name_charge_money.regex' => 'El campo Nombre no debe contener caracteres especiales.',
+            ]
+        );
 
         $charge_money->name_charge_money = $request->name_charge_money;
         $charge_money->description_charge_money = $request->description_charge_money;
-        $charge_money->attributes_charge_money = json_encode($attributes, JSON_FORCE_OBJECT);
         $charge_money->save();
         return response()->json(['message' => 'Success'], 200);
     }

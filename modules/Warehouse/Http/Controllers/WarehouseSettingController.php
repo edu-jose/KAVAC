@@ -61,12 +61,14 @@ class WarehouseSettingController extends Controller
             ->where('type', 'warehouse.request')->first();
         $rqStaffCode = $codeSettings->where('table', 'warehouse_requests')
             ->where('type', 'warehouse.requestStaff')->first();
+        $xrqCode = $codeSettings->where('table', 'warehouse_external_requests')->first();
         $rpCode = $codeSettings->where('table', 'warehouse_reports')->first();
+        $receptionsCode = $codeSettings->where('table', 'warehouse_receptions')->first();
         $ivCode = $codeSettings->where('table', 'warehouse_inventories')->first();
 
         return view(
             'warehouse::settings',
-            compact('paramMultiWarehouse', 'header', 'pdCode', 'mvCode', 'rqCode', 'rqStaffCode', 'rpCode', 'ivCode')
+            compact('paramMultiWarehouse', 'header', 'pdCode', 'mvCode', 'rqCode', 'rqStaffCode', 'xrqCode', 'rpCode', 'receptionsCode', 'ivCode')
         );
     }
 
@@ -91,27 +93,26 @@ class WarehouseSettingController extends Controller
             'products_code'         => [new CodeSettingRule()],
             'movements_code'        => [new CodeSettingRule()],
             'requests_code'         => [new CodeSettingRule()],
-            'requestStaffs_code'   => [new CodeSettingRule()],
+            'requestStaffs_code'    => [new CodeSettingRule()],
+            'externalRequests_code' => [new CodeSettingRule()],
             'reports_code'          => [new CodeSettingRule()],
-            'inventories_code'      => [new CodeSettingRule()]
+            'inventories_code'      => [new CodeSettingRule()],
+            'receptions_code'          => [new CodeSettingRule()]
         ]);
-
         foreach ($codes as $key => $value) {
             /* Define el modelo al cual hace referencia el código */
             $model = '';
             $type = null;
-
             if ($key !== '_token' && !is_null($value)) {
                 list($table, $field) = explode("_", $key);
                 list($prefix, $digits, $sufix) = CodeSetting::divideCode($value);
-
                 if ($table === "products") {
                     /* Define la tabla asociado a los productos inventariados */
                     $table = "inventory_products";
 
                     /* Define el modelo asociado a los productos inventariados */
                     $model = \Modules\Warehouse\Models\WarehouseInventoryProduct::class;
-                } elseif ($table === "movements") {
+                } elseif ($table === "movements" || $table === "receptions") {
                     /* Define el modelo para asociado a los movimientos de almacén */
                     $model = \Modules\Warehouse\Models\WarehouseMovement::class;
                 } elseif (in_array($key, ['requests_code', 'requestStaffs_code'])) {
@@ -131,8 +132,11 @@ class WarehouseSettingController extends Controller
                 } elseif ($table === "inventories") {
                     /* Define el modelo para asociado al inventario de almacenes */
                     //$model = \Modules\Warehouse\Models\WarehouseInventory::class;
+                } elseif ($table === "externalRequests") {
+                    /* Define el modelo para asociado a las solicitudes externas de almacén */
+                    $model = \Modules\Warehouse\Models\WarehouseExternalRequest::class;
+                    $table = "external_requests";
                 }
-
                 if ($table != "inventories") {
                     $codeSetting = CodeSetting::where([
                         'module' => 'warehouse',
@@ -159,7 +163,6 @@ class WarehouseSettingController extends Controller
                 }
             }
         }
-
         if ($saved) {
             $request->session()->flash('message', ['type' => 'store']);
         }

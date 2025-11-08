@@ -332,6 +332,15 @@ class PayrollAssociatedParametersRepository
                 'where'       => null
             ],
             [
+                'id'          => 'staff_paid_concepts',
+                'name'        => 'Todos los trabajadores a los que se cancelo el/los concepto(s)',
+                'model'       => 'Modules\Payroll\Models\PayrollStaff',
+                'optionModel' => 'Modules\Payroll\Models\PayrollConcept',
+                'type'        => 'list',
+                'whereHas'    => null,
+                'where'       => null
+            ],
+            [
                 'id'          => 'all_staff_in_vacations',
                 'name'        => 'Todos los trabajadores que están de vacaciones',
                 'model'       => 'Modules\Payroll\Models\PayrollStaff',
@@ -387,7 +396,7 @@ class PayrollAssociatedParametersRepository
                     'field' => 'payrollSocioeconomic',
                     'whereHas' => [
                         'field' => 'payrollChildrens',
-                        'where' => ['is_student',true ],
+                        'where' => ['is_student', true],
                     ],
                 ],
             ],
@@ -433,8 +442,8 @@ class PayrollAssociatedParametersRepository
                 'name'    => 'Trabajadores',
                 'model'   => 'Modules\Payroll\Models\PayrollStaff',
                 'optionModel'   => 'Modules\Payroll\Models\PayrollStaff',
-                'optionField'   => ['first_name', ' ','last_name'],
-                'field'   => ['first_name', ' ','last_name'],
+                'optionField'   => ['first_name', ' ', 'last_name'],
+                'field'   => ['first_name', ' ', 'last_name'],
                 'type'    => 'list',
                 'whereIn' => ['id', ['ids']]
             ],
@@ -453,8 +462,8 @@ class PayrollAssociatedParametersRepository
                 'name'        => 'Todos los trabajadores excepto los especificados',
                 'model'       => 'Modules\Payroll\Models\PayrollStaff',
                 'optionModel'   => 'Modules\Payroll\Models\PayrollStaff',
-                'optionField'   => ['first_name', ' ','last_name'],
-                'field'       => ['first_name', ' ','last_name'],
+                'optionField'   => ['first_name', ' ', 'last_name'],
+                'field'       => ['first_name', ' ', 'last_name'],
                 'type'        => 'list',
                 'whereNotIn'  => ['id', ['ids']]
             ],

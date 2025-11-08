@@ -55,14 +55,14 @@ class BudgetaryAvailabilityController extends Controller
             'verifiedBy.payrollStaff',
             'firstSignature.payrollStaff',
             'secondSignature.payrollStaff',
-            'purchaseCommonBudgetaryAvailability',
+            'budgetCommonBudgetaryAvailability',
         )->find($id);
 
         if ($module == 'Payroll') {
             $payroll = Payroll::with([
                 'payrollPaymentPeriod.payrollPaymentType.payrollConcepts.currency',
                 'payrollPaymentPeriod.payrollPaymentType.payrollConcepts.budgetAccount',
-                'purchaseCommonBudgetaryAvailability',
+                'budgetCommonBudgetaryAvailability',
             ])->find($id);
 
             $round = Parameter::where('p_key', 'round')->where('required_by', 'payroll')->first();
@@ -148,8 +148,8 @@ class BudgetaryAvailabilityController extends Controller
         /* Base para generar el pdf */
         $pdf = new ReportRepository();
         $code = match ($module) {
-             'Purchase' => $record->purchaseCommonBudgetaryAvailability?->code ?? '',
-             'Payroll' => $payroll->purchaseCommonBudgetaryAvailability?->code ?? '',
+             'Purchase' => $record->budgetCommonBudgetaryAvailability?->code ?? '',
+             'Payroll' => $payroll->budgetCommonBudgetaryAvailability?->code ?? '',
              default => ''
         };
 

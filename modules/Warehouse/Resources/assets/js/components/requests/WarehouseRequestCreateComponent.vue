@@ -1,4 +1,4 @@
-<template>
+		<template>
 	<section id="WarehouseRequestForm">
 		<div class="card-body">
 			<div class="alert alert-danger" v-if="errors.length > 0">
@@ -23,6 +23,27 @@
 				<div class="col-md-12">
 					<b>Datos de la solicitud</b>
 				</div>
+				<div class="col-md-4" id="helpInstitution">
+                    <div class="form-group is-required">
+                        <label for="institution">Nombre de la organización:</label>
+                        <select2
+                            :options="institutions"
+                            @input="getWarehouses"
+                            v-model="record.institution_id">
+                        </select2>
+                        <input type="hidden" v-model="record.id">
+                    </div>
+                </div>
+				<div class="col-md-4" id="helpWarehouse">
+                    <div class="form-group is-required">
+                        <label for="warehouse">Nombre del almacén:</label>
+                        <select2 id="warehouse"
+                            :options="warehouses"
+                            @input="getWarehouseProducts"
+                            v-model="record.warehouse_id">
+                        </select2>
+                    </div>
+                </div>
 
 				<div class="col-md-4" id="helpWarehouseRequestDate">
 					<div class="form-group is-required">
@@ -54,13 +75,12 @@
 						<label>Proyecto</label>
 						<div class="custom-control custom-switch mb-4">
 							<input type="radio" class="custom-control-input sel_pry_acc" id="sel_project"
-								name="project_centralized_action" value="project">
+								name="project_centralized_action" value="project" v-bind:checked="record.budget_project_id !== ''">
 							<label class="custom-control-label" for="sel_project"></label>
 						</div>
 						<select2 :options="budget_projects" id="budget_project_id"
 							@input="getBudgetSpecificActions('Project')" disabled v-model="record.budget_project_id">
 						</select2>
-
 					</div>
 				</div>
 				<div class="col-md-6" id="helpWarehouseRequestCentralizedAction">
@@ -68,12 +88,13 @@
 						<label>Acción centralizada</label>
 						<div class="custom-control custom-switch mb-4">
 							<input type="radio" class="custom-control-input sel_pry_acc" id="sel_centralized_action"
-								name="project_centralized_action" value="centralized_action">
+								name="project_centralized_action" value="centralized_action" v-bind:checked="record.budget_centralized_action_id !== ''">
 							<label class="custom-control-label" for="sel_centralized_action"></label>
 						</div>
 						<select2 :options="budget_centralized_actions" id="budget_centralized_action_id"
 							@input="getBudgetSpecificActions('CentralizedAction')" disabled
-							v-model="record.budget_centralized_action_id"></select2>
+							v-model="record.budget_centralized_action_id">
+						</select2>
 					</div>
 				</div>
 				<div class="col-md-12" id="helpWarehouseRequestSpecificAction">
@@ -89,7 +110,7 @@
 			<div class="col-12">
 				<h6 class="card-title">Listado de solicitud de almacén</h6>
 			</div>
-			<v-client-table id="helpTable" @row-click="toggleActive" :columns="columns" :data="records" :options="table_options" >
+			<v-client-table id="helpTable" @row-click="toggleActive" :columns="columns" :data="warehouse_products" :options="table_options" >
 				<div slot="h__check" class="text-center">
 					<label class="form-checkbox">
 						<input type="checkbox" v-model="selectAll" @click="select()" class="cursor-pointer">
@@ -198,8 +219,12 @@ export default {
 				budget_specific_action_id: '',
 				request_date: '',
 				warehouse_products: [],
+				institution_id: '',
+				warehouse_id: '',
 			},
-
+			institutions: [],
+			warehouses: [],
+			warehouse_products: [],
 			editIndex: null,
 			records: [],
 			productsQuantity: [],
@@ -252,11 +277,18 @@ export default {
 			}
 		}
 	},
-	created() {
-		this.getBudgetProjects();
-		this.getBudgetCentralizedActions();
+	async created() {
+		await this.getInstitutions();
+		await this.getWarehouses();
+		await this.getWarehouseProducts()
+		await this.getBudgetProjects();
+		await this.getBudgetCentralizedActions();
 		//this.initForm('/warehouse/requests/vue-list-products');
-		this.initForm('/warehouse/requests/vue-list-products/' + this.requestid);
+		await this.initForm('/warehouse/requests/vue-list-products/' + this.requestid);
+
+		if (this.requestid) {
+			await this.loadRequest(this.requestid);
+		}
 	},
 
 	props: {
@@ -388,7 +420,7 @@ export default {
 			 *	Ajustar si esta activa unica institucion seleccionar la institucion x defecto
 			 */
 			vm.record.institution_id = '1';
-			vm.getDepartments();
+			await this.getDepartments();
 			await axios.get(url).then(function (response) {
 				if (typeof (response.data.records) !== "undefined")
 					vm.records = response.data.records;
@@ -398,34 +430,44 @@ export default {
 		async loadRequest(id) {
 			const vm = this;
 			var fields = {};
+			const response = await axios.get('/warehouse/requests/info/' + id);
+			if (typeof (response.data.records != "undefined")) {
+				fields = response.data.records;
+				let type = fields?.budget_specific_action?.specificable_type ?? '';
+				let budget_id = fields?.budget_specific_action?.specificable_id ?? '';
+				var pry_acc_type = (type.indexOf("BudgetProject") >= 0) ? 'Proyecto' : 'Acción Centralizada';
 
-			await axios.get('/warehouse/requests/info/' + id).then(response => {
-				if (typeof (response.data.records != "undefined")) {
-					fields = response.data.records;
-					let type = fields.budget_specific_action.specificable_type;
-					let id = fields.budget_specific_action.specificable_id;
+				$('#centralized_action_id').attr('disabled', pry_acc_type === 'Proyecto');
+				$('#project_id').attr('disabled', !(pry_acc_type === 'Proyecto'));
 
-					vm.record = {
-						id: fields.id,
-						motive: fields.motive,
-						institution_id: '1',
-						department_id: fields.department_id,
-						budget_project_id: (type.includes('BudgetProject')) ? id : '',
-						budget_centralized_action_id: (type.includes('BudgetCentralizedAction')) ? id : '',
-						budget_specific_action: fields.budget_specific_action,
-						budget_specific_action_id: '',
-						warehouse_products: fields.warehouse_inventory_product_requests,
-						request_date: fields.request_date ? vm.format_date(fields.request_date, 'YYYY-MM-DD') :
-							vm.format_date(fields.created_at, 'YYYY-MM-DD'),
-					};
-					$.each(fields.warehouse_inventory_product_requests, function (index, campo) {
-						if (campo.warehouse_inventory_product_id) {
-							vm.input_values[campo.warehouse_inventory_product_id] = campo.quantity;
-							vm.selected.push(campo.warehouse_inventory_product_id);
-						}
-					});
+				if (pry_acc_type === 'Proyecto') {
+					$('#sel_project').click();
+				} else {
+					$('#sel_centralized_action').click();
 				}
-			});
+				$('#specific_action_id').attr('disabled', false);
+
+				vm.record = {
+					id: fields.id,
+					motive: fields.motive,
+					institution_id: '1',
+					warehouse_id: fields.warehouse_id,
+					department_id: fields.department_id,
+					budget_project_id: (type.includes('BudgetProject')) ? budget_id : '',
+					budget_centralized_action_id: (type.includes('BudgetCentralizedAction')) ? budget_id : '',
+					budget_specific_action: fields.budget_specific_action ?? '',
+					budget_specific_action_id: '',
+					warehouse_products: fields.warehouse_inventory_product_requests,
+					request_date: fields.request_date ? vm.format_date(fields.request_date, 'YYYY-MM-DD') :
+					vm.format_date(fields.created_at, 'YYYY-MM-DD'),
+				};
+				$.each(fields.warehouse_inventory_product_requests, function (index, campo) {
+					if (campo.warehouse_inventory_product_id) {
+						vm.input_values[campo.warehouse_inventory_product_id] = campo.quantity;
+						vm.selected.push(campo.warehouse_inventory_product_id);
+					}
+				});
+			};
 		},
 		createRequest(url) {
 			const vm = this;
@@ -546,9 +588,6 @@ export default {
 			}
 		});
 
-		if (this.requestid) {
-			this.loadRequest(this.requestid);
-		}
 	}
 };
 </script>

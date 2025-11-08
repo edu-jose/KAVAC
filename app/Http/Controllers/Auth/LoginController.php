@@ -195,6 +195,9 @@ class LoginController extends Controller
     protected function authenticated(Request $request, $user)
     {
         $user->lock_screen = false;
+        if (!$user->email_verified_at && config('auth.email_verified_by_default', false)) {
+            $user->email_verified_at = now();
+        }
         $user->save();
     }
 

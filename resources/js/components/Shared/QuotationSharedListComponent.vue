@@ -6,12 +6,12 @@
                 <b>Filtros</b>
             </div>
             <div class="col-md-2">
-                <label class="form-label">Código del requerimiento</label>
+                <label for="filterCode" class="form-label">Código del requerimiento</label>
                 <input
+                    id="filterCode"
                     class="form-control"
                     type="text"
                     placeholder="Código del requerimiento"
-                    tabindex="1"
                     v-model="filterBy.code"
                 />
             </div>
@@ -294,7 +294,7 @@ export default {
                 var rute = this.app_url + "/payroll/registers/availability/{id}";
                 location.href = rute.indexOf("{id}") >= 0 ? rute.replace("{id}", id) : rute + "/" + id;
             } else {
-                var rute = this.app_url + "/purchase/budgetary_availability/{id}/edit";
+                var rute = this.app_url + "/budget/budgetary_availability/{id}/edit";
                 location.href = rute.indexOf("{id}") >= 0 ? rute.replace("{id}", id) : rute + "/" + id;
             }
         },
@@ -388,7 +388,7 @@ export default {
          */
          approveBudgetAvailability(budget_availability) {
             const vm = this;
-            const url = vm.setUrl('/purchase/budgetary_availability/approve');
+            const url = vm.setUrl('/budget/budgetary_availability/approve');
             bootbox.confirm({
                 title: "Aprobar disponibilidad presupuestaria",
                 message: "Código del requrimiento: " + budget_availability.code,
@@ -483,13 +483,7 @@ export default {
     },
     mounted() {
         this.loadingState(true); // Inicio de spinner de carga.
-        this.record_lists.forEach((element) => {
-            if (element.currency === null) {
-            }
-            else {
-                this.records.push(element);
-            }
-        });
+        this.records = this.record_lists.filter((element) => element.currency_name) || [];
         // Variable usada para resetear los filtros de la tabla.
         this.tmpRecords = this.records;
         this.loadingState(); // Finaliza spinner de carga.

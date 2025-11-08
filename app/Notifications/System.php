@@ -19,7 +19,7 @@ use Illuminate\Notifications\Messages\BroadcastMessage;
  * @license
  *     [LICENCIA DE SOFTWARE CENDITEL](http://conocimientolibre.cenditel.gob.ve/licencia-de-software-v-1-3/)
  */
-class System extends Notification //implements ShouldQueue
+class System extends Notification implements ShouldQueue
 {
     use Queueable;
 
@@ -57,6 +57,20 @@ class System extends Notification //implements ShouldQueue
      * @var array $filesToEmail
      */
     protected array $filesToEmail;
+
+    /**
+     * Número máximo de intentos
+     *
+     * @var integer $tries
+     */
+    public $tries = 5;
+
+    /**
+     * Tiempo máximo de espera en segundos
+     *
+     * @var integer $timeout
+     */
+    public $timeout = 300;
 
     /**
      * Crea una nueva instancia de la notificación

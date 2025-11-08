@@ -82,6 +82,7 @@
 		},
 		props: {
 			requestid: Number,
+			type: String,
 		},
 		methods: {
 			/**
@@ -107,6 +108,7 @@
 				const vm = this;
 				var id = $(".modal-body #id").val();
 				if(typeof(url) != 'undefined'){
+					vm.record.type = this.type;
 					axios.patch(url + this.requestid, vm.record).then(response => {
 						if (typeof(response.data.redirect) !== "undefined")
 							location.href = response.data.redirect;

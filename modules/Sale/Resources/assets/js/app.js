@@ -537,6 +537,37 @@ Vue.component('sale-report-service-requests', () => import(
 );
 
 /**
+ * Componente para registrar las solicitudes de servicios
+ *
+ * @author Miguel Narvaez <mnarvaez@cenditel.gob.ve>
+ */
+Vue.component('sale-customer-management-create', () => import(
+    /* webpackChunkName: "sale-customer-management-create" */
+    './components/customer-management/SaleCustomerManagementCreateComponent.vue')
+);
+
+/**
+ * Componente para mostrar un listado de las solicitudes de servicios
+ *
+ * @author Miguel Narvaez <mnarvaez@cenditel.gob.ve>
+ */
+Vue.component('sale-customer-management-list', () => import(
+    /* webpackChunkName: "sale-customer-management-list" */
+    './components/customer-management/SaleCustomerManagementList.vue')
+);
+
+/**
+ * Componente para mostrar una modal de las solicitudes de servicios
+ *
+ * @author Miguel Narvaez <mnarvaez@cenditel.gob.ve>
+ */
+Vue.component('sale-customer-management-show', () => import(
+    /* webpackChunkName: "sale-customer-management-show" */
+    './components/customer-management/SaleCustomerManagementShow.vue')
+);
+
+
+/**
  * Opciones de configuración global del módulo de Commercialización
  */
 Vue.mixin({

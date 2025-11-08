@@ -9,6 +9,7 @@ use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
 use App\Rules\DateBeforeFiscalYear;
 use Modules\Payroll\Models\Profile;
+use Nwidart\Modules\Facades\Module;
 use Illuminate\Support\Facades\Storage;
 use Modules\Payroll\Models\Institution;
 use Modules\Payroll\Models\PayrollStaff;
@@ -22,6 +23,7 @@ use Modules\Payroll\Jobs\PayrollExportNotification;
 use Modules\Payroll\Imports\Staff\RegisterStaffImport;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Modules\Payroll\Models\PayrollSupervisedGroupStaff;
+use Modules\Payroll\Models\PayrollEmploymentPayrollPosition;
 
 /**
  * @class PayrollEmploymentController
@@ -118,7 +120,7 @@ class PayrollEmploymentController extends Controller
             'payroll_staff_type_id' => 'tipo de personal',
             'institution_id' => 'institución',
             'department_id' => 'departamento',
-            'payroll_contract_type_id' => 'tipo de contracto',
+            'payroll_contract_type_id' => 'tipo de contrato',
             'payroll_staff_id' => 'trabajador',
             //'institution_email' => 'correo institucional',
             'previous_jobs.*.start_date' => 'fecha de inicio',
@@ -645,9 +647,13 @@ class PayrollEmploymentController extends Controller
         $filePath = $request->file('file')->store('', 'temporary');
         $fileErrorsPath = 'import' . uniqid() . '.errors';
         Storage::disk('temporary')->put($fileErrorsPath, '');
-        $import = new RegisterStaffImport($filePath, 'temporary', auth()->user()->id, $fileErrorsPath);
 
-        $import->import();
+        if ('local' !== @env('APP_ENV')) {
+            (new RegisterStaffImport($filePath, 'temporary', auth()->user()->id, $fileErrorsPath))->queue()->allOnQueue('bulk');
+        } else {
+            $import = new RegisterStaffImport($filePath, 'temporary', auth()->user()->id, $fileErrorsPath);
+            $import->import();
+        }
 
         return response()->json(['result' => true], 200);
     }
@@ -691,24 +697,58 @@ class PayrollEmploymentController extends Controller
     public function destroy($id)
     {
         $payrollEmployment = PayrollEmployment::find($id);
+        if (!$payrollEmployment) {
+            return response()->json(['message' => 'Registro no encontrado.'], 404);
+        }
 
-        // Obtén el ID del del empleado
-        $payrollPositionId = $payrollEmployment->payrollPositions->first()->id;
+        // Eliminar registros de la tabla pivote antes de eliminar el dato laboral
+        PayrollEmploymentPayrollPosition::where('payroll_employment_id', $payrollEmployment->id)->delete();
 
-        /* actualizar active como false para que libere el carto antes de
-        eliminarse el empleado */
-        $payrollEmployment->payrollPositions()->updateExistingPivot(
-            $payrollPositionId,
-            ['active' => false]
-        );
+        // Eliminar relaciones hasMany
+        $hasManyRelations = [
+            'payrollPreviousJob',
+        ];
+        foreach ($hasManyRelations as $relation) {
+            if (method_exists($payrollEmployment, $relation)) {
+                $items = $payrollEmployment->$relation;
+                if ($items && count($items)) {
+                    foreach ($items as $item) {
+                        $item->delete();
+                    }
+                }
+            }
+        }
+
+        // Relaciones con módulos externos: eliminar o actualizar a null los PurchaseDirectHire relacionados por firmas
+        if (Module::has('Purchase') && Module::isEnabled('Purchase')) {
+            $purchaseDirectHireModel = \Modules\Purchase\Models\PurchaseDirectHire::class;
+            $signatureFields = [
+                'prepared_by_id',
+                'reviewed_by_id',
+                'verified_by_id',
+                'first_signature_id',
+                'second_signature_id',
+            ];
+            foreach ($signatureFields as $field) {
+                $directHires = $purchaseDirectHireModel::where($field, $payrollEmployment->id)->get();
+                foreach ($directHires as $hire) {
+                    // Puedes cambiar a $hire->delete() si prefieres eliminar el registro completo
+                    $hire->$field = null;
+                    $hire->save();
+                }
+            }
+        }
+
+        // Liberar el cargo en la tabla pivote antes de eliminar
+        $payrollPosition = $payrollEmployment->payrollPositions->first();
+        if ($payrollPosition) {
+            $payrollEmployment->payrollPositions()->updateExistingPivot(
+                $payrollPosition->id,
+                ['active' => false]
+            );
+        }
 
         $payrollEmployment->delete();
-
-        $payrollPreviousJob = PayrollPreviousJob::where('id', $payrollEmployment->id)->get();
-
-        foreach ($payrollPreviousJob as $job) {
-            $job->delete();
-        }
 
         return response()->json(['record' => $payrollEmployment, 'message' => 'Success'], 200);
     }

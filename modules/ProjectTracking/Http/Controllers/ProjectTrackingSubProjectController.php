@@ -103,8 +103,8 @@ class ProjectTrackingSubProjectController extends Controller
     {
         $SubprojectsList = ProjectTrackingSubProject::with('Responsable', 'Project')->get()->all();
         foreach ($SubprojectsList as $subproject) {
-            $subproject['responsable_name'] = $subproject->Responsable->name;
-            $subproject['project_name'] = $subproject->Project->name;
+            $subproject['responsable_name'] = $subproject->Responsable ? $subproject->Responsable->name : 'N/A';
+            $subproject['project_name'] = $subproject->Project ? $subproject->Project->name : 'N/A';
         }
         /* Condicional que oculta el registro común si existe el módulo de Talento Humano */
         if (Module::has('Payroll')) {
@@ -370,5 +370,31 @@ class ProjectTrackingSubProjectController extends Controller
             'selected_product_types' => $selectedProductTypes,
             'department' => $departament,
         ], 200);
+    }
+
+    /**
+     * Muestra el listado de subproyectos según el trabajador seleccionado
+     *
+     * @author Fabián Palmera <fapalmera@cenditel.gob.ve>
+     *
+     * @param integer $payroll_staff_id Identificador único del trabajador registrado
+     *
+     * @return \Illuminate\Http\JsonResponse           Objeto con los registros a mostrar
+     */
+    public function getSubProjectsByResponsable($payroll_staff_id)
+    {
+        $projectTrackingSubProjects = ProjectTrackingSubproject::where('responsable_id', $payroll_staff_id)->get();
+        $subprojects = [];
+        array_push($subprojects, [
+            'id' => '',
+            'text' => 'Seleccione...'
+        ]);
+        foreach ($projectTrackingSubProjects as $staff) {
+            array_push($subprojects, [
+                'id' => $staff->id,
+                'text' => $staff->name . ' ' . $staff->last_name
+            ]);
+        }
+        return response()->json($subprojects, 200);
     }
 }

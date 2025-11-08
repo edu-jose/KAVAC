@@ -114,135 +114,225 @@ class ProjectTrackingTaskController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        $rules = [
-            'tasks' => ['nullable', function ($attribute, $value, $fail) {
-                if (count($value) == 0) {
-                    $fail('Debe agregar al menos una tarea.');
-                }
-            }],
-            'tasks.*.project_name' => [
-                'bail',
-                'nullable',
-                function ($attribute, $value, $fail) use ($request) {
-                    $this->validateDateInRange($request, $attribute, $value, $fail, ProjectTrackingProject::query());
-                }
-            ],
-            'tasks.*.subproject_name' => [
-                'bail',
-                'nullable',
-                function ($attribute, $value, $fail) use ($request) {
-                    $this->validateDateInRange($request, $attribute, $value, $fail, ProjectTrackingSubProject::query());
-                }
-            ],
-            'tasks.*.product_name' => [
-                'bail',
-                'nullable',
-                function ($attribute, $value, $fail) use ($request) {
-                    $this->validateDateInRange($request, $attribute, $value, $fail, ProjectTrackingProduct::query());
-                }
-            ],
-            'tasks.*.activity_plan_id' => ['required'],
-            'tasks.*.name' => ['required'],
-            'tasks.*.description' => ['nullable', 'Max:250'],
-            'tasks.*.employers_id' => ['required'],
-            'tasks.*.priority_id' => ['required'],
-            'tasks.*.start_date' => ['required', 'before_or_equal:tasks.*.end_date'],
-            'tasks.*.end_date' => ['required', 'after_or_equal:tasks.*.start_date'],
-            'tasks.*.new_end_date' => ['nullable', 'after_or_equal:tasks.*.start_date', 'after:tasks.*.end_date'],
-            'tasks.*.cut_off_time' => ['nullable', 'Max:8'],
-            'tasks.*.activity_status_id' => ['required'],
-            'tasks.*.weight' => ['nullable', 'integer', 'Min:1', 'Max:100'],
-            'tasks.*.subTasks.*.name' => ['sometimes', 'required'],
-            'tasks.*.subTasks.*.description' => ['sometimes', 'required'],
-        ];
-        $messages = [];
-        foreach ($request->input('tasks', []) as $index => $task) {
-            $messages["tasks.{$index}.project_name.required"] = "El campo Proyecto en la tarea "
-                . ($index + 1) . " es obligatorio";
-            $messages["tasks.{$index}.subproject_name.required"] = "El campo Subproyecto en la tarea "
-                . ($index + 1) . " es obligatorio";
-            $messages["tasks.{$index}.product_name.required"] = "El campo Producto en la tarea "
-                . ($index + 1) . " es obligatorio";
-            $messages["tasks.{$index}.activity_plan_id.required"] = "El campo Actividad en la tarea "
-                . ($index + 1) . " es obligatorio";
-            $messages["tasks.{$index}.name.required"] = "El campo Nombre en la tarea "
-                . ($index + 1) . " es obligatorio";
-            $messages["tasks.{$index}.description.max"] = "El campo Descripción en la tarea "
-                . ($index + 1) . " no debe superar los 250 caracteres";
-            $messages["tasks.{$index}.employers_id.required"] = "El campo responsable de la tarea en la tarea "
-                . ($index + 1) . " es obligatorio";
-            $messages["tasks.{$index}.priority_id.required"] = "El campo Prioridad en la tarea "
-                . ($index + 1) . " es obligatorio";
-            $messages["tasks.{$index}.start_date.required"] = "El campo Fecha de inicio en la tarea "
-                . ($index + 1) . " es obligatorio";
-            $messages["tasks.{$index}.end_date.required"] = "El campo Fecha de fin en la tarea "
-                . ($index + 1) . " es obligatorio";
-            $messages["tasks.{$index}.end_date.after_or_equal"] =
-                "La fecha de inicio no puede ser posterior a la fecha de fin en la tarea "
-                . ($index + 1);
-            $messages["tasks.{$index}.new_end_date.after_or_equal"] =
-                "La fecha de inicio no puede ser posterior a la nueva fecha de fin en la tarea "
-                . ($index + 1);
-            $messages["tasks.{$index}.new_end_date.after"] =
-                "La Nueva fecha de culminación debe ser mayor a la primera fecha de culminación"
-                . ($index + 1);
-            $messages["tasks.{$index}.start_date.before_or_equal"] =
-                "La fecha de fin no puede ser anterior a la fecha de inicio en la tarea "
-                . ($index + 1);
-            $messages["tasks.{$index}.cut_off_time.max"] = "El campo Hora límite en la tarea "
-                . ($index + 1) . " no debe superar los 8";
-            $messages["tasks.{$index}.weight.integer"] = "El campo Peso en la tarea "
-                . ($index + 1) . " debe ser un valor numerico";
-            $messages["tasks.{$index}.weight.between"] = "El campo Peso en la tarea "
-                . ($index + 1) . " debe estar entre 1 y 100";
-            $messages["tasks.{$index}.activity_status_id.required"] = "El campo estatus de la actividad  en la tarea "
-                . ($index + 1) . " es obligatorio";
+        if (! $request->has('tasks')) {
+            $rules = [
+                'project_name' => isset($request->project_name) ? ['required'] : ['nullable'],
+                'subproject_name' => isset($request->subproject_name) ? ['required'] : ['nullable'],
+                'product_name' => isset($request->product_name) ? ['required'] : ['nullable'],
+                'activity_plan_id' => ['required'],
+                'name' => ['required'],
+                'description' => ['nullable', 'Max:250'],
+                'employers_id' => ['required'],
+                'priority_id' => ['required'],
+                'start_date' => ['required', 'before_or_equal:end_date'],
+                'end_date' => ['required', 'after_or_equal:start_date'],
+                'new_end_date' => ['nullable', 'after_or_equal:start_date', 'after:end_date'],
+                'cut_off_time' => ['nullable', 'Max:8'],
+                'activity_status_id' => ['required'],
+                'weight' => ['nullable', 'integer', 'Min:1', 'Max:100'],
+                'subname' => ['sometimes', 'required'],
+                'subdescription' => ['sometimes', 'required'],
+                'subTasks.*.name' => ['sometimes', 'required'],
+                'subTasks.*.description' => ['sometimes', 'required'],
+            ];
+            $messages = [
+                'project_name.required' => 'El campo proyecto es obligatorio',
+                'subproject_name.required' => 'El campo subproyecto es obligatorio',
+                'product_name.required' => 'El campo producto es obligatorio',
+                'activity_plan_id.required' => 'El campo actividad es obligatorio',
+                'name.required' => 'El campo nombre es obligatorio',
+                'description.max' => 'EL campo descripcion no debe superar los 250 caracteres',
+                'employers_id.required' => 'El campo responsable es obligatorio',
+                'priority_id.required' => 'El campo prioridad es obligatorio',
+                'start_date.required' => 'El campo fecha de inicio es obligatorio',
+                'end_date.required' => 'El campo fecha fin es obligatorio',
+                'end_date.after_or_equal' => 'La fecha de inicio no puede ser posterior a la fecha de fin',
+                'new_end_date.after' => 'La fecha de inicio no puede ser posterior a la fecha de fin',
+                'new_end_date.after_or_equal' => 'La fecha de inicio no puede ser posterior a la nueva fecha de fin',
+                'new_end_date.before_or_equal' => 'La fecha de fin no puede ser anterior a la fecha de inicio',
+                'cut_off_time.max' => 'El campo Hora límite no debe superar los 8 caracteres',
+                'activity_status_id.required' => 'El campo estatus de la actividad es obligatorio',
+                'weight.integer' => 'El campo peso debe ser un valor numerico',
+                'weight.between' => 'El campo peso debe estar entre 1 y 100',
+            ];
+        } else {
+            $rules = [
+                'tasks' => ['nullable', function ($attribute, $value, $fail) {
+                    if (count($value) == 0) {
+                        $fail('Debe agregar al menos una tarea.');
+                    }
+                }],
+                'tasks.*.project_name' => [
+                    'bail',
+                    'nullable',
+                    function ($attribute, $value, $fail) use ($request) {
+                        $this->validateDateInRange($request, $attribute, $value, $fail, ProjectTrackingProject::query());
+                    }
+                ],
+                'tasks.*.subproject_name' => [
+                    'bail',
+                    'nullable',
+                    function ($attribute, $value, $fail) use ($request) {
+                        $this->validateDateInRange($request, $attribute, $value, $fail, ProjectTrackingSubProject::query());
+                    }
+                ],
+                'tasks.*.product_name' => [
+                    'bail',
+                    'nullable',
+                    function ($attribute, $value, $fail) use ($request) {
+                        $this->validateDateInRange($request, $attribute, $value, $fail, ProjectTrackingProduct::query());
+                    }
+                ],
+                'tasks.*.activity_plan_id' => ['required'],
+                'tasks.*.name' => ['required'],
+                'tasks.*.description' => ['nullable', 'Max:250'],
+                'tasks.*.employers_id' => ['required'],
+                'tasks.*.priority_id' => ['required'],
+                'tasks.*.start_date' => ['required', 'before_or_equal:tasks.*.end_date'],
+                'tasks.*.end_date' => ['required', 'after_or_equal:tasks.*.start_date'],
+                'tasks.*.new_end_date' => ['nullable', 'after_or_equal:tasks.*.start_date', 'after:tasks.*.end_date'],
+                'tasks.*.cut_off_time' => ['nullable', 'Max:8'],
+                'tasks.*.activity_status_id' => ['required'],
+                'tasks.*.weight' => ['nullable', 'integer', 'Min:1', 'Max:100'],
+                'tasks.*.subTasks.*.name' => ['sometimes', 'required'],
+                'tasks.*.subTasks.*.description' => ['sometimes', 'required'],
+            ];
+            $messages = [];
+            foreach ($request->input('tasks', []) as $index => $task) {
+                $messages["tasks.{$index}.project_name.required"] = "El campo Proyecto en la tarea "
+                    . ($index + 1) . " es obligatorio";
+                $messages["tasks.{$index}.subproject_name.required"] = "El campo Subproyecto en la tarea "
+                    . ($index + 1) . " es obligatorio";
+                $messages["tasks.{$index}.product_name.required"] = "El campo Producto en la tarea "
+                    . ($index + 1) . " es obligatorio";
+                $messages["tasks.{$index}.activity_plan_id.required"] = "El campo Actividad en la tarea "
+                    . ($index + 1) . " es obligatorio";
+                $messages["tasks.{$index}.name.required"] = "El campo Nombre en la tarea "
+                    . ($index + 1) . " es obligatorio";
+                $messages["tasks.{$index}.description.max"] = "El campo Descripción en la tarea "
+                    . ($index + 1) . " no debe superar los 250 caracteres";
+                $messages["tasks.{$index}.employers_id.required"] = "El campo responsable de la tarea en la tarea "
+                    . ($index + 1) . " es obligatorio";
+                $messages["tasks.{$index}.priority_id.required"] = "El campo Prioridad en la tarea "
+                    . ($index + 1) . " es obligatorio";
+                $messages["tasks.{$index}.start_date.required"] = "El campo Fecha de inicio en la tarea "
+                    . ($index + 1) . " es obligatorio";
+                $messages["tasks.{$index}.end_date.required"] = "El campo Fecha de fin en la tarea "
+                    . ($index + 1) . " es obligatorio";
+                $messages["tasks.{$index}.end_date.after_or_equal"] =
+                    "La fecha de inicio no puede ser posterior a la fecha de fin en la tarea "
+                    . ($index + 1);
+                $messages["tasks.{$index}.new_end_date.after_or_equal"] =
+                    "La fecha de inicio no puede ser posterior a la nueva fecha de fin en la tarea "
+                    . ($index + 1);
+                $messages["tasks.{$index}.new_end_date.after"] =
+                    "La Nueva fecha de culminación debe ser mayor a la primera fecha de culminación"
+                    . ($index + 1);
+                $messages["tasks.{$index}.start_date.before_or_equal"] =
+                    "La fecha de fin no puede ser anterior a la fecha de inicio en la tarea "
+                    . ($index + 1);
+                $messages["tasks.{$index}.cut_off_time.max"] = "El campo Hora límite en la tarea "
+                    . ($index + 1) . " no debe superar los 8";
+                $messages["tasks.{$index}.weight.integer"] = "El campo Peso en la tarea "
+                    . ($index + 1) . " debe ser un valor numerico";
+                $messages["tasks.{$index}.weight.between"] = "El campo Peso en la tarea "
+                    . ($index + 1) . " debe estar entre 1 y 100";
+                $messages["tasks.{$index}.activity_status_id.required"] = "El campo estatus de la actividad  en la tarea "
+                    . ($index + 1) . " es obligatorio";
+            }
         }
 
         $this->validate($request, $rules, $messages);
 
         DB::transaction(function () use ($request) {
-            foreach ($request->tasks as $task) {
+            if (! $request->has('tasks')) {
+                // Crear una sola tarea
                 $projectTrackingTask = ProjectTrackingTask::create([
-                    'project_name' => $task['project_name'],
-                    'subproject_name' => $task['subproject_name'],
-                    'product_name' => $task['product_name'],
-                    'activity_plan_id' => $task['activity_plan_id'],
-                    'name' => $task['name'],
-                    'description' => $task['description'],
-                    'employers_id' => $task['employers_id'],
-                    'priority_id' => $task['priority_id'],
-                    'start_date' => $task['start_date'],
-                    'end_date' => $task['end_date'],
-                    'new_end_date' => $task['new_end_date'],
-                    'cut_off_time' => $task['cut_off_time'],
-                    'activity_status_id' => $task['activity_status_id'],
-                    'depending_task_id' => $task['depending_task_id'],
-                    'dependency_type_id' => $task['dependency_type_id'],
-                    'task_type_id' => $task['task_type_id'],
-                    'weight' => $task['weight'],
-                    'percentage' => $task['percentage'],
-                    'reviewer_id' => $task['reviewer_id'],
-                    'approver_id' => $task['approver_id'],
-                    'is_private' => $task['is_private'],
-                    'payroll_staffs' => json_encode($task['payroll_staffs']),
+                    'project_name' => $request->input('project_name'),
+                    'subproject_name' => $request->input('subproject_name'),
+                    'product_name' => $request->input('product_name'),
+                    'activity_plan_id' => $request->input('activity_plan_id'),
+                    'name' => $request->input('name'),
+                    'description' => $request->input('description'),
+                    'employers_id' => $request->input('employers_id'),
+                    'priority_id' => $request->input('priority_id'),
+                    'start_date' => $request->input('start_date'),
+                    'end_date' => $request->input('end_date'),
+                    'new_end_date' => $request->input('new_end_date'),
+                    'cut_off_time' => $request->input('cut_off_time'),
+                    'activity_status_id' => $request->input('activity_status_id'),
+                    'depending_task_id' => $request->input('depending_task_id'),
+                    'dependency_type_id' => $request->input('dependency_type_id'),
+                    'task_type_id' => $request->input('task_type_id'),
+                    'weight' => $request->input('weight'),
+                    'percentage' => $request->input('percentage'),
+                    'reviewer_id' => $request->input('reviewer_id'),
+                    'approver_id' => $request->input('approver_id'),
+                    'is_private' => $request->input('is_private'),
+                    'payroll_staffs' => json_encode($request->input('payroll_staffs')),
                 ]);
 
-                $tags_id = array_column($task['tags'], 'id');
+                $tags_id = array_column($request->input('tags'), 'id');
                 $TaskTime =  ProjectTrackingTaskTimer::create([
                     'project_tracking_task_id' => $projectTrackingTask->id,
-                    'start_time' => $task['start_date'],
-                    'initial_status_id' => $task['activity_status_id'],
+                    'start_time' => $request->input('start_date'),
+                    'initial_status_id' => $request->input('activity_status_id'),
                 ]);
                 $projectTrackingTask->tags()->attach($tags_id);
 
-                if ($task['subTasks'] && count($task['subTasks']) > 0) {
-                    foreach ($task['subTasks'] as $subTask) {
+                if ($request->input('subTasks') && count($request->input('subTasks')) > 0) {
+                    foreach ($request->input('subTasks') as $subTask) {
                         ProjectTrackingSubTask::create([
                             'task_id' => $projectTrackingTask->id,
                             'name' => $subTask['name'],
                             'description' => $subTask['description']
                         ]);
+                    }
+                }
+            } else {
+                // Crear múltiples tareas
+                foreach ($request->tasks as $task) {
+                    $projectTrackingTask = ProjectTrackingTask::create([
+                        'project_name' => $task['project_name'],
+                        'subproject_name' => $task['subproject_name'],
+                        'product_name' => $task['product_name'],
+                        'activity_plan_id' => $task['activity_plan_id'],
+                        'name' => $task['name'],
+                        'description' => $task['description'],
+                        'employers_id' => $task['employers_id'],
+                        'priority_id' => $task['priority_id'],
+                        'start_date' => $task['start_date'],
+                        'end_date' => $task['end_date'],
+                        'new_end_date' => $task['new_end_date'],
+                        'cut_off_time' => $task['cut_off_time'],
+                        'activity_status_id' => $task['activity_status_id'],
+                        'depending_task_id' => $task['depending_task_id'],
+                        'dependency_type_id' => $task['dependency_type_id'],
+                        'task_type_id' => $task['task_type_id'],
+                        'weight' => $task['weight'],
+                        'percentage' => $task['percentage'],
+                        'reviewer_id' => $task['reviewer_id'],
+                        'approver_id' => $task['approver_id'],
+                        'is_private' => $task['is_private'],
+                        'payroll_staffs' => json_encode($task['payroll_staffs']),
+                    ]);
+
+                    $tags_id = array_column($task['tags'], 'id');
+                    $TaskTime =  ProjectTrackingTaskTimer::create([
+                        'project_tracking_task_id' => $projectTrackingTask->id,
+                        'start_time' => $task['start_date'],
+                        'initial_status_id' => $task['activity_status_id'],
+                    ]);
+                    $projectTrackingTask->tags()->attach($tags_id);
+
+                    if ($task['subTasks'] && count($task['subTasks']) > 0) {
+                        foreach ($task['subTasks'] as $subTask) {
+                            ProjectTrackingSubTask::create([
+                                'task_id' => $projectTrackingTask->id,
+                                'name' => $subTask['name'],
+                                'description' => $subTask['description']
+                            ]);
+                        }
                     }
                 }
             }

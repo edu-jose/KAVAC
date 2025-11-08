@@ -213,9 +213,7 @@
                             >
                                 <input
                                     type="checkbox"
-                                    class="
-                                        custom-control-input sel_has_disability
-                                    "
+                                    class="custom-control-input sel_has_disability"
                                     id="has_disability"
                                     v-model="record.has_disability"
                                     :value="true"
@@ -438,7 +436,7 @@
             >
                 Talla de uniforme
                 <i
-                    class="fa fa-plus-circle cursor-pointer"
+                    class="cursor-pointer fa fa-plus-circle"
                     @click="addUniformSize()"
                 ></i>
             </h6>
@@ -485,7 +483,7 @@
             <hr>
             <h6 class="card-title" id="helpStaffPhone">
                 Números Telefónicos
-                <i class="fa fa-plus-circle cursor-pointer" @click="addPhone"></i>
+                <i class="cursor-pointer fa fa-plus-circle" @click="addPhone"></i>
             </h6>
             <div class="row phone-row" v-for="(phone, i) in record.phones" :key="i">
                 <div class="col-3">
@@ -564,7 +562,7 @@
             </div>
         </div>
 
-        <div class="card-footer text-right" id="helpParamButtons">
+        <div class="text-right card-footer" id="helpParamButtons">
             <button
                 class="btn btn-default btn-icon btn-round"
                 data-toggle="tooltip" type="button"
@@ -891,6 +889,137 @@
                         vm.record.age_group = ageGruop.text;
                     }
                 })
+            },
+
+            /**
+             * Método que permite crear o actualizar un registro
+             *
+             * @author  Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
+             *
+             * @param  {string} url    Ruta de la acción a ejecutar para la creación o actualización de datos
+             * @param  {string} list   Condición para establecer si se cargan datos en un listado de tabla.
+             *                         El valor por defecto es verdadero.
+             * @param  {string} reset  Condición que evalúa si se inicializan datos del formulario.
+             *                         El valor por defecto es verdadero.
+             */
+            async createRecord(url, list = true, reset = true) {
+                const vm = this;
+                url = vm.setUrl(url);
+
+                if (vm.record.id) {
+                    vm.updateRecord(url);
+                }
+                else {
+                    vm.loading = true;
+                    var fields = {};
+
+                    for (var index in vm.record) {
+                        fields[index] = vm.record[index];
+                    }
+                    await axios.post(url, fields).then(response => {
+                        if (typeof (response.data.redirect) !== "undefined") {
+                            location.href = response.data.redirect;
+                        }
+                        else {
+                            vm.errors = [];
+                            if (reset) {
+                                vm.reset();
+                            }
+                            if (list) {
+                                vm.readRecords(url);
+                            }
+
+                            vm.showMessage('store');
+                        }
+                    }).catch(error => {
+                        vm.errors = [];
+
+                        if (typeof (error.response) != "undefined") {
+                            if (error.response.data.error_code == "ACC_DEL_EXISTS_001") {
+                                vm.showMessage('custom', 'Acción no permitida', 'danger', 'screen-error', error.response.data.message);
+
+                                bootbox.confirm({
+                                    title: "¿Desea restaurar el registro?",
+                                    message: error.response.data.message,
+                                    buttons: {
+                                        cancel: {
+                                            label: '<i class="fa fa-times"></i> Cancelar',
+                                        },
+                                        confirm: {
+                                            label: '<i class="fa fa-check"></i> Restaurar',
+                                        },
+                                    },
+                                    callback: function(result) {
+                                        if (result) {
+                                            vm.restoreRecord('payroll/staffs/restore/' + error.response.data.deleted_id);
+                                        }
+                                    },
+                                });
+                            }
+
+                            if (error.response.data.error_code == "ACC_DEL_EXISTS_002") {
+                                vm.showMessage('custom', 'Acción no permitida', 'danger', 'screen-error', error.response.data.message);
+                            }
+
+                            if (error.response.status == 403) {
+                                vm.showMessage('custom', 'Acceso Denegado', 'danger', 'screen-error', error.response.data.message);
+                            }
+
+                            for (var index in error.response.data.errors) {
+                                if (error.response.data.errors[index]) {
+                                    vm.errors.push(error.response.data.errors[index][0]);
+                                }
+                            }
+                        }
+
+                    });
+
+                    vm.loading = false;
+                }
+
+            },
+
+            /**
+             * Método que permite restaurar un registro eliminado
+             *
+             * @author  Ing. Juan Rosas <jrosas@cenditel.gob.ve> | <juan.rosar01@gmail.com>
+             */
+            restoreRecord(url) {
+                const vm = this;
+                url = vm.setUrl(url);
+
+                vm.loading = true;
+                axios.put(url).then(response => {
+                    if (typeof (response.data.redirect) !== "undefined") {
+                        vm.showMessage('custom', 'Registro restaurado con éxito', 'success', 'screen-ok', 'La información se ha restaurado correctamente.');
+                        setTimeout(function () {
+                            location.href = response.data.redirect;
+                        }, 2000);
+                    }
+                    else {
+                        vm.errors = [];
+                        vm.reset();
+                        vm.readRecords('payroll/staffs');
+                        vm.showMessage('custom', 'Registro restaurado con éxito', 'success', 'screen-ok', 'La información se ha restaurado correctamente.');
+                    }
+                }).catch(error => {
+                    vm.errors = [];
+                    if (typeof (error.response) != "undefined") {
+                        if (error.response.status == 403) {
+                            vm.showMessage(
+                                'custom', 'Acceso Denegado', 'danger', 'screen-error', error.response.data.message
+                            );
+                        }
+                        for (var index in error.response.data.errors) {
+                            if (error.response.data.errors[index]) {
+                                vm.errors.push(error.response.data.errors[index][0]);
+                            }
+                        }
+                    }
+
+                });
+
+                vm.loading = false;
             },
         },
         async created() {

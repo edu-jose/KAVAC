@@ -39,6 +39,25 @@ Vue.component('workattendance-history', () => import(
 ));
 
 /**
+ * Componente para editar datos de asistencia
+ *
+ * @author  Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
+ */
+Vue.component('workattendance-history-edit', () => import(
+    /* webpackChunkName: "workattendance-history-edit" */
+    './components/reports/WorkAttendanceHistoryListEditComponent.vue'
+));
+/**
+ * Componente para registrar datos de asistencia
+ *
+ * @author  Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
+ */
+Vue.component('workattendance-history-new', () => import(
+    /* webpackChunkName: "workattendance-history-new" */
+    './components/reports/WorkAttendanceHistoryListNewComponent.vue'
+));
+
+/**
  * Componente para mostrar el histórico de asistencia individual
  *
  * @author  Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
@@ -116,6 +135,36 @@ Vue.component('workattendance-custom-schedule-form', () => import(
 Vue.component('workattendance-custom-schedule-info', () => import(
     /* webpackChunkName: "workattendance-custom-schedule-info" */
     './components/custom-schedules/WorkAttendanceCustomScheduleInfoComponent.vue'
+));
+
+/**
+ * Componente para la gestion de permisos de asistencia
+ *
+ * @author  Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
+ */
+Vue.component('workattendance-permission-list', () => import(
+    /* webpackChunkName: "workattendance-permission-list" */
+    './components/permissions/WorkAttendancePermissionListComponent.vue'
+));
+
+/**
+ * Componente para el registro y actualización de datos de permisos de asistencia
+ *
+ * @author  Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
+ */
+Vue.component('workattendance-permission-form', () => import(
+    /* webpackChunkName: "workattendance-permission-form" */
+    './components/permissions/WorkAttendancePermissionFormComponent.vue'
+));
+
+/**
+ * Componente para ver información de datos de solicitudes de permisos de ausencia
+ *
+ * @author  Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
+ */
+Vue.component('workattendance-permission-info', () => import(
+    /* webpackChunkName: "workattendance-permission-info" */
+    './components/permissions/WorkAttendancePermissionInfoComponent.vue'
 ));
 
 Vue.mixin({

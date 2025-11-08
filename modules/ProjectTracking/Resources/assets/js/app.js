@@ -115,7 +115,17 @@ Vue.component('project-tracking-tags', () =>
       './components/settings/ProjectTrackingTagsComponent.vue'
     )
    );
-  
+
+/**
+ *  Componente para el reporte de trabajadores
+ *
+ *  @author Mauricio Araujo <araujoperezme20@gmail.com>
+ */
+Vue.component('project-tracking-report-personal-register', () => import(
+    /* webpackChunkName: "project-tracking-report-personal-register" */
+    './components/reports/ProjectTrackingReportPersonalRegisterComponent.vue')
+);
+
   Vue.component('project-tracking-subprojects'), () =>
    import(
      /* webpackChunkName: "projecttracking-subprojects" */
@@ -308,6 +318,14 @@ Vue.mixin({
                 .then((response) => {
                     this.payroll_staffs = response.data;
                 });
+            if (this.payroll_staffs.length == 0) {
+                await axios
+                    .get(`${window.app_url}/projecttracking/get-personal`)
+                    .then((response) => {
+                        this.payroll_staffs = response.data;
+                        this.payroll_staffs.shift();
+                    });
+            }
         },
     },
 });

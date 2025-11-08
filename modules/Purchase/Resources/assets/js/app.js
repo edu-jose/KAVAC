@@ -250,16 +250,6 @@ Vue.component('purchase-type-operations', () =>
         './components/settings/PurchaseTypeOperationComponent.vue'));
 
 /**
- *  Componente para gestionar la disponibilidad presupuestaria para una orden de compra
- *
- * @author  Juan Rosas <jrosas@cenditel.gob.ve> | <juan.rosasr01@gmail.com>
- */
-Vue.component('purchase-budgetary-availability', () =>
-    import (
-        /* webpackChunkName: "purchase-budgetary-availability" */
-        './components/budgetary_availability/PurchaseIndexComponent.vue'));
-
-/**
  *  Componente para gestionar el listado de ordenes de compra
  *
  * @author  Juan Rosas <jrosas@cenditel.gob.ve> | <juan.rosasr01@gmail.com>

@@ -10,7 +10,9 @@ use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithCustomStartCell;
+use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 use Maatwebsite\Excel\Events\AfterSheet;
+use Nwidart\Modules\Facades\Module;
 use PhpOffice\PhpSpreadsheet\Cell\DataValidation;
 
 class WarehouseProductExport extends \App\Exports\DataExport implements
@@ -18,8 +20,16 @@ class WarehouseProductExport extends \App\Exports\DataExport implements
     ShouldAutoSize,
     WithMapping,
     WithEvents,
-    WithCustomStartCell
+    WithCustomStartCell,
+    WithMultipleSheets
 {
+    public function sheets(): array
+    {
+        return [
+            'Productos' => $this, // hoja principal
+            new WarehousePurchaseProductsExport(), // hoja con catálogo SNC
+        ];
+    }
     /**
      * Metodo para obtener la colección de datos a exportar
      *
@@ -28,7 +38,7 @@ class WarehouseProductExport extends \App\Exports\DataExport implements
     public function collection()
     {
         // Cargar la relación measurementUnit con los productos
-        return WarehouseProduct::with('measurementUnit')->get();
+        return WarehouseProduct::with(['measurementUnit:id,name', 'purchaseProduct:id,code,name'])->get();
     }
 
     /**
@@ -52,6 +62,7 @@ class WarehouseProductExport extends \App\Exports\DataExport implements
     public function headings(): array
     {
         return [
+            'Catálogo SNC',
             'Nombre del insumo',
             'Descripción del insumo',
             'Nombre de la unidad de medida',
@@ -71,6 +82,7 @@ class WarehouseProductExport extends \App\Exports\DataExport implements
     public function map($warehouseProduct): array
     {
         return [
+            $warehouseProduct?->purchaseProduct ? $warehouseProduct?->purchaseProduct?->code . ' - ' . $warehouseProduct?->purchaseProduct?->name : '',
             $warehouseProduct->name,
             htmlspecialchars_decode(strip_tags($warehouseProduct->description)),
             $warehouseProduct->measurementUnit ? $warehouseProduct->measurementUnit->name : 'N/A',
@@ -88,6 +100,17 @@ class WarehouseProductExport extends \App\Exports\DataExport implements
             AfterSheet::class => function (AfterSheet $event) {
                 $sheet = $event->sheet;
 
+                // Validación para nombre del insumo
+                $validationInsumo = new DataValidation();
+                $validationInsumo->setType(DataValidation::TYPE_CUSTOM);
+                $validationInsumo->setErrorStyle(DataValidation::STYLE_INFORMATION);
+                $validationInsumo->setAllowBlank(false);
+                $validationInsumo->setShowInputMessage(true);
+                $validationInsumo->setShowErrorMessage(false);
+                $validationInsumo->setPromptTitle('Nombre del insumo');
+                $validationInsumo->setPrompt('Debe estar completamente en MAYÚSCULAS.');
+                $sheet->setDataValidation('B2:B50000', $validationInsumo);
+
                 // Configuración de validación para unidades de medida
                 $validation = new DataValidation();
                 $validation->setType(DataValidation::TYPE_LIST);
@@ -102,10 +125,15 @@ class WarehouseProductExport extends \App\Exports\DataExport implements
 
                 $records = $this->getArraysSelect();
 
-                // Validación para unidad de medida (columna C)
+                // Validación para Catálogo SNC (columna A)
+                $validation->setPromptTitle('Catálogo SNC');
+                $validation->setFormula1('=\'Catálogo SNC\'!$A$1:$A$50000');
+                $sheet->setDataValidation('A2:A100000', clone $validation);
+
+                // Validación para unidad de medida (columna D)
                 $validation->setPromptTitle('Unidad de medida');
                 $validation->setFormula1(json_encode($records['measurementUnit'], JSON_UNESCAPED_UNICODE));
-                $sheet->setDataValidation('C2:C100000', clone $validation);
+                $sheet->setDataValidation('D2:D50000', clone $validation);
 
                 // Estilos para la cabecera
                 $styleArray = [
@@ -131,16 +159,24 @@ class WarehouseProductExport extends \App\Exports\DataExport implements
     {
         // Obtener todas las unidades de medida con sus nombres y acrónimos
         $measurementUnits = MeasurementUnit::all();
+        $purchaseProducts = (Module::has('Purchase') && Module::isEnabled('Purchase')) ?
+            (\Modules\Purchase\Models\PurchaseProduct::all()) :
+            null;
 
         $measurementUnitNames = $measurementUnits->pluck('name')->toArray();
+        $purchaseProductNames = $purchaseProducts->map(function ($product) {
+            return "{$product->code} - {$product->name}";
+        })->toArray();
 
-        // Formatear para Excel (sin comas ni caracteres especiales)
-        $measurementUnitFormated = implode(',', array_map(function ($item) {
+        $purchaseProductFormatted = implode(',', $purchaseProductNames);
+
+        $measurementUnitFormatted = implode(',', array_map(function ($item) {
             return str_replace([',', '.', '-'], '', $item);
         }, $measurementUnitNames));
 
         return [
-            'measurementUnit' => $measurementUnitFormated,
+            'measurementUnit' => $measurementUnitFormatted,
+            'purchaseProduct' => $purchaseProductFormatted,
         ];
     }
 }

@@ -89,6 +89,36 @@ Vue.component('warehouse-request-staff-list', () => import(
 ));
 
 /**
+ * Componentes para gestionar las solicitudes externas de almacén
+ *
+ * @author Pedro Contreras <pmcontreras@cenditel.gob.ve>
+ */
+Vue.component('warehouse-external-request-create', () => import(
+    /* webpackChunkName: "warehouse-external-request-create" */
+    './components/requests/WarehouseExternalRequestCreateComponent.vue'
+));
+
+/**
+ * Componente para mostrar un listado de las solicitudes externas registradas
+ *
+ * @author Pedro Contreras <pmcontreras@cenditel.gob.ve>
+ */
+Vue.component('warehouse-external-request-list', () => import(
+    /* webpackChunkName: "warehouse-external-request-list" */
+    './components/requests/WarehouseExternalRequestListComponent.vue'
+));
+
+/**
+ * Componente para mostrar la información de las solicitudes externas de almacén
+ *
+ * @author Henry Paredes <hparedes@cenditel.gob.ve>
+ */
+Vue.component('warehouse-ext-req-info', () => import(
+    /* webpackChunkName: "warehouse-ext-req-info" */
+    './components/requests/WarehouseExternalRequestInfoComponent.vue'
+));
+
+/**
  * Componentes para gestionar las solicitudes pendientes de almacén
  *
  * @author Henry Paredes <hparedes@cenditel.gob.ve>
@@ -218,6 +248,16 @@ Vue.component('warehouse-report-products', () => import(
     './components/reports/WarehouseReportProductsComponent.vue'
 ));
 
+/**
+ * Componente para gestionar la creación de los reportes de consumo en almacén
+ *
+ * @author Natanael Rojo <ndrojo@cenditel.gob.ve> | <rojonatanael99@gmail.com>
+ */
+Vue.component('warehouse-consumption-report', () => import(
+    /* webpackChunkName: "warehouse-consumption-report" */
+    './components/reports/WarehouseReportConsumptionComponent.vue'
+));
+
 Vue.component('warehouse-report-stocks', () => import(
     /* webpackChunkName: "warehouse-report-stocks" */
     './components/reports/WarehouseReportStocksComponent.vue'
@@ -290,17 +330,16 @@ Vue.mixin({
          *
          * @author Henry Paredes <hparedes@cenditel.gob.ve>
          */
-        getWarehouses()
+        async getWarehouses()
         {
             const vm = this;
             var institution_id = (vm.record.institution_id) ? vm.record.institution_id :
                 ((vm.institution_id) ? vm.institution_id : '');
 
-            axios.get('/warehouse/get-warehouses/' + institution_id).then(response => {
+            const response = await axios.get('/warehouse/get-warehouses/' + institution_id);
                 if (typeof(response.data) != "undefined") {
                     vm.warehouses = response.data;
                 }
-            });
         },
 
         /**
@@ -314,16 +353,14 @@ Vue.mixin({
         async getPayrollPositions() {
             const vm = this;
             vm.payroll_positions = [];
-            await axios.get('/warehouse/get-payroll-positions').then(response => {
-                vm.payroll_positions = response.data;
-            });
+            const response = await axios.get('/warehouse/get-payroll-positions');
+            vm.payroll_positions = response.data;
         },
 
-        async getPayrollStaffs() {
+        async getPayrollStaffs(type = '') {
             this.payroll_staffs = [];
-            await axios.get('/warehouse/get-payroll-staffs').then(response => {
-                this.payroll_staffs = response.data;
-            });
+            const response = await axios.get(`${window.app_url}/payroll/get-staffs/${type}`);
+            this.payroll_staffs = response.data;
         },
         /**
          *--------------------------------------------------------------------------
@@ -339,13 +376,13 @@ Vue.mixin({
          * @author Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
          * @param  {integer} id Identificador del proyecto a buscar, este parámetro es opcional
          */
-        getBudgetProjects(id) {
+        async getBudgetProjects(id) {
             const vm = this;
 
             var budget_project_id = typeof id !== "undefined" ? '/' + id : '';
-            axios.get('/warehouse/get-budget-projects' + budget_project_id).then(function (response) {
-                vm.budget_projects = response.data;
-            });
+
+            const response= await axios.get('/warehouse/get-budget-projects' + budget_project_id);
+            vm.budget_projects = response.data;
         },
 
         /**
@@ -354,13 +391,12 @@ Vue.mixin({
          * @author Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
          * @param  {integer} id Identificador de la acción centralizada a buscar, este parámetro es opcional
          */
-        getBudgetCentralizedActions(id) {
+        async getBudgetCentralizedActions(id) {
             const vm = this;
 
             var budget_centralized_action_id = typeof id !== "undefined" ? '/' + id : '';
-            axios.get('/warehouse/get-budget-centralized-actions' + budget_centralized_action_id).then(function (response) {
-                vm.budget_centralized_actions = response.data;
-            });
+            const response = await axios.get('/warehouse/get-budget-centralized-actions' + budget_centralized_action_id);
+            vm.budget_centralized_actions = response.data;
         },
 
         /**
@@ -432,6 +468,16 @@ Vue.mixin({
                 if (vm.record.id) {
                     vm.record.parish_id = vm.record.parish.id;
                 }
+            }
+        },
+
+        async getWarehouseProducts() {
+            const vm = this;
+            vm.warehouse_products = [];
+
+            if (vm.record.warehouse_id != '') {
+                const response = await axios.get(`/warehouse/get-warehouse-full-info-products/${vm.record.warehouse_id}`);
+                vm.warehouse_products = response.data.records;
             }
         },
 

@@ -45,6 +45,20 @@ class SystemNotification extends Notification implements ShouldQueue
     public $currentTimestamp;
 
     /**
+     * Número máximo de intentos
+     *
+     * @var integer $tries
+     */
+    public $tries = 5;
+
+    /**
+     * Tiempo máximo de espera en segundos
+     *
+     * @var integer $timeout
+     */
+    public $timeout = 300;
+
+    /**
      * Crea una nueva instancia de la notificación
      *
      * @return void

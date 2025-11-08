@@ -703,6 +703,7 @@ class FinancePaymentExecuteController extends Controller
             'pending_amount',
             'completed',
             'observations',
+            'description',
             'status',
             'payment_number',
             'general_bank_reference',
@@ -973,14 +974,9 @@ class FinancePaymentExecuteController extends Controller
                 )->get();
 
                 //Estatus del documento Aprobado
-                $documentStatus = DocumentStatus::query()->getStatus('AP');
+                $documentStatus = DocumentStatus::getStatus('AP');
                 //Estatus del documento PR, Por revisar = Por aprobar
-                $documentStatusPR = default_document_status();
-
-                $financePaymentExecute->status = ($financePaymentExecute->is_partial) ? 'PP' : 'PA';
-                $financePaymentExecute->paid_at = $request->approved_at;
-                $financePaymentExecute->document_status_id = $documentStatus->id;
-                $financePaymentExecute->save();
+                $documentStatusPR = DocumentStatus::getStatus('PR');
 
                 if ($payOrdersPaymentExecute) {
                     foreach ($payOrdersPaymentExecute as $payOrder) {
@@ -992,7 +988,8 @@ class FinancePaymentExecuteController extends Controller
                     $this->createBankingMovement(
                         $financePaymentExecute->toArray(),
                         $payOrdersPaymentExecute[0]->finance_pay_order_id,
-                        $request->approved_at
+                        $request->approved_at,
+                        $documentStatus->id
                     );
 
                     \Modules\Accounting\Models\AccountingEntry::query()
@@ -1002,18 +999,16 @@ class FinancePaymentExecuteController extends Controller
                     ])->firstOrFail()
                     ->update(['document_status_id' => $documentStatusPR->id]);
                 }
+                $financePaymentExecute->status = ($financePaymentExecute->is_partial) ? 'PP' : 'PA';
+                $financePaymentExecute->paid_at = $request->approved_at;
+                $financePaymentExecute->document_status_id = $documentStatus->id;
+                $financePaymentExecute->save();
             });
             return response()->json(['message' => 'Success'], 200);
         } catch (\Exception $e) {
-            $message = str_replace("\n", "", $e->getMessage());
-            if (strpos($message, 'ERROR') !== false && strpos($message, 'DETAIL') !== false) {
-                $pattern = '/ERROR:(.*?)DETAIL/';
-                preg_match($pattern, $message, $matches);
-                $errorMessage = trim($matches[1]);
-            } else {
-                $errorMessage = $message;
-            }
             Log::error($e->getMessage());
+            Log::error($e);
+
             return response()->json(
                 ['message' =>
                     [
@@ -1021,7 +1016,22 @@ class FinancePaymentExecuteController extends Controller
                         'title' => 'Alerta',
                         'icon' => 'screen-error',
                         'class' => 'growl-danger',
-                        'text' => 'No se pudo completar la operación. ' . ucfirst($errorMessage),
+                        'text' => 'No se pudo realizar la operación. Error: ' . $e->getMessage(),
+                    ]],
+                500
+            );
+        } catch (\Throwable $th) {
+            Log::error($th->getMessage());
+            Log::error($th);
+
+            return response()->json(
+                ['message' =>
+                    [
+                        'type' => 'custom',
+                        'title' => 'Alerta',
+                        'icon' => 'screen-error',
+                        'class' => 'growl-danger',
+                        'text' => 'Ha ocurrido un error inesperado. Por favor, contacte al administrador del sistema.',
                     ]],
                 500
             );
@@ -1310,28 +1320,6 @@ class FinancePaymentExecuteController extends Controller
 
                                                     $payrollPaymentPeriod->save();
 
-                                                    /*
-                                                     * Buscar los movimientos bancarios, actualizar el concepto del movimiento y anularlo
-                                                     */
-                                                    $bankingMovement =
-                                                    FinanceBankingMovement::query()
-                                                        ->where(
-                                                            'reference',
-                                                            $payroll->code
-                                                        )->where(
-                                                            'document_status_id',
-                                                            '!=',
-                                                            $documentStatus->id
-                                                        )->first();
-
-                                                    if (isset($bankingMovement)) {
-                                                        $bankingMovement->concept = 'Anulado: '
-                                                        . $bankingMovement->concept
-                                                        . '. (' . $financePaymentExecute->description . ')';
-                                                        $bankingMovement->document_status_id = $documentStatus->id;
-                                                        $bankingMovement->save();
-                                                    }
-
                                                     // Se procede a realizar todo el proceso de anulación
                                                     // de los aportes de nómina
                                                     $this->cancelContribution(
@@ -1478,14 +1466,7 @@ class FinancePaymentExecuteController extends Controller
             return response()->json(['message' => 'Success'], 200);
         } catch (\Exception $e) {
             Log::error($e->getMessage());
-            $message = str_replace("\n", "", $e->getMessage());
-            if (strpos($message, 'ERROR') !== false && strpos($message, 'DETAIL') !== false) {
-                $pattern = '/ERROR:(.*?)DETAIL/';
-                preg_match($pattern, $message, $matches);
-                $errorMessage = trim($matches[1]);
-            } else {
-                $errorMessage = $message;
-            }
+            Log::error($e);
 
             return response()->json(
                 ['message' =>
@@ -1494,7 +1475,22 @@ class FinancePaymentExecuteController extends Controller
                         'title' => 'Alerta',
                         'icon' => 'screen-error',
                         'class' => 'growl-danger',
-                        'text' => 'No se pudo completar la operación. Contacte al administrador del sistema.',
+                        'text' => 'No se pudo realizar la operación. Error: ' . $e->getMessage(),
+                    ]],
+                500
+            );
+        } catch (\Throwable $th) {
+            Log::error($th->getMessage());
+            Log::error($th);
+
+            return response()->json(
+                ['message' =>
+                    [
+                        'type' => 'custom',
+                        'title' => 'Alerta',
+                        'icon' => 'screen-error',
+                        'class' => 'growl-danger',
+                        'text' => 'Ha ocurrido un error inesperado. Por favor, contacte al administrador del sistema.',
                     ]],
                 500
             );
@@ -1562,7 +1558,8 @@ class FinancePaymentExecuteController extends Controller
 
                             if ($isAccounting) {
                                 /* Reverso de Asiento contable de la emisión de pago */
-                                $accountEntry = \Modules\Accounting\Models\AccountingEntry::where(
+                                $accountEntry = \Modules\Accounting\Models\AccountingEntry::query()
+                                ->where(
                                     'reference',
                                     $financePaymentExecute->code
                                 )->first();
@@ -1789,7 +1786,7 @@ class FinancePaymentExecuteController extends Controller
      *
      * @return void
      */
-    private function createBankingMovement($financePaymentExecute, $pay_order_id, $date)
+    private function createBankingMovement($financePaymentExecute, $pay_order_id, $date, $documentStatusId)
     {
         $financePayOrder = FinancePayOrder::query()->find($pay_order_id);
         if (isset($financePayOrder)) {
@@ -1823,6 +1820,7 @@ class FinancePaymentExecuteController extends Controller
                 'currency_id' => $financePaymentExecute['currency_id'],
                 'finance_bank_account_id' => $financePaymentExecute['finance_bank_account_id'],
                 'institution_id' => $financePayOrder['institution_id'],
+                'document_status_id' => $documentStatusId,
             ]);
             $accountingEntry = \Modules\Accounting\Models\AccountingEntry::where('reference', $financePaymentExecute["code"])->first();
 

@@ -76,7 +76,7 @@ class PayrollTextFileController extends Controller
 
         $this->rules = [
             'fileName'          => ['required'],
-            'fileNumber'        => ['required', 'numeric'],
+            'fileNumber'        => ['required', 'regex:/^\d{2,}$/', 'numeric'],
             'payrollId'         => ['required', 'array', 'min:1'],
             'payrollId.*'       => ['required'],
             'date'              => ['required', 'date'],
@@ -86,6 +86,7 @@ class PayrollTextFileController extends Controller
             'fileName.required'             => 'El nombre del archivo es obligatorio',
             'fileNumber.required'           => 'El número de archivo es obligatorio',
             'fileNumber.numeric'            => 'El número de archivo debe ser numérico',
+            'fileNumber.regex'              => 'El número de archivo debe tener al menos 2 dígitos',
             'payrollId.required'            => '
                 El campo nómina es obligatorio y debe contener al menos un elemento seleccionado
             ',

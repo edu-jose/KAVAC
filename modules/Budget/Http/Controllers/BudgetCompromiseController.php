@@ -944,7 +944,8 @@ class BudgetCompromiseController extends Controller
         }
 
         if ((string)$amount > (string)$totalAccountAmount) {
-            return response(['result' => 'error'], 422);
+            $errors[] = 'El monto a comprometer no puede ser mayor al monto disponible en la cuenta presupuestaria seleccionada.';
+            return response(['result' => 'error', 'errors' => $errors], 422);
         }
 
         return response(['result' => 'true'], 200);
@@ -991,7 +992,8 @@ class BudgetCompromiseController extends Controller
         $usedAmount = (float)$usedAmount - (float)$taxAmountEdit;
 
         if ((float)$usedAmount + (float)$taxAmount > (float)$request->selected_account_amount) {
-            return response(['result' => 'error'], 422);
+            $errors[] = 'El monto a comprometer no puede ser mayor al monto disponible en la cuenta presupuestaria de impuestos seleccionada.';
+            return response(['result' => 'error', 'errors' => $errors], 422);
         }
 
         return response(['result' => 'true'], 200);

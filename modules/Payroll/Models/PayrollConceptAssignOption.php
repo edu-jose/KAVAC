@@ -37,7 +37,7 @@ class PayrollConceptAssignOption extends Model implements Auditable
      *
      * @var array $fillable
      */
-    protected $fillable = ['key', 'value', 'applicable_type', 'applicable_id'];
+    protected $fillable = ['key', 'value', 'applicable_type', 'applicable_id', 'assignable_type', 'assignable_id'];
 
     /**
      * Obtiene la relación con la política de vacaciones

@@ -1378,13 +1378,11 @@ Vue.mixin({
             vm.payroll_payment_types = [];
             await axios.get(`${window.app_url}/payroll/get-payment-types`).then(response => {
                 vm.payroll_payment_types = response.data.map((item) => {
-                    /** @todo Comentario temporal para efectos de pruebas.
                     if (!enabled) {
                         item['disabled'] = (item['payroll_ids'].length > 0) && (!item['payroll_ids'].includes(vm.payroll_id));
                     }
-                    */
                     return item;
-                });;
+                });
             });
         },
         /**
@@ -1786,26 +1784,26 @@ Vue.mixin({
          *
          * @author    Pedro Contreras <pmcontreras@cenditel.gob.ve>
          */
-                async getPayrollAgeGroups() {
-                    const vm = this;
-                    vm.payroll_age_groups = [];
-                    await axios.get(`${window.app_url}/payroll/get-age-groups`).then(response => {
-                        vm.payroll_age_groups = response.data;
-                    });
-                },
-        
-                /**
-                 * Método que obtiene un arreglo con las antiguedades
-                 *
-                 * @author    Pedro Contreras <pmcontreras@cenditel.gob.ve>
-                 */
-                async getPayrollSeniorities() {
-                    const vm = this;
-                    vm.payroll_seniorities = [];
-                    await axios.get(`${window.app_url}/payroll/get-seniorities`).then(response => {
-                        vm.payroll_seniorities = response.data;
-                    });
-                },
-        
+        async getPayrollAgeGroups() {
+            const vm = this;
+            vm.payroll_age_groups = [];
+            await axios.get(`${window.app_url}/payroll/get-age-groups`).then(response => {
+                vm.payroll_age_groups = response.data;
+            });
+        },
+
+        /**
+         * Método que obtiene un arreglo con las antiguedades
+         *
+         * @author    Pedro Contreras <pmcontreras@cenditel.gob.ve>
+         */
+        async getPayrollSeniorities() {
+            const vm = this;
+            vm.payroll_seniorities = [];
+            await axios.get(`${window.app_url}/payroll/get-seniorities`).then(response => {
+                vm.payroll_seniorities = response.data;
+            });
+        },
+
     }
 });

@@ -15,8 +15,9 @@ use Illuminate\Database\Eloquent\Model;
 use OwenIt\Auditing\Contracts\Auditable;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Modules\Payroll\Models\PayrollAriRegister;
-use OwenIt\Auditing\Auditable as AuditableTrait;
 use Modules\Payroll\Models\PayrollSavingsFund;
+use OwenIt\Auditing\Auditable as AuditableTrait;
+use Modules\Payroll\Models\PayrollFortnightlyAdvanceDebtor;
 
 /**
  * @class      PayrollStaff
@@ -182,6 +183,64 @@ class PayrollStaff extends Model implements Auditable
     public function payrollNationality()
     {
         return $this->belongsTo(PayrollNationality::class);
+    }
+
+    // PayrollResetParameter
+    public function payrollResetParameters()
+    {
+        return $this->hasMany(PayrollResetParameter::class);
+    }
+
+    // PayrollSupervisedGroupStaff
+    public function payrollSupervisedGroupStaffs()
+    {
+        return $this->hasMany(PayrollSupervisedGroupStaff::class);
+    }
+
+    // PayrollArcResponsible
+    public function payrollArcResponsibles()
+    {
+        return $this->hasMany(PayrollArcResponsible::class);
+    }
+
+    // PurchasePlan
+    public function purchasePlans()
+    {
+        return (
+            Module::has('Purchase') && Module::isEnabled('Purchase')
+        ) ? $this->hasMany(\Modules\Purchase\Models\PurchasePlan::class) : [];
+    }
+
+    // WorkAttendance
+    public function workAttendances()
+    {
+        return (
+            Module::has('WorkAttendance') && Module::isEnabled('WorkAttendance')
+        ) ? $this->hasMany(\Modules\WorkAttendance\Models\WorkAttendance::class) : [];
+    }
+
+    // WorkAttendanceCustomSchedule
+    public function workAttendanceCustomSchedules()
+    {
+        return (
+            Module::has('WorkAttendance') && Module::isEnabled('WorkAttendance')
+        ) ? $this->hasMany(\Modules\WorkAttendance\Models\WorkAttendanceCustomSchedule::class) : [];
+    }
+
+    // WorkAttendanceExternalActivityStaff
+    public function workAttendanceExternalActivityStaffs()
+    {
+        return (
+            Module::has('WorkAttendance') && Module::isEnabled('WorkAttendance')
+        ) ? $this->hasMany(\Modules\WorkAttendance\Models\WorkAttendanceExternalActivityStaff::class) : [];
+    }
+
+    // WorkAttendancePermission
+    public function workAttendancePermissions()
+    {
+        return (
+            Module::has('WorkAttendance') && Module::isEnabled('WorkAttendance')
+        ) ? $this->hasMany(\Modules\WorkAttendance\Models\WorkAttendancePermission::class) : [];
     }
 
     /**
@@ -522,6 +581,11 @@ class PayrollStaff extends Model implements Auditable
         return $this->belongsTo(Region::class);
     }
 
+    public function payrollFortnightlyAdvanceDebtors()
+    {
+        return $this->hasMany(PayrollFortnightlyAdvanceDebtor::class);
+    }
+
     /**
      * Scope que permite filtrar a los trabajadores bajo cierto parámetros
      *
@@ -848,7 +912,6 @@ class PayrollStaff extends Model implements Auditable
                                     $query->whereIn('id', $payroll_schooling_level_ids)
                                         ->select('id', 'name');
                                 }]);
-                                ;
                             } else {
                                 $query->with(['payrollSchoolingLevel' => function ($query) {
                                     $query->select('id', 'name');
@@ -1050,7 +1113,7 @@ class PayrollStaff extends Model implements Auditable
      */
     public function scopeOnlyActive($query)
     {
-        return $query->whereHas('payrollEmployment', fn ($q) => $q->where('active', true));
+        return $query->whereHas('payrollEmployment', fn($q) => $q->where('active', true));
     }
 
     /**
@@ -1062,8 +1125,8 @@ class PayrollStaff extends Model implements Auditable
         $relationshipSonId = $this->getSonRelationshipId();
         return $query->whereHas('payrollSocioeconomic.payrollChildrens', function ($burdenQuery) use ($relationshipSonId, $scholarshipTypeIds) {
             $burdenQuery->where('payroll_relationships_id', $relationshipSonId)
-                        ->where('has_scholarships', true)
-                        ->whereIn('payroll_scholarship_types_id', $scholarshipTypeIds);
+                ->where('has_scholarships', true)
+                ->whereIn('payroll_scholarship_types_id', $scholarshipTypeIds);
         })->onlyActive(); // Asegura que el trabajador esté activo
     }
 
@@ -1080,16 +1143,16 @@ class PayrollStaff extends Model implements Auditable
             $maxBirthDate = Carbon::parse($referenceDate)->subYears($minAge)->endOfDay()->toDateString();
             $minBirthDate = Carbon::parse($referenceDate)->subYears($maxAge + 1)->addDay()->startOfDay()->toDateString(); // +1 para incluir el año completo
         } catch (\Exception $e) {
-             // Manejar error de fecha inválida si es necesario, por ahora lanzamos excepción o devolvemos query vacía
+            // Manejar error de fecha inválida si es necesario, por ahora lanzamos excepción o devolvemos query vacía
             \Log::error("Error calculando rango de fechas para hijos: " . $e->getMessage());
-             return $query->whereRaw('1 = 0'); // Devuelve query sin resultados
+            return $query->whereRaw('1 = 0'); // Devuelve query sin resultados
         }
 
 
         return $query->whereHas('payrollSocioeconomic.payrollChildrens', function ($burdenQuery) use ($relationshipSonId, $minBirthDate, $maxBirthDate) {
             $burdenQuery->where('payroll_relationships_id', $relationshipSonId)
-                        ->whereNotNull('birthdate') // Asegurar que la fecha no sea nula
-                        ->whereBetween('birthdate', [$minBirthDate, $maxBirthDate]);
+                ->whereNotNull('birthdate') // Asegurar que la fecha no sea nula
+                ->whereBetween('birthdate', [$minBirthDate, $maxBirthDate]);
         })->onlyActive();
     }
 
@@ -1102,7 +1165,7 @@ class PayrollStaff extends Model implements Auditable
         $relationshipSonId = $this->getSonRelationshipId();
         return $query->whereHas('payrollSocioeconomic.payrollChildrens', function ($burdenQuery) use ($relationshipSonId) {
             $burdenQuery->where('payroll_relationships_id', $relationshipSonId)
-                        ->where('is_student', true);
+                ->where('is_student', true);
         })->onlyActive();
     }
 
@@ -1119,18 +1182,18 @@ class PayrollStaff extends Model implements Auditable
         $retiredId = PayrollInactivityType::where('name', 'ILIKE', 'jubilado')->value('id');
 
         return $query->where('has_died', true)
-        ->whereHas('payrollSurvivor', function ($query) {
-            $query->whereNotNull('first_name')
-            ->whereNotNull('last_name')
-            ->whereNotNull('payroll_staff_id')
-            ->whereNotNull('id_number')
-            ->whereNotNull('finance_bank_id')
-            ->whereNotNull('finance_account_type_id')
-            ->whereNotNull('payroll_account_number');
-        })
-        ->whereHas('payrollEmployment', function ($query) use ($retiredId) {
-            $query->where('payroll_inactivity_type_id', $retiredId);
-        });
+            ->whereHas('payrollSurvivor', function ($query) {
+                $query->whereNotNull('first_name')
+                    ->whereNotNull('last_name')
+                    ->whereNotNull('payroll_staff_id')
+                    ->whereNotNull('id_number')
+                    ->whereNotNull('finance_bank_id')
+                    ->whereNotNull('finance_account_type_id')
+                    ->whereNotNull('payroll_account_number');
+            })
+            ->whereHas('payrollEmployment', function ($query) use ($retiredId) {
+                $query->where('payroll_inactivity_type_id', $retiredId);
+            });
     }
 
     /**
@@ -1144,7 +1207,7 @@ class PayrollStaff extends Model implements Auditable
         return $query->whereHas('payrollEmployment', function ($empQuery) {
             $empQuery->where('workers_union', true);
         })
-        ->onlyActive();
+            ->onlyActive();
     }
 
     /**
@@ -1158,7 +1221,7 @@ class PayrollStaff extends Model implements Auditable
         return $query->whereHas('payrollEmployment', function ($empQuery) {
             $empQuery->where('savings_fund', true);
         })
-        ->onlyActive();
+            ->onlyActive();
     }
 
     /**
@@ -1181,13 +1244,20 @@ class PayrollStaff extends Model implements Auditable
      */
     public function scopeIsNotInApprovedVacationDuring($query, string $periodStart, string $periodEnd)
     {
-         // Trabajador activo que NO tiene una solicitud APROBADA que se SOLAPE con el periodo
+        // Trabajador activo que NO tiene una solicitud APROBADA que se SOLAPE con el periodo
         return $query->whereDoesntHave('payrollVacationRequests', function ($vacQuery) use ($periodStart, $periodEnd) {
             $vacQuery->where('status', 'approved')
-                    // Solapamiento: La vacación empieza antes o cuando termina el periodo Y termina después o cuando empieza el periodo
-                    ->where('start_date', '<=', $periodEnd)
-                    ->where('end_date', '>=', $periodStart);
+                // Solapamiento: La vacación empieza antes o cuando termina el periodo Y termina después o cuando empieza el periodo
+                ->where('start_date', '<=', $periodEnd)
+                ->where('end_date', '>=', $periodStart);
         })->onlyActive();
+    }
+
+    public function scopeFindStaffWithPaidConcepts($query, array $conceptIds)
+    {
+        return $query->whereHas('payrollFortnightlyAdvanceDebtors', function ($query) use ($conceptIds) {
+            $query->whereIn('payroll_concept_id', $conceptIds)->where('in_debt', true);
+        });
     }
 
     /**
@@ -1199,8 +1269,8 @@ class PayrollStaff extends Model implements Auditable
         // Trabajador activo que SÍ tiene una solicitud APROBADA cuya FECHA FIN cae DENTRO del periodo
         return $query->whereHas('payrollVacationRequests', function ($vacQuery) use ($periodStart, $periodEnd) {
             $vacQuery->where('status', 'approved')
-                    ->where('end_date', '>=', $periodStart)
-                    ->where('end_date', '<=', $periodEnd);
+                ->where('end_date', '>=', $periodStart)
+                ->where('end_date', '<=', $periodEnd);
         })->onlyActive();
     }
 
@@ -1209,25 +1279,26 @@ class PayrollStaff extends Model implements Auditable
         // Trabajador activo que SÍ tiene una solicitud APROBADA cuya FECHA FIN cae DENTRO del periodo
         return $query->whereHas('payrollVacationRequests', function ($vacQuery) use ($periodStart) {
             $vacQuery->where('status', 'approved')
-                    ->where('end_date', '>=', $periodStart);
+                ->where('start_date', '<', $periodStart)
+                ->where('end_date', '>=', $periodStart);
         })->onlyActive();
     }
 
     /**
-      * Scope: Trabajadores con o sin discapacidad.
-      * Rule IDs: all_disabled_staff, all_except_disabled_staff
-      */
+     * Scope: Trabajadores con o sin discapacidad.
+     * Rule IDs: all_disabled_staff, all_except_disabled_staff
+     */
     public function scopeHasDisability($query, bool $hasDisability = true)
     {
         // Asume un campo 'has_disability' booleano en la tabla payroll_staffs
         return $query->where('has_disability', $hasDisability)
-        ->onlyActive();
+            ->onlyActive();
     }
 
     /**
-      * Scope: Trabajadores que están estudiando (ellos mismos).
-      * Rule ID: all_studying_staff
-      */
+     * Scope: Trabajadores que están estudiando (ellos mismos).
+     * Rule ID: all_studying_staff
+     */
     public function scopeIsStudying($query)
     {
         return $query->whereHas('payrollProfessional', function ($profQuery) {
@@ -1242,7 +1313,7 @@ class PayrollStaff extends Model implements Auditable
     public function scopeMastersMoreThanOneLanguage($query)
     {
         return $query->whereHas('payrollProfessional.payrollLanguages', null, '>', 1) // Verifica que la cuenta de idiomas relacionados sea > 1
-                    ->onlyActive();
+            ->onlyActive();
     }
 
     /**
@@ -1290,9 +1361,9 @@ class PayrollStaff extends Model implements Auditable
     }
 
     /**
-      * Scope: Trabajadores según rango de fecha de ingreso.
-      * Rule ID: all_staff_according_start_date
-      */
+     * Scope: Trabajadores según rango de fecha de ingreso.
+     * Rule ID: all_staff_according_start_date
+     */
     public function scopeStartDateBetween($query, ?string $maxDate, $periodStart, $periodEnd)
     {
         //convertir la fecha de inio y fin de periodo a un objero de datatime para poder usar la funcion modify
@@ -1338,9 +1409,9 @@ class PayrollStaff extends Model implements Auditable
     }
 
     /**
-      * Scope: Trabajadores según nivel de instrucción.
-      * Rule ID: staff_according_instruction_degree
-      */
+     * Scope: Trabajadores según nivel de instrucción.
+     * Rule ID: staff_according_instruction_degree
+     */
     public function scopeInstructionDegreeInList($query, array $degreeIds)
     {
         return $query->whereHas('payrollProfessional', function ($profQuery) use ($degreeIds) {
@@ -1355,7 +1426,7 @@ class PayrollStaff extends Model implements Auditable
     public function scopeGenderInList($query, array $genderIds)
     {
         return $query->whereIn('payroll_gender_id', $genderIds)
-        ->onlyActive();
+            ->onlyActive();
     }
 
 
@@ -1368,11 +1439,11 @@ class PayrollStaff extends Model implements Auditable
     {
         static $sonId = null;
         if ($sonId === null) {
-             // Asegúrate que el modelo PayrollRelationship exista en la ruta correcta
+            // Asegúrate que el modelo PayrollRelationship exista en la ruta correcta
             $sonId = \Modules\Payroll\Models\PayrollRelationship::where('name', 'Hijo(a)')->value('id');
             if ($sonId === null) {
                 \Log::warning("No se encontró la relación 'Hijo(a)', usando ID 3 por defecto.");
-                 $sonId = 3; // Valor por defecto del código original
+                $sonId = 3; // Valor por defecto del código original
             }
         }
         return $sonId;

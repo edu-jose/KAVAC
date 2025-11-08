@@ -388,7 +388,8 @@ class AssetGenerateReport implements ShouldQueue
             true,
             [
                 'pdf' => $pdf,
-                'assets' => $assets
+                'assets' => $assets,
+                'institution' => $institution,
             ]
         );
 
@@ -401,7 +402,7 @@ class AssetGenerateReport implements ShouldQueue
                 new SystemNotification(
                     'Exito',
                     'Se ha generado el reporte de bienes, '
-                    . 'el archivo ha sido enviado a su correo electrónico',
+                        . 'el archivo ha sido enviado a su correo electrónico',
                 )
             );
 

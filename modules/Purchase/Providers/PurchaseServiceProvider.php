@@ -157,8 +157,7 @@ class PurchaseServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             // Registrar comandos solo si se está ejecutando en la consola
             $this->commands([
-                UpdateStatusBudgetaryAvailability::class,
-                UpdateDataBudgetaryAvailability::class,
+                // Comandos del módulo de compras
             ]);
         }
     }

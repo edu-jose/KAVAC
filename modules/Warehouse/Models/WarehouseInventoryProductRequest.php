@@ -26,7 +26,7 @@ class WarehouseInventoryProductRequest extends Model implements Auditable
      *
      * @var array $fillable
      */
-    protected $fillable = ['quantity', 'warehouse_request_id', 'warehouse_inventory_product_id', 'new_exist'];
+    protected $fillable = ['quantity',  'warehouse_request_id', 'warehouse_inventory_product_id', 'new_exist'];
 
     /**
      * Método que obtiene el producto asociado al inventario

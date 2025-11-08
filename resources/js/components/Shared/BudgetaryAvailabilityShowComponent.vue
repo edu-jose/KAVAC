@@ -39,7 +39,7 @@
                                     <strong>Código de Disponibilidad Presupuestaria</strong>
                                     <div class="row" style="margin: 1px 0">
                                         <span class="col-md-12" id="code">
-                                            {{ records.purchase_common_budgetary_availability?.code ? records.purchase_common_budgetary_availability?.code : 'No definido' }}
+                                            {{ records.budget_common_budgetary_availability?.code ? records.budget_common_budgetary_availability?.code : 'No definido' }}
                                         </span>
                                     </div>
                                 </div>
@@ -385,22 +385,22 @@
                         <table class="table">
                             <thead>
                                 <tr>
+                                    <th class="col-md-3">Acción Específica</th>
                                     <th class="col-md-3">Cuenta</th>
                                     <th class="col-md-3">Nombre</th>
-                                    <th class="col-md-3">Descripción</th>
                                     <th class="col-md-3">Monto</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr v-for="(account, index) in records.availabilityitem" :key="index">
                                     <td class="col-md-3 text-center">
+                                        {{ account.spac_description ? account.spac_description : ''}}
+                                    </td>
+                                    <td class="col-md-3 text-center">
                                         {{ account.item_code }}
                                     </td>
                                     <td class="col-md-3 text-center">
                                         {{ account.item_name }}
-                                    </td>
-                                    <td class="col-md-3 text-center">
-                                        {{ account.description }}
                                     </td>
                                     <td class="col-md-3 text-center">
                                         {{ account.amount }}

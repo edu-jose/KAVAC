@@ -64,10 +64,10 @@ class FinanceConciliationController extends Controller
         ];
 
         // Establece permisos de acceso para cada método del controlador
-        $this->middleware('permission:finance.bankreconciliation.index', ['only' => 'index']);
-        $this->middleware('permission:finance.bankreconciliation.store', ['only' => 'create']);
-        $this->middleware('permission:finance.bankreconciliation.update', ['only' => 'update']);
-        $this->middleware('permission:finance.bankreconciliation.destroy', ['only' => 'destroy']);
+        $this->middleware('permission:finance.bankreconciliation.list', ['only' => 'index']);
+        $this->middleware('permission:finance.bankreconciliation.create', ['only' => 'create']);
+        $this->middleware('permission:finance.bankreconciliation.edit', ['only' => 'update']);
+        $this->middleware('permission:finance.bankreconciliation.delete', ['only' => 'destroy']);
         // $this->middleware('permission:finance.settingbankreconciliationfiles.index', ['only' => 'index', 'vueList']);
     }
 

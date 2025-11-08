@@ -83,7 +83,7 @@ Route::get('/refresh-csrf-token', function () {
 Route::post('/logs/front-end', [LogController::class, 'frontEnd'])->name('logs.front-end');
 
 Route::group(['middleware' => 'auth'], function () {
-    Route::post('session-expired', [UserController::class, 'getExpiredSessions']);
+    Route::post('check-expired-session', [UserController::class, 'getExpiredSessions']);
 });
 
 /*
@@ -356,6 +356,7 @@ Route::group(['middleware' => ['auth', 'verified']], function () {
     Route::get('fiscal-years/opened/list', 'FiscalYearController@getOpened')->name('opened.fiscal-years');
     Route::get('fiscal-years/closed/list', 'FiscalYearController@getClosed')->name('closed.fiscal-years');
     Route::get('fiscal-years/last', 'FiscalYearController@getLast')->name('last.fiscal-years');
+    Route::get('fiscal-years/most-recent/{numYears?}', 'FiscalYearController@getMostRecentFiscalYears')->name('most-recent.fiscal-years');
 
     /* Rutas para la gestión de unidades de medida */
     Route::resource('measurement-units', 'MeasurementUnitController', ['except' => ['create', 'show', 'edit']]);

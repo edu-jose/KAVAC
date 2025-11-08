@@ -425,13 +425,36 @@ class FinancePayOrderController extends Controller
      */
     public function edit($id)
     {
-        $payOrder = FinancePayOrder::find($id);
+        $payOrder = FinancePayOrder::query()->with('documentSourceable')->find($id);
         $receiver = Receiver::find($payOrder->receiverId());
         $payOrder['receiver'] = $receiver;
         $registeredAccounts = \Modules\Accounting\Models\AccountingEntryable::with('accountingEntry.accountingAccounts')
             ->where('accounting_entryable_type', FinancePayOrder::class)
             ->where('accounting_entryable_id', $id)
             ->first();
+
+        if (
+            $payOrder
+            && $payOrder->type === 'NP'
+            && $payOrder->document_type === 'T'
+            && (isset($payOrder->documentSourceable)
+                && ($payOrder->documentSourceable instanceof Deduction)
+                && $payOrder->document_number
+            )
+        ) {
+            $paymentDeduction = FinancePaymentDeduction::find($payOrder->document_number);
+            if ($paymentDeduction) {
+                $deductions_ids = $paymentDeduction->deductions_ids ? json_decode($paymentDeduction->deductions_ids) : [];
+                if ($deductions_ids) {
+                    $financePaymentDeduction = FinancePaymentDeduction::query()
+                    ->whereIn('id', $deductions_ids)
+                    ->first();
+                    if ($financePaymentDeduction) {
+                        $payOrder->year = $financePaymentDeduction->deducted_at ? date('Y', strtotime($financePaymentDeduction->deducted_at)) : null;
+                    }
+                }
+            }
+        }
 
         return view('finance::pay_orders.create-edit-form', compact('payOrder', 'registeredAccounts'));
     }
@@ -920,7 +943,7 @@ class FinancePayOrderController extends Controller
                     Module::has('Accounting')
             ) {
                 // Se establece el perido de busqueda dado por el mes y el periodo seleccionados.
-                [$startDate, $endDate] = $this->getPeriod($request->month, $request->period);
+                [$startDate, $endDate] = $this->getPeriod($request->month, $request->period, $request->year);
 
                 //Se establecen los estatus del documento.
                 $documentStatusPR = default_document_status();
@@ -1072,14 +1095,9 @@ class FinancePayOrderController extends Controller
                                     }
                                 });
                             } catch (\Exception $e) {
-                                $message = str_replace("\n", "", $e->getMessage());
-                                if (strpos($message, 'ERROR') !== false && strpos($message, 'DETAIL') !== false) {
-                                    $pattern = '/ERROR:(.*?)DETAIL/';
-                                    preg_match($pattern, $message, $matches);
-                                    $errorMessage = trim($matches[1]);
-                                } else {
-                                    $errorMessage = $message;
-                                }
+                                $errorMessage = $e->getMessage();
+                                Log::error($errorMessage);
+                                Log::error($e);
                                 return response()->json(
                                     ['message' =>
                                     [
@@ -1087,7 +1105,7 @@ class FinancePayOrderController extends Controller
                                         'title' => 'Alerta',
                                         'icon' => 'screen-error',
                                         'class' => 'growl-danger',
-                                        'text' => 'No se pudo completar la operación. ' . ucfirst($errorMessage)
+                                        'text' => 'No se pudo completar la operación. ' . $errorMessage
                                     ]],
                                     500
                                 );
@@ -1405,24 +1423,32 @@ class FinancePayOrderController extends Controller
             return response()->json(['record' => $financePayOrder, 'message' => 'Success'], 200);
         } catch (\Exception $e) {
             Log::error($e->getMessage());
-            $message = str_replace("\n", "", $e->getMessage());
-            if (strpos($message, 'ERROR') !== false && strpos($message, 'DETAIL') !== false) {
-                $pattern = '/ERROR:(.*?)DETAIL/';
-                preg_match($pattern, $message, $matches);
-                $errorMessage = trim($matches[1]);
-            } else {
-                $errorMessage = $message;
-            }
+            Log::error($e);
 
             return response()->json(
                 ['message' =>
-                [
-                    'type' => 'custom',
-                    'title' => 'Alerta',
-                    'icon' => 'screen-error',
-                    'class' => 'growl-danger',
-                    'text' => 'No se pudo completar la operación. ' . ucfirst($errorMessage)
-                ]],
+                    [
+                        'type' => 'custom',
+                        'title' => 'Alerta',
+                        'icon' => 'screen-error',
+                        'class' => 'growl-danger',
+                        'text' => 'No se pudo realizar la operación. Error: ' . $e->getMessage(),
+                    ]],
+                500
+            );
+        } catch (\Throwable $th) {
+            Log::error($th->getMessage());
+            Log::error($th);
+
+            return response()->json(
+                ['message' =>
+                    [
+                        'type' => 'custom',
+                        'title' => 'Alerta',
+                        'icon' => 'screen-error',
+                        'class' => 'growl-danger',
+                        'text' => 'Ha ocurrido un error inesperado. Por favor, contacte al administrador del sistema.',
+                    ]],
                 500
             );
         }
@@ -1965,30 +1991,39 @@ class FinancePayOrderController extends Controller
                     }
                 }
             });
+
+            return response()->json(['message' => 'Success'], 200);
         } catch (\Exception $e) {
             Log::error($e->getMessage());
-            $message = str_replace("\n", "", $e->getMessage());
-            if (strpos($message, 'ERROR') !== false && strpos($message, 'DETAIL') !== false) {
-                $pattern = '/ERROR:(.*?)DETAIL/';
-                preg_match($pattern, $message, $matches);
-                $errorMessage = trim($matches[1]);
-            } else {
-                $errorMessage = $message;
-            }
+            Log::error($e);
 
             return response()->json(
                 ['message' =>
-                [
-                    'type' => 'custom',
-                    'title' => 'Alerta',
-                    'icon' => 'screen-error',
-                    'class' => 'growl-danger',
-                    'text' => 'No se pudo completar la operación. Contacte al administrador del sistema.',
-                ]],
+                    [
+                        'type' => 'custom',
+                        'title' => 'Alerta',
+                        'icon' => 'screen-error',
+                        'class' => 'growl-danger',
+                        'text' => 'No se pudo realizar la operación. Error: ' . $e->getMessage(),
+                    ]],
+                500
+            );
+        } catch (\Throwable $th) {
+            Log::error($th->getMessage());
+            Log::error($th);
+
+            return response()->json(
+                ['message' =>
+                    [
+                        'type' => 'custom',
+                        'title' => 'Alerta',
+                        'icon' => 'screen-error',
+                        'class' => 'growl-danger',
+                        'text' => 'Ha ocurrido un error inesperado. Por favor, contacte al administrador del sistema.',
+                    ]],
                 500
             );
         }
-        return response()->json(['message' => 'Success'], 200);
     }
 
     /**
@@ -2276,11 +2311,18 @@ class FinancePayOrderController extends Controller
      *
      * @return array un arreglo que contiene las fechas de inicio y fin del periodo especificado
      */
-    private function getPeriod($month = 1, $period = 3)
+    private function getPeriod($month = 1, $period = 3, $year = null)
     {
         // Se establece el perido de busqueda dado por el año fiscal en curso y el mes seleccionado.
-        $currentFiscalYear = FiscalYear::select('year')
-        ->where(['active' => true, 'closed' => false])->orderBy('year', 'desc')->first();
+        $currentFiscalYear = FiscalYear::query()->select('year');
+
+        if ($year) {
+            $currentFiscalYear = $currentFiscalYear->where('id', $year);
+        } else {
+            $currentFiscalYear = $currentFiscalYear->where(['active' => true, 'closed' => false]);
+        }
+
+        $currentFiscalYear = $currentFiscalYear->orderBy('year', 'desc')->first();
         $monthPeriod = $currentFiscalYear->year . '-' . $month;
 
         // Determinar las fechas de inicio y finalización del rango de fechas según el periodo y el mes proporcionados

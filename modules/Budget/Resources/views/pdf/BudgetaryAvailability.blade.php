@@ -54,7 +54,11 @@
                 <th width="25%" style="font-size:9rem;">
                     <strong>Estatus:</strong>
                     <br>
-                    {{ $record['availabilityitem'][0]['availability'] == 1 ? 'Disponible' : '' }}
+                    {{
+                        $record['availabilityitem'][0]['availability'] == 1 ? 'Por aprobar'
+                        : ($record['availabilityitem'][0]['availability'] == 2 ? 'Aprobado'
+                        : '')
+                    }}
                 </th>
             </tr>
         </thead>
@@ -230,9 +234,9 @@
         <table border="0.1" cellspacing="0" cellpadding="2" style="font-size: 8rem;">
             <thead>
                 <tr style="background-color: #BDBDBD;">
+                    <th align="center"><b>Acción Específica</b></th>
                     <th align="center"><b>Código</b></th>
                     <th align="center"><b>Nombre</b></th>
-                    <th align="center"><b>Descripción</b></th>
                     <th align="center"><b>Monto</b></th>
                 </tr>
             </thead>
@@ -240,13 +244,13 @@
                 @foreach ($record['availabilityitem'] as $item)
                     <tr>
                         <td align="center">
+                            {{ $item['spac_description'] ? $item['spac_description'] : '' }}
+                        </td>
+                        <td align="center">
                             {{ $item['item_code'] }}
                         </td>
                         <td align="left">
                             {{ $item['item_name'] }}
-                        </td>
-                        <td align="left">
-                            {{ $item['description'] }}
                         </td>
                         <td align="center">
                             {{ $item['amount'] }}

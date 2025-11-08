@@ -1,6 +1,7 @@
 <template>
     <section id="WarehouseReceptionForm">
         <div class="card-body">
+
             <div class="alert alert-danger" v-if="errors.length > 0">
                 <div class="container">
                     <div class="alert-icon">
@@ -14,7 +15,7 @@
                         </span>
                     </button>
                     <ul>
-                        <li v-for="(error, index) in errors" :key="index">{{ error }}</li>
+                        <li v-for="(error, index) in formattedErrors" :key="index">{{ error }}</li>
                     </ul>
                 </div>
             </div>
@@ -75,13 +76,13 @@
                 <div class="col-md-4" id="helpWarehouseRequestDate">
                     <div class="form-group">
                         <label>Observaciones generales:</label>
-						<ckeditor :editor="ckeditor.editor"
+                        <ckeditor :editor="ckeditor.editor"
                             :config="ckeditor.editorConfig"
                             class="form-control" tag-name="textarea"
                             rows="3" v-model="record.general_observations">
                         </ckeditor>
-					</div>
-				</div>
+                    </div>
+                </div>
             </div>
 
             <div class="row" v-if="record.id == ''">
@@ -113,10 +114,10 @@
                 <div class="col-md-4" id="helpWarehouseRequestDate">
                     <div class="form-group is-required">
                         <label>Fecha de ingreso</label>
-						<input type="date" data-toggle="tooltip" title="Fecha de ingreso" class="form-control input-sm"
+                        <input type="date" data-toggle="tooltip" title="Fecha de ingreso" class="form-control input-sm"
                         v-model="record.reception_date">
-					</div>
-				</div>
+                    </div>
+                </div>
             </div>
 
             <div class="row" v-if="record.id != ''">
@@ -146,109 +147,137 @@
                 <div class="col-md-4" id="helpWarehouseRequestDate">
                     <div class="form-group is-required">
                         <label>Fecha de ingreso</label>
-						<input type="date" data-toggle="tooltip" title="Fecha de ingreso" class="form-control input-sm"
+                        <input type="date" data-toggle="tooltip" title="Fecha de ingreso" class="form-control input-sm"
                         v-model="record.reception_date">
-					</div>
-				</div>
+                    </div>
+                </div>
             </div>
+
             <hr>
+            <div class="float-right">
+                <button 
+                    type="button" 
+                    class="btn btn-sm btn-primary btn-custom"
+                    title="Exportar plantilla para carga masiva (OJO SE TIENE QUE SELECCIONAR EL ALMACÉN PRIMERO)"
+                    data-toggle="tooltip"
+                    @click="exportTemplate"
+                    :disabled="!record.warehouse_id || loading"
+                >
+                    <i class="fa fa-file-excel-o"></i> 
+                    {{ loading ? 'Generando...' : 'Exportar' }}
+                </button>
+                <button 
+                    type="button" 
+                    class="btn btn-sm btn-primary btn-custom"
+                    title="Importar datos desde archivo"
+                    data-toggle="tooltip"
+                    @click="showImportSection = !showImportSection"
+                >
+                    <i class="fa fa-upload"></i> Importar
+                </button>
+            </div>
+            <br>
 
             <div class="row" id="helpSectionProducts">
-                <div class="col-md-12">
-                    <b>Ingrese los insumos a la solicitud</b>
-                </div>
-                <div class="col-md-3" id="helpProductName">
-                    <div class="form-group is-required">
-                        <label>Nombre del insumo:</label>
-                        <select2 :options="warehouse_products"
-                            @input="getWarehouseProductAttributes();getWarehouseProductRules();"
-                            v-model="warehouse_inventory_product.warehouse_product_id">
-                        </select2>
+                <div class="row" id="helpSectionProducts" v-if="showManualInputs">
+                    <div class="col-md-12">
+                        <b>Ingrese los insumos a la solicitud</b>
                     </div>
-                </div>
-                <div class="col-md-3" id="helpProductQuantity">
-                    <div class="form-group is-required">
-                        <label>Cantidad:</label>
-                        <input type="text" placeholder="Cantidad del insumo"
-                               title="Cantidad del insumo" data-toggle="tooltip"
-                                class="form-control input-sm"
-                                v-input-mask data-inputmask="
-                                    'alias': 'numeric',
-                                    'allowMinus': 'false',
-                                    'digits': 2"
-                               v-model="warehouse_inventory_product.quantity">
+                    <div class="col-md-3" id="helpProductName">
+                        <div class="form-group is-required">
+                            <label>Nombre del insumo:</label>
+                            <select2 :options="warehouse_products"
+                                @input="getWarehouseProductAttributes();getWarehouseProductRules();"
+                                v-model="warehouse_inventory_product.warehouse_product_id">
+                            </select2>
+                        </div>
                     </div>
-                </div>
-                <div class="col-md-3" id="helpProductValue">
-                    <div class="form-group">
-                        <label>Valor:</label>
-                        <input  id="productValue"
-                                type="text" data-toggle="tooltip"
-                                title="Valor por unidad del insumo"
-                                placeholder="Valor por unidad del insumo"
-                                class="form-control input-sm"
-                                v-input-mask data-inputmask="
-                                    'alias': 'numeric',
-                                    'allowMinus': 'false',
-                                    'digits': 2"
-                                v-model="warehouse_inventory_product.unit_value">
+                    <div class="col-md-3" id="helpProductQuantity">
+                        <div class="form-group is-required">
+                            <label>Cantidad:</label>
+                            <input type="text" placeholder="Cantidad del insumo"
+                                   title="Cantidad del insumo" data-toggle="tooltip"
+                                    class="form-control input-sm"
+                                    v-input-mask data-inputmask="
+                                        'alias': 'numeric',
+                                        'allowMinus': 'false',
+                                        'digits': 2"
+                                   v-model="warehouse_inventory_product.quantity">
+                        </div>
+                    </div>
+                    <div class="col-md-3" id="helpProductValue">
+                        <div class="form-group">
+                            <label>Valor:</label>
+                            <input  id="productValue"
+                                    type="text" data-toggle="tooltip"
+                                    title="Valor por unidad del insumo"
+                                    placeholder="Valor por unidad del insumo"
+                                    class="form-control input-sm"
+                                    v-input-mask data-inputmask="
+                                        'alias': 'numeric',
+                                        'allowMinus': 'false',
+                                        'digits': 2"
+                                    v-model="warehouse_inventory_product.unit_value">
 
+                        </div>
                     </div>
-                </div>
-                <div class="col-md-3" id="helpProductCurrency">
-                    <div class="form-group is-required">
-                        <label>Moneda:</label>
-                        <select2 :options="currencies"
-                                 v-model="warehouse_inventory_product.currency_id"></select2>
+                    <div class="col-md-3" id="helpProductCurrency">
+                        <div class="form-group is-required">
+                            <label>Moneda:</label>
+                            <select2 :options="currencies"
+                                     v-model="warehouse_inventory_product.currency_id"></select2>
+                        </div>
                     </div>
-                </div>
-                <div class="col-md-3" id="helpWarehouseRequestDate">
-                    <div class="form-group is-required">
-                        <label>Fecha de vencimiento</label>
-						<input type="date" data-toggle="tooltip" title="Fecha de vencimiento" class="form-control input-sm no-restrict"
-                        v-model="warehouse_inventory_product.expiration_date">
-					</div>
-				</div>
-                <div class="col-md-3" id="helpWarehouseRequestDate">
-                    <div class="form-group is-required">
-                        <label>Lote</label>
-						<input type="text" data-toggle="tooltip" title="Lote" class="form-control input-sm"
-                        maxlength="20" v-model="warehouse_inventory_product.batch_number"
-                        v-input-mask data-inputmask-regex="^([A-Za-z0-9]*)$">
-					</div>
-				</div>
+                    <div class="col-md-3" id="helpWarehouseRequestDate">
+                        <div class="form-group is-required">
+                            <label>Fecha de vencimiento</label>
+                            <input type="date" data-toggle="tooltip" title="Fecha de vencimiento" class="form-control input-sm no-restrict"
+                            v-model="warehouse_inventory_product.expiration_date">
+                        </div>
+                    </div>
+                    <div class="col-md-3" id="helpWarehouseRequestDate">
+                        <div class="form-group is-required">
+                            <label>Lote</label>
+                            <input type="text" data-toggle="tooltip" title="Lote" class="form-control input-sm"
+                            maxlength="20" v-model="warehouse_inventory_product.batch_number"
+                            v-input-mask data-inputmask-regex="^([A-Za-z0-9\/\-*]*)$"> <!-- Permitir más caracteres -->
+                        </div>
+                    </div>
+                </div>  
             </div>
             <div class="row">
-                <hr>
-                <div class="col-md-12">
-                    <b>Reglas de abastecimiento del insumo</b>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>Minimo:</label>
-                        <input  type="text" data-toggle="tooltip"
-                                placeholder="Minimo establecido del insumo"
-                                class="form-control input-sm"
-                                v-input-mask data-inputmask="
-                                    'alias': 'numeric',
-                                    'allowMinus': 'false',
-                                    'digits': 2"
-                                v-model="warehouse_inventory_product.minimum">
+                <div class="row" v-if="showManualInputs">
+                    <hr>
+                    <div class="col-md-12">
+                        <b>Reglas de abastecimiento del insumo</b>
                     </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>Maximo:</label>
-                        <input  type="text" data-toggle="tooltip"
-                                placeholder="Maximo establecido del insumo"
-                                class="form-control input-sm"
-                                v-input-mask data-inputmask="
-                                    'alias': 'numeric',
-                                    'allowMinus': 'false',
-                                    'digits': 2"
-                                v-model="warehouse_inventory_product.maximum">
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label>Minimo:</label>
+                            <input  type="text" data-toggle="tooltip"
+                                    placeholder="Minimo establecido del insumo"
+                                    class="form-control input-sm"
+                                    v-input-mask data-inputmask="
+                                        'alias': 'numeric',
+                                        'allowMinus': 'false',
+                                        'digits': 2"
+                                    v-model="warehouse_inventory_product.minimum">
+                        </div>
                     </div>
-                </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label>Maximo:</label>
+                            <input  type="text" data-toggle="tooltip"
+                                    placeholder="Maximo establecido del insumo"
+                                    class="form-control input-sm"
+                                    v-input-mask data-inputmask="
+                                        'alias': 'numeric',
+                                        'allowMinus': 'false',
+                                        'digits': 2"
+                                    v-model="warehouse_inventory_product.maximum">
+                        </div>
+                    </div>
+                </div>  
             </div>
             <div class="row" v-show="warehouse_inventory_product.warehouse_product_attributes.length > 0">
                 <hr>
@@ -269,13 +298,99 @@
                 <div class="col-md-12">
                     <button type="button" @click="addProduct($event)" class="btn btn-sm btn-primary btn-custom float-right"
                             title="Agregar registro a la lista"
-                            data-toggle="tooltip">
+                            data-toggle="tooltip" v-if="showManualInputs">
                         <i class="fa fa-plus-circle"></i>
                         Agregar
                     </button>
                 </div>
             </div>
             <hr>
+           
+
+            <!-- Sección de importación (se mostrará solo cuando showImportSection sea true) -->
+            <div class="row" v-if="showImportSection">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>Importar datos desde hoja de cálculo</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-info">
+                                <strong>Instrucciones:</strong> El archivo debe contener los siguientes campos:
+                                <ul>
+                                    <li>Nombre del insumo (selección)</li>
+                                    <li>Cantidad (número)</li>
+                                    <li>Valor (número)</li>
+                                    <li>Moneda (selección)</li>
+                                    <li>Lote (texto)</li>
+                                    <li>Fecha de vencimiento (fecha)</li>
+                                    <li>Mínimo (número, opcional)</li>
+                                    <li>Máximo (número, opcional)</li>
+                                </ul>
+                                <strong>Todos los campos de Entrega y Selección de destino de insumo tienen que estar completados excepto el proveedor que es opcional</strong> 
+                            </div>
+                            <h6>EJEMPLO: Formato de hoja de cálculo</h6>
+                            <div class="table-responsive">
+                                <table  class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <td class="text-center"><strong>Nombre del insumo</strong></td>
+                                            <td class="text-center"><strong>Cantidad</strong></td>
+                                            <td class="text-center"><strong>Valor</strong></td>
+                                            <td class="text-center"><strong>Moneda</strong></td>
+                                            <td class="text-center"><strong>Lote</strong></td>
+                                            <td class="text-center"><strong>Fecha de vencimiento</strong></td>
+                                            <td class="text-center"><strong>Mínimo</strong></td>
+                                            <td class="text-center"><strong>Máximo</strong></td>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="text-center">Insumo selección</td>
+                                            <td class="text-center">01 a infinito</td>
+                                            <td class="text-center">01 a infinito</td>
+                                            <td class="text-center">$ selección</td>
+                                            <td class="text-center">x lote</td>
+                                            <td class="text-center">26/01/1989</td>
+                                            <td class="text-center">1</td>
+                                            <td class="text-center">9999999</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="form-group">
+                                <label>Seleccione el archivo a importar (.xlsx)</label>
+                                <input 
+                                    type="file" 
+                                    class="form-control" 
+                                    accept=".xlsx"
+                                    ref="fileInput"
+                                    @change="handleFileImport"
+                                >
+                            </div>
+                            
+                            <div class="text-right">
+                                <button 
+                                    type="button" 
+                                    class="btn btn-sm btn-default"
+                                    @click="showImportSection = false"
+                                >
+                                    Cancelar
+                                </button>
+                                <button 
+                                    type="button" 
+                                    class="btn btn-sm btn-primary"
+                                    @click="importData"
+                                    :disabled="!importFile"
+                                >
+                                    Procesar Importación
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <v-client-table id="helpTable"
                 :columns="columns" :data="records" :options="table_options">
                 <div slot="name" slot-scope="props" class="text-center">
@@ -322,8 +437,8 @@
                     </div>
                 </div>
             </v-client-table>
-
         </div>
+
         <div class="card-footer text-right">
             <div class="row">
                 <div class="col-md-3 offset-md-9" id="helpParamButtons">
@@ -347,10 +462,9 @@
                     </button>
                 </div>
             </div>
-        </div>
+        </div>            
     </section>
 </template>
-
 <script>
     export default {
         data() {
@@ -367,6 +481,7 @@
                     general_observations: '',
                     warehouse_inventory_products: [],
                 },
+                loading: false,
                 bring_purchase_info: false,
                 warehouse_inventory_product: {
                     id: '',
@@ -397,6 +512,11 @@
                 /** Revisar */
                 editIndex: null,
                 warehouse_product_attributes: [],
+
+                /** importación */
+                showImportSection: false,
+                importFile: null,
+                importErrors: [],
             }
         },
         props: {
@@ -419,6 +539,20 @@
             }
         },
         methods: {
+            showSuccessNotification(message) {
+                // Si tienes vue-notification instalado
+                if (this.$notify) {
+                    this.$notify({
+                        type: 'success',
+                        title: 'Éxito',
+                        text: message,
+                        duration: 3000
+                    });
+                } else {
+                    // Fallback básico
+                    alert(message);
+                }
+            },
             reset(all = true) {
                 if (all) {
                     this.record = {
@@ -546,6 +680,9 @@
                 var currency_name = '';
                 var warehouse_product_name = '';
 
+                vm.warehouse_inventory_product.batch_number = String(vm.warehouse_inventory_product.batch_number || '');
+
+
                 if (this.isDuplicateProduct(this.warehouse_inventory_product, this.editIndex)) {
                     this.errors.push('Ya existe un insumo registrado con ese mismo lote. Por favor, modifique la cantidad.');
                     this.reset(false);
@@ -594,8 +731,9 @@
             editProduct(index, event) {
                 this.reset(false);
                 this.editIndex = index-1;
-                this.warehouse_inventory_product = this.records[index - 1];
-
+                this.warehouse_inventory_product = {...this.records[index - 1]};
+                
+                this.warehouse_inventory_product.batch_number = String(this.warehouse_inventory_product.batch_number || '');
 
                 $.each(this.warehouse_inventory_product.warehouse_product_attributes, function(index, campo) {
                     var element = document.getElementById(campo.name);
@@ -646,7 +784,45 @@
             createReception(url) {
                 const vm = this;
                 vm.record.warehouse_inventory_products = vm.records;
-                vm.createRecord('warehouse/receptions');
+                
+                // Limpiar errores previos
+                vm.errors = [];
+                
+                axios.post(url, vm.record)
+                    .then(response => {
+                        if (response.data.result) {
+                            window.location.href = response.data.redirect;
+                        } else {
+                            // Error del servidor (año fiscal, configuración, etc.)
+                            if (response.data.message) {
+                                vm.errors.push(response.data.message);
+                            }
+                            if (response.data.redirect) {
+                                // Si hay redirección específica para error
+                                window.location.href = response.data.redirect;
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        if (error.response) {
+                            if (error.response.status === 422) {
+                                // Procesar errores de validación
+                                const validationErrors = error.response.data.errors;
+                                for (const field in validationErrors) {
+                                    if (validationErrors.hasOwnProperty(field)) {
+                                        // Convertir los errores del campo a mensajes legibles
+                                        validationErrors[field].forEach(errorMessage => {
+                                            vm.errors.push(errorMessage);
+                                        });
+                                    }
+                                }
+                            } else {
+                                vm.errors.push('Ocurrió un error al procesar la solicitud');
+                            }
+                        } else {
+                            vm.errors.push('Error de conexión con el servidor');
+                        }
+                    });
             },
             loadReception(id) {
                 const vm = this;
@@ -696,7 +872,205 @@
                     });
                 });
             },
+
+            /**
+             * Exporta una plantilla Excel con los productos disponibles en el almacén seleccionado
+             */
+             exportTemplate() {
+                if (!this.record.warehouse_id || !this.record.institution_id) {
+                    this.errors.push('Debe seleccionar una institución y un almacén antes de exportar la plantilla');
+                    return;
+                }
+
+                this.loading = true;
+                
+                // Construye la URL correctamente
+                const url = `/warehouse/receptions/export-template?warehouse_id=${this.record.warehouse_id}&institution_id=${this.record.institution_id}`;
+
+
+                console.log(url);
+
+
+
+
+                axios({
+                    url: url.toString(),
+                    method: 'GET',
+                    responseType: 'blob'
+                }).then(response => {
+                    const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
+                    const link = document.createElement('a');
+                    link.href = blobUrl;
+                    
+                    // Obtener nombre del archivo del header o usar uno por defecto
+                    const contentDisposition = response.headers['content-disposition'];
+                    let fileName = 'plantilla_recepcion_almacen.xlsx';
+                    
+                    if (contentDisposition) {
+                        const fileNameMatch = contentDisposition.match(/filename="(.+)"/);
+                        if (fileNameMatch && fileNameMatch.length === 2) {
+                            fileName = fileNameMatch[1];
+                        }
+                    }
+                    
+                    link.setAttribute('download', fileName);
+                    document.body.appendChild(link);
+                    link.click();
+                    
+                    // Limpieza
+                    window.URL.revokeObjectURL(blobUrl);
+                    link.remove();
+                }).catch(error => {
+                    console.error('Error en la descarga:', error);
+                    this.errors.push('Error al descargar la plantilla');
+                    
+                    if (error.response && error.response.status === 404) {
+                        this.errors.push('La ruta de exportación no fue encontrada');
+                    }
+                }).finally(() => {
+                    this.loading = false;
+                });
+            },
+
+            /**
+             * Maneja la selección del archivo a importar
+             */
+            handleFileImport(event) {
+                this.importFile = event.target.files[0];
+                this.importErrors = [];
+            },
+                        
+            /**
+             * Procesa el archivo importado
+             */
+             
+            importData() {
+                if (!this.importFile) {
+                    this.errors = ['El campo archivo es obligatorio'];
+                    return;
+                }
+                
+                const formData = new FormData();
+                formData.append('file', this.importFile);
+                formData.append('institution_id', this.record.institution_id);
+                formData.append('warehouse_id', this.record.warehouse_id);
+                
+                // Agregar información de compra según corresponda
+                if (this.bring_purchase_info) {
+                    formData.append('direct_hire', this.record.purchase_direct_hire_id);
+                    if (this.record.purchase_supplier_id) {
+                        formData.append('supplier', this.record.purchase_supplier_id);
+                    }
+                } else {
+                    formData.append('direct_hire', this.record.direct_hire);
+                    if (this.record.supplier) {
+                        formData.append('supplier', this.record.supplier);
+                    }
+                }
+                
+                formData.append('reception_date', this.record.reception_date);
+                formData.append('general_observations', this.record.general_observations);
+                
+                this.loading = true;
+                this.errors = [];
+
+                axios.post('/warehouse/receptions/import', formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                }).then(response => {
+                    if (response.data.success) {
+                        // Agregar los productos importados a la lista
+                        response.data.records.forEach(product => {
+                            if (!this.isDuplicateProduct(product)) {
+                                this.records.push(product);
+                            }
+                        });
+                        
+                        //this.showSuccessNotification('Los productos se importaron correctamente');
+                        this.showImportSection = false;
+                        this.importFile = null;
+                    } else {
+                        // Mostrar errores de validación
+                        if (response.data.errors) {
+                            this.errors = response.data.errors;
+                        } else {
+                            this.errors = ['Ocurrió un error al procesar el archivo'];
+                        }
+                    }
+                }).catch(error => {
+                    if (error.response) {
+                        if (error.response.status === 422) {
+                            // Errores de validación del formulario
+                            if (error.response.data.errors) {
+                                this.errors = error.response.data.errors;
+                            }
+                            
+                            // Si hay registros válidos a pesar de los errores
+                            if (error.response.data.records) {
+                                error.response.data.records.forEach(product => {
+                                    if (!this.isDuplicateProduct(product)) {
+                                        this.records.push(product);
+                                    }
+                                });
+                            }
+                        } else {
+                            this.errors = ['Ocurrió un error al procesar el archivo'];
+                        }
+                    } else {
+                        this.errors = ['Ocurrió un error al procesar el archivo'];
+                    }
+                }).finally(() => {
+                    this.loading = false;
+                    // Limpiar el input de archivo
+                    if (this.$refs.fileInput) {
+                        this.$refs.fileInput.value = '';
+                    }
+                });
+            },
+
+            /**
+             * Oculta los campos de ingreso manual cuando se está importando
+             */
+            hideManualInputs() {
+                return this.showImportSection;
+            },
         },
+
+        computed: {
+            formattedErrors() {
+                return this.errors.flatMap(error => {
+                    // Si el error es un string, lo devolvemos tal cual
+                    if (typeof error === 'string') {
+                        return [error];
+                    }
+                    
+                    // Si el error tiene la estructura { row: {...}, errors: [...] }
+                    if (error.row && error.errors) {
+                        const row = error.row;
+                        const productName = row.nombre_del_insumo || 'Fila sin nombre';
+                        const rowNumber = error.row_number ? `Fila ${error.row_number}` : 'Fila desconocida';
+                        
+                        return error.errors.map(err => {
+                            if (err.includes('fecha') || err === 'El formato de fecha debe ser dd/mm/yyyy') {
+                                return `${rowNumber} - El insumo "${productName}" tiene el siguiente error en la columna fecha: "El formato de fecha debe ser dd/mm/yyyy"`;
+                            }
+                            return `${rowNumber} - El insumo "${productName}" tiene el siguiente error: ${err}`;
+                        });
+                    }
+                    
+                    // Para cualquier otro formato de error, lo convertimos a string
+                    return [JSON.stringify(error)];
+                });
+            },
+            /**
+             * Determina si los campos de ingreso manual deben mostrarse
+             */
+            showManualInputs() {
+                return !this.showImportSection;
+            }
+        },
+
         created() {
             this.table_options.headings = {
                 'name':                         'Insumo',

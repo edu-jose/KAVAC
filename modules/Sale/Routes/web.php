@@ -540,5 +540,39 @@ Route::group(
             'reports/bills/pdf/{value?}',
             'Reports\SaleBillReportController@pdf'
         );
+
+        /*
+         | ----------------------------------------------------------
+         | Rutas para gestionar Gestión de Clientes
+         | ----------------------------------------------------------
+         */
+        Route::resource(
+            '/customer-management',
+            'SaleCustomerManagementController',
+            ['as' => 'sale', 'except' => ['create','edit','show']]
+        );
+
+        // Ruta para listar clientes (GET)
+        Route::get('customer-management/vue-list', 'SaleCustomerManagementController@vueList')
+            ->name('sale.customer-management.vue-list');
+        // Ruta para formulario de creación (GET)
+        Route::get('customer-management/create', 'SaleCustomerManagementController@create')
+             ->name('sale.customer-management.create');
+        // Ruta para formulario de guardar (GET)
+        Route::post('customer-management/store', 'SaleCustomerManagementController@store')
+             ->name('sale.customer-management.store');
+        // Ruta para  actualziar (GET)
+        Route::put('customer-management/store/{id}', 'SaleCustomerManagementController@update');
+                // Ruta para formulario de edición (GET)
+        Route::get('customer-management/{id}/edit', 'SaleCustomerManagementController@edit')
+             ->name('sale.customer-management.edit');
+        // Ruta para eliminar (DELETE)
+        Route::delete('customer-management/delete/{id}', 'SaleCustomerManagementController@destroy')
+             ->name('sale.customer-management.destroy');
+        // Ruta para traer valores (edit)
+        Route::get('customer-management/{id}', 'SaleCustomerManagementController@getCustomer');
+        // Ruta para traer valores (show)
+        Route::get('customer-management/{id}', 'SaleCustomerManagementController@show')
+            ->name('sale.customer-management.show');
     }
 );

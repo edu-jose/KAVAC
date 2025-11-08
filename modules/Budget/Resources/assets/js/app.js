@@ -29,6 +29,7 @@ import BudgetConsolidated from './components/reports/BudgetConsolidatedComponent
 import BudgetModifications from './components/reports/BudgetModificationsReportComponent.vue';
 import BudgetButtonPrintWithModal from './components/buttons/BudgetButtonPrintWithModalComponent.vue';
 import BudgetButtonExportWithModal from './components/buttons/BudgetButtonExportWithModalComponent.vue';
+import BudgetBudgetaryAvailabilityForm from './components/budgetary_availability/BudgetBudgetaryAvailabilityFormComponent.vue';
 
 /**
  * Componente para mostrar listado del clasificador de cuentas presupuestarias
@@ -243,6 +244,13 @@ Vue.component('budget-print-with-modal', BudgetButtonPrintWithModal);
  * @author Juan Rosas <jrosas@cenditel.gob.ve> | <juan.rosasr01@gmail.com>
  */
 Vue.component('budget-export-with-modal', BudgetButtonExportWithModal);
+
+/**
+ * Componente para mostrar modal e imprimir reportes de formulación
+ *
+ * @author Juan Rosas <jrosas@cenditel.gob.ve> | <juan.rosasr01@gmail.com>
+ */
+Vue.component('budget-budgetary-availability-form', BudgetBudgetaryAvailabilityForm);
 
 /**
  * Opciones de configuración global del módulo de presupuesto

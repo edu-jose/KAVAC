@@ -30,7 +30,7 @@ class PurchaseBudgetAvailabilityPayrollResource extends JsonResource
 
         $common_fields = [
             'id' => $this->resource->id,
-            'budgetary_availability_code' => $this->resource->purchaseCommonBudgetaryAvailability?->code ?? '',
+            'budgetary_availability_code' => $this->resource->budgetCommonBudgetaryAvailability?->code ?? '',
             'code' => $this->resource->code ?? '',
             'description' => $this->resource->name ?? '',
             'currency_name' => $currency->name ?? '',

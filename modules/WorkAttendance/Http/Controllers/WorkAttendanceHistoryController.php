@@ -55,9 +55,12 @@ class WorkAttendanceHistoryController extends Controller
 
     protected $saveGraphPattern = '#^data:image/\w+;base64,#i';
 
+    protected $defaultTime = '00:00:00';
+
     public function __construct()
     {
         $this->middleware('permission:workattendance.history.index');
+        $this->middleware('permission:workattendance.history.update', ['only' => ['update']]);
     }
 
     /**
@@ -69,7 +72,35 @@ class WorkAttendanceHistoryController extends Controller
      */
     public function index()
     {
-        return view('workattendance::reports.history.general');
+        $canUpdate = auth()->user()->getPermissions()->contains('slug', 'workattendance.history.update');
+        $canRegister = auth()->user()->getPermissions()->contains('slug', 'workattendance.manual.store');
+        return view(
+            'workattendance::reports.history.general',
+            compact('canUpdate', 'canRegister')
+        );
+    }
+
+    public function update(Request $request, $id)
+    {
+        $workAttendance = WorkAttendance::findOrFail($id);
+        if (!$workAttendance) {
+            return response()->json(['result' => false], 400);
+        }
+        $workAttendance->update([
+            'entry_time' => $request->entry_time,
+            'exit_time' => $request->exit_time,
+        ]);
+        $entry = Carbon::parse(
+            $request->entry_time ?? $request->exit_time ?? $this->defaultTime
+        )->format($this->formatDateTime);
+        $exit = Carbon::parse(
+            $request->exit_time ?? $request->entry_time ?? $this->defaultTime
+        )->format($this->formatDateTime);
+        $time = Carbon::parse($exit)->diffInSeconds(Carbon::parse($entry)) / 60;
+        $hours = floor($time / 60);
+        $minutes = $time % 60;
+        $workTime = sprintf('%02d:%02d', $hours, $minutes);
+        return response()->json(['result' => true, 'workTime' => $workTime ?? '00:00'], 200);
     }
 
     /**
@@ -216,13 +247,13 @@ class WorkAttendanceHistoryController extends Controller
             $workAttendance['work_time'] = (float)number_format(Carbon::parse(
                 Carbon::parse(
                     $workAttendance->date_at . " " . Carbon::parse(
-                        $workAttendance->exit_time ?? $workAttendance->entry_time ?? '00:00:00'
+                        $workAttendance->exit_time ?? $workAttendance->entry_time ?? $this->defaultTime
                     )->format('H:i:s')
                 )->format($this->formatDateTime)
             )->diffInSeconds(Carbon::parse(
                 Carbon::parse(
                     $workAttendance->date_at . " " . Carbon::parse(
-                        $workAttendance->entry_time ?? $workAttendance->exit_time ?? '00:00:00'
+                        $workAttendance->entry_time ?? $workAttendance->exit_time ?? $this->defaultTime
                     )->format('H:i:s')
                 )->format($this->formatDateTime)
             )) / 60, 2);

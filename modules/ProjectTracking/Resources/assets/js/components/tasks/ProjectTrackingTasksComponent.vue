@@ -531,8 +531,10 @@ export default {
                 return;
             }
             if (!vm.record.tasks && !vm.isUpdateMode) {
-                vm.errors.push('Debes agregar al menos una tarea.');
-                return;
+                if (!vm.validateForm()) {
+                    vm.errors.push('Debes agregar al menos una tarea.');
+                    return;
+                }
             }
             vm.createRecord('projecttracking/tasks');
         },

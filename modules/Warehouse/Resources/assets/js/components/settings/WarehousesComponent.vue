@@ -57,6 +57,16 @@
                                 </div>
                             </div>
                             <div class="col-md-4">
+                                <div class="form-group is-required">
+                                    <label for="payroll-staffs">Responsable de almacén:</label>
+                                    <v-multiselect data-toggle="tooltip"
+                                                            title="Indique los responsables de almacén"
+                                                            track_by="text" :hide_selected="false" :options="payroll_staffs"
+                                                            v-model="record.payroll_staffs" style="margin-top: -26px;">
+                                                        </v-multiselect>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="form-group">
                                     <label for="" class="control-label">Activo</label>
                                     <div class="col-12">
@@ -164,6 +174,14 @@
                                 <span v-if="props.row.warehouse.active">Activo</span>
                                 <span v-else>Inactivo</span>
                             </div>
+                            <div slot="responsibles" slot-scope="props">
+                                <p v-for="(responsible, index) in props.row.warehouse.responsibles"
+                                      :key="index">
+                                    {{
+                                        responsible.text.split(' - ')[1]
+                                        }}
+                                </p>
+                            </div>
                             <div slot="id" slot-scope="props" class="text-center">
                                 <div class="d-inline-flex">
                                     <button @click="editRecord(props.index, $event)"
@@ -201,14 +219,24 @@
                     estate_id:       '',
                     municipality_id: '',
                     parish_id:       '',
-
+                    payroll_staffs:  [],
                 },
 
                 multi_warehouse:   null,
                 multi_institution: null,
                 errors:            [],
                 records:           [],
-                columns:           ['name', 'country', 'estate', 'address', 'institution','active', 'id'],
+                columns:           [
+                    'name',
+                    'country',
+                    'estate',
+                    'address',
+                    'institution',
+                    'active',
+                    'responsibles',
+                    'id',
+                ],
+                payroll_staffs:    [],
                 institutions:      [],
                 countries:         [],
                 estates:           [],
@@ -217,6 +245,15 @@
             }
         },
         methods: {
+            getResponsibleNames(responsibles) {
+                const originalNames = responsibles.map(responsible => responsible.text);
+                const names = textValues.map(text => {
+  const parts = text.split(' - ');
+  return parts[1];
+});
+const namesString = names.join(', ');
+return namesString;
+            },
             /**
              * Método que borra todos los datos del formulario
              *
@@ -235,6 +272,7 @@
                     estate_id:       '',
                     municipality_id: '',
                     parish_id:       '',
+                    payroll_staffs:  [],
                 };
 
                 vm.errors = [];
@@ -293,6 +331,7 @@
                 vm.record = field.warehouse;
                 vm.record.institution_id = field.institution_id;
                 vm.record.country_id = field.warehouse.parish.municipality.estate.country_id;
+                vm.record.payroll_staffs = field.warehouse.responsibles;
                 var elements = {
                     active: vm.record.active,
                     main: field.main,
@@ -309,6 +348,7 @@
                 'address':     'Dirección',
                 'institution': 'Gestionado por',
                 'active':      'Estatus',
+                'responsibles': 'Responsables',
                 'id':          'Acción'
             };
 
@@ -325,11 +365,13 @@
                 'country':     'col-xs-2',
                 'estate':      'col-xs-2',
                 'address':     'col-xs-2',
-                'institution': 'col-xs-2',
-                'active':      'col-xs-2',
+                'institution': 'col-xs-1',
+                'active':      'col-xs-1',
+                'responsibles': 'col-xs-3',
                 'id':          'col-xs-1'
             };
 
+            vm.getPayrollStaffs('all-with-user');
             vm.getCountries();
             vm.getInstitutions();
             vm.getSetting('/warehouse/vue-setting');

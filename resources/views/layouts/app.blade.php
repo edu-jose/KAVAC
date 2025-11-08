@@ -235,6 +235,13 @@
                         e.preventDefault();
                         undelete_record($(this).data('route'));
                     });
+                    $('.datatable').on('draw.dt', function () {
+                        $('.btn-undelete-record').on('click', function(e) {
+                            if (!$('.modal').hasClass('show')) {
+                                undelete_record($(this).data('route'));
+                            }
+                        });
+                    });
                     $('#btnLogout').on('click', function() {
                         $('#logout-form').submit();
                     });
@@ -544,6 +551,10 @@
                  * @param  {string} url URL que recibe la petición y ejecuta la acción
                  */
                 function undelete_record(url) {
+                    if (isModalOpen) {
+                        return;
+                    }
+                    isModalOpen = true;
                     bootbox.confirm('{{ __('Esta seguro de querer restaurar este registro?') }}', function (result) {
                         if (result) {
                             /** Ajax config csrf token */
@@ -572,6 +583,7 @@
                                 }
                             });
                         }
+                        isModalOpen = false;
                     });
                 }
 

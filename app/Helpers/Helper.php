@@ -1084,8 +1084,15 @@ if (! function_exists('restoreSoftDeletedRelatedModels')) {
         foreach ($relationships as $relationshipName => $relationship) {
             // Verificar si la relación no es nula
             if ($relationship) {
-                // Sí la refelación es payrollFinancial, se guarda la primera posicion del array
-                $relation = ($relationshipName == 'payrollFinancial') ? $relationship[0] : $relationship;
+                // Validación: Verificar si la relación es 'payrollFinancial' y es un array no vacío
+                if ($relationshipName == 'payrollFinancial' && is_array($relationship) && !empty($relationship)) {
+                    // Sí la refelación es payrollFinancial, se guarda la primera posicion del array
+                    $relation = $relationship[0];
+                } elseif ($relationshipName != 'payrollFinancial') {
+                    // Para otras relaciones, se usa el valor directamente
+                    $relation = $relationship;
+                }
+
                 // Verificar si el modelo relacionado utiliza SoftDeletes
                 if (in_array('Illuminate\Database\Eloquent\SoftDeletes', class_uses($relation))) {
                     // Restaurar los registros eliminados tempóralmete para el modelo relacionado

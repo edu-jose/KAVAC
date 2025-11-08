@@ -7,6 +7,7 @@ use Illuminate\Contracts\Support\Renderable;
 use Illuminate\Routing\Controller;
 use Modules\Budget\Models\CodeSetting;
 use App\Rules\CodeSetting as CodeSettingRule;
+use Modules\Budget\Models\BudgetBudgetaryAvailability;
 use Modules\Budget\Models\BudgetCompromise;
 use Modules\Budget\Models\BudgetProject;
 use Modules\Budget\Models\BudgetSubSpecificFormulation;
@@ -78,7 +79,7 @@ class BudgetSettingController extends Controller
         $pCode = $codeSettings->where('table', 'budget_payed')->first();
 
         /* Contiene información sobre la configuración de código para la disponibilidad presupuestaria manual */
-        $bamCode = $codeSettings->where('table', 'purchase_budgetary_availabilities')->first();
+        $bamCode = $codeSettings->where('table', 'budget_budgetary_availabilities')->first();
 
         return view('budget::settings', compact(
             'projects',
@@ -196,15 +197,15 @@ class BudgetSettingController extends Controller
                     $model = BudgetCompromise::class;
                 } elseif ($key === 'budgetary_availabilities_code') {
                     /* Define el modelo asociado a las disponibilidades presupuestarias */
-                    $model = \Modules\Purchase\Models\PurchaseBudgetaryAvailability::class;
+                    $model = BudgetBudgetaryAvailability::class;
                 }
 
                 // Si el caso es budgetary_availabilities_code.
                 if ($key === 'budgetary_availabilities_code') {
                     // Buscar en la base de datos la existencia de un código igual.
                     $codeSetting = CodeSetting::where([
-                        'module' => 'purchase',
-                        'table'  => 'purchase_budgetary_availabilities',
+                        'module' => 'budget',
+                        'table'  => 'budget_budgetary_availabilities',
                         'field'  => 'code',
                         'type'   => null
                     ])->first();
@@ -215,8 +216,8 @@ class BudgetSettingController extends Controller
                     */
                     if (!isset($codeSetting)) {
                         $codeSetting = CodeSetting::create([
-                            'module'        => 'purchase',
-                            'table'         => 'purchase_budgetary_availabilities',
+                            'module'        => 'budget',
+                            'table'         => 'budget_budgetary_availabilities',
                             'field'         => 'code',
                             'type'          => null,
                             'format_prefix' => $prefix,

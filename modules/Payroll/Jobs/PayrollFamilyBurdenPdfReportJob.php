@@ -4,9 +4,9 @@ namespace Modules\Payroll\Jobs;
 
 use App\Models\Institution;
 use Illuminate\Bus\Queueable;
-use App\Notifications\SystemNotification;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
+use App\Notifications\SystemNotification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Modules\Payroll\Models\PayrollSocioeconomic;
@@ -210,9 +210,9 @@ class PayrollFamilyBurdenPdfReportJob implements ShouldQueue
             $this->user->notify(new SystemNotification('Carga Familiar', 'Lo sentimos, no se han encontrado registros que coincidan con los parámetros proporcionados para el reporte de carga familiar.'));
             throw new \Exception('No hay registros que procesar para el reporte de carga familiar');
         }
-        $records->chunk(100)->each(function ($chunk, $index) {
+        $records->chunk(50)->each(function ($chunk, $index) {
             $filename = $this->filename . '-' . $index . '.pdf';
-            $this->generatePdf($chunk, $filename);
+            $this->generatePdf($chunk, $filename, $index);
         });
     }
 
@@ -225,8 +225,14 @@ class PayrollFamilyBurdenPdfReportJob implements ShouldQueue
         fclose($file);
     }
 
-    private function generatePdf($records, $filename)
+    private function generatePdf($records, $filename, $index)
     {
+        $hasbanner = 0;
+        $hasLogo = 0;
+        if ($index == "0") {
+            $hasbanner = true;
+            $hasLogo = true;
+        }
         $pdf = new ReportRepository();
         $this->addFilenameToTxtFile($filename, $this->fileroute);
         $pdf->setConfig(
@@ -238,7 +244,7 @@ class PayrollFamilyBurdenPdfReportJob implements ShouldQueue
             ]
         );
 
-        $pdf->setHeader('Reporte de carga familiar');
+        $pdf->setHeader('Reporte de carga familiar', '', false, false, $hasbanner, $hasLogo);
         $pdf->setFooter(true, strip_tags($this->institution->legal_address));
         $pdf->setBody(
             $this->pdfBody,

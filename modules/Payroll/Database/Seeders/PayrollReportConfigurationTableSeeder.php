@@ -40,6 +40,10 @@ class PayrollReportConfigurationTableSeeder extends Seeder
                 'p_key' => 'zero_concept',
                 'p_value' => 'true'
             ],
+            [
+                'p_key' => 'max_digits',
+                'p_value' => 2
+            ],
         ];
 
         DB::transaction(function () use ($PayrollReportConfigurations) {

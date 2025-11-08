@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\ServiceProvider;
 use Modules\Budget\Console\Commands\FixBudgetCancelPayroll;
 use Modules\Budget\Console\Commands\UpdateStatusModifications;
+use Modules\Budget\Console\Commands\UpdateDataBudgetaryAvailability;
+use Modules\Budget\Console\Commands\UpdateStatusBudgetaryAvailability;
 
 /**
  * @class BudgetServiceProvider
@@ -159,7 +161,9 @@ class BudgetServiceProvider extends ServiceProvider
             // Registrar comandos solo si se está ejecutando en la consola
             $this->commands([
                 UpdateStatusModifications::class,
-                FixBudgetCancelPayroll::class
+                FixBudgetCancelPayroll::class,
+                UpdateDataBudgetaryAvailability::class,
+                UpdateStatusBudgetaryAvailability::class
             ]);
         }
     }

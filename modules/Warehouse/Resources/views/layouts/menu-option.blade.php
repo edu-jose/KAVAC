@@ -81,6 +81,11 @@
                     <a href="{{ route('warehouse.report.stocks') }}">
                     Reporte de mínimo inventario</a>
                 </li>
+                <li title="Reporte de consumo"
+                    data-toggle="tooltip" data-placement="right"
+                    class='{!! set_active_menu('warehouse.report.consumption') !!}'>
+                    <a href="{{ route('warehouse.report.consumption') }}">Reporte de consumo</a>
+                </li>
             </ul>
         </li>
     </ul>

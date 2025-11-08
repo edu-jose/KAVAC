@@ -27,6 +27,27 @@
                 <div class="col-md-12">
                     <b>Datos de la solicitud</b>
                 </div>
+                <div class="col-md-4" id="helpInstitution">
+                    <div class="form-group is-required">
+                        <label for="institution">Nombre de la organización:</label>
+                        <select2
+                            :options="institutions"
+                            @input="getWarehouses"
+                            v-model="record.institution_id">
+                        </select2>
+                        <input type="hidden" v-model="record.id">
+                    </div>
+                </div>
+                <div class="col-md-4" id="helpWarehouse">
+                    <div class="form-group is-required">
+                        <label for="warehouse">Nombre del almacén:</label>
+                        <select2 id="warehouse"
+                            :options="warehouses"
+                            @input="getWarehouseProducts"
+                            v-model="record.warehouse_id">
+                        </select2>
+                    </div>
+                </div>
                 <div class="col-md-4" id="helpWarehouseRequestDate">
                     <div class="form-group is-required">
                         <label>Fecha de la solicitud</label>
@@ -40,22 +61,7 @@
                         <input type="hidden" v-model="record.id">
                     </div>
                 </div>
-                <div class="col-md-8" id="helpWarehouseRequestMotive">
-                    <div class="form-group is-required">
-                        <label>Motivo de la solicitud</label>
-                        <ckeditor
-                            :editor="ckeditor.editor"
-                            data-toggle="tooltip"
-                            title="Indique el motivo de la solicitud (requerido)"
-                            :config="ckeditor.editorConfig"
-                            class="form-control"
-                            tag-name="textarea"
-                            rows="3"
-                            v-model="record.motive"
-                        ></ckeditor>
-                    </div>
-                </div>
-                <div class="col-md-4" id="helpWarehouseRequestDepartment">
+                                <div class="col-md-4" id="helpWarehouseRequestDepartment">
                     <div class="form-group is-required">
                         <label>Solicitante</label>
                         <select2 :options="payroll_staffs" v-model="record.payroll_staff_id">
@@ -78,6 +84,21 @@
                         ></select2>
                     </div>
                 </div>
+                <div class="col-md-8" id="helpWarehouseRequestMotive">
+                    <div class="form-group is-required">
+                        <label>Motivo de la solicitud</label>
+                        <ckeditor
+                            :editor="ckeditor.editor"
+                            data-toggle="tooltip"
+                            title="Indique el motivo de la solicitud (requerido)"
+                            :config="ckeditor.editorConfig"
+                            class="form-control"
+                            tag-name="textarea"
+                            rows="3"
+                            v-model="record.motive"
+                        ></ckeditor>
+                    </div>
+                </div>
             </div>
 
             <hr>
@@ -88,7 +109,7 @@
                 id="helpTable"
                 @row-click="toggleActive"
                 :columns="columns"
-                :data="records"
+                :data="warehouse_products"
                 :options="table_options"
             >
                 <div slot="h__check" class="text-center">
@@ -228,7 +249,12 @@ export default {
                 payroll_staff_id: '',
                 request_date: '',
                 warehouse_products: [],
+                institution_id: '',
+                warehouse_id: '',
             },
+            institutions: [],
+            warehouses: [],
+            warehouse_products: [],
             editIndex: null,
             records: [],
             productsQuantity: [],
@@ -277,10 +303,18 @@ export default {
             }
         }
     },
-    created() {
-        this.getPayrollStaffs();
+    async created() {
+        await this.getInstitutions();
+        await this.getWarehouses();
+        await this.getWarehouseProducts();
+        await this.getPayrollPositions();
+        await this.getPayrollStaffs();
         //this.initForm('/warehouse/requests/vue-list-products');
-        this.initForm('/warehouse/requests/vue-list-products/' + this.requestid);
+        await this.initForm('/warehouse/requests/vue-list-products/' + this.requestid);
+
+        if (this.requestid) {
+            await this.loadRequest(this.requestid);
+        }
     },
     props: {
         requestid: Number,
@@ -291,6 +325,7 @@ export default {
         },
     },
     methods: {
+
         toggleActive({ row }) {
             const vm = this;
             var checkbox = document.getElementById('checkbox_' + row.id);
@@ -435,29 +470,29 @@ export default {
             const vm = this;
             var fields = {};
 
-            await axios.get('/warehouse/requests/staff/info/' + id).then(response => {
-                if (typeof (response.data.records != "undefined")) {
-                    fields = response.data.records;
-                    vm.record = {
-                        id: fields.id,
-                        motive: fields.motive,
-                        institution_id: '1',
-                        department_id: fields.department_id,
-                        payroll_position_id: (fields.payroll_staff)
-                            ? fields.payroll_staff.payroll_employment.payroll_position_id : '',
-                        payroll_staff_id: fields.payroll_staff_id,
-                        request_date: fields.request_date
-                            ? vm.format_date(fields.request_date, 'YYYY-MM-DD')
-                            : vm.format_date(fields.created_at, 'YYYY-MM-DD'),
-                    };
-                    $.each(fields.warehouse_inventory_product_requests, function (index, campo) {
-                        if (campo.warehouse_inventory_product_id) {
-                            vm.input_values[campo.warehouse_inventory_product_id] = campo.quantity;
-                            vm.selected.push(campo.warehouse_inventory_product_id);
-                        }
-                    });
-                }
-            });
+            const response = await axios.get('/warehouse/requests/staff/info/' + id)
+            if (typeof (response.data.records != "undefined")) {
+                fields = response.data.records;
+                vm.record = {
+                    id: fields.id,
+                    motive: fields.motive,
+                    institution_id: '1',
+                    warehouse_id: fields.warehouse_id,
+                    department_id: fields.department_id,
+                    payroll_position_id: (fields.payroll_staff)
+                        ? fields.payroll_staff.payroll_employment.payroll_position_id : '',
+                    payroll_staff_id: fields.payroll_staff_id,
+                    request_date: fields.request_date
+                        ? vm.format_date(fields.request_date, 'YYYY-MM-DD')
+                        : vm.format_date(fields.created_at, 'YYYY-MM-DD'),
+                };
+                $.each(fields.warehouse_inventory_product_requests, function (index, campo) {
+                    if (campo.warehouse_inventory_product_id) {
+                        vm.input_values[campo.warehouse_inventory_product_id] = campo.quantity;
+                        vm.selected.push(campo.warehouse_inventory_product_id);
+                    }
+                });
+            }
         },
 
         createRequest(url) {
@@ -610,11 +645,6 @@ export default {
         numberDecimal(num, dec) {
             var exp = Math.pow(10, dec || 2);
             return parseInt(num * exp, 10) / exp;
-        }
-    },
-    mounted() {
-        if (this.requestid) {
-            this.loadRequest(this.requestid);
         }
     },
 };

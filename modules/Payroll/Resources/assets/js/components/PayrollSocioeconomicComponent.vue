@@ -55,7 +55,6 @@
                             id="marital_status_id"
                             :options="marital_status"
                             v-model="record.marital_status_id"
-                            :disabled="isEditMode"
                         ></select2>
                     </div>
                 </div>
@@ -64,7 +63,7 @@
             <h6 class="card-title" id="helpSocioeconomicChildren">
                 Carga Familiar
                 <i
-                    class="fa fa-plus-circle cursor-pointer"
+                    class="cursor-pointer fa fa-plus-circle"
                     @click="addPayrollChildren"
                 ></i>
             </h6>
@@ -454,7 +453,7 @@
             </div>
         </div>
 
-        <div class="card-footer text-right" id="helpParamButtons">
+        <div class="text-right card-footer" id="helpParamButtons">
             <button
                 class="btn btn-default btn-icon btn-round"
                 data-toggle="tooltip"
@@ -538,6 +537,93 @@
                     survivor_payroll_account_number: '',
                     survivor_finance_bank_id: '',
                 };
+            },
+
+            /**
+             * Método que permite crear o actualizar un registro
+             *
+             * @author  Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
+             *
+             * @param  {string} url    Ruta de la acción a ejecutar para la creación o actualización de datos
+             * @param  {string} list   Condición para establecer si se cargan datos en un listado de tabla.
+             *                         El valor por defecto es verdadero.
+             * @param  {string} reset  Condición que evalúa si se inicializan datos del formulario.
+             *                         El valor por defecto es verdadero.
+             */
+            async createRecord(url, list = true, reset = true) {
+                const vm = this;
+                url = vm.setUrl(url);
+                if (vm.record.id) {
+                    vm.updateRecord(url);
+                }
+                else {
+                    vm.loading = true;
+                    var fields = {};
+
+                    for (var index in vm.record) {
+                        fields[index] = vm.record[index];
+                    }
+                    await axios.post(url, fields).then(response => {
+                        if (typeof (response.data.redirect) !== "undefined") {
+                            location.href = response.data.redirect;
+                        }
+                        else {
+                            vm.errors = [];
+                            if (reset) {
+                                vm.reset();
+                            }
+                            if (list) {
+                                vm.readRecords(url);
+                            }
+
+                            vm.showMessage('store');
+                        }
+                    }).catch(error => {
+                        vm.errors = [];
+
+                        if (typeof (error.response) != "undefined") {
+                            if (error.response.data.error_code == "ACC_DEL_EXISTS_001") {
+                                vm.showMessage('custom', 'Acción no permitida', 'danger', 'screen-error', error.response.data.message);
+
+                                bootbox.confirm({
+                                    title: "¿Desea restaurar el registro?",
+                                    message: error.response.data.message,
+                                    buttons: {
+                                        cancel: {
+                                            label: '<i class="fa fa-times"></i> Cancelar',
+                                        },
+                                        confirm: {
+                                            label: '<i class="fa fa-check"></i> Restaurar',
+                                        },
+                                    },
+                                    callback: function(result) {
+                                        if (result) {
+                                            vm.restoreRecord('payroll/financials/restore/' + error.response.data.deleted_id);
+                                        }
+                                    },
+                                });
+                            }
+
+                            if (error.response.data.error_code == "ACC_DEL_EXISTS_002") {
+                                vm.showMessage('custom', 'Acción no permitida', 'danger', 'screen-error', error.response.data.message);
+                            }
+
+                            if (error.response.status == 403) {
+                                vm.showMessage('custom', 'Acceso Denegado', 'danger', 'screen-error', error.response.data.message);
+                            }
+
+                            for (var index in error.response.data.errors) {
+                                if (error.response.data.errors[index]) {
+                                    vm.errors.push(error.response.data.errors[index][0]);
+                                }
+                            }
+                        }
+
+                    });
+
+                    vm.loading = false;
+                }
+
             },
 
             /**

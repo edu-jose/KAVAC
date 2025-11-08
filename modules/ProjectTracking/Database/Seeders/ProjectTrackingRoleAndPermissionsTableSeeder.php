@@ -549,6 +549,19 @@ class ProjectTrackingRoleAndPermissionsTableSeeder extends Seeder
         ],
     ];
 
+    protected $reportPermissions = [
+        /* Permisos de Ruta que permite generar el reporte de los empleados */
+        [
+            'name' => 'Crear reporte de trabajadores',
+            'slug' => 'project.tracking.reports.create',
+            'description' => 'Acceso para crear reporte de trabajadores',
+            'model' => '',
+            'model_prefix' => 'Seguimiento',
+            'slug_alt' => 'bienes.reporte.crear',
+            'short_description' => 'generar reporte de trabajadores',
+        ],
+    ];
+
     /**
      * Ejecute el seeder de la base de datos.
      *
@@ -591,7 +604,8 @@ class ProjectTrackingRoleAndPermissionsTableSeeder extends Seeder
             ...$this->prioritiesPermissions,
             ...$this->deliveryPermissions,
             ...$this->workDaysPermissions,
-            ...$this->tagsPermissions
+            ...$this->tagsPermissions,
+            ...$this->reportPermissions
         ];
         $projectTrackingRole->detachAllPermissions();
 

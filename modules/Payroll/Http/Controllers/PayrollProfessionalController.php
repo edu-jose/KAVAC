@@ -504,7 +504,7 @@ class PayrollProfessionalController extends Controller
                     'profession_id' => $payrollStudy['profession_id'],
                 ]));
             }
-            if (!$request->is_student) {
+            if (!$request->is_student && $payrollProfessional->payrollCourse) {
                 Document::where('documentable_id', $payrollProfessional->payrollClassSchedule->id)->delete();
             }
             if ($request->class_schedule_ids && !empty($request->class_schedule_ids)) {
@@ -552,14 +552,20 @@ class PayrollProfessionalController extends Controller
                 $prof = Profession::find($profession['id']);
                 $payrollProfessional->professions()->attach($prof);
             }
-            PayrollCourseFile::where(
-                'payroll_course_id',
-                $payrollProfessional->payrollCourse->id,
-            )->delete();
-            PayrollAcknowledgmentFile::where(
-                'payroll_acknowledgment_id',
-                $payrollProfessional->payrollAcknowledgment->id,
-            )->delete();
+
+            if ($payrollProfessional->payrollCourse) {
+                PayrollCourseFile::where(
+                    'payroll_course_id',
+                    $payrollProfessional->payrollCourse->id,
+                )->delete();
+            }
+            if ($payrollProfessional->payrollAcknowledgment) {
+                PayrollAcknowledgmentFile::where(
+                    'payroll_acknowledgment_id',
+                    $payrollProfessional->payrollAcknowledgment->id,
+                )->delete();
+            }
+
             if ($request->payroll_cou_ack_files && !empty($request->payroll_cou_ack_files)) {
                 foreach ($request->payroll_cou_ack_files as $payrollCouAckFile) {
                     if ($payrollCouAckFile['course']['file_type'] === 'img') {
@@ -659,6 +665,64 @@ class PayrollProfessionalController extends Controller
     public function destroy($id)
     {
         $payrollProfessional = PayrollProfessional::find($id);
+        if (!$payrollProfessional) {
+            return response()->json(['message' => 'Registro no encontrado.'], 404);
+        }
+
+        // Eliminar PayrollClassSchedule si existe
+        if (method_exists($payrollProfessional, 'payrollClassSchedule')) {
+            $classSchedule = $payrollProfessional->payrollClassSchedule;
+            if ($classSchedule) {
+                $classSchedule->delete();
+            }
+        }
+
+        // Eliminar PayrollAcknowledgment y sus archivos primero (clave foránea)
+        if (method_exists($payrollProfessional, 'payrollAcknowledgment')) {
+            $ack = $payrollProfessional->payrollAcknowledgment;
+            if ($ack) {
+                if (method_exists($ack, 'payrollAcknowledgmentFiles')) {
+                    $files = $ack->payrollAcknowledgmentFiles;
+                    if ($files && count($files)) {
+                        foreach ($files as $file) {
+                            $file->delete();
+                        }
+                    }
+                }
+                $ack->delete();
+            }
+        }
+
+        // Eliminar PayrollCourse si existe
+        if (method_exists($payrollProfessional, 'payrollCourse')) {
+            $course = $payrollProfessional->payrollCourse;
+            if ($course) {
+                $course->delete();
+            }
+        }
+
+        // Eliminar relaciones hasMany
+        if (method_exists($payrollProfessional, 'payrollStudies')) {
+            $rel = $payrollProfessional->payrollStudies();
+            if (is_object($rel) && method_exists($rel, 'exists') && $rel->exists()) {
+                $rel->delete();
+            }
+        }
+
+        // Eliminar relaciones belongsToMany (detach)
+        if (method_exists($payrollProfessional, 'professions')) {
+            $rel = $payrollProfessional->professions();
+            if (is_object($rel) && method_exists($rel, 'detach')) {
+                $rel->detach();
+            }
+        }
+        if (method_exists($payrollProfessional, 'payrollLanguages')) {
+            $rel = $payrollProfessional->payrollLanguages();
+            if (is_object($rel) && method_exists($rel, 'detach')) {
+                $rel->detach();
+            }
+        }
+
         $payrollProfessional->delete();
         return response()->json(['record' => $payrollProfessional, 'message' => 'Success'], 200);
     }

@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Institution;
 use App\Models\CodeSetting;
 use App\Models\FiscalYear;
+use App\Models\User;
+use Illuminate\Http\JsonResponse;
+use Modules\Warehouse\Models\Warehouse;
 use Modules\Warehouse\Models\WarehouseInventoryProductMovement;
 use Modules\Warehouse\Models\WarehouseInstitutionWarehouse;
 use Modules\Warehouse\Models\WarehouseInventoryProduct;
@@ -19,6 +22,9 @@ use Modules\Warehouse\Models\WarehouseInventoryRule;
 use Modules\Warehouse\Models\WarehouseProductValue;
 use Modules\Warehouse\Models\WarehouseMovement;
 use Nwidart\Modules\Facades\Module;
+use Maatwebsite\Excel\Facades\Excel;
+use Modules\Warehouse\Exports\WarehouseReceptionExport;
+use Modules\Warehouse\Imports\WarehouseReceptionImport;
 
 /**
  * @class WarehouseReceptionController
@@ -162,7 +168,15 @@ class WarehouseReceptionController extends Controller
     {
         $this->validate($request, $this->validateRules, $this->messages);
 
-        $codeSetting = CodeSetting::where('table', 'warehouse_movements')->first();
+        $warehouse = Warehouse::find($request->warehouse_id);
+        if (!$this->approveWarehouseReception(auth()->user(), $warehouse)) {
+            return response()->json([
+                'result' => false,
+                'message' => 'No posee permisos para hacer ingresos a este almacén',
+            ], JsonResponse::HTTP_FORBIDDEN);
+        }
+
+        $codeSetting = CodeSetting::where('table', 'warehouse_receptions')->first();
         if (is_null($codeSetting)) {
             $request->session()->flash('message', [
                 'type' => 'other', 'title' => 'Alerta', 'icon' => 'screen-error', 'class' => 'growl-danger',
@@ -729,5 +743,129 @@ class WarehouseReceptionController extends Controller
                 ]
             ]);
         }
+    }
+
+    /**
+     * Importar una plantilla Excel con los insumos o productos disponibles en el almacén
+     *
+     * @author Miguel Narvaez <mnarvaez@cenditel.gob.ve>
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function import(Request $request)
+    {
+        $validated = $request->validate([
+            'file' => 'required|mimes:xlsx,xls',
+            'institution_id' => 'required|exists:institutions,id',
+            'warehouse_id' => 'required|exists:warehouses,id',
+            'direct_hire' => 'required',
+            'supplier' => 'nullable',
+            'reception_date' => 'required|date',
+            'general_observations' => 'nullable|string'
+        ], [
+            'file.required' => 'El campo archivo es obligatorio.',
+            'file.mimes' => 'El archivo debe ser un documento Excel (xlsx, xls).',
+            'institution_id.required' => 'El campo institución es obligatorio.',
+            'institution_id.exists' => 'La institución seleccionada no existe.',
+            'warehouse_id.required' => 'El campo almacén es obligatorio.',
+            'warehouse_id.exists' => 'El almacén seleccionado no existe.',
+            'direct_hire.required' => 'El campo código es obligatorio.',
+            'reception_date.required' => 'El campo fecha de ingreso es obligatorio.',
+            'reception_date.date' => 'El campo fecha de ingreso debe ser una fecha válida.'
+        ]);
+
+        try {
+            $import = new WarehouseReceptionImport(
+                $validated['institution_id'],
+                $validated['warehouse_id'],
+                $validated['direct_hire'],
+                $validated['supplier'] ?? null,
+                $validated['reception_date'],
+                $validated['general_observations'] ?? null
+            );
+
+            Excel::import($import, $request->file('file'));
+
+            $errors = $import->getErrors();
+
+            if (!empty($errors)) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $errors,
+                    'records' => $import->getValidRecords(),
+                    'message' => 'Errores encontrados durante la importación'
+                ], 422);
+            }
+            return response()->json([
+                'success' => true,
+                'records' => $import->getValidRecords(),
+                'message' => 'Importación completada exitosamente'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al procesar el archivo: ' . $e->getMessage(),
+                'trace' => config('app.debug') ? $e->getTrace() : []
+            ], 500);
+        }
+    }
+
+    /**
+     * Exporta una plantilla Excel con los insumos o productos disponibles en el almacén
+     *
+     * @author Miguel Narvaez <mnarvaez@cenditel.gob.ve>
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function exportTemplate(Request $request)
+    {
+        $request->validate([
+            'warehouse_id' => 'required|integer|exists:warehouses,id',
+            'institution_id' => 'required|integer|exists:institutions,id'
+        ]);
+
+        $warehouse = Warehouse::find($request->warehouse_id);
+        $institution = Institution::find($request->institution_id);
+
+        // Generar el Excel
+        $export = new WarehouseReceptionExport($warehouse, $institution);
+
+        return Excel::download($export, 'plantilla_recepcion_almacen.xlsx');
+    }
+
+    /**
+     * Define si el usuario actual tiene la capacidad de aprobar un ingreso a un almacén
+     *
+     * @author Natanael Rojo <ndrojo@cenditel.gob.ve> | <rojonatanael99@gmail.com>
+     * @param \App\Models\User $user
+     * @param \Modules\Warehouse\Models\Warehouse $warehouse
+     * @return bool
+     */
+    private function approveWarehouseReception(User $user, Warehouse $warehouse): bool
+    {
+        if (auth()->user()->isAdmin()) {
+            return true;
+        } else {
+            if (Module::has('Payroll') && Module::isEnabled('Payroll')) {
+                $payrollStaff = \Modules\Payroll\Models\PayrollEmployment::query()
+                    ->has('profile')
+                    ->whereHas('profile', function ($query) use ($user) {
+                        $query->where('user_id', $user->id);
+                    })->first()
+                    ->payrollStaff;
+
+                foreach ($warehouse->responsibles as $responsible) {
+                    if ($payrollStaff->id === $responsible['id']) {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+        }
+
+        return false;
     }
 }

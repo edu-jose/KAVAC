@@ -206,6 +206,12 @@ class AppManagementController extends Controller
             restoreSoftDeletedRelatedModels($model, $id)
             : $model::withTrashed()->find($id)->restore();
 
+        $request->session()->flash('message', ['type' => 'other', 'title' => '¡Éxito!',
+            'text' => __('Registro restaurado exitosamente'),
+            'icon' => 'screen-ok',
+            'class' => 'growl-primary'
+        ]);
+
         return response()->json(['result' => true], 200);
     }
 

@@ -191,7 +191,7 @@ class ReportRepository implements ReportInterface
      *
      * @return     void
      */
-    public function setHeader($title = '', $subTitle = '', $hasQR = true, $hasBarCode = false)
+    public function setHeader($title = '', $subTitle = '', $hasQR = true, $hasBarCode = false, $hasbanner = true, $hasLogo = true)
     {
         $params = (object)[
             'institution' => $this->institution,
@@ -204,14 +204,16 @@ class ReportRepository implements ReportInterface
             'title' => $title,
             'subTitle' => $subTitle,
             'reportDate' => $this->reportDate,
-            'headerY' => $this->headerY
+            'headerY' => $this->headerY,
+            'hasbanner' => $hasbanner,
+            'hasLogo' => $hasLogo
         ];
         $this->title = $title ?? 'Reporte';
 
         $this->pdf->setHeaderCallback(function ($pdf) use ($params) {
             $parameter = Parameter::where(['p_key' => 'report_banner', 'p_value' => 'true'])->first();
 
-            if (!is_null($params->institution->banner)) {
+            if (!is_null($params->institution->banner) && $params->hasbanner) {
                 /** Imagen del banner institucional a implementar en el reporte */
                 $pdf->Image(
                     storage_path('pictures') . DIRECTORY_SEPARATOR . $params->institution->banner->file,
@@ -233,7 +235,7 @@ class ReportRepository implements ReportInterface
                     true
                 );
             }
-            if (!is_null($params->institution->logo)) {
+            if (!is_null($params->institution->logo) && $params->hasLogo) {
                 /** Imagen del logotipo institucional a implementar en el reporte */
                 $pdf->Image(
                     storage_path('pictures') . DIRECTORY_SEPARATOR  . $params->institution->logo->file,

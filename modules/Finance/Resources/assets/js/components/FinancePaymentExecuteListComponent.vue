@@ -61,11 +61,11 @@
                 <span>{{ props.row.code }}</span>
             </div>
             <div slot="observations" slot-scope="props" class="text-center">
-                <div
+                <div v-if="props.row.observations"
                     v-html="props.row.observations"
-                    v-if="props.row.observations"
                 ></div>
-                <div v-else></div>
+                <div v-else-if="props.row.description"> {{ props.row.description }} </div>
+                <div v-else> N/A </div>
             </div>
             <div slot="status" slot-scope="props" class="text-center">
                 <span

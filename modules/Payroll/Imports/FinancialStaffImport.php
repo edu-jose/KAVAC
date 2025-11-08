@@ -114,6 +114,14 @@ class FinancialStaffImport implements
                 $data['banco'] = $modelID->id;
                 $data['banco_value'] = false;
             }
+            if (isset($data['numero_de_cuenta']) && $data['numero_de_cuenta'] && !is_null($data['numero_de_cuenta']) && trim($data['numero_de_cuenta']) != '') {
+                $data['numero_de_cuenta_value'] = substr($data['numero_de_cuenta'], 0, 4);
+                if ($modelID->code != $data['numero_de_cuenta_value']) {
+                    $data['numero_de_cuenta_value'] = $data['numero_de_cuenta'];
+                } else {
+                    $data['numero_de_cuenta_value'] = false;
+                }
+            }
         }
 
         return $data;
@@ -164,6 +172,14 @@ class FinancialStaffImport implements
                     $onFailure(
                         'El nombre del tipo de cuenta ingresado (' . strip_tags($value) .
                         ') no coincide con la lista disponible en la base de datos del sistema'
+                    );
+                }
+            },
+            'numero_de_cuenta_value' => function ($attribute, $value, $onFailure) {
+                if ($value) {
+                    $onFailure(
+                        'El numero de cuenta ingresado (' . strip_tags($value) .
+                        ') no coincide con el banco de la lista disponible en la base de datos del sistema'
                     );
                 }
             },

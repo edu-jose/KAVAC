@@ -4,11 +4,14 @@ namespace Modules\WorkAttendance\Http\Controllers;
 
 use App\Models\Department;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Redirect;
 use Modules\Payroll\Models\PayrollStaff;
 use Modules\Payroll\Models\PayrollPosition;
 use Illuminate\Contracts\Support\Renderable;
+use Modules\Payroll\Models\PayrollEmployment;
 use Modules\WorkAttendance\Models\WorkAttendance;
 use Modules\WorkAttendance\Services\WorkAttendanceService;
 
@@ -23,6 +26,15 @@ use Modules\WorkAttendance\Services\WorkAttendanceService;
  */
 class WorkAttendanceController extends Controller
 {
+    public function __construct()
+    {
+        /* Establece permisos de acceso para cada método del controlador */
+        $this->middleware(
+            'permission:workattendance.store',
+            ['only' => ['manualStore']]
+        );
+    }
+
     /**
      * Muestra la página de control de acceso
      *
@@ -188,5 +200,48 @@ class WorkAttendanceController extends Controller
         return response()->json(
             template_choices(Department::class, 'name', [], true)
         );
+    }
+
+    /**
+     * Establece una asistencia manual por el encargado de gestionar las asistencias del personal
+     *
+     * @author Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
+     *
+     * @param \Illuminate\Http\Request $request
+     *
+     * @return mixed|\Illuminate\Http\JsonResponse
+     */
+    public function manualStore(Request $request): JsonResponse
+    {
+        $this->validate($request, [
+            'position_id' => ['required', 'exists:payroll_positions,id'],
+            'payroll_employment_id' => ['required', 'exists:payroll_employments,id'],
+            'date_at' => ['required', 'date'],
+            'entry_time' => ['required', 'regex:/^(0[1-9]|1[0-2]):[0-5][0-9] (am|pm)$/i'],
+            'exit_time' => ['nullable', 'regex:/^(0[1-9]|1[0-2]):[0-5][0-9] (am|pm)$/i'],
+        ], [
+            'position_id.required' => 'El campo Cargo es obligatorio.',
+            'position_id.exists' => 'El cargo seleccionado no existe.',
+            'payroll_employment_id.required' => 'El campo de Personal es obligatorio.',
+            'payroll_employment_id.exists' => 'El empleado seleccionado no existe.',
+            'date_at.required' => 'El campo Fecha es obligatorio.',
+            'date_at.date' => 'El formato de la fecha es inválido.',
+            'entry_time.required' => 'El campo Hora de entrada es obligatorio.',
+            'entry_time.regex' => 'El formato de la hora de entrada es inválido.',
+            'exit_time.regex' => 'El formato de la hora de salida es inválido.',
+        ]);
+        DB::transaction(function () use ($request) {
+            $payrollEmployment = PayrollEmployment::find($request->payroll_employment_id);
+            WorkAttendance::create([
+                'date_at' => $request->date_at,
+                'entry_time' => $request->entry_time,
+                'exit_time' => $request->exit_time,
+                'payroll_staff_id' => $payrollEmployment->payroll_staff_id,
+            ]);
+        });
+        return response()->json([
+            'result' => true,
+            'message' => 'Asistencia registrada correctamente'
+        ], 200);
     }
 }

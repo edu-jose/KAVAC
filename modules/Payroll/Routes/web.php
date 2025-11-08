@@ -322,6 +322,12 @@ Route::group([
         'PayrollStaffClassificationController@getPayrollStaffClassifications'
     )->name('payroll.get-payroll-staff-classifications');
 
+    /* Ruta que restaura un registro de personal eliminado */
+    Route::put(
+        'staffs/restore/{id}',
+        'PayrollStaffController@restore'
+    )->name('payroll.staffs.restore');
+
     /* Rutas para gestionar el registro del personal */
     Route::resource('staffs', 'PayrollStaffController', ['as' => 'payroll']);
 
@@ -561,6 +567,12 @@ Route::group([
     /* Ruta que obtiene un arreglo con los idiomas registrados */
     Route::get('get-languages', 'PayrollLanguageController@getPayrollLanguages')->name('payroll.get-payroll-languages');
 
+    /* Ruta que restaura un registro de datos socioeconómicos eliminado */
+    Route::put(
+        'socioeconomics/restore/{id}',
+        'PayrollSocioeconomicController@restore'
+    )->name('payroll.socioeconomics.restore');
+
     /* Rutas para gestionar los datos socioeconómicos del personal */
     Route::resource('socioeconomics', 'PayrollSocioeconomicController', ['as' => 'payroll']);
 
@@ -584,6 +596,12 @@ Route::group([
         'get-json-professions',
         'PayrollProfessionalController@getJsonProfessions'
     )->name('payroll.get-json-professions');
+
+    /* Ruta que restaura un registro de datos financieros eliminado */
+    Route::put(
+        'financials/restore/{id}',
+        'PayrollFinancialController@restore'
+    )->name('payroll.financials.restore');
 
     /* Rutas para gestionar los datos financieros del personal */
     Route::resource('financials', 'PayrollFinancialController', ['as' => 'payroll']);
@@ -1006,6 +1024,10 @@ Route::group([
     Route::get(
         'get-supervised-groups-staff',
         'PayrollSupervisedGroupController@getPayrollSupervisedGroupStaff'
+    );
+    Route::get(
+        'get-supervised-groups-staffs/{ids?}',
+        'PayrollSupervisedGroupController@getPayrollSupervisedGroupStaffs'
     );
 
     Route::post('supervised-group/export', 'PayrollSupervisedGroupController@export');

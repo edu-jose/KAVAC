@@ -60,6 +60,17 @@
 								]) !!}
 							</div>
 						</div>
+						<div class="col-md-3" id="helpCodeExternalRequest">
+							<div class="form-group">
+								{!! Form::label('externalRequest_code', 'Código de las solicitudes externas', []) !!}
+								{!! Form::text('externalRequests_code', ($xrqCode) ? $xrqCode->format_code : old('externalRequestS_code'), [
+									'class' => 'form-control input-sm', 'data-toggle' => 'tooltip',
+									'title' => 'Formato para el código de las solicitudes externas',
+									'placeholder' => 'Ej. XXX-00000000-YYYY',
+									'readonly' => ($xrqCode) ? true : false
+								]) !!}
+							</div>
+						</div>
 						<div class="col-md-3" id="helpCodeReport">
 							<div class="form-group">
 								{!! Form::label('report_code', 'Código de los reportes', []) !!}
@@ -68,6 +79,17 @@
 									'title' => 'Formato para el código de los reportes de inventario',
 									'placeholder' => 'Ej. XXX-00000000-YYYY',
 									'readonly' => ($rpCode) ? true : false
+								]) !!}
+							</div>
+						</div>
+						<div class="col-md-3" id="helpCodeReceptions">
+							<div class="form-group">
+								{!! Form::label('receptions_code', 'Código para los ingresos a almacén', []) !!}
+								{!! Form::text('receptions_code', ($receptionsCode) ? $receptionsCode->format_code : old('receptionsCode'), [
+									'class' => 'form-control input-sm', 'data-toggle' => 'tooltip',
+									'title' => 'Formato para el código de ingresos a almacén',
+									'placeholder' => 'Ej. XXX-00000000-YYYY',
+									'readonly' => ($receptionsCode) ? true : false
 								]) !!}
 							</div>
 						</div>
@@ -84,7 +106,7 @@
 						</div-->
 					</div>
 				</div>
-				@if (!$pdCode || !$mvCode || !$rqCode || !$rqStaffCode || !$rpCode)
+				@if (!$pdCode || !$mvCode || !$rqCode || !$rqStaffCode || !$xrqCode || !$rpCode || !$receptionsCode)
 					<div class="card-footer text-right">
 						@include('layouts.form-buttons')
 					</div>

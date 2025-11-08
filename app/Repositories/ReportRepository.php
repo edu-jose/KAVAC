@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use App\Models\Parameter;
 use Illuminate\Http\Response;
 use Elibyy\TCPDF\TCPDF as PDF;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\View;
 use App\Repositories\Contracts\ReportInterface;
 
@@ -27,126 +28,126 @@ class ReportRepository implements ReportInterface
      *
      * @var string $orientation
      */
-    private $orientation;
+    protected $orientation;
 
     /**
      * Establece la unidad de medida a implementar en el reporte
      *
      * @var string $units
      */
-    private $units;
+    protected $units;
 
     /**
      * Establece el formato de la página (A4, Letter, ...)
      *
      * @var string $format
      */
-    private $format;
+    protected $format;
 
     /**
      * Establece el tipo de fuente a usar en el reporte
      *
      * @var string $fontFamily
      */
-    private $fontFamily;
+    protected $fontFamily;
 
     /**
      * Estilos a implementar en códigos QR a generar
      *
      * @var array $qrCodeStyle
      */
-    private $qrCodeStyle;
+    protected $qrCodeStyle;
 
     /**
      * Estilos a implementar en códigos de barras a generar
      *
      * @var array $barCodeStyle
      */
-    private $barCodeStyle;
+    protected $barCodeStyle;
 
     /**
      * Estilos para líneas de separación entre encabezado cuerpo y pie de página
      *
      * @var string $lineStyle
      */
-    private $lineStyle;
+    protected $lineStyle;
 
     /**
      * URL de verificación del reporte
      *
      * @var string $urlVerify
      */
-    private $urlVerify;
+    protected $urlVerify;
 
     /**
      * Fecha en la que se genera el reporte
      *
      * @var string $reportDate
      */
-    private $reportDate;
+    protected $reportDate;
 
     /**
      * Identificador de la organización que genera el reporte
      *
      * @var object $institution
      */
-    private $institution;
+    protected $institution;
 
     /**
      * Nombre del archivo a generar con el reporte
      *
      * @var string $filename
      */
-    private $filename;
+    protected $filename;
 
     /**
      * Título del reporte
      *
      * @var string $title
      */
-    private $title;
+    protected $title;
 
     /**
      * Indica si el título del reporte es en HTML
      *
      * @var boolean $titleIsHTML
      */
-    private $titleIsHTML;
+    protected $titleIsHTML;
 
     /**
      * Indica si el sub-título del reporte es en HTML
      *
      * @var boolean $subTitleIsHTML
      */
-    private $subTitleIsHTML;
+    protected $subTitleIsHTML;
 
     /**
      * Asunto del reporte
      *
      * @var string $subject
      */
-    private $subject;
+    protected $subject;
 
     /**
      * Establece el eje de las Y en donde comienza a mostrarse el encabezado del reporte
      *
      * @var integer $headerY
      */
-    private $headerY;
+    protected $headerY;
 
     /**
      * Establece el eje de las Y para el texto de subtítulo y fecha del reporte
      *
      * @var integer $headerTextY
      */
-    private $headerTextY;
+    protected $headerTextY;
 
     /**
      * Crea y gestiona el objeto PDF
      *
      * @var object $pdf
      */
-    private $pdf;
+    protected $pdf;
 
     /**
      * Método constructor de la clase
@@ -408,7 +409,7 @@ class ReportRepository implements ReportInterface
      *
      * @return     void
      */
-    public function setBody($body, $isHTML = true, $htmlParams = [], $storeAction = 'I', $images = [])
+    public function setBody($body, $isHTML = true, $htmlParams = [], $storeAction = 'I', $images = []): mixed
     {
         // Contenido del reporte
         $htmlContent = $body;

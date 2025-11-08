@@ -4,7 +4,7 @@
            href="#" title="Registros de insumos almacenables" data-toggle="tooltip" v-has-tooltip
            @click="addRecord('add_product', 'warehouse/products', $event)">
             <i class="icofont icofont-cubes ico-3x"></i>
-            <span>Insumos</span>
+            <span>Insumos /<br>Productos</span>
         </a>
         <div class="modal fade text-left" tabindex="-1" role="dialog" id="add_product">
             <div class="modal-dialog vue-crud" role="document">
@@ -33,7 +33,7 @@
                         </button>
                         <h6>
                             <i class="icofont icofont-cubes ico-2x"></i>
-                            Registros de insumos almacenables
+                            Registros de insumos/productos almacenables
                         </h6>
                     </div>
                     <div class="modal-body">
@@ -57,12 +57,36 @@
 
                         <div class="row">
                             <div class="col-md-12">
-                                <b>Datos del insumo</b>
+                                <b>Datos del insumo/producto</b>
                             </div>
 
-                            <div class="col-md-6">
+                            <div class="col-4" id="helpProduct">
                                 <div class="form-group is-required">
-                                    <label>Nombre del insumo:</label>
+                                    <label>
+                                        Catálogo SNC
+                                    </label>
+                                    <v-multiselect
+                                        :options="products"
+                                        track_by="text"
+                                        :hide_selected="false"
+                                        v-model="record.product"
+                                        :multiple="false"
+                                        :options_limit="Infinity"
+                                        :search_change="
+                                            (query) => applyFunctionDebounce(
+                                                query, searchProducts
+                                            )
+                                        "
+                                        :internal_search="false"
+                                        :searchable="true"
+                                        style="margin-top: -25px;"
+                                    >
+                                    </v-multiselect>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group is-required">
+                                    <label>Nombre del insumo/producto:</label>
                                     <input type="text" placeholder="Nombre del insumo" data-toggle="tooltip"
                                            v-has-tooltip title="Indique el nombre del nuevo insumo (requerido)"
                                            class="form-control input-sm" v-model="record.name">
@@ -136,6 +160,17 @@
                     <div class="modal-body modal-table">
                         <hr>
                         <v-client-table :columns="columns" :data="records" :options="table_options">
+                            <div slot="purchase_product" slot-scope="props">
+                                <span v-if="props.row.purchase_product">
+                                    {{ props.row.purchase_product.code || '' }} - {{ props.row.purchase_product.name || '' }}
+                                </span>
+                                <div v-else>
+                                    <span>N/A</span>
+                                </div>
+                            </div>
+                            <div slot="name" slot-scope="props">
+                                <span>{{ props.row.name }}</span>
+                            </div>
                             <div slot="measurement_unit" slot-scope="props">
                                 <span v-if="props.row.measurement_unit">
                                     {{ props.row.measurement_unit.name || props.row.measurement_unit.acronym }}
@@ -149,7 +184,7 @@
                             </div>
                             <div slot="id" slot-scope="props" class="text-center">
                                 <div class="d-inline-flex">
-                                    <button @click="initUpdate(props.row.id, $event)"
+                                    <button @click="loadData(props.row)"
                                             class="btn btn-warning btn-xs btn-icon btn-action"
                                             title="Modificar registro" data-toggle="tooltip" type="button">
                                         <i class="fa fa-edit"></i>
@@ -183,14 +218,16 @@
                     accounting_account_id: '',
                     history_tax_id: '',
                     warehouse_product_attributes: [],
+                    product: {}
                 },
 
                 errors: [],
                 records: [],
-                columns: ['name', 'description', 'measurement_unit', 'id'],
+                columns: ['purchase_product', 'name', 'description', 'measurement_unit', 'id'],
                 measurement_units: [],
                 budget_accounts: [],
                 taxes: [],
+                products: [],
                 formImport: false,
             }
         },
@@ -213,6 +250,7 @@
                     history_tax_id:                       '',
                     warehouse_product_attributes: []
                 };
+                this.products = [];
             },
             /**
              * Método que obtiene las unidades de medida del insumo
@@ -235,13 +273,13 @@
                 location.href = `${window.app_url}/warehouse/products/export/all`;
             },
             importData() {
-                //instrucciones para exportar registros
                 const vm = this;
-                var url = '/warehouse/products/import/all' ;
-                var formData = new FormData();
-                var importFile = document.querySelector('#importFile');
+                const url = '/warehouse/products/import/all';
+                const formData = new FormData();
+                const importFile = document.querySelector('#importFile');
                 formData.append("file", importFile.files[0]);
                 vm.loading = true;
+
                 axios.post(url, formData, {
                     headers: {
                         'Content-Type': 'multipart/form-data'
@@ -249,13 +287,19 @@
                 }).then(response => {
                     console.log('exit');
                     vm.loading = false;
-                    vm.showMessage('store');
+                    vm.showMessage(
+                        'custom',
+                        '¡Éxito!',
+                        'info',
+                        'screen-ok',
+                        'Su solicitud está en proceso, esto puede tardar unos segundos. Se le notificará al terminar la operación'
+                    );
                 }).catch(error => {
                     console.log('failure');
                     vm.loading = false;
-
                 });
             },
+
             /**
              * Obtiene un listado de cuentas presupuestarias
              *
@@ -309,21 +353,61 @@
                     });
             },
 
+            /**
+             * Método que realiza una consulta para obtener todos los receptores que coincidan
+             * con el query de la búsqueda
+             *
+             * @author    Daniel Contreras <dcontreras@cenditel.gob.ve>
+             */
+            searchProducts (query) {
+                const vm = this;
+                vm.products = [];
+
+                axios.get(`${window.app_url}/purchase/get-products`, {params: {query:query}}).then(response => {
+                    vm.products = response.data;
+                });
+            },
+
+            /**
+             * Carga los datos del registro seleccionado
+             *
+             * @param record Registro seleccionado
+             * @author Pedro Contreras <pcontreras@cenditel.gob.ve>
+             */
+            loadData(record) {
+                this.record = {
+                    id:                           record.id,
+                    name:                         record.name,
+                    description:                  record.description,
+                    define_attributes:            record.define_attributes,
+                    measurement_unit_id:          record.measurement_unit_id,
+                    accounting_account_id:        record.accounting_account_id,
+                    history_tax_id:               record.history_tax_id,
+                    warehouse_product_attributes: record.warehouse_product_attributes,
+                    product: {
+                        code: record.purchase_product ? record.purchase_product.code : null,
+                        id: record.purchase_product ? record.purchase_product.id : null,
+                        text: record.purchase_product ? record.purchase_product.code + ' - ' + record.purchase_product.name : null,
+                    }
+                };
+            },
         },
         created() {
             const vm = this;
             vm.table_options.headings = {
-                'name':        'insumo',
+                'purchase_product': 'Catálogo SNC',
+                'name':        'insumo/producto',
                 'description': 'Descripción',
                 'measurement_unit':  'Unidad',
                 'id':          'Acción'
             };
-            vm.table_options.sortable       = ['name', 'description'];
-            vm.table_options.filterable     = ['name', 'description'];
+            vm.table_options.sortable       = ['name', 'description', 'purchase_product'];
+            vm.table_options.filterable     = ['name', 'description', 'purchase_product'];
             vm.table_options.columnsClasses = {
+                'purchase_product': 'col-xs-2',
                 'name':        'col-xs-2',
-                'description': 'col-xs-4',
-                'measurement_unit':  'col-xs-4',
+                'description': 'col-xs-3',
+                'measurement_unit':  'col-xs-3',
                 'id':          'col-xs-2'
             };
         },
@@ -331,8 +415,8 @@
             const vm = this;
             $("#add_product").on('show.bs.modal', function() {
                 vm.getMeasurementUnits();
-                vm.getBudgetAccounts();
-                vm.getTaxes();
+                // vm.getBudgetAccounts();
+                // vm.getTaxes();
                 vm.switchHandler('define_attributes');
             });
         }

@@ -63,16 +63,24 @@ if (token) {
 /** @type {object} Requerimiento para el uso de pusher en notificaciones */
 window.Pusher = pusher;
 
-/** @type {object} Configuración para el uso de Laravel Echo */
-window.Echo = new Echo({
+const echoData = {
     authEndpoint: `${process.env.MIX_APP_URL}/broadcasting/auth`,
     broadcaster: 'pusher',
     key: process.env.MIX_PUSHER_APP_KEY,
     wsHost: process.env.MIX_WEBSOCKETS_HOST,
     wsPort: process.env.MIX_WEBSOCKETS_PORT,
-    wssPort: process.env.MIX_WEBSOCKETS_PORT,
     wsPath: process.env.MIX_WEBSOCKETS_PATH,
-    enabledTransports: ['ws', 'wss'],
-    encrypted: process.env.MIX_WEBSOCKETS_TLS, //Descomentar al usar protocolos con ssl
+    enabledTransports: ['ws'],
     disableStats: true
-});
+};
+
+if (process.env.MIX_WEBSOCKETS_TLS === 'true') {
+    echoData.wssHost = process.env.MIX_WEBSOCKETS_HOST;
+    echoData.wssPort = process.env.MIX_WEBSOCKETS_PORT;
+    echoData.cluster = process.env.MIX_PUSHER_APP_CLUSTER;
+    echoData.enabledTransports = ['wss'];
+    echoData.encrypted = true;
+}
+
+/** @type {object} Configuración para el uso de Laravel Echo */
+window.Echo = new Echo(echoData);

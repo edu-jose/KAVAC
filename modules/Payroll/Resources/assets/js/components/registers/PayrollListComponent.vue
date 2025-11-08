@@ -160,10 +160,16 @@
                     </span>
 
                     <div class="progress" style="margin-top: 0px;"
-                        v-if="props.row.document_status && props.row.document_status.action === 'PR'">
-                        <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100"
+                        v-if="props.row.document_status && props.row.document_status.action === 'PR' && percentage[props.row.id] !== undefined">
+                        <div role="progressbar" aria-valuemin="0" aria-valuemax="100"
                             :style="{ width: (percentage[props.row.id] !== undefined ? percentage[props.row.id] : 0) + '%' }">
                             <span class="progress-value">{{ percentage[props.row.id] !== undefined ? percentage[props.row.id] : 0 }}%</span>
+                        </div>
+                    </div>
+                    <div style="margin-top: 0px;"
+                        v-if="props.row.document_status && props.row.document_status.action === 'PR' && percentage[props.row.id] == undefined ">
+                        <div>
+                            <span>Sincronizando...</span>
                         </div>
                     </div>
                 </div>
@@ -227,12 +233,27 @@ export default {
     },
     async mounted() {
         const vm = this;
+            
+    // Recuperar porcentajes guardados del localStorage al montar el componente
+    const savedPercentages = localStorage.getItem('payrollPercentages');
+    if (savedPercentages) {
+        vm.percentage = JSON.parse(savedPercentages);
+    }
         window.Echo.private(`notifications.${vm.userId}`)
             .listen('.system.notificacion', (e) => {
                 Vue.set(vm.percentage, e.payroll_id, e.porcentaje);
+                localStorage.setItem('payrollPercentages', JSON.stringify(vm.percentage));
                 console.log(`⏳ Progreso de la nómina ${e.payroll_code}: ${e.porcentaje}% (${e.procesados}/${e.total})`);
                 if (e.porcentaje == 100) {
                     setTimeout(() => {
+
+                    // Eliminar solo el payroll_id completado del localStorage
+                    const updatedPercentages = { ...vm.percentage };
+                    delete updatedPercentages[e.payroll_id]; // Borra la clave específica
+                    
+                    // Actualizar localStorage y el estado de Vue
+                    localStorage.setItem('payrollPercentages', JSON.stringify(updatedPercentages));
+                    vm.percentage = updatedPercentages;
                         vm.initRecords(vm.route_list, '');
                     }, 1000);
                 }

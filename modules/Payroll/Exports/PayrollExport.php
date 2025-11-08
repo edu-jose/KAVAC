@@ -169,9 +169,9 @@ class PayrollExport implements
             ->values()
             ->all();
 
-            $this->payrollConceptTypes = PayrollConceptType::query()->whereHas('payrollConcepts', function ($query) use ($conceptNames) {
-                $query->whereIn('name', $conceptNames);
-            })->select('id', 'name', 'sign')->get()->keyBy('name');
+        $this->payrollConceptTypes = PayrollConceptType::query()->whereHas('payrollConcepts', function ($query) use ($conceptNames) {
+            $query->whereIn('name', $conceptNames);
+        })->select('id', 'name', 'sign')->get()->keyBy('name');
     }
 
     /**
@@ -185,10 +185,10 @@ class PayrollExport implements
     }
 
     /**
-    * Colección de datos a exportar
-    *
-    * @return    \Illuminate\Support\Collection
-    */
+     * Colección de datos a exportar
+     *
+     * @return    \Illuminate\Support\Collection
+     */
     public function collection()
     {
         $filteredRecords = $this->payroll->payrollStaffPayrolls
@@ -354,8 +354,14 @@ class PayrollExport implements
         }
         $data = [
             $payroll->index,
-            $this->payroll->payrollPaymentPeriod?->payrollPaymentType?->is_survivor ? ($payroll_staff->payrollSurvivor->first_name ? $payroll_staff->payrollSurvivor->first_name : $payroll->basic_payroll_staff_data['full_name']) : $payroll->basic_payroll_staff_data['full_name'],
-            $this->payroll->payrollPaymentPeriod?->payrollPaymentType?->is_survivor ? ($payroll_staff->payrollSurvivor->id_number ? $payroll_staff->payrollSurvivor->id_number : $payroll->basic_payroll_staff_data['id_number'] ) : $payroll->basic_payroll_staff_data['id_number'],
+            $this->payroll->payrollPaymentPeriod?->payrollPaymentType?->is_survivor
+                ? (
+                    ($payroll_staff?->payrollSurvivor?->first_name || $payroll_staff?->payrollSurvivor?->last_name)
+                    ? trim(($payroll_staff?->payrollSurvivor?->first_name ?? '') . ' ' . ($payroll_staff?->payrollSurvivor?->last_name ?? ''))
+                    : $payroll->basic_payroll_staff_data['full_name']
+                )
+                : $payroll->basic_payroll_staff_data['full_name'],
+            $this->payroll->payrollPaymentPeriod?->payrollPaymentType?->is_survivor ? ($payroll_staff->payrollSurvivor->id_number ? $payroll_staff->payrollSurvivor->id_number : $payroll->basic_payroll_staff_data['id_number']) : $payroll->basic_payroll_staff_data['id_number'],
         ];
         if (!$this->payroll->payrollPaymentPeriod?->payrollPaymentType?->is_survivor) {
             $data[] = $payroll->basic_payroll_staff_data['instruction_degree'];
@@ -442,7 +448,7 @@ class PayrollExport implements
         }
 
         foreach ($data as $dataKey => $dataValue) {
-            $condicion = !$this->payroll->payrollPaymentPeriod?->payrollPaymentType?->is_survivor ? ($dataKey < 6) : ($dataKey < 3) ;
+            $condicion = !$this->payroll->payrollPaymentPeriod?->payrollPaymentType?->is_survivor ? ($dataKey < 6) : ($dataKey < 3);
 
             if ($condicion) {
                 $this->total[$dataKey] = ' ';
@@ -539,7 +545,7 @@ class PayrollExport implements
                 $sheet = $event->sheet;
 
                 $counts = 0;
-                $letter = $this->payroll->payrollPaymentPeriod?->payrollPaymentType?->is_survivor ? 69 : 73 ;
+                $letter = $this->payroll->payrollPaymentPeriod?->payrollPaymentType?->is_survivor ? 69 : 73;
                 $flagSign = '';
 
                 foreach ($concepTypes as $key => $conceptType) {
@@ -614,7 +620,7 @@ class PayrollExport implements
                 $dLetter = !$this->payroll->payrollPaymentPeriod?->payrollPaymentType?->is_survivor ? 72 : 69;
 
                 foreach ($this->total as $tKey => $total) {
-                    $condicion = !$this->payroll->payrollPaymentPeriod?->payrollPaymentType?->is_survivor ? ($tKey > 5) : ($tKey > 2) ;
+                    $condicion = !$this->payroll->payrollPaymentPeriod?->payrollPaymentType?->is_survivor ? ($tKey > 5) : ($tKey > 2);
                     if ($condicion && is_numeric($dLetter)) {
                         $char = '';
                         $count = 65;

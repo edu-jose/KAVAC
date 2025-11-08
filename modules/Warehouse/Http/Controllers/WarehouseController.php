@@ -63,6 +63,7 @@ class WarehouseController extends Controller
             'estate_id' => ['required'],
             'municipality_id' => ['required'],
             'parish_id' => ['required'],
+            'payroll_staffs' => ['required', 'array', 'min:1'],
         ];
 
         /* Define los mensajes de validación para las reglas del formulario */
@@ -73,7 +74,9 @@ class WarehouseController extends Controller
             'estate_id.required'          => 'El campo estado es obligatorio.',
             'municipality_id.required'       => 'El campo municipio es obligatorio.',
             'address.required'   => 'El campo dirección es obligatorio.',
-            'parish_id.required' => 'El campo parroquia es obligatorio.'
+            'parish_id.required' => 'El campo parroquia es obligatorio.',
+            'payroll_staffs.required' => 'El campo responsable del almacén es obligatorio.',
+            'payroll_staffs.min' => 'El campo responsable del almacén debe tener al menos un empleado.',
         ];
     }
 
@@ -139,6 +142,7 @@ class WarehouseController extends Controller
             'address'   => $request->input('address'),
             'parish_id' => $request->input('parish_id'),
             'active'    => !empty($request->active) ? $request->input('active') : false,
+            'responsibles' => $request->input('payroll_staffs'),
         ]);
         if (empty($request->institution_id)) {
             $institution = Institution::where('active', true)->where('default', true)->first();
@@ -196,6 +200,7 @@ class WarehouseController extends Controller
         $warehouse->address   = $request->input('address');
         $warehouse->parish_id = $request->input('parish_id');
         $warehouse->active    = !empty($request->active) ? $request->input('active') : false;
+        $warehouse->responsibles = $request->input('payroll_staffs');
         $warehouse->save();
 
         if (empty($request->institution_id)) {

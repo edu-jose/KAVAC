@@ -12,6 +12,7 @@ use App\Models\Parameter;
 use Modules\Warehouse\Pdf\WarehouseReport as WarehouseReportRepository;
 use App\Repositories\ReportRepository;
 use Carbon\Carbon;
+use Modules\Warehouse\Models\WarehouseExternalRequest;
 use Modules\Warehouse\Models\WarehouseMovement;
 use Modules\Warehouse\Models\WarehouseRequest;
 
@@ -285,7 +286,7 @@ class WarehousePDFController extends Controller
             [
                 'institution' => $institution,
                 'urlVerify'   => url(''),
-                'orientation' => 'L',
+                'orientation' => 'P',
                 'filename'    => 'warehouse-report-' . Carbon::now() . '.pdf'
             ]
         );
@@ -328,7 +329,7 @@ class WarehousePDFController extends Controller
             [
                 'institution' => $institution,
                 'urlVerify'   => url(''),
-                'orientation' => 'L',
+                'orientation' => 'P',
                 'filename'    => 'warehouse-report-' . Carbon::now() . '.pdf'
             ]
         );
@@ -378,6 +379,49 @@ class WarehousePDFController extends Controller
         $pdf->setFooter();
         $pdf->setBody(
             'warehouse::pdf.warehouse-movements-pdf',
+            true,
+            [
+                'pdf'    => $pdf,
+                'record' => $record
+            ]
+        );
+    }
+
+    public function warehouseExternalRequestPdf($id)
+    {
+        $record = WarehouseExternalRequest::query()
+            ->where('id', $id)
+            ->with([
+            'warehouse' => function ($query): void {
+                $query->select(['id', 'name']);
+            },
+            'warehouseExternalRequestInventoryProducts' => function ($query) {
+                $query->with(['warehouseInventoryProduct' => function ($query) {
+                    $query->with(['warehouseProduct' => function ($query) {
+                        $query->with('measurementUnit');
+                    }, 'currency']);
+                }]);
+            }
+        ])->first();
+
+        $institution = Institution::where('default', true)
+            ->where('active', true)->first();
+        $pdf = new ReportRepository();
+
+        /* Definicion de las caracteristicas generales de la página */
+        $pdf->setConfig(
+            [
+                'institution' => $institution,
+                'urlVerify'   => url(''),
+                'orientation' => 'P',
+                'filename'    => 'warehouse-report-' . Carbon::now() . '.pdf'
+            ]
+        );
+
+        $pdf->setHeader('Solicitudes Externas de Almacén');
+        $pdf->setFooter();
+        $pdf->setBody(
+            'warehouse::pdf.warehouse-external-request-pdf',
             true,
             [
                 'pdf'    => $pdf,

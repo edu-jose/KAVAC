@@ -1,6 +1,12 @@
 {{-- Gestión de nómina --}}
 <li>
-    <a href="javascript:void(0)" title="Datos de personal y nómina" data-toggle="tooltip" data-placement="right">
+    <a
+        href="javascript:void(0)"
+        title="Datos de personal y nómina"
+        data-toggle="tooltip"
+        data-placement="right"
+        id="menu-payroll"
+    >
         <i class="ion-ios-folder-outline"></i><span>Talento Humano</span>
     </a>
     <ul class="submenu" style="{!! display_submenu('payroll') !!}">
@@ -90,20 +96,46 @@
             </a>
         </li>
         <li>
-            <a href="javascript:void(0)" data-toggle="tooltip" data-placement="right" title="Gestión para la generación de archivos txt">Archivo txt</a>
+            <a
+                href="javascript:void(0)"
+                data-toggle="tooltip"
+                data-placement="right"
+                title="Gestión para la generación de archivos txt"
+                id="menu-payroll-text-files"
+            >
+                Archivo txt
+            </a>
             <ul class="submenu" style="{!! display_submenu(['text-file', 'text-trust-file']) !!}">
                 <li class="{!! set_active_menu(['payroll.text-file.index']) !!}">
-                    <a href="{{ route('payroll.text-file.index') }}" data-toggle="tooltip" data-placement="right" title="Gestión para la generación de archivos txt de nómina">
+                    <a
+                        href="{{ route('payroll.text-file.index') }}"
+                        data-toggle="tooltip"
+                        data-placement="right"
+                        title="Gestión para la generación de archivos txt de nómina"
+                        id="menu-payroll-text-files-manage"
+                    >
                         Nómina
                     </a>
                 </li>
                 <li class="{!! set_active_menu(['payroll.trust-text-file.create']) !!}">
-                    <a href="{{ route('payroll.trust-text-file.create') }}" data-toggle="tooltip" data-placement="right" title="Gestión para la generación de archivos txt de fideicomiso">
+                    <a
+                        href="{{ route('payroll.trust-text-file.create') }}"
+                        data-toggle="tooltip"
+                        data-placement="right"
+                        title="Gestión para la generación de archivos txt de fideicomiso"
+                        id="menu-payroll-trust-text-file"
+                    >
                         Fideicomiso
                     </a>
                 </li>
                 <li class="{!! set_active_menu(['payroll.trust-file-staff.create']) !!}">
-                    <a href="{{ route('payroll.trust-file-staff.create') }}" data-toggle="tooltip" data-placement="right" title="Txt de fideicomiso para agregar nuevo trabajador">
+                    <a
+                        href="{{ route('payroll.trust-file-staff.create') }}"
+                        data-toggle="tooltip"
+                        data-placement="right"
+                        title="Txt de fideicomiso para agregar nuevo trabajador"
+                        id="menu-payroll-trust-file-staff"
+                    >
                         Nuevo registro fideicomiso
                     </a>
                 </li>
@@ -195,11 +227,13 @@
                         Recibos de pago
                     </a>
                 </li>
-                <li title="Reporte de promedio de conceptos de vacaciones" data-toggle="tooltip" data-placement="right" class="{!! set_active_menu('payroll.reports.average-concepts') !!}">
-                    <a href="{{ route('payroll.reports.average-concepts') }}">
-                        Promedio de conceptos de vacaciones
-                    </a>
-                </li>
+                @if (config('payroll.features.concept-averages'))
+                    <li title="Reporte de promedio de conceptos de vacaciones" data-toggle="tooltip" data-placement="right" class="{!! set_active_menu('payroll.reports.average-concepts') !!}">
+                        <a href="{{ route('payroll.reports.average-concepts') }}">
+                            Promedio de conceptos de vacaciones
+                        </a>
+                    </li>
+                @endif
                 <li title="Reporte de historial de cargos" data-toggle="tooltip" data-placement="right" class="{!! set_active_menu('payroll.reports.payment-receipts') !!}">
                     <a href="{{ route('payroll.reports.historical-positions') }}">
                     Reporte Histórico de cargos

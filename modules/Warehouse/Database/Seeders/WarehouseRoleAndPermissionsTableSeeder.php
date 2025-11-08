@@ -223,6 +223,34 @@ class WarehouseRoleAndPermissionsTableSeeder extends Seeder
                 'model' => 'Modules\Warehouse\Models\WarehouseRequest', 'model_prefix' => 'Almacén',
                 'slug_alt' => 'almacen.solicitud.usuario', 'short_description' => 'Ver solicitudes por usuario'
             ],
+            [
+                'name' => 'Visualizar solicitudes externas de almacén',
+                'slug' => 'warehouse.external.request',
+                'description' => 'Acceso para visualizar lsa solicitudes externas de almacén',
+                'model' => 'Modules\Warehouse\Models\WarehouseExternalRequest', 'model_prefix' => 'Almacén',
+                'slug_alt' => 'almacen.solicitud.externa', 'short_description' => 'Ver solicitudes externas'
+            ],
+            [
+                'name' => 'Crear registro de solicitud externa de almacén',
+                'slug' => 'warehouse.external.request.create',
+                'description' => 'Acceso para crear registro de solicitud externa de almacén',
+                'model' => 'Modules\Warehouse\Models\WarehouseExternalRequest', 'model_prefix' => 'Almacén',
+                'slug_alt' => 'almacen.solicitud.externa.crear', 'short_description' => 'agregar solicitud externa de almacén'
+            ],
+            [
+                'name' => 'Modificar registro de solicitud externa de almacén',
+                'slug' => 'warehouse.external.request.edit',
+                'description' => 'Acceso para modificar registro de solicitud externa de almacén',
+                'model' => 'Modules\Warehouse\Models\WarehouseExternalRequest', 'model_prefix' => 'Almacén',
+                'slug_alt' => 'almacen.solicitud.externa.editar', 'short_description' => 'editar solicitud externa de almacén'
+            ],
+            [
+                'name' => 'Eliminar registro de solicitud externa de almacén',
+                'slug' => 'warehouse.external.request.delete',
+                'description' => 'Acceso para eliminar registro de solicitud externa de almacén',
+                'model' => 'Modules\Warehouse\Models\WarehouseExternalRequest', 'model_prefix' => 'Almacén',
+                'slug_alt' => 'almacen.solicitud.externa.eliminar', 'short_description' => 'eliminar solicitud externa de almacén'
+            ],
             /* Movimientos de Almacén */
             [
                 'name' => 'Visualizar registro de movimiento de artículos de almacén',

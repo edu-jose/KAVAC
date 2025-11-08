@@ -87,6 +87,16 @@
                             />
                     </div>
                 </div>
+                <div class="col-md-3" v-show="record.documentType == 'T'" id="">
+                    <div class="form-group">
+                        <label for="" class="control-label">Año Fiscal:</label>
+                        <select2 :options="mostRecentYears"
+                            v-model="record.year"
+                            @input="resetInfoDeduction(); getSourceDocuments()"
+                            :disabled="!record.period"
+                            />
+                    </div>
+                </div>
                 <div class="col-md-3" v-show="record.documentType != 'M'" id="helpFinanceDocumentOrigin">
                     <div class="form-group is-required">
                         <label for="" class="control-label">Nro. Documento de Origen</label>
@@ -337,6 +347,7 @@ export default {
                 { 'id': 2, 'text': 'Segunda Quincena' },
                 { 'id': 3, 'text': 'Mensual' },
             ],
+            mostRecentYears: [],
             currencies: [],
             autoAccounting: [],
             accounting_accounts: [],
@@ -576,6 +587,7 @@ export default {
                     edit : vm.edit_object ? true : false,
                     month: vm.record.month,
                     period: vm.record.period,
+                    year: vm.record.year ?? '',
                 }
             ).then(response => {
 
@@ -838,6 +850,7 @@ export default {
             vm.record.document_sourceable_id = vm.record.documentType != 'T' ? editData.document_sourceable_id : null;
             vm.record.month = editData.month;
             vm.record.period = editData.period;
+            vm.record.year = editData.year ? vm.mostRecentYears.find(y => y.text == editData.year)?.id : null;
             vm.record.concept = editData.concept;
             vm.record.is_payroll_contribution = editData.is_payroll_contribution;
 
@@ -1070,6 +1083,8 @@ export default {
         await vm.getInstitutions();
         await vm.getReceivers();
         await vm.getCurrencies();
+        // Consultar los 2 ultimos años fiscales incluyento el actual
+        await vm.getMostRecentFiscalYears(2);
 
         if (vm.edit_object) {
             await vm.loadForm();

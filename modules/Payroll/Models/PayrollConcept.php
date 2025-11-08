@@ -42,11 +42,26 @@ class PayrollConcept extends Model implements Auditable
      * @var array $fillable
      */
     protected $fillable = [
-        'name', 'description', 'active', 'formula', 'institution_id',
-        'payroll_concept_type_id', 'is_strict',
-        'accounting_account_id', 'budget_account_id', 'budget_project_id',
-        'budget_centralized_action_id', 'budget_specific_action_id', 'assign_to',
-        'currency_id', 'pay_order', 'arc', 'formula_history', 'formula_show_history'
+        'name',
+        'description',
+        'active',
+        'formula',
+        'institution_id',
+        'payroll_concept_type_id',
+        'is_strict',
+        'accounting_account_id',
+        'budget_account_id',
+        'budget_project_id',
+        'budget_centralized_action_id',
+        'budget_specific_action_id',
+        'assign_to',
+        'currency_id',
+        'pay_order',
+        'arc',
+        'formula_history',
+        'formula_show_history',
+        'is_concept_advancement',
+        'is_advance_deduction',
     ];
 
     /**

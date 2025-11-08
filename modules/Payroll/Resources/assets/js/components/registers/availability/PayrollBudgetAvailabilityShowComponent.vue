@@ -38,7 +38,7 @@
                                     <strong>Código de Disponibilidad Presupuestaria</strong>
                                     <div class="row" style="margin: 1px 0">
                                         <span class="col-md-12" id="code">
-                                            {{ records.payroll.purchase_common_budgetary_availability?.code ? records.payroll.purchase_common_budgetary_availability?.code : 'No definido' }}
+                                            {{ records.payroll.budget_common_budgetary_availability?.code ? records.payroll.budget_common_budgetary_availability?.code : 'No definido' }}
                                         </span>
                                     </div>
                                 </div>

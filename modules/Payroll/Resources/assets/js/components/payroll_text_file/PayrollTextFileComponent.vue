@@ -36,10 +36,14 @@
                 </div>
                 <div class="col-4 mt-4">
                     <div class="form-group is-required">
-                        <label for="fileName">Número de archivo</label>
-                        <input type="text" class="form-control" id="fileName"
-                                v-model="record.fileNumber"
-                                v-input-mask data-inputmask-regex="^([0-9]{1,10})$"
+                        <label for="fileNumber">Número de archivo</label>
+                        <input
+                            type="text"
+                            class="form-control"
+                            id="fileNumber"
+                            v-model="record.fileNumber"
+                            :maxlength="maxFileNumber"
+                            @input="sanitizeFileNumber"
                         >
                     </div>
                 </div>
@@ -60,9 +64,16 @@
                 <div class="col-4 mt-4">
                     <div class="form-group is-required">
                         <label for="payroll" class="is-required">Nómina</label>
-                        <v-multiselect :options="closedPayrollList" track_by="text" :hide_selected="false"
-                            v-model="record.payrollId" :group_values="'group'" :group_label="'label'" style="margin-top: -5px;">
-                        </v-multiselect>
+                        <v-multiselect
+                            id="payroll"
+                            :options="closedPayrollList"
+                            track_by="text"
+                            :hide_selected="false"
+                            v-model="record.payrollId"
+                            :group_values="'group'"
+                            :group_label="'label'"
+                            style="margin-top: -5px;"
+                        ></v-multiselect>
                     </div>
                 </div>
             </div>
@@ -70,8 +81,14 @@
         <!-- Archivo de nómina -->
 
         <div class="card-footer text-right">
-            <button type="button" @click="createRecord('payroll/validate-txt-data')" data-toggle="tooltip"
-                title="Generar archivo txt de nómina" class="btn btn-primary btn-sm">
+            <button
+                type="button"
+                id="generatePayrollTextFileButton"
+                @click="createRecord('payroll/validate-txt-data')"
+                data-toggle="tooltip"
+                title="Generar archivo txt de nómina"
+                class="btn btn-primary btn-sm"
+            >
                 <span>Generar archivo txt de nómina</span>
                 <i class="fa fa-print"></i>
             </button>
@@ -91,9 +108,9 @@ export default {
 
     data() {
         return {
+            maxFileNumber: 0,
             errors: [],
             paymentTypes: [],
-            // bankAccounts: [],
             closedPayrollList: [],
             records: [],
             record: {
@@ -109,6 +126,9 @@ export default {
     async created() {
         const vm = this;
         try {
+            const response = await axios.get(`${window.app_url}/payroll/get-report-parameters`);
+            const p_value = response.data.records.find(record => record.p_key === 'max_digits')?.p_value || 2;
+            vm.maxFileNumber = p_value;
             let payments = await axios.get(`${window.app_url}/payroll/get-payroll-payment-types`);
             let payrollList = await axios.get(`${window.app_url}/payroll/get-payroll-list`);
 
@@ -125,7 +145,6 @@ export default {
 
     async mounted() {
         const vm = this;
-
     },
 
     methods: {
@@ -200,6 +219,12 @@ export default {
                 vm.loading = false;
             }
         },
+
+        sanitizeFileNumber(event) {
+            const raw = event.target.value;
+            const cleaned = raw.replace(/\D/g, '').slice(0, this.maxFileNumber);
+            this.record.fileNumber = cleaned;
+        }
     },
 };
 </script>

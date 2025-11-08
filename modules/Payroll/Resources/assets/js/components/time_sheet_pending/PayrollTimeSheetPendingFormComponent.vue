@@ -121,7 +121,6 @@
                             v-model="record.payroll_supervised_group_id"
                             @input="
                                 getSupervisedGroupData();
-                                setTimeSheetData();
                             "
                         >
                         </select2>
@@ -322,7 +321,7 @@ export default {
          *
          * @author  Daniel Contreras <dcontreras@cenditel.gob.ve>
          */
-        getSupervisedGroupData() {
+        async getSupervisedGroupData() {
             const vm = this;
 
             if (vm.record.payroll_supervised_group_id) {
@@ -340,6 +339,7 @@ export default {
                 vm.record.supervisor = null;
                 vm.record.approver = null;
             }
+            await vm.setTimeSheetData();
         },
 
         /**
@@ -490,8 +490,9 @@ export default {
          *
          * @author  Daniel Contreras <dcontreras@cenditel.gob.ve>
          */
-        setTimeSheetData() {
+        async setTimeSheetData() {
             const vm = this;
+            let id = vm.record.payroll_supervised_group_id;
             let draggableData = [];
             let payroll_staffs = [];
 
@@ -511,7 +512,9 @@ export default {
                     );
                 });
                 let index = 1;
-
+                await axios.get(`${window.app_url}/payroll/get-supervised-groups-staff`, { params: { id } }).then(response => {
+                group.payroll_staffs = response.data;
+                });
                 group.payroll_staffs.forEach((staff, indexof) => {
                     draggableData.push({
                         "N°": index++,
@@ -791,6 +794,7 @@ export default {
 
             vm.record = recordEdit;
             vm.totalGroups = recordEdit.total_groups;
+            await vm.getSupervisedGroupData();
         },
 
         /**

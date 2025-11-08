@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\FiscalYear;
 use App\Models\Institution;
+use Composer\Util\Http\Response;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
@@ -216,6 +217,79 @@ class FiscalYearController extends Controller
         }
 
         return response()->json(["last_year" => $lastYear], 200);
+    }
+
+    /**
+     * Obtiene los años fiscales más recientes.
+     *
+     * Devuelve los últimos $numYears años fiscales ordenados por año de forma descendente. Si
+     * $numYears es 1 (por defecto) devuelve el único año fiscal más reciente.
+     *
+     * @param int $numYears Cantidad de años fiscales a retornar
+     * @return \Illuminate\Http\JsonResponse Objeto con el listado de años fiscales
+     */
+    public function getMostRecentFiscalYears(int $numYears = 1): JsonResponse
+    {
+        $numYears = max(1, (int)$numYears);
+
+        // Determinar la institución del usuario autenticado (si aplica)
+        $profileUser = Auth()->user()->profile ?? null;
+        if ($profileUser && $profileUser->institution_id !== null) {
+            $institution = Institution::find($profileUser->institution_id);
+        } else {
+            $institution = Institution::where('active', true)->where('default', true)->first();
+        }
+
+        // Buscar el año fiscal activo (o el más reciente si no existe activo)
+        $activeQuery = FiscalYear::query()
+            ->where(['active' => true, 'closed' => false]);
+        if (isset($institution)) {
+            $activeQuery->where('institution_id', $institution->id);
+        }
+        $activeFiscal = $activeQuery->orderBy('year', 'desc')->first();
+
+        if ($activeFiscal) {
+            $startYear = (int)$activeFiscal->year;
+        } else {
+            // Si no hay activo, tomar el mayor año disponible
+            $latestQuery = FiscalYear::query();
+            if (isset($institution)) {
+                $latestQuery->where('institution_id', $institution->id);
+            }
+            $latestFiscal = $latestQuery->orderBy('year', 'desc')->first();
+            $startYear = $latestFiscal ? (int)$latestFiscal->year : (int)date('Y');
+        }
+
+        // Construir la lista de años solicitados: año actual (activo) y los anteriores
+        $yearsRequested = [];
+        for ($i = 0; $i < $numYears; $i++) {
+            $yearsRequested[] = $startYear - $i;
+        }
+
+        // Consultar registros existentes en DB para esos años
+        $yearsQuery = FiscalYear::query()
+            ->select(['id', 'year'])
+            ->whereIn('year', $yearsRequested);
+        if (isset($institution)) {
+            $yearsQuery->where('institution_id', $institution->id);
+        }
+
+        // Preparar el resultado manteniendo el orden descendente solicitado
+        $fiscalYears = $yearsQuery->orderBy('year')->get()->map(function ($fiscalYear) {
+            return [
+                'id' => $fiscalYear->id,
+                'text' => $fiscalYear->year
+            ];
+        });
+
+        $records = [
+            'id' => '',
+            'text' => 'Seleccione...'
+        ];
+
+        $records = array_merge([$records], $fiscalYears->toArray());
+
+        return response()->json(['records' => $records], 200);
     }
 
     /**

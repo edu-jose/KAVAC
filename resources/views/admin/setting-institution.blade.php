@@ -40,7 +40,8 @@
                             @endphp
                             @if (old('logo_id'))
                                 @php
-                                    $img_logo = App\Models\Image::find(old('logo_id'))->url;
+                                    $logo = App\Models\Image::find(old('logo_id'));
+                                    $img_logo = file_exists(base_path($logo->url)) ? $logo->url : null;
                                 @endphp
                             @endif
                             <img
@@ -89,7 +90,8 @@
                             @endphp
                             @if (old('banner_id'))
                                 @php
-                                    $img_banner = App\Models\Image::find(old('banner_id'))->url;
+                                    $banner = App\Models\Image::find(old('banner_id'));
+                                    $img_banner = file_exists(base_path($banner->url)) ? $banner->url : null;
                                 @endphp
                             @endif
                             <img
@@ -461,9 +463,29 @@
                     </div>
                     <div class="row">
                         <div class="col-12 mt-2">
+                            @if (
+                                old('phone_type') ||
+                                old('phone_area_code') ||
+                                old('phone_number') ||
+                                old('phone_extension')
+                            )
+                                @php
+                                    $initialDataPhones = [];
+                                    foreach (old('phone_type') as $key => $value) {
+                                        $initialDataPhones[] = [
+                                            'type' => old('phone_type')[$key],
+                                            'area_code' => old('phone_area_code')[$key],
+                                            'number' => old('phone_number')[$key],
+                                            'extension' => old('phone_extension')[$key],
+                                        ];
+                                    }
+                                @endphp
+                            @endif
                             <phones
                                 ref="institutionPhones"
-                                @if (isset($model_institution) && $model_institution->phones)
+                                @if (isset($initialDataPhones) && count($initialDataPhones) > 0)
+                                    initial_data="{{ json_encode($initialDataPhones) }}"
+                                @elseif (isset($model_institution) && $model_institution->phones)
                                     initial_data="{{ json_encode($model_institution->phones) }}"
                                 @endif
                             ></phones>

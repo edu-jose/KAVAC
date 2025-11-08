@@ -29,6 +29,8 @@ Route::group(
             'BudgetController@index'
         )->name('budget.index');
 
+        Route::post('send_notify', 'BudgetBudgetaryAvailabilityController@sendNotify');
+
         /*
          * -----------------------------------------------------------------------
          * Rutas para la configuración general del módulo de presupuesto
@@ -436,5 +438,18 @@ Route::group(
                 'Reports\BudgetReportsController@budgetConsolidatedExport'
             );
         });
+
+        /*
+        | -----------------------------------------------------------------------
+        | Rutas para la gestión de Disponibilidad presupuestaria
+        | -----------------------------------------------------------------------
+        |
+        | Gestiona los datos de los tipos de operaciones
+        */
+        Route::resource('budgetary_availability', 'BudgetBudgetaryAvailabilityController', [
+            'as'     => 'budget',
+        ]);
+        Route::post('budgetary_availability/approve', 'BudgetBudgetaryAvailabilityController@approveBudgetaryAvailability')
+        ->name('budget.budgetary_availability.approve');
     }
 );

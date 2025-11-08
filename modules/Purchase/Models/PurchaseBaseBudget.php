@@ -74,11 +74,12 @@ class PurchaseBaseBudget extends Model implements Auditable
      */
     public function getPurchaseBudgetaryAvailabilityDocumentAttribute()
     {
-        $documentFile = Document::where([
-            'documentable_type' => 'Modules\Purchase\Models\PurchaseBudgetaryAvailability',
-            'documentable_id' => $this->id
-        ])->first();
-        return $documentFile;
+        return (
+            Module::has('Budget') && Module::isEnabled('Budget')
+            ) ? Document::where([
+                'documentable_type' => \Modules\Budget\Models\BudgetBudgetaryAvailability::class,
+                'documentable_id' => $this->id
+            ])->first() : null;
     }
 
     /**
@@ -88,8 +89,13 @@ class PurchaseBaseBudget extends Model implements Auditable
      */
     public function getAvailabilityAttribute()
     {
+        if (!Module::has('Budget') || !Module::isEnabled('Budget')) {
+            return "No_Disponible";
+        }
+
         $answer = "";
-        $availability = PurchaseBudgetaryAvailability::where('purchase_base_budgets_id', $this->id)->first();
+
+        $availability = \Modules\Budget\Models\BudgetBudgetaryAvailability::where('purchase_base_budget_id', $this->id)->first();
         if ($availability) {
             if ($availability->availability == 1) {
                 $answer = "Disponible";
@@ -97,7 +103,7 @@ class PurchaseBaseBudget extends Model implements Auditable
                 $answer = "AP"; //Aprobado/
             } else {
                 $answer = "No_Disponible";
-            };
+            }
         }
         return $answer;
     }
@@ -109,8 +115,9 @@ class PurchaseBaseBudget extends Model implements Auditable
      */
     public function getAvailabilityItemAttribute()
     {
-        $availability = PurchaseBudgetaryAvailability::where('purchase_base_budgets_id', $this->id)->get()->toArray();
-        return $availability;
+        return (
+            Module::has('Budget') && Module::isEnabled('Budget')
+        ) ? \Modules\Budget\Models\BudgetBudgetaryAvailability::where('purchase_base_budget_id', $this->id)->get()->toArray() : [];
     }
 
     /**
@@ -234,9 +241,10 @@ class PurchaseBaseBudget extends Model implements Auditable
      *
      * @return \Illuminate\Database\Eloquent\Relations\MorphOne
      */
-    public function purchaseCommonBudgetaryAvailability()
+    public function budgetCommonBudgetaryAvailability()
     {
-        return $this->morphOne(PurchaseCommonBudgetaryAvailability::class, 'budgetable');
+        return (Module::has('Budget') && Module::isEnabled('Budget')) ?
+            $this->morphOne(\Modules\Budget\Models\BudgetCommonBudgetaryAvailability::class, 'budgetable') : null;
     }
 
     /**

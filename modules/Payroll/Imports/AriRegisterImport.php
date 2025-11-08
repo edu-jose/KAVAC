@@ -59,6 +59,9 @@ class AriRegisterImport implements
             'porcentaje'     =>  'Porcentaje de Aumento',
             'desde'          =>  'Fecha Comienzo del Aumento',
             'hasta'          =>  'Fecha Fin del Aumento',
+            'unique_from_date' => 'Fecha de Comienzo Única',
+            'overlap_period'   => 'Periodo de Aumento Solapado',
+            'invalid_date_range' => 'Fecha Fin del Aumento'
         ];
     }
 
@@ -71,27 +74,59 @@ class AriRegisterImport implements
      */
     public function model(array $row)
     {
-        $payrollStaff =
-            PayrollStaff::query()->where('id_number', $row['cedula'])->toBase()->first();
+        $payrollStaff = PayrollStaff::query()
+            ->where('id_number', $row['cedula'])
+            ->toBase()
+            ->first();
 
-        $from_date =
-            isset($row['desde']) ? (is_string($row['desde']) ? $row['desde'] : Carbon::instance(
-                \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($row['desde'])
-            )) : null;
-
-        $to_date =
-            isset($row['hasta']) ? (is_string($row['hasta']) ? $row['hasta'] : Carbon::instance(
-                \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($row['hasta'])
-            )) : null;
-
-        if ($payrollStaff) {
-            return new PayrollAriRegister([
-                'payroll_staff_id' => $payrollStaff->id,
-                'from_date' => $from_date,
-                'to_date' => $to_date,
-                'percetage' => $row['porcentaje'] / 100
-            ]);
+        if (!$payrollStaff) {
+            return null;
         }
+
+        $from_date = isset($row['desde'])
+            ? (is_string($row['desde']) ? Carbon::parse($row['desde']) : Carbon::instance(
+                \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($row['desde'])
+            ))
+            : null;
+
+        $to_date = isset($row['hasta'])
+            ? (is_string($row['hasta']) ? Carbon::parse($row['hasta']) : Carbon::instance(
+                \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($row['hasta'])
+            ))
+            : null;
+
+        $id = null;
+
+        if (!empty($row['codigo']) && preg_match('/-(\d+)$/', $row['codigo'], $matches)) {
+            $id = $matches[1];
+        }
+
+        $payrollAriRegister = $id ? PayrollAriRegister::find($id) : null;
+
+        if ($payrollAriRegister) {
+            $payrollAriRegister->from_date = $from_date;
+            $payrollAriRegister->to_date = $to_date;
+            $payrollAriRegister->percetage = $row['porcentaje'] / 100;
+            $payrollAriRegister->save();
+            return null;
+        }
+
+        $lastRegister = PayrollAriRegister::query()
+            ->where('payroll_staff_id', $payrollStaff->id)
+            ->orderBy('from_date', 'desc')
+            ->first();
+
+        if ($lastRegister && $lastRegister->to_date === null && $from_date) {
+            $lastRegister->to_date = $from_date->copy()->subDay()->format('Y-m-d');
+            $lastRegister->save();
+        }
+
+        return new PayrollAriRegister([
+            'payroll_staff_id' => $payrollStaff->id,
+            'from_date' => $from_date,
+            'to_date' => $to_date,
+            'percetage' => $row['porcentaje'] / 100,
+        ]);
     }
 
     /**
@@ -104,28 +139,66 @@ class AriRegisterImport implements
      */
     public function prepareForValidation($data, $index)
     {
-        $payrollStaff =
-            PayrollStaff::query()->where('id_number', $data['cedula'])->toBase()->first();
+        $payrollStaff = PayrollStaff::query()
+            ->where('id_number', $data['cedula'])
+            ->toBase()
+            ->first();
 
-        $from_date =
-            isset($data['desde']) ? (is_string($data['desde']) ? $data['desde'] : Carbon::instance(
+        $from_date = isset($data['desde'])
+            ? (is_string($data['desde']) ? Carbon::parse($data['desde']) : Carbon::instance(
                 \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($data['desde'])
-            )) : null;
+            ))
+            : null;
 
-        $payrollAriRegistersFromDate = [];
+        $to_date = isset($data['hasta']) && $data['hasta'] !== ''
+            ? (is_string($data['hasta']) ? Carbon::parse($data['hasta']) : Carbon::instance(
+                \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($data['hasta'])
+            ))
+            : null;
 
-        if (!empty($from_date) && !empty($payrollStaff)) {
-            $payrollAriRegistersFromDate = PayrollAriRegister::query()
+        $id = null;
+        if (!empty($data['codigo']) && preg_match('/ARI-(\d+)/', $data['codigo'], $matches)) {
+            $id = $matches[1];
+        }
+
+        $data['unique_from_date'] = false;
+        $data['overlap_period'] = false;
+        $data['invalid_date_range'] = false;
+
+        if ($payrollStaff && $from_date) {
+            $allRegisters = PayrollAriRegister::query()
                 ->where('payroll_staff_id', $payrollStaff->id)
-                ->where('from_date', $from_date)
-                ->where('deleted_at', null)
-                ->get()
-                ->toBase();
+                ->when($id, fn($q) => $q->where('id', '!=', $id))
+                ->orderBy('from_date')
+                ->get();
+
+            foreach ($allRegisters as $reg) {
+                $regFrom = Carbon::parse($reg->from_date);
+                $regTo = $reg->to_date ? Carbon::parse($reg->to_date) : null;
+
+                if ($from_date->lessThanOrEqualTo($regFrom) && !$id) {
+                    $data['unique_from_date'] = true;
+                    break;
+                }
+
+                if ($regTo && $from_date->between($regFrom, $regTo)) {
+                    $data['overlap_period'] = true;
+                    break;
+                }
+
+                if (!$regTo && $from_date->lessThanOrEqualTo($regFrom) && $allRegisters->count() > 1) {
+                    $data['overlap_period'] = true;
+                    break;
+                }
+            }
         }
 
-        if (count($payrollAriRegistersFromDate) > 0) {
-            $data["unique_from_date"] = true;
+        if ($from_date && $to_date && $to_date->lt($from_date)) {
+            $data['invalid_date_range'] = true;
         }
+
+        $data['desde'] = $from_date?->format('Y-m-d');
+        $data['hasta'] = $to_date?->format('Y-m-d');
 
         return $data;
     }
@@ -138,16 +211,25 @@ class AriRegisterImport implements
     public function rules(): array
     {
         return [
-            "unique_from_date" => function ($attribute, $value, $onFailure) {
+            'cedula' => ['required'],
+            'porcentaje' => ['required'],
+            'desde' => ['required'],
+
+            'unique_from_date' => function ($attribute, $value, $onFailure) {
                 if ($value) {
-                    $onFailure(
-                        'La fecha inicial ya ha sido registrado por este empleado.'
-                    );
+                    $onFailure('La fecha de inicio debe ser posterior a la fecha de inicio anterior.');
                 }
             },
-            "cedula" => ['required'],
-            "porcentaje" => ['required'],
-            "desde" => ['required'],
+            'overlap_period' => function ($attribute, $value, $onFailure) {
+                if ($value) {
+                    $onFailure('La fecha de inicio se encuentra dentro del periodo de un registro anterior.');
+                }
+            },
+            'invalid_date_range' => function ($attribute, $value, $onFailure) {
+                if ($value) {
+                    $onFailure('La fecha de fin no puede ser anterior a la fecha de inicio.');
+                }
+            },
         ];
     }
 
@@ -173,7 +255,7 @@ class AriRegisterImport implements
                 'row' => $failure->row(),
                 'attribute' => str_replace('_value', '', $this->attributes[$failure->attribute()]),
                 'error' => $failure->errors()[0],
-                'sheetName' => 'Registros de Ajuste en Salario',
+                'sheetName' => 'Registros ARI',
             ];
             $jsonErrors = json_encode($validationErrors);
 

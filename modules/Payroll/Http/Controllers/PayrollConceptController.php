@@ -266,6 +266,8 @@ class PayrollConceptController extends Controller
             'is_strict' => $request->is_strict,
             'formula_history' => $request->formula_history,
             'formula_show_history' => $request->formula_show_history,
+            'is_concept_advancement' => $request->is_concept_advancement,
+            'is_advance_deduction' => $request->is_advance_deduction
         ]);
         $existAccounting = Module::has('Accounting') && Module::isEnabled('Accounting');
         if (!empty($request->receiver)) {
@@ -309,13 +311,16 @@ class PayrollConceptController extends Controller
                     /* Objeto asociado al modelo PayrollConceptAssignOption */
                     $payrollConceptAssignOption = PayrollConceptAssignOption::create([
                         'key' => $assign_to['id'],
-                        'applicable_type' => PayrollConcept::class,
-                        'applicable_id' => $payrollConcept->id,
+                        // 'applicable_type' => PayrollConcept::class,
+                        // 'applicable_id' => $payrollConcept->id,
+                        'assignable_type' => $assign_to['optionModel'] ?? $assign_to['model'],
+                        'assignable_id' => $assign_option['id'],
                     ]);
+
                     /* Se guarda la información en el campo morphs */
-                    $assignModel = $assign_to['optionModel'] ?? $assign_to['model'];
-                    $option = $assignModel::find($assign_option['id']);
-                    $option->payrollConceptAssignOptions()->save($payrollConceptAssignOption);
+                    // $assignModel = $assign_to['optionModel'] ?? $assign_to['model'];
+                    // $option = $assignModel::find($assign_option['id']);
+                    $payrollConcept->payrollConceptAssignOptions()->save($payrollConceptAssignOption);
                 }
             }
         };
@@ -407,6 +412,8 @@ class PayrollConceptController extends Controller
         $payrollConcept->is_strict = $request->is_strict;
         $payrollConcept->formula_history = $request->formula_history;
         $payrollConcept->formula_show_history = $request->formula_show_history;
+        $payrollConcept->is_concept_advancement = $request->is_concept_advancement;
+        $payrollConcept->is_advance_deduction = $request->is_advance_deduction;
         $payrollConcept->save();
 
         $existAccounting = Module::has('Accounting') && Module::isEnabled('Accounting');
@@ -460,13 +467,16 @@ class PayrollConceptController extends Controller
                     /* Objeto asociado al modelo PayrollConceptAssignOption */
                     $payrollConceptAssignOption = PayrollConceptAssignOption::create([
                         'key' => $assign_to['id'],
-                        'applicable_type' => PayrollConcept::class,
-                        'applicable_id' => $payrollConcept->id,
+                        // 'applicable_type' => PayrollConcept::class,
+                        // 'applicable_id' => $payrollConcept->id,
+                        'assignable_type' => $assign_to['optionModel'] ?? $assign_to['model'],
+                        'assignable_id' => $assign_option['id'],
                     ]);
+
                     /* Se guarda la información en el campo morphs */
-                    $assignModel = $assign_to['optionModel'] ?? $assign_to['model'];
-                    $option = $assignModel::find($assign_option['id']);
-                    $option->payrollConceptAssignOptions()->save($payrollConceptAssignOption);
+                    // $assignModel = $assign_to['optionModel'] ?? $assign_to['model'];
+                    // $option = $assignModel::find($assign_option['id']);
+                    $payrollConcept->payrollConceptAssignOptions()->save($payrollConceptAssignOption);
                 }
             }
         };
@@ -486,6 +496,10 @@ class PayrollConceptController extends Controller
     {
         /* Objeto con la información del concepto a eliminar asociado al modelo PayrollConcept */
         $payrollConcept = PayrollConcept::find($id);
+        $paymentType = $payrollConcept->payrollPaymentTypes()->first();
+        if ($paymentType) {
+            return response()->json(['errors' => ['No se puede eliminar el registro porque esta asociado a otro proceso.']], 422);
+        }
         $payrollConcept->delete();
         return response()->json(['record' => $payrollConcept, 'message' => 'Success'], 200);
     }
@@ -499,7 +513,17 @@ class PayrollConceptController extends Controller
      */
     public function getPayrollConcepts()
     {
-        return template_choices('Modules\Payroll\Models\PayrollConcept', ['name'], ['active' => true], true);
+        $payrollConceptsList = PayrollConcept::where('active', true)
+            ->get(['id', 'name', 'assign_to', 'is_concept_advancement'])
+            ->map(function ($payrollConcept) {
+                return [
+                    'id' => $payrollConcept->id,
+                    'text' => $payrollConcept->name,
+                    'is_concept_advancement' => $payrollConcept->is_concept_advancement,
+                ];
+            })
+            ->toArray();
+        return $payrollConceptsList;
     }
 
     /**
@@ -528,6 +552,20 @@ class PayrollConceptController extends Controller
         foreach ($assignTo->loadData('assignTo') as $field) {
             if ($field['type'] == 'list') {
                 if ($field['id'] == $id) {
+                    if (isset($field['optionModel']) && $field['id'] == 'staff_paid_concepts') {
+                        $payrollConceptsList = PayrollConcept::where('active', true)
+                            ->where('is_concept_advancement', true)
+                            ->get(['id', 'name', 'assign_to', 'is_concept_advancement'])
+                            ->map(function ($payrollConcept) {
+                                return [
+                                    'id' => $payrollConcept->id,
+                                    'text' => $payrollConcept->name,
+                                    'is_concept_advancement' => $payrollConcept->is_concept_advancement,
+                                ];
+                            })
+                            ->toArray();
+                        return $payrollConceptsList;
+                    }
                     if (isset($field['optionModel'])) {
                         return template_choices($field['optionModel'], $field['optionField'] ?? 'name', '', true);
                     }
@@ -630,11 +668,40 @@ class PayrollConceptController extends Controller
 
         $exploded = multiexplode(
             [
-                'if', '(', ')', '{', '}',
-                '==', '<=', '>=', '<', '>', '!=',
-                '+', '-', '*', '/', 'select', 'case',
-                'then', 'when', 'else', 'end', ';', '1', '2',
-                '3', '4', '5', '6', '7', '8', '9', '0', '.', ','
+                'if',
+                '(',
+                ')',
+                '{',
+                '}',
+                '==',
+                '<=',
+                '>=',
+                '<',
+                '>',
+                '!=',
+                '+',
+                '-',
+                '*',
+                '/',
+                'select',
+                'case',
+                'then',
+                'when',
+                'else',
+                'end',
+                ';',
+                '1',
+                '2',
+                '3',
+                '4',
+                '5',
+                '6',
+                '7',
+                '8',
+                '9',
+                '0',
+                '.',
+                ','
             ],
             $formula
         );

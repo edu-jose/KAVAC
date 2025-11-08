@@ -5,6 +5,7 @@ use Modules\WorkAttendance\Http\Controllers\WorkAttendanceController;
 use Modules\WorkAttendance\Http\Controllers\WorkAttendanceHistoryController;
 use Modules\WorkAttendance\Http\Controllers\WorkAttendanceSettingController;
 use Modules\WorkAttendance\Http\Controllers\WorkAttendanceScheduleController;
+use Modules\WorkAttendance\Http\Controllers\WorkAttendancePermissionController;
 use Modules\WorkAttendance\Http\Controllers\WorkAttendanceCustomScheduleController;
 use Modules\WorkAttendance\Http\Controllers\WorkAttendanceExternalActivityController;
 use Modules\WorkAttendance\Http\Controllers\WorkAttendanceSettingNotificationController;
@@ -55,6 +56,15 @@ Route::group([
         ['settings' => 'schedule']
     )->names('workattendance.settings.schedule');
     Route::get('history', [WorkAttendanceHistoryController::class, 'index'])->name('workattendance.history.index');
+    /** Registra una asistencia manual por el encargado de gestionar las asistencias del personal */
+    Route::post('manual-entry', [
+        WorkAttendanceController::class,
+        'manualStore'
+    ])->name('workattendance.manual.store');
+    Route::post(
+        'history/{id}',
+        [WorkAttendanceHistoryController::class, 'update']
+    )->name('workattendance.history.update');
     Route::get(
         'history/individual',
         [WorkAttendanceHistoryController::class, 'individualIndex']
@@ -115,4 +125,20 @@ Route::group([
         'custom-schedules/list/all',
         [WorkAttendanceCustomScheduleController::class, 'getList']
     )->name('workattendance.custom.schedule.list');
+    Route::resource(
+        'permissions',
+        WorkAttendancePermissionController::class
+    )->names('workattendance.permissions');
+    Route::get(
+        'get-permissions',
+        [WorkAttendancePermissionController::class, 'getList']
+    )->name('workattendance.permissions.list');
+    Route::get(
+        'permissions/approve/{permission}',
+        [WorkAttendancePermissionController::class, 'setApproved']
+    )->name('workattendance.permissions.approve');
+    Route::get(
+        'permissions/reject/{permission}',
+        [WorkAttendancePermissionController::class, 'setRejected']
+    )->name('workattendance.permissions.reject');
 });

@@ -126,6 +126,31 @@ class SaleRoleAndPermissionsTableSeeder extends Seeder
                 'slug_alt' => 'configuracion.metodos_cobro',
                 'short_description' => 'Configuración de los métodos de cobro'
             ],
+            [
+                'name' => 'Registrarlos métodos de cobro',
+                'slug' => 'sale.setting.charge.store',
+                'description' => 'Acceso a registrar los métodos de cobro',
+                'model' => 'Modules\Sale\Models\SaleChargeMoney', 'model_prefix' => 'Comercialización',
+                'slug_alt' => 'configuracion.metodos_cobro.crear',
+                'short_description' => 'Registrar los métodos de cobro'
+            ],
+            [
+                'name' => 'Actualizar los métodos de cobro',
+                'slug' => 'sale.setting.charge.update',
+                'description' => 'Acceso a actualizar los métodos de cobro',
+                'model' => 'Modules\Sale\Models\SaleChargeMoney', 'model_prefix' => 'Comercialización',
+                'slug_alt' => 'configuracion.metodos_cobro.actualizar',
+                'short_description' => 'Actualizar los métodos de cobro'
+            ],
+            [
+                'name' => 'Eliminar los métodos de cobro',
+                'slug' => 'sale.setting.charge.destroy',
+                'description' => 'Acceso a eliminar los métodos de cobro',
+                'model' => 'Modules\Sale\Models\SaleChargeMoney', 'model_prefix' => 'Comercialización',
+                'slug_alt' => 'configuracion.metodos_cobro.eliminar',
+                'short_description' => 'Eliminar los métodos de cobro'
+            ],
+
             /* Configuración de las formas de cobro */
             [
                 'name' => 'Configuración de las formas de cobro',
@@ -336,6 +361,35 @@ class SaleRoleAndPermissionsTableSeeder extends Seeder
                 'model_prefix'      => 'Comercialiación',
                 'slug_alt'          => 'panel_de_control.ver',
                 'short_description' => 'Visualizar panel de control del módulo de comercialización'
+            ],
+            /* Gestión de Clientes */
+            [
+                'name' => 'Ver Gestión de Clientes',
+                'slug' => 'sale.customer.management.list',
+                'description' => 'Acceso para ver las Gestión de Clientes',
+                'model' => 'Modules\Sale\Models\SaleCustomerManagement', 'model_prefix' => 'Comercialización',
+                'slug_alt' => 'comercializacion.customermanagement.ver', 'short_description' => 'ver Gestión de Clientes'
+            ],
+            [
+                'name' => 'Crear Gestión de Clientes',
+                'slug' => 'sale.customer.management.create',
+                'description' => 'Acceso para crear las Gestión de Clientes',
+                'model' => 'Modules\Sale\Models\SaleCustomerManagement', 'model_prefix' => 'Comercialización',
+                'slug_alt' => 'comercializacion.customermanagement.crear', 'short_description' => 'crear Gestión de Clientes'
+            ],
+            [
+                'name' => 'Editar Gestión de Clientes',
+                'slug' => 'sale.customer.management.edit',
+                'description' => 'Acceso para editar las Gestión de Clientes',
+                'model' => 'Modules\Sale\Models\SaleCustomerManagement', 'model_prefix' => 'Comercialización',
+                'slug_alt' => 'comercializacion.customermanagement.editar', 'short_description' => 'editar Gestión de Clientes'
+            ],
+            [
+                'name' => 'Eliminar Gestión de Clientes',
+                'slug' => 'sale.customer.management.delete',
+                'description' => 'Acceso para eliminar las Gestión de Clientes',
+                'model' => 'Modules\Sale\Models\SaleCustomerManagement', 'model_prefix' => 'Comercialización',
+                'slug_alt' => 'comercializacion.customermanagement.eliminar', 'short_description' => 'eliminar Gestión de Clientes'
             ],
         ];
 

@@ -131,7 +131,41 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <!-- ./alimenta la arc -->
+                                        <!-- Es un adelanto -->
+                                        <div class="col-md-2">
+                                            <div class="form-group">
+                                                <label>¿Es un adelanto?</label>
+                                                <div class="col-12">
+                                                    <div class="custom-control custom-switch" data-toggle="tooltip"
+                                                        title="Indique si el concepto es un adelanto">
+                                                        <input type="checkbox" class="custom-control-input"
+                                                            id="isAdvance" v-model="record.is_concept_advancement"
+                                                            :value="true">
+                                                        <label class="custom-control-label" for="isAdvance"></label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- ./Es un adelanto -->
+
+                                        <!-- deducción por adelantado -->
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label>¿Es deducción de un adelantado?</label>
+                                                <div class="col-12">
+                                                    <div class="custom-control custom-switch" data-toggle="tooltip"
+                                                        title="Indique si el concepto se va a deducir por adelantado">
+                                                        <input type="checkbox" class="custom-control-input"
+                                                            id="isAdvanceDeduction"
+                                                            v-model="record.is_advance_deduction" :value="true">
+                                                        <label class="custom-control-label"
+                                                            for="isAdvanceDeduction"></label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- ./deducción por adelantado -->
+
                                         <!-- descripción -->
                                         <div class="col-md-12">
                                             <div class="form-group">
@@ -174,6 +208,7 @@
                                         </div>
                                         <!-- ./¿asignar a? -->
                                     </div>
+
                                     <div v-if="record.assign_to" class="row align-items-baseline">
                                         <div class="col-md-4" v-for="field in record.assign_to" :key="field['id']">
                                             <div
@@ -533,10 +568,10 @@
                                                         <label for="savings_fund">¿Registro Fondo de Ahorro?</label>
                                                         <div class="col-12">
                                                             <p-radio class="pretty p-switch p-fill p-bigger"
-                                                                     color="success" off-color="text-gray" toggle
-                                                                     data-toggle="tooltip"
-                                                                     title="Indique si desea utilizar una variable asociada al registro Fondo de Ahorro"
-                                                                     v-model="variable" value="savings_fund">
+                                                                color="success" off-color="text-gray" toggle
+                                                                data-toggle="tooltip"
+                                                                title="Indique si desea utilizar una variable asociada al registro Fondo de Ahorro"
+                                                                v-model="variable" value="savings_fund">
                                                                 <label slot="off-label"></label>
                                                             </p-radio>
                                                         </div>
@@ -544,13 +579,14 @@
                                                 </div>
                                                 <div class="col-xs-3 col-md-3">
                                                     <div class="form-group">
-                                                        <label for="wage_garnishment">¿Registro de Embargo de sueldo?</label>
+                                                        <label for="wage_garnishment">¿Registro de Embargo de
+                                                            sueldo?</label>
                                                         <div class="col-12">
                                                             <p-radio class="pretty p-switch p-fill p-bigger"
-                                                                     color="success" off-color="text-gray" toggle
-                                                                     data-toggle="tooltip"
-                                                                     title="Indique si desea utilizar una variable asociada al registro Embargo de sueldo"
-                                                                     v-model="variable" value="wage_garnishment">
+                                                                color="success" off-color="text-gray" toggle
+                                                                data-toggle="tooltip"
+                                                                title="Indique si desea utilizar una variable asociada al registro Embargo de sueldo"
+                                                                v-model="variable" value="wage_garnishment">
                                                                 <label slot="off-label"></label>
                                                             </p-radio>
                                                         </div>
@@ -571,7 +607,7 @@
                                                     </div>
                                                 </div>
                                                 <div class="col-md-12"
-                                                     v-if="variable && variable != 'ari_register' && variable != 'savings_fund' && variable != 'wage_garnishment'">
+                                                    v-if="variable && variable != 'ari_register' && variable != 'savings_fund' && variable != 'wage_garnishment'">
                                                     <!-- opciones -->
                                                     <div class="form-group">
                                                         <label for="register">Registro</label>
@@ -800,6 +836,8 @@ export default {
                 description: '',
                 active: false,
                 arc: false,
+                is_concept_advancement: false,
+                is_advance_deduction: false,
                 formula: '',
                 formulaShow: '',
                 payroll_concept_type_id: '',
@@ -1105,6 +1143,12 @@ export default {
         });
     },
     watch: {
+        'record.is_concept_advancement'(val) {
+            if (val) this.record.is_advance_deduction = false;
+        },
+        'record.is_advance_deduction'(val) {
+            if (val) this.record.is_concept_advancement = false;
+        },
         /*'record.formula': {
             handler(newVal) {
                 const vm = this;
@@ -1165,8 +1209,8 @@ export default {
             } else {
                 vm.variable_options = [];
             }
-            
-            
+
+
 
         },
         formulaFunction: function (value) {
@@ -1517,6 +1561,8 @@ export default {
                 description: '',
                 active: false,
                 arc: false,
+                is_concept_advancement: false,
+                is_advance_deduction: false,
                 formula: '',
                 formulaShow: '',
                 currency_id: '',
@@ -2037,6 +2083,11 @@ export default {
                                 if (error.response.status == 403) {
                                     vm.showMessage(
                                         'custom', 'Acceso Denegado', 'danger', 'screen-error', error.response.data.message
+                                    );
+                                }
+                                if (error.response.status == 422) {
+                                    vm.showMessage(
+                                        'custom', 'Acceso Denegado', 'danger', 'screen-error', error.response.data.errors
                                     );
                                 }
                             }

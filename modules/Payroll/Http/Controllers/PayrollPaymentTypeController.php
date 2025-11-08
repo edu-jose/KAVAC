@@ -572,6 +572,36 @@ class PayrollPaymentTypeController extends Controller
     }
 
     /**
+     * Obtener los períodos de pago por un arreglo de Ids
+     *
+     * @param \Illuminate\Http\Request $request Datos de la petición
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getPaymentPeriodsByIds(Request $request)
+    {
+        $payrollPaymentPeriods = [];
+        $paymentTypeIds = array_column($request->payment_types, 'id');
+
+        $payrollGeneratedPaymentPeriods = PayrollPaymentPeriod::query()
+            ->whereIn('payroll_payment_type_id', $paymentTypeIds)
+            ->whereIn('payment_status', ['generated', 'approved'])
+            ->select('id', 'start_date', 'end_date', 'payroll_payment_type_id')
+            ->orderBy('start_date', 'desc')
+            ->get();
+
+        foreach ($payrollGeneratedPaymentPeriods as $generatedPeriod) {
+            $generatedPeriod['text'] = $generatedPeriod->start_date
+                . ' - ' . $generatedPeriod->end_date;
+            $payrollPaymentPeriods[$generatedPeriod->payroll_payment_type_id][] = $generatedPeriod;
+        }
+
+        return response()->json([
+            'records' => $payrollPaymentPeriods
+        ], 200);
+    }
+
+    /**
      * Cálcula los pagos de nómina
      *
      * @param \Illuminate\Http\Request $request Datos de la petición

@@ -33,6 +33,9 @@ Route::group(['middleware' => ['web', 'auth', 'verified'], 'prefix' => 'warehous
 
     Route::get('get-warehouses/{institution?}', 'WarehouseController@getWarehouses');
     Route::get('get-warehouse-products', 'WarehouseProductController@getWarehouseProducts');
+    // Ruta para obtener los productos de un almacén especifico
+    Route::get('get-warehouse-full-info-products/{warehouse}', 'WarehouseProductController@getWarehouseFullInfoProducts')
+        ->name('warehouse.get-warehouse-full-info-products');
     Route::get('get-warehouse-product/{product}', 'WarehouseProductController@getProductMeasurementUnit');
     Route::get('attributes/product/{product}', 'WarehouseProductController@getProductAttributes');
     Route::get('get-measurement-units', 'WarehouseProductController@getMeasurementUnits');
@@ -66,6 +69,9 @@ Route::group(['middleware' => ['web', 'auth', 'verified'], 'prefix' => 'warehous
     Route::get('receptions/info/{reception}', 'WarehouseReceptionController@vueInfo');
     Route::get('receptions/vue-list', 'WarehouseReceptionController@vueList');
 
+        // Ruta para obtener los productos de un almacén especifico para un selector
+    Route::get('get-warehouse-full-info-products-vue-select/{warehouse?}', 'WarehouseProductController@getWarehouseProductsVueSelect')
+        ->name('warehouse.get-warehouse-full-info-products-vue-select');
     Route::get(
         'receptions/edit/{reception}',
         'WarehouseReceptionController@edit'
@@ -88,13 +94,25 @@ Route::group(['middleware' => ['web', 'auth', 'verified'], 'prefix' => 'warehous
         'WarehouseReceptionController@approvedReception'
     );
 
+    /*
+     | ------------------------------------------------------------
+     | Rutas para gestionar la importación y exportación masiva
+     | ------------------------------------------------------------
+     */
+
+    Route::get('receptions/export-template', 'WarehouseReceptionController@exportTemplate')
+     ->name('warehouse.receptions.export-template');
+
+    Route::post('receptions/import', [
+        'as' => 'warehouse.receptions.import',
+        'uses' => 'WarehouseReceptionController@import'
+    ]);
 
     /*
      | ------------------------------------------------------------
      | Rutas para gestionar los Movimientos de Almacén
      | ------------------------------------------------------------
      */
-
 
     Route::resource('movements', 'WarehouseMovementController', ['only' => 'store']);
     Route::patch('movements/{movement}', 'WarehouseMovementController@update');
@@ -160,6 +178,31 @@ Route::group(['middleware' => ['web', 'auth', 'verified'], 'prefix' => 'warehous
         'WarehouseRequestStaffController',
         ['as' => 'warehouse.request', 'only' => ['store', 'update']]
     );
+    Route::delete(
+        'requests/staff/delete/{request}',
+        'WarehouseRequestStaffController@destroy'
+    )->name('warehouse.request.staff.destroy');
+
+    Route::get(
+        'external/requests/vue-list',
+        'WarehouseExternalRequestController@vueList'
+    )->name('warehouse.external-request.vue-list');
+
+    Route::get(
+        'external/requests/vue-info/{id}',
+        'WarehouseExternalRequestController@vueInfo'
+    )->name('warehouse.external-request.vue-info');
+
+    Route::get(
+        'external/requests/pdf/{id}',
+        'WarehousePDFController@warehouseExternalRequestPdf'
+    )->name('warehouse.external.request.pdf');
+
+    Route::resource(
+        'external/requests',
+        'WarehouseExternalRequestController',
+        ['as' => 'warehouse.external-request']
+    );
 
     Route::patch('requests/request-complete/{request}', 'WarehouseRequestController@confirmRequest');
     Route::put('requests/request-rejected/{request}', 'WarehouseRequestController@rejectedRequest');
@@ -206,6 +249,14 @@ Route::group(['middleware' => ['web', 'auth', 'verified'], 'prefix' => 'warehous
         ->name('warehouse.report.request-products');
     Route::get('reports/stocks', 'WarehouseReportController@stocks')
         ->name('warehouse.report.stocks');
+    Route::get('reports/consumption', 'WarehouseReportController@consumption')
+        ->name('warehouse.report.consumption');
+    Route::post('reports/get-consumption-data', 'WarehouseReportController@showConsumptionData')
+        ->name('warehouse.report.consumption.data');
+            Route::post('reports/consumption/export', 'WarehouseReportController@consumptionReportExport')
+                ->name('warehouse.report.consumption.export');
+        Route::post('reports/consumption/create', 'WarehouseReportController@createConsumptionReport')
+            ->name('warehouse.report.consumption.create');
     Route::post('reports/inventory-products/vue-list', 'WarehouseReportController@vueList');
     Route::post('reports/inventory-products/create', 'WarehouseReportController@create');
 

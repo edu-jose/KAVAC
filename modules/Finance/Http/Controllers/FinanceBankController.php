@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Modules\Finance\Models\FinanceBank;
+use Modules\Payroll\Models\PayrollFinancial;
 
 /**
  * @class FinanceBankController
@@ -159,6 +160,16 @@ class FinanceBankController extends Controller
             'name' => ['required', 'max:100', 'unique:finance_banks,name,' . $financeBank->id],
             'short_name' => ['required', 'max:50', 'unique:finance_banks,short_name,' . $financeBank->id]
         ], [], $this->customAttributes);
+        // si el usuario no es admin no puede cambiar el código si ya está en uso
+        if (!auth()->user()->isAdmin()) {
+            if ($financeBank->code !== $request->code) {
+                // Log de auditoría
+                $financePersonal = PayrollFinancial::where('bank_id', $financeBank->id)->first();
+                if ($financePersonal) {
+                    return response()->json(['errors' => ['No se puede cambiar el registro porque está en uso.']], 422);
+                }
+            }
+        }
 
         $financeBank->code = $request->code;
         $financeBank->name = $request->name;
@@ -179,6 +190,12 @@ class FinanceBankController extends Controller
     {
         /* Datos de la entidad bancaria */
         $financeBank = FinanceBank::find($id);
+        if ($financeBank) {
+            $financePersonal = PayrollFinancial::where('bank_id', $financeBank->id)->first();
+            if ($financePersonal) {
+                return response()->json(['errors' => ['No se puede eliminar el registro porque está en uso.']], 422);
+            }
+        }
         $financeBank->delete();
         return response()->json(['record' => $financeBank, 'message' => 'Success'], 200);
     }

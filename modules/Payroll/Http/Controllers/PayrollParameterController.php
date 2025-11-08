@@ -1189,7 +1189,7 @@ class PayrollParameterController extends Controller
             }
         } else { //Gestiona el formulario de Configuración de parametros para reporte de nómina
             // Parametros del formularios
-            $parameters = ['number_decimals', 'round', 'zero_concept'];
+            $parameters = ['number_decimals', 'round', 'zero_concept', 'max_digits'];
 
             foreach ($parameters as $parameter) {
                 if ($parameter == 'number_decimals') {
@@ -1201,6 +1201,27 @@ class PayrollParameterController extends Controller
                         [],
                         [
                             'number_decimals' => 'Número de decimales'
+                        ]
+                    );
+                    Parameter::updateOrCreate(
+                        [
+                            'p_key' => $parameter,
+                            'required_by' => 'payroll',
+                            'active' => true
+                        ],
+                        [
+                            'p_value' => $request->$parameter
+                        ]
+                    );
+                } elseif ($parameter == 'max_digits') {
+                    $this->validate(
+                        $request,
+                        [
+                            'max_digits' => ['required', 'integer', 'min:2']
+                        ],
+                        [],
+                        [
+                            'max_digits' => 'Máximo de digitos del número del archivo'
                         ]
                     );
                     Parameter::updateOrCreate(

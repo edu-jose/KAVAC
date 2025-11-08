@@ -7,6 +7,7 @@ use Illuminate\Database\Seeder;
 use App\Roles\Models\Permission;
 use Illuminate\Database\Eloquent\Model;
 use Modules\WorkAttendance\Models\WorkAttendance;
+use Modules\WorkAttendance\Models\WorkAttendancePermission;
 use Modules\WorkAttendance\Models\WorkAttendanceCustomSchedule;
 use Modules\WorkAttendance\Models\WorkAttendanceExternalActivity;
 
@@ -93,6 +94,41 @@ class WorkAttendanceRolesAndPermissionsTableSeeder extends Seeder
         ],
     ];
 
+    protected $requestWorkAbsencePermissions = [
+        [
+            'name' => 'Ver solicitud de permisos',
+            'slug' => 'workattendance.permissions.index',
+            'description' => 'Acceso para ver solicitud de permisos',
+            'model' => WorkAttendancePermission::class,
+            'model_prefix' => 'asistencia',
+            'slug_alt' => 'asistencia.solicitud.permiso.ver'
+        ],
+        [
+            'name' => 'Crear solicitud de permisos',
+            'slug' => 'workattendance.permissions.store',
+            'description' => 'Acceso para crear solicitud de permisos',
+            'model' => WorkAttendancePermission::class,
+            'model_prefix' => 'asistencia',
+            'slug_alt' => 'asistencia.solicitud.permiso.crear'
+        ],
+        [
+            'name' => 'Editar solicitud de permisos',
+            'slug' => 'workattendance.permissions.update',
+            'description' => 'Acceso para editar solicitud de permisos',
+            'model' => WorkAttendancePermission::class,
+            'model_prefix' => 'asistencia',
+            'slug_alt' => 'asistencia.solicitud.permiso.editar'
+        ],
+        [
+            'name' => 'Eliminar solicitud de permisos',
+            'slug' => 'workattendance.permissions.delete',
+            'description' => 'Acceso para eliminar solicitud de permisos',
+            'model' => WorkAttendancePermission::class,
+            'model_prefix' => 'asistencia',
+            'slug_alt' => 'asistencia.solicitud.permiso.eliminar',
+        ],
+    ];
+
     /**
      * Ejecuta los seeds de la base de datos
      *
@@ -126,8 +162,27 @@ class WorkAttendanceRolesAndPermissionsTableSeeder extends Seeder
                 'slug_alt' => 'asistencias.ver',
                 'short_description' => 'Ver asistencias',
             ],
+            [
+                'name' => 'Registrar asistencia',
+                'slug' => 'workattendance.manual.store',
+                'description' => 'Acceso para registrar asistencia del personal',
+                'model' => WorkAttendance::class,
+                'model_prefix' => 'asistencia',
+                'slug_alt' => 'asistencias.manual.crear',
+                'short_description' => 'Registrar asistencias',
+            ],
+            [
+                'name' => 'Editar asistencia',
+                'slug' => 'workattendance.history.update',
+                'description' => 'Acceso para editar asistencia del personal',
+                'model' => WorkAttendance::class,
+                'model_prefix' => 'asistencia',
+                'slug_alt' => 'asistencias.editar',
+                'short_description' => 'Editar asistencias',
+            ],
             ...$this->externalActivityPermissions,
-            ...$this->customSchedulePermissions
+            ...$this->customSchedulePermissions,
+            ...$this->requestWorkAbsencePermissions
         ];
 
         $workAttendanceRole->detachAllPermissions();

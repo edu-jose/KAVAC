@@ -52,8 +52,11 @@ $(document).ready(function() {
  * @return  {[type]}  [return description]
  */
 var checkSession = async function() {
+    if (window.screen_locked) {
+        return;
+    }
     let expired = false;
-    await axios.post(`${window.app_url}/session-expired`).then(response => {
+    await axios.post(`${window.app_url}/check-expired-session`).then(response => {
         expired = (response.data.result && !response.data.active);
     }).catch(error => {
         expired = (error.response.status === 403);

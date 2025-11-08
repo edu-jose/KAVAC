@@ -407,7 +407,7 @@ class AssetReport implements ReportInterface
         $this->pdf->AddPage($this->orientation, $this->format);
 
         if ($isHTML) {
-            $view = \Illuminate\View\View::make($body, $htmlParams);
+            $view = \Illuminate\Support\Facades\View::make($body, $htmlParams);
             $htmlContent = $view->render();
         }
         /* Escribre el contenido del reporte */

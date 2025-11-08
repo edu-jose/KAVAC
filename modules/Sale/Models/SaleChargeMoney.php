@@ -35,5 +35,5 @@ class SaleChargeMoney extends Model implements Auditable
      *
      * @var array $fillable
      */
-    protected $fillable = ['name_charge_money', 'description_charge_money', 'attributes_charge_money'];
+    protected $fillable = ['name_charge_money', 'description_charge_money'];
 }

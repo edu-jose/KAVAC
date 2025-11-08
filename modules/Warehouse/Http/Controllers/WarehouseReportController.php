@@ -16,8 +16,15 @@ use Modules\Warehouse\Models\WarehouseReport;
 use App\Models\Institution;
 use App\Models\FiscalYear;
 use App\Models\Currency;
+use App\Models\Department;
+use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Facades\Excel;
+use Modules\Warehouse\Exports\WarehouseConsumptionReportExport;
+use Modules\Warehouse\Models\Warehouse;
 use Modules\Warehouse\Models\WarehouseMovement;
+use Modules\Warehouse\Models\WarehouseRequest;
 
 /**
  * @class WarehouseReportController
@@ -91,6 +98,135 @@ class WarehouseReportController extends Controller
     }
 
     /**
+     * Reporte de consumo
+     *
+     * @return \Illuminate\View\View
+     */
+    public function consumption(Request $request)
+    {
+
+        if (isset(auth()->user()->profile) && isset(auth()->user()->profile->institution_id)) {
+            $institution = Institution::where(['id' => auth()->user()->profile->institution_id])->first();
+        } else {
+            $institution = Institution::where(['active' => true, 'default' => true])->first();
+        }
+
+        return view('warehouse::reports.warehouse-report-consumption', compact('institution'));
+    }
+
+    public function showConsumptionData(Request $request): JsonResponse
+    {
+        $validatedData = $this->validateConsumptionReportFilterParameters($request);
+        $records = $this->getRequestConsumptions($request);
+
+        return response()->json(['records' => $records['items']], JsonResponse::HTTP_OK);
+    }
+
+    /**
+     * Retrieves consumption data based on provided filters.
+     *
+     * @param Request $request The incoming HTTP request.
+     * @return array An array containing report header data and aggregated consumption items.
+     */
+    public function getRequestConsumptions(Request $request): array
+    {
+        $validatedData = $this->validateConsumptionReportFilterParameters($request);
+
+        $inventoryProductIds = collect($request->warehouse_product_ids)
+            ->pluck('id')
+            ->filter(function ($item) {
+                return $item !== 'all';
+            })->toArray();
+
+        $productIds = collect($request->warehouse_product_ids)
+            ->pluck('product_id')
+            ->filter(function ($item) {
+                return $item !== null;
+            })->toArray();
+
+        $records = WarehouseRequest::query()
+            ->filterDataToConsumptionReport([
+                'institution_id'        => $validatedData['institution_id'],
+                'warehouse_id'          => $validatedData['warehouse_id'],
+                'department_id'         => $validatedData['department_id'],
+                'type_search'           => $validatedData['type_search'],
+                'start_date'            => $validatedData['start_date'] ?? null,
+                'end_date'              => $validatedData['end_date'] ?? null,
+                'mes_id'                => $validatedData['mes_id'] ?? null,
+                'year'                  => $validatedData['year'] ?? null,
+                'inventory_product_ids' => $inventoryProductIds,
+                'product_ids'           => $productIds,
+            ])->get();
+
+        $consumptions = $this->processConsumptionsData($records, $validatedData, $productIds, $inventoryProductIds);
+
+        $institution = $request->institution_id ? Institution::find($request->institution_id) : null;
+        $department  = $validatedData['department_id'] ? Department::find($validatedData['department_id']) : null;
+
+        $from = null;
+        $to = null;
+        if ($validatedData['type_search'] === 'date') {
+            $from = $validatedData['start_date'];
+            $to = $validatedData['end_date'];
+        } elseif ($validatedData['type_search'] === 'mes') {
+            if ($validatedData['year'] && $validatedData['mes_id']) {
+                $carbonDate = Carbon::create($validatedData['year'], $validatedData['mes_id']);
+                $from = $carbonDate->startOfMonth()->toDateString();
+                $to = $carbonDate->endOfMonth()->toDateString();
+            } elseif ($validatedData['year'] && $validatedData['mes_id'] == 0) {
+                $carbonDate = Carbon::createFromFormat('Y', $validatedData['year']);
+                $from = $carbonDate->startOfYear()->format('d-m-Y');
+                $to = $carbonDate->endOfYear()->format('d-m-Y');
+            }
+        }
+
+        return [
+            'institution'   => $institution ? $institution->name : 'Todas',
+            'department'    => $department ? $department->name : 'Todos',
+            'from'          => $from,
+            'to'            => $to,
+            'items'         => array_values($consumptions),
+        ];
+    }
+
+    /**
+     * Descarga el reporte de consumo en formato xlsx
+     *
+     * @author Natanael Rojo <ndrojo@cenditel.gob.ve> | <<rojonatanael99@gmail.com>
+     * @param \Illuminate\Http\Request $request
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
+     */
+    public function consumptionReportExport(Request $request)
+    {
+        $validatedData = $this->validateConsumptionReportFilterParameters($request);
+
+        $inventoryProductIds = collect($request->warehouse_product_ids)
+            ->pluck('id')
+            ->filter(function ($item) {
+                return $item !== 'all';
+            })->toArray();
+        $productIds = collect($request->warehouse_product_ids)
+            ->pluck('product_id')
+            ->filter(function ($item) {
+                return $item !== null;
+            })->toArray();
+        $filterParameters = [
+            'institution_id' => $validatedData['institution_id'],
+            'warehouse_id' => $validatedData['warehouse_id'],
+            'department_id' => $validatedData['department_id'],
+            'type_search' => $validatedData['type_search'],
+            'start_date' => $validatedData['start_date'] ?? null,
+            'end_date' => $validatedData['end_date'] ?? null,
+            'mes_id' => $validatedData['mes_id'] ?? null,
+            'year' => $validatedData['year'] ?? null,
+            'inventory_product_ids' => $inventoryProductIds,
+            'product_ids' => $productIds,
+        ];
+
+        return Excel::download(new WarehouseConsumptionReportExport($filterParameters), 'reporte_consumo.xlsx');
+    }
+
+    /**
      * Reporte de inventario de productos
      *
      * @return \Illuminate\View\View
@@ -156,8 +292,8 @@ class WarehouseReportController extends Controller
                     });
                 /*Consulta para obtener las solicitudes de movimiento un producto en especifico */
                 $productsMovement = WarehouseMovement::where('state', 'Pendiente')
-                ->whereNotNull('warehouse_institution_warehouse_initial_id')
-                ->with(['warehouseInventoryProductMovements'])
+                    ->whereNotNull('warehouse_institution_warehouse_initial_id')
+                    ->with(['warehouseInventoryProductMovements'])
                     ->whereHas('warehouseInventoryProductMovements', function ($q) use ($id_product) {
                         $q->with(['warehouseInitialInventoryProduct'])
                             ->whereHas('warehouseInitialInventoryProduct', function ($qq) use ($id_product) {
@@ -519,11 +655,11 @@ class WarehouseReportController extends Controller
                     }
                     array_push($productsQuantity, [
                         'code' => $codeProduct,
-                        'quantity' => $totalQuantity]);
+                        'quantity' => $totalQuantity
+                    ]);
                 }
             }
         } else {
-            //$codeProducts = $this->getCodeProductsRequest($products->get(), $productsMovement->get());
             $codeProducts = $this->getCodeProductsRequest($products, $productsMovement);
             $productsQuantity = [];
             if (count($codeProducts)) {
@@ -538,9 +674,7 @@ class WarehouseReportController extends Controller
                         }
                     }
                     /* Cuenta la cantidad de los productos solicitado por movimiento*/
-                    //if (count($productsMovement->get()) > 0) {
                     if (count($productsMovement) > 0) {
-                        //foreach ($productsMovement->get() as $product) {
                         foreach ($productsMovement as $product) {
                             if (count($product->warehouseInventoryProductMovements) > 0) {
                                 foreach ($product->warehouseInventoryProductMovements as $movement) {
@@ -553,7 +687,8 @@ class WarehouseReportController extends Controller
                     }
                     array_push($productsQuantity, [
                         'code' => $codeProduct,
-                        'quantity' => $totalQuantity]);
+                        'quantity' => $totalQuantity
+                    ]);
                 }
             }
         }
@@ -613,8 +748,8 @@ class WarehouseReportController extends Controller
                     });
                 /*Consulta para obtener las solicitudes de movimiento un producto en especifico */
                 $productsMovement = WarehouseMovement::where('state', 'Pendiente')
-                ->whereNotNull('warehouse_institution_warehouse_initial_id')
-                ->with(['warehouseInventoryProductMovements'])
+                    ->whereNotNull('warehouse_institution_warehouse_initial_id')
+                    ->with(['warehouseInventoryProductMovements'])
                     ->whereHas('warehouseInventoryProductMovements', function ($q) use ($id_product) {
                         $q->with(['warehouseInitialInventoryProduct'])
                             ->whereHas('warehouseInitialInventoryProduct', function ($qq) use ($id_product) {
@@ -960,6 +1095,8 @@ class WarehouseReportController extends Controller
                     }
                 }
             }
+        } elseif ($request->current === 'consumption') {
+            return $this->createConsumptionReport($request);
         }
         /*Manejo de cantidad de las solicitudes de los productos*/
         if ($request->current == "request-products") {
@@ -975,11 +1112,11 @@ class WarehouseReportController extends Controller
                     }
                     array_push($productsQuantity, [
                         'code' => $codeProduct,
-                        'quantity' => $totalQuantity]);
+                        'quantity' => $totalQuantity
+                    ]);
                 }
             }
         } else {
-            //$codeProducts = $this->getCodeProductsRequest($products->get(), $productsMovement->get());
             $codeProducts = $this->getCodeProductsRequest($products, $productsMovement);
             $productsQuantity = [];
             if (count($codeProducts)) {
@@ -994,10 +1131,8 @@ class WarehouseReportController extends Controller
                         }
                     }
                     /* Cuenta la cantidad de los productos solicitado por movimiento*/
-                    //if (count($productsMovement->get()) > 0) {
                     if (count($productsMovement) > 0) {
                         foreach ($productsMovement as $product) {
-                        //foreach ($productsMovement->get() as $product) {
                             if (count($product->warehouseInventoryProductMovements) > 0) {
                                 foreach ($product->warehouseInventoryProductMovements as $movement) {
                                     if ($movement->warehouseInitialInventoryProduct['code'] == $codeProduct) {
@@ -1009,7 +1144,8 @@ class WarehouseReportController extends Controller
                     }
                     array_push($productsQuantity, [
                         'code' => $codeProduct,
-                        'quantity' => $totalQuantity]);
+                        'quantity' => $totalQuantity
+                    ]);
                 }
             }
         }
@@ -1021,7 +1157,10 @@ class WarehouseReportController extends Controller
         $codeSetting = CodeSetting::where('table', 'warehouse_reports')->first();
         if (is_null($codeSetting)) {
             $request->session()->flash('message', [
-                'type' => 'other', 'title' => 'Alerta', 'icon' => 'screen-error', 'class' => 'growl-danger',
+                'type' => 'other',
+                'title' => 'Alerta',
+                'icon' => 'screen-error',
+                'class' => 'growl-danger',
                 'text' => 'Debe configurar previamente el formato para el código a generar'
             ]);
             return response()->json(['result' => false, 'redirect' => route('warehouse.setting.index')], 200);
@@ -1093,6 +1232,88 @@ class WarehouseReportController extends Controller
         return response()->json(['result' => true, 'redirect' => $url], 200);
     }
 
+    public function createConsumptionReport(Request $request)
+    {
+        $fields = $this->getRequestConsumptions($request);
+        $institution = Institution::where('default', true)
+            ->where('active', true)->first();
+        $department = Department::find($request->department_id);
+        $warehouse = $request->input('warehouse_id') ? Warehouse::find($request->warehouse_id) : null;
+
+        $pdf = new ReportRepository();
+
+        $codeSetting = CodeSetting::where('table', 'warehouse_reports')->first();
+
+        if (is_null($codeSetting)) {
+            $request->session()->flash('message', [
+                'type' => 'other',
+                'title' => 'Alerta',
+                'icon' => 'screen-error',
+                'class' => 'growl-danger',
+                'text' => 'Debe configurar previamente el formato para el código a generar'
+            ]);
+            return response()->json(['result' => false, 'redirect' => route('warehouse.setting.index')], 200);
+        }
+
+        $currentFiscalYear = FiscalYear::select('year')
+            ->where(['active' => true, 'closed' => false])->orderBy('year', 'desc')->first();
+
+        $code  = generate_registration_code(
+            $codeSetting->format_prefix,
+            strlen($codeSetting->format_digits),
+            (strlen($codeSetting->format_year) == 2) ? (isset($currentFiscalYear) ?
+                substr($currentFiscalYear->year, 2, 2) : date('y')) : (isset($currentFiscalYear) ?
+                $currentFiscalYear->year : date('Y')),
+            WarehouseReport::class,
+            $codeSetting->field
+        );
+
+        $filename = 'warehouse-report-' . $code . '.pdf';
+
+        $report = WarehouseReport::create([
+            'code'           => $code,
+            'type_report'    => $request->current,
+            'institution_id' => $institution->id,
+            'filename'       => $filename
+        ]);
+
+        $body = 'warehouse::pdf.warehouse-consumption-report';
+
+        $institution = Institution::find(1);
+
+        $fiscal_year = FiscalYear::where('active', true)->first();
+
+        $currency = Currency::where('default', true)->first();
+
+        $pdf->setConfig(
+            [
+                'institution' => $institution,
+                'urlVerify'   => url(''),
+                'orientation' => 'L',
+                'filename'    => $filename
+            ]
+        );
+
+        $pdf->setHeader("Reporte de Almacén");
+        $pdf->setFooter(true, strip_tags($institution->legal_address));
+        $pdf->setBody(
+            $body,
+            true,
+            [
+                'pdf'    => $pdf,
+                'fields' => $fields,
+                'institution' => $institution,
+                'department' => $department,
+                'warehouse' => $warehouse,
+                'currencySymbol' => $currency['symbol'],
+                'fiscal_year' => $fiscal_year['year'],
+            ]
+        );
+
+        $url = route('warehouse.report.show', ['code' => $report->code]);
+        return response()->json(['result' => true, 'redirect' => $url], 200);
+    }
+
     /**
      * Descarga el reporte
      *
@@ -1142,5 +1363,86 @@ class WarehouseReportController extends Controller
         }
 
         return $codeProducts;
+    }
+
+    /**
+     * Processes the raw warehouse request records to aggregate consumption data.
+     *
+     * @param \Illuminate\Database\Eloquent\Collection $records The collection of WarehouseRequest records.
+     * @param array $validatedData The validated request data.
+     * @param array $productIds An array of product IDs to filter by.
+     * @param array $inventoryProductIds An array of inventory product IDs (used for conditional logic).
+     * @return array An associative array of aggregated consumption data, keyed by product ID.
+     */
+    private function processConsumptionsData($records, array $validatedData, array $productIds, array $inventoryProductIds): array
+    {
+        $consumptions = [];
+        $desiredProductIds = count($productIds) > 0 ? array_flip($productIds) : [];
+
+        foreach ($records as $record) {
+            foreach ($record->warehouseInventoryProductRequests as $productRequest) {
+                $warehouseProduct = $productRequest?->warehouseInventoryProduct?->warehouseProduct;
+                $productId = $warehouseProduct?->id;
+                $departmentId = $record?->department_id;
+                $institutionId = $record?->institution_id;
+                $warehouseId = $productRequest?->warehouseInventoryProduct?->warehouseInstitutionWarehouse?->warehouse_id;
+
+                if ($validatedData['warehouse_id'] === null && $institutionId == $validatedData['institution_id'] && $departmentId == $validatedData['department_id']) {
+                    if ($warehouseProduct && (isset($desiredProductIds[$warehouseProduct->id]) || empty($inventoryProductIds))) {
+                        if (!isset($consumptions[$productId])) {
+                            $consumptions[$productId] = [
+                                'id'                => $warehouseProduct->id,
+                                'product_name'      => $warehouseProduct->name,
+                                'consumed_amount'   => 0,
+                                'unit_of_measure'   => $warehouseProduct?->measurementUnit->name ?? '',
+                                'warehouse' => $record->warehouse->name,
+                            ];
+                        }
+                        $consumptions[$productId]['consumed_amount'] += $productRequest->quantity;
+                    }
+                } elseif ($institutionId == $validatedData['institution_id'] && $warehouseId == $validatedData['warehouse_id'] && $departmentId == $validatedData['department_id']) {
+                    if ($warehouseProduct && (isset($desiredProductIds[$warehouseProduct->id]) || empty($inventoryProductIds))) {
+                        if (!isset($consumptions[$productId])) {
+                            $consumptions[$productId] = [
+                                'id'                => $warehouseProduct->id,
+                                'product_name'      => $warehouseProduct->name,
+                                'consumed_amount'   => 0,
+                                'unit_of_measure'   => $warehouseProduct?->measurementUnit->name ?? '',
+                                'warehouse' => $record->warehouse->name,
+                            ];
+                        }
+                        $consumptions[$productId]['consumed_amount'] += $productRequest->quantity;
+                    }
+                }
+            }
+        }
+
+        return $consumptions;
+    }
+
+    private function validateConsumptionReportFilterParameters(Request $request): array
+    {
+        return $request->validate([
+            'institution_id'    => 'required|integer',
+            'warehouse_id'      => 'nullable',
+            'department_id'     => 'required|integer|exists:departments,id',
+            'type_search'       => 'required|in:date,mes',
+            'start_date'        => 'nullable|date_format:Y-m-d|required_if:type_search,date',
+            'end_date'          => 'nullable|date_format:Y-m-d|after_or_equal:start_date|required_if:type_search,date',
+            'mes_id'            => 'nullable|integer|between:0,12|required_if:type_search,mes',
+            'year'              => 'nullable|integer|digits:4|required_if:type_search,mes',
+            'warehouse_product_ids' => 'required|array|min:1',
+        ], [
+            'institution_id.required' => 'El campo institución es obligatorio.',
+            'warehouse_id.required'   => 'El campo almacén es obligatorio.',
+            'department_id.required'  => 'El campo departamento es obligatorio.',
+            'type_search.required'    => 'El campo tipo de búsqueda es obligatorio.',
+            'start_date.required_if'  => 'La fecha de inicio es obligatoria cuando el tipo de búsqueda es "fecha".',
+            'end_date.required_if'    => 'La fecha de fin es obligatoria cuando el tipo de búsqueda es "fecha".',
+            'mes_id.required_if'      => 'El mes es obligatorio cuando el tipo de búsqueda es "mes".',
+            'year.required_if'        => 'El año es obligatorio cuando el tipo de búsqueda es "mes".',
+            'warehouse_product_ids.required' => 'El campo productos es obligatorio.',
+            'warehouse_product_ids.min' => 'Debe seleccionar al menos un producto del almacén.',
+        ]);
     }
 }

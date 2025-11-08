@@ -266,16 +266,22 @@ class BudgetSpecificActionController extends Controller
             $request,
             [
                 'from_date' => ['required', 'date'],
-                'to_date' => ['date'],
+                'to_date' => ['nullable', 'date', 'after:from_date'],
                 'code' => ['required'],
                 'name' => ['required'],
                 'description' => ['required'],
+                'project_centralized_action' => ['required'],
+                'project_id' => ['required_if:project_centralized_action,project'],
+                'centralized_action_id' => ['required_if:project_centralized_action,centralized_action']
             ],
             [
                 'from_date.required' => 'El campo fecha de inicio es obligatorio.',
                 'from_date.date' => 'El campo fecha de inicio no tiene un formato válido.',
                 'to_date.date' => 'El campo fecha final no tiene un formato válido.',
                 'code.required' => 'El campo código es obligatorio.',
+                'project_centralized_action.required' => 'Debe indicar si el registro es para un proyecto o acción centralizada.',
+                'project_id.required_if' => 'Debe seleccionar un proyecto.',
+                'centralized_action_id.required_if' => 'Debe seleccionar una acción centralizada.'
             ]
         );
 

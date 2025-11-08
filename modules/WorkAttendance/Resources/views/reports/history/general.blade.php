@@ -33,11 +33,29 @@
                     </h6>
                     <div class="card-btns">
                         @include('buttons.previous', ['route' => url()->previous()])
+                        @if ($canRegister)
+                            <button
+                                type="button"
+                                class="btn btn-sm btn-primary btn-custom btn-new"
+                                title="Crear nuevo registro"
+                                data-toggle="modal"
+                                data-target="#work_attendance_new"
+                                v-has-tooltip
+                            >
+                                <i class="fa fa-plus-circle"></i>
+                            </button>
+                        @endif
                         @include('buttons.minimize')
                     </div>
                 </div>
                 <div class="card-body">
-                    <workattendance-history route_list="{{ route('workattendance.history.list') }}"></workattendance-history>
+                    <workattendance-history
+                        route_list="{{ route('workattendance.history.list') }}"
+                        can_update="{{ $canUpdate ? true : false }}"
+                    ></workattendance-history>
+                    <workattendance-history-new
+                        can_new="{{ $canRegister ? true : false }}"
+                    ></workattendance-history-new>
                 </div>
             </div>
         </div>

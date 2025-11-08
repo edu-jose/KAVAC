@@ -72,7 +72,7 @@ final class ExportPayrollAverageConceptReportAction
         int $payrollPaymentPeriodId,
         array $payrollStaffs,
         array $payrollConcepts,
-        PayrollVacationPolicyPayment $payrollVacationPolicyPayment,
+        ?PayrollVacationPolicyPayment $payrollVacationPolicyPayment,
     ) {
         $payrollPaymentPeriod = PayrollPaymentPeriod::toBase()->find($payrollPaymentPeriodId);
         $payrollPaymentAction = new PayrollPaymentRelationshipAction();
@@ -127,7 +127,7 @@ final class ExportPayrollAverageConceptReportAction
 
         if (count($payrollConcepts) === 0) {
             $payrollConcepts = $payrollVacationPolicyPayment
-                ->payrollVacationPolicyPaymentConcepts
+                ?->payrollVacationPolicyPaymentConcepts
                 ->pluck('payroll_concept_id')
                 ->toArray();
         }

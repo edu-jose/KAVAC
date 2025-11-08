@@ -1,23 +1,8 @@
 <template>
     <section id="PayrollEmploymentForm">
         <div class="card-body">
-            <div class="alert alert-danger" v-if="errors.length > 0">
-                <div class="container">
-                    <div class="alert-icon">
-                        <i class="now-ui-icons objects_support-17"></i>
-                    </div>
-                    <strong>Cuidado!</strong> Debe verificar los siguientes errores antes de continuar:
-                    <button type="button" class="close" data-dismiss="alert" aria-label="Close"
-                            @click.prevent="errors = []">
-                        <span aria-hidden="true">
-                            <i class="now-ui-icons ui-1_simple-remove"></i>
-                        </span>
-                    </button>
-                    <ul>
-                        <li v-for="error in errors" :key="error">{{ error }}</li>
-                    </ul>
-                </div>
-            </div>
+            <!-- sección de errores -->
+            <form-errors :listErrors="errors"></form-errors>
             <!-- Sección para registrar movimiento bancario -->
             <div class="row">
                 <div class="col-12 mb-4">
@@ -149,15 +134,7 @@
                             </thead>
                             <tbody>
                                 <tr v-for="(account, index) in record.accounts" :key="index">
-                                    <td
-                                        class="text-center"
-                                    >
-                                        {{
-                                            account.budget_tax_key
-                                                ? account.budget_tax_key
-                                                : index + 1
-                                        }}
-                                    </td>
+                                    <td class="text-center">{{ account.budget_tax_key ?? index + 1 }}</td>
                                     <td class="text-center">{{ account.pro_code }}</td>
                                     <td class="text-center">{{ account.code }}</td>
                                     <td class="text-center">{{ account.sp_acc_code }}</td>
@@ -198,15 +175,8 @@
                                 </thead>
                                 <tbody>
                                     <tr v-for="(tax_account, index) in record.tax_accounts" :key="index">
-                                        <td
-                                            v-if="tax_account.tax_id"
-                                            class="text-center"
-                                        >
-                                            {{
-                                                tax_account.budget_tax_key
-                                                    ? tax_account.budget_tax_key
-                                                    : index + 1
-                                            }}
+                                        <td v-if="tax_account.tax_id"
+                                            class="text-center">{{ tax_account.budget_tax_key ?? index + 1 }}
                                         </td>
                                         <td class="text-center">{{ tax_account.pro_code }}</td>
                                         <td class="text-center">{{ tax_account.code }}</td>
@@ -230,7 +200,8 @@
                         <div class="modal-dialog vue-crud" role="document">
                             <div class="modal-content">
                                 <div class="modal-header">
-                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"
+                                            @click="resetAddAccount">
                                         <span aria-hidden="true">×</span>
                                     </button>
                                     <h6>
@@ -239,20 +210,20 @@
                                     </h6>
                                 </div>
                                 <div class="modal-body">
-                                    <div class="alert alert-danger" v-if="errors.length > 0">
+                                    <div class="alert alert-danger" v-if="errorsAccounts.length > 0">
                                         <div class="container">
                                             <div class="alert-icon">
                                                 <i class="now-ui-icons objects_support-17"></i>
                                             </div>
                                             <strong>Cuidado!</strong> Debe verificar los siguientes errores antes de continuar:
                                             <button type="button" class="close" data-dismiss="alert" aria-label="Close"
-                                                    @click.prevent="errors = []">
+                                                    @click.prevent="errorsAccounts = []">
                                                 <span aria-hidden="true">
                                                     <i class="now-ui-icons ui-1_simple-remove"></i>
                                                 </span>
                                             </button>
                                             <ul>
-                                                <li v-for="error in errors" :key="error">{{ error }}</li>
+                                                <li v-for="error in errorsAccounts" :key="error">{{ error }}</li>
                                             </ul>
                                         </div>
                                     </div>
@@ -312,7 +283,7 @@
                                 </div>
                                 <div class="modal-footer">
                                     <button type="button" class="btn btn-default btn-sm btn-round btn-modal-close"
-                                            data-dismiss="modal">
+                                            data-dismiss="modal" @click="resetAddAccount">
                                         Cerrar
                                     </button>
                                     <button type="button" @click="addAccount"
@@ -354,6 +325,8 @@
     </section>
 </template>
 <script>
+import { error } from 'jquery';
+
 
     export default {
         props: {
@@ -447,6 +420,9 @@
                 columns: ['code', 'account', 'esp_code', 'description', 'amount', 'id'],
                 errors: [],
                 arrayKeys: [],
+                amountError: false,
+                taxAmount: 0,
+                errorsAccounts: [],
             }
         },
 
@@ -550,7 +526,26 @@
                         if (data.budget_compromise) {
                             for (let compromise_details of data.budget_compromise.budget_compromise_details) {
                                 let accounting_account_id = '';
-                                await vm.getAccountingAccountId(compromise_details.budget_account_id).then(data => accounting_account_id = data.accounting_account_id);
+
+                                await vm.getAccountingAccountId(compromise_details.budget_account_id)
+                                .then(response => accounting_account_id = response.data.accounting_account_id)
+                                .catch(error => {
+                                    // Manejar el error  de la respuesta
+                                    if (typeof(error.response.data.errors) !== "undefined") {
+                                        if (error.response.status == 422) {
+                                            vm.errors = error.response.data.errors;
+                                        } else {
+                                            vm.showMessage(
+                                                "custom",
+                                                "Alerta!",
+                                                "danger",
+                                                "screen-error",
+                                                error.response.data.message
+                                            );
+                                        }
+                                    }
+                                });
+
                                 if (!compromise_details.tax_id) {
                                     if (compromise_details.budget_tax_key) vm.arrayKeys.push(compromise_details.budget_tax_key);
                                     vm.record.accounts.push({
@@ -654,8 +649,20 @@
                     },
                 };
                 this.getCurrencies();
-                errors: [];
+                this.errors = [];
                 this.arrayKeys = [];
+                this.amountError = false;
+                this.taxAmount = 0;
+                this.errorsAccounts = [];
+            },
+
+            resetAddAccount() {
+                const vm = this;
+                vm.amountError = false;
+                vm.errorsAccounts = [];
+                vm.account_concept = '';
+                vm.account_amount = '';
+                vm.account_tax_id = '';
             },
 
             addDecimals(value) {
@@ -795,7 +802,7 @@
              * @author Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
              * @param  {integer} index Índice del elemento a eliminar
              */
-            deleteAccountCompromise(index) {
+            async deleteAccountCompromise(index) {
                 let vm = this;
                 bootbox.confirm({
                     title: "Eliminar cuenta?",
@@ -901,6 +908,95 @@
             },
 
             /**
+             * Método que valida que el monto a agregar no supere el existente en las cuentas
+             *
+             * @author  Ing. Francisco J. P. Ruiz <fjpeneya@cenditel.gob.ve>
+             *
+             * @param  {array} accounts Cuentas a las cuales se les va a descontar el monto
+             * @param  {array} taxAccounts Cuentas de impuestos a las cuales se les va a descontar el monto
+             * @param  {boolean} hasTaxAccount Indica si la cuenta tiene impuestos
+             * @param  {integer} taxId Id del impuesto
+             * @param  {integer} editIndex Índice del elemento a editar
+             *
+             * @return {void}
+             */
+            async maxAmount(accounts, taxAccounts, hasTaxAccount, taxId, editIndex = null) {
+                const vm = this;
+                vm.errorsAccounts = [];
+                // Reiniciar estado de error al iniciar la validación
+                vm.amountError = false;
+
+                let fields = {};
+                const selectedAccount = vm.accounts.find(
+                    (account) => account.id == vm.account_id
+                );
+                fields.account_amount = parseFloat(vm.account_amount);
+                fields.editIndex = editIndex;
+                fields.tax_account_id = taxId;
+                fields.account_amount_original = selectedAccount ? selectedAccount.amount : 0;
+
+                // Si La cuenta tiene impuestos se valida el monto disponible en la cuenta de impuestos
+                if (hasTaxAccount && taxId) {
+                    for (let taxAccount of vm.tax_accounts) {
+                        // Si ya hay un error, detener las peticiones
+                        if (vm.amountError) break;
+
+                        fields.account_id = taxAccount.id;
+                        fields.use_accounts = taxAccounts;
+                        fields.selected_account_amount = taxAccount.amount;
+
+                        try {
+                            const response = await axios.post(
+                                `${window.app_url}/budget/compromises/max-amount-tax-accounts`,
+                                fields
+                            );
+                            if (response && typeof response.data !== "undefined") {
+                                // Si la validación en backend falla, marcar error y detener
+                                if (!response.data.result) {
+                                    vm.amountError = true;
+                                    break;
+                                }
+                            } else {
+                                vm.errorsAccounts = [];
+                            }
+                        } catch (error) {
+                            vm.errorsAccounts = (error.response && error.response.data && error.response.data.errors) ? error.response.data.errors : [];
+                            vm.amountError = true;
+                            break;
+                        }
+                    }
+                }
+
+                // Si ocurrió un error validando cuentas de impuestos, detener y no validar la cuenta principal
+                if (vm.amountError) {
+                    return;
+                }
+
+                // Se valida el monto disponible en la cuenta principal (solo si no hubo error en impuestos)
+                fields.use_accounts = accounts;
+                fields.tax_accounts = taxAccounts;
+                fields.account_id = vm.account_id;
+                fields.selected_account_amount = 0;
+                fields.account_amount += vm.taxAmount;
+
+                try {
+                    const response = await axios.post(
+                        `${window.app_url}/budget/compromises/max-amount-accounts`,
+                        fields
+                    );
+                    if (response && typeof response.data !== "undefined") {
+                        vm.amountError = !response.data.result;
+                    } else {
+                        vm.errorsAccounts = [];
+                    }
+                } catch (error) {
+                    console.error(error);
+                    vm.errorsAccounts = (error.response && error.response.data && error.response.data.errors) ? error.response.data.errors : [];
+                    vm.amountError = true;
+                }
+            },
+
+            /**
              * Listado de impuestos
              *
              * @author     Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
@@ -931,6 +1027,8 @@
              */
             async addAccount() {
                 const vm = this;
+                vm.errorsAccounts = [];
+                vm.taxAmount = 0;
 
                 if (
                     !vm.specific_action_id ||
@@ -952,6 +1050,7 @@
                     return;
                 }
                 vm.loading = true;
+
                 if (
                     Number(vm.account_amount) == 0
                 ) {
@@ -977,13 +1076,40 @@
 
                 await vm.getAccountDetail(vm.account_id).then(detail => account = detail.record);
 
-                await vm.getAccountingAccountId(vm.account_id).then(data => accounting_account_id = data.accounting_account_id);
+                await vm.getAccountingAccountId(vm.account_id)
+                .then(response => accounting_account_id = response.data.accounting_account_id)
+                .catch(error => {
+                    // Manejar el error  de la respuesta
+                    if (typeof(error.response.data.errors) !== "undefined") {
+                        vm.amountError = true;
+                        if (error.response.status == 422) {
+                            vm.errorsAccounts = error.response.data.errors;
+                        } else {
+                            vm.showMessage(
+                                "custom",
+                                "Alerta!",
+                                "danger",
+                                "screen-error",
+                                error.response.data.message
+                            );
+                        }
+                    }
+                });
+                if (vm.amountError) {
+                    setTimeout(() => {
+                        vm.loading = false;
+                    }, 500);
+                    return;
+                }
 
                 if (vm.account_concept.length > 400) {
                     vm.errors.push('El campo concepto debe ser menor a 400 caracteres')
                 } else {
+                    let taxAccounts = [];
+                    let accounts = [];
                     let budget_tax_key = vm.generateUnitKey();
-                    vm.record.accounts.push({
+
+                    accounts.push({
                         'spac_description': `${specificAction.specificable.code}-${specificAction.code} | ${specificAction.name}`,
                         'code': account.code,
                         'description': vm.account_concept,
@@ -1012,8 +1138,32 @@
 
                         if (vm.tax_accounts.length > 0) {
                             for (let tax_account of vm.tax_accounts) {
-                                await vm.getAccountingAccountId(tax_account.id).then(data => tax_accounting_account_id = data.accounting_account_id);
-                                vm.record.tax_accounts.push({
+                                await vm.getAccountingAccountId(tax_account.id)
+                                .then(response => tax_accounting_account_id = response.data.accounting_account_id)
+                                .catch(error => {
+                                    // Manejar el error  de la respuesta
+                                    if (typeof(error.response.data.errors) !== "undefined") {
+                                        vm.amountError = true;
+                                        if (error.response.status == 422) {
+                                            vm.errorsAccounts = error.response.data.errors;
+                                        } else {
+                                            vm.showMessage(
+                                                "custom",
+                                                "Alerta!",
+                                                "danger",
+                                                "screen-error",
+                                                error.response.data.message
+                                            );
+                                        }
+                                    }
+                                });
+                                if (vm.amountError) {
+                                    setTimeout(() => {
+                                        vm.amountError = false;
+                                    }, 500);
+                                    return;
+                                }
+                                taxAccounts.push({
                                     'spac_description': `${specificAction.specificable.code}-${specificAction.code} | ${specificAction.name}`,
                                     'code': tax_account.code,
                                     'description': vm.account_concept,
@@ -1031,11 +1181,12 @@
                                 });
                             }
                         } else {
-                            vm.record.tax_accounts.push({
+                            vm.taxAmount = (vm.account_amount * tax_percentage) / 100;
+                            taxAccounts.push({
                                 'spac_description': `${specificAction.specificable.code}-${specificAction.code} | ${specificAction.name}`,
                                 'code': account.code,
                                 'description': vm.account_concept,
-                                'amount': vm.account_amount * tax_percentage / 100,
+                                'amount': vm.taxAmount,
                                 'specific_action_id': vm.specific_action_id,
                                 'account_id': vm.account_id,
                                 'tax_id': vm.account_tax_id,
@@ -1047,7 +1198,20 @@
                             });
                         }
                     }
-                    console.log(vm.record.accounts, vm.record.tax_accounts);
+
+                    await vm.maxAmount(vm.record.accounts, vm.record.tax_accounts, vm.tax_accounts.length > 0, vm.account_tax_id);
+
+                    if (vm.amountError) {
+                        setTimeout(() => {
+                            vm.amountError = false;
+                            vm.loading = false;
+                        }, 500);
+                        return;
+                    }
+
+                    vm.record.accounts = vm.record.accounts.concat(accounts);
+                    vm.record.tax_accounts = vm.record.tax_accounts.concat(taxAccounts);
+
                     bootbox.confirm({
                         title: "Agregar cuenta",
                         message: `Desea agregar otra cuenta?`,
@@ -1069,6 +1233,8 @@
                             vm.account_concept = '';
                             vm.account_amount = 0;
                             vm.account_tax_id = '';
+                            vm.taxAmount = 0;
+                            vm.errorsAccounts = [];
                             vm.sendEntryData();
                         }
                     });
@@ -1213,11 +1379,17 @@
                 return response.data;
             },
 
+            /**
+             * Obtiene la cuenta contable asociada a una cuenta presupuestaria
+             *
+             * @param id ID de la cuenta presupuestaria
+             */
             async getAccountingAccountId(id) {
                 const response = await axios.get(
                     `${window.app_url}/finance/movements/budget-accounting-accounts/${id}`
                 );
-                return response.data;
+
+                return response;
             },
 
             /**

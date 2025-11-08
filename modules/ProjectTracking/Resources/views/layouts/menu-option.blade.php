@@ -28,7 +28,14 @@
         </li>
 
         <li>
-            <a href="javascript:void(0)">Reportes</a>
+            <a href="javascript:void(0)" data-toggle="tooltip" data-placement="right" title="Gestiona la generación de reportes">Reportes</a>
+            <ul class="submenu" style="{!! display_submenu('reports') !!}">
+                <li title="Reporte de trabajadores" data-toggle="tooltip" data-placement="right" class="{!! set_active_menu('project-tracking.reports.personal-registers') !!}">
+                    <a href="{{ route('project-tracking.reports.personal-registers') }}">
+                        Trabajadores
+                    </a>
+                </li>
+            </ul>
         </li>
     </ul>
 </li>

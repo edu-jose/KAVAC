@@ -18,6 +18,15 @@
                 {{ (props.row.request_date) ? format_date(props.row.request_date):format_date(props.row.created_at) }}
             </span>
         </div>
+        <div slot="warehouse" slot-scope="props">
+            <span>
+                {{
+                    (props.row.warehouse) ?
+                        props.row.warehouse.name:
+                        'N/A'
+                    }}
+            </span>
+        </div>
         <div slot="id" slot-scope="props" class="text-center">
             <div class="d-inline-flex">
                 <warehouse-req-info
@@ -69,13 +78,22 @@ export default {
             records: [],
             warehouse_request_staffs_pdf: `${window.app_url}/warehouse/request/staffs/pdf/`,
             lastYear: "",
-            columns: ['code', 'payroll_staff', 'motive', 'state', 'request_date', 'id']
+            columns: [
+                'code',
+                'payroll_staff',
+                'warehouse',
+                'motive',
+                'state',
+                'request_date',
+                'id'
+            ]
         }
     },
     created() {
         this.table_options.headings = {
             'code':          'Código',
             'payroll_staff': 'Solicitante',
+            'warehouse':     'Almacén',
             'motive':        'Motivo',
             'state':         'Estado de la solicitud',
             'request_date':  'Fecha de la solicitud',
@@ -102,11 +120,8 @@ export default {
         reset() {
 
         },
-        deleteRecord(index, url) {
-            var url = (url)?url:this.route_delete;
-            var records = this.records;
-            var confirmated = false;
-            var index = index - 1;
+        deleteRecord(id, url) {
+            var url = (url) ? url : this.route_delete;
             const vm = this;
             url = vm.setUrl(url);
 
@@ -123,14 +138,18 @@ export default {
                 },
                 callback: function (result) {
                     if (result) {
-                        confirmated = true;
-                        axios.delete(`${url}/${records[index].id}`).then(response => {
+                        // Buscar el índice real por ID
+                        const recordIndex = vm.records.findIndex(item => item.id === id);
+                        if (recordIndex === -1) {
+                            vm.showMessage('custom', 'Alerta!', 'warning', 'screen-error', 'Registro no encontrado.');
+                            return;
+                        }
+                        axios.delete(`${url}/${id}`).then(response => {
                             if (typeof(response.data.error) !== "undefined") {
-                                /** Muestra un mensaje de error si sucede algún evento en la eliminación */
                                 vm.showMessage('custom', 'Alerta!', 'warning', 'screen-error', response.data.message);
                                 return false;
                             }
-                            records.splice(index, 1);
+                            vm.records.splice(recordIndex, 1);
                             vm.showMessage('destroy');
                         }).catch(error => {
                             vm.logs('mixins.js', 498, error, 'deleteRecord');
@@ -138,11 +157,6 @@ export default {
                     }
                 }
             });
-
-            if (confirmated) {
-                this.records = records;
-                this.showMessage('destroy');
-            }
         },
     }
 };

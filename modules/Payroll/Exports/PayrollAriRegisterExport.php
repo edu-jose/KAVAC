@@ -8,7 +8,10 @@ use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Events\AfterSheet;
 use Modules\Payroll\Models\PayrollAriRegister;
+use PhpOffice\PhpSpreadsheet\Style\Protection;
 
 /**
  * @class PayrollAriRegisterExport
@@ -19,7 +22,7 @@ use Modules\Payroll\Models\PayrollAriRegister;
  * @license
  *     [LICENCIA DE SOFTWARE CENDITEL](http://conocimientolibre.cenditel.gob.ve/licencia-de-software-v-1-3/)
  */
-class PayrollAriRegisterExport implements FromCollection, ShouldQueue, WithHeadings, ShouldAutoSize, WithMapping
+class PayrollAriRegisterExport implements FromCollection, ShouldQueue, WithHeadings, ShouldAutoSize, WithMapping, WithEvents
 {
     use Exportable;
 
@@ -30,7 +33,7 @@ class PayrollAriRegisterExport implements FromCollection, ShouldQueue, WithHeadi
      */
     public function collection()
     {
-        $columns = ['payroll_staff_id', 'percetage', 'from_date', 'to_date'];
+        $columns = ['payroll_staff_id', 'percetage', 'from_date', 'to_date', 'id'];
 
         return PayrollAriRegister::with('payrollStaff')->get($columns);
     }
@@ -46,7 +49,8 @@ class PayrollAriRegisterExport implements FromCollection, ShouldQueue, WithHeadi
             'Cédula',
             'Porcentaje',
             'Desde',
-            'Hasta'
+            'Hasta',
+            'Código'
         ];
     }
 
@@ -59,11 +63,40 @@ class PayrollAriRegisterExport implements FromCollection, ShouldQueue, WithHeadi
      */
     public function map($row): array
     {
+        $code = 'ARI-' . $row->id;
+
         return [
             $row->payrollStaff->id_number,
             $row->percetage * 100,
             $row->from_date,
             $row->to_date,
+            $code
+        ];
+    }
+
+    /**
+     * Registra los eventos para la hoja de cálculo
+     *
+     * @return array
+     */
+    public function registerEvents(): array
+    {
+        return [
+            AfterSheet::class => function (AfterSheet $event) {
+                $sheet = $event->sheet->getDelegate();
+
+                // Activar protección de hoja
+                $sheet->getProtection()->setSheet(true);
+                $sheet->getProtection()->setPassword('pwd');
+
+                // Desbloquear toda la hoja (hasta el límite de Excel)
+                $sheet->getStyle('A1:Z1048576')
+                      ->getProtection()->setLocked(Protection::PROTECTION_UNPROTECTED);
+
+                // Bloquear toda la columna E (Código)
+                $sheet->getStyle('E1:E1048576')
+                      ->getProtection()->setLocked(Protection::PROTECTION_PROTECTED);
+            },
         ];
     }
 }

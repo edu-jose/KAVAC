@@ -64,6 +64,31 @@
         </div>
     @endpermission
 
+    @permission(['warehouse.external.request'])
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="card-title">Solicitudes Externas</h6>
+                        <div class="card-btns">
+                            @include('buttons.previous', ['route' => url()->previous()])
+                            @include('buttons.new', [
+                                'route' => route('warehouse.external-request.requests.create'),
+                            ])
+                            @include('buttons.minimize')
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <warehouse-external-request-list route_list="{{ url('warehouse/external/requests/vue-list') }}"
+                            route_edit="{{ url('warehouse/external/requests/{id}/edit') }}"
+                            route_delete="{{ url('warehouse/external/requests/{request}') }}">
+                        </warehouse-external-request-list>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endpermission
+
     @role(['admin', 'warehouse'])
         <div class="row">
             <div class="col-12">

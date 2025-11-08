@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Modules\Payroll\Models\PayrollStaff;
 use Modules\Payroll\Models\PayrollSurvivor;
@@ -60,6 +61,7 @@ class PayrollSocioeconomicController extends Controller
         $this->middleware('permission:payroll.socioeconomics.create', ['only' => ['create', 'store']]);
         $this->middleware('permission:payroll.socioeconomics.edit', ['only' => ['edit', 'update']]);
         $this->middleware('permission:payroll.socioeconomics.delete', ['only' => 'destroy']);
+        $this->middleware('permission:payroll.socioeconomics.restore', ['only' => 'restore']);
         $this->middleware('permission:payroll.socioeconomics.import', ['only' => 'import']);
         $this->middleware('permission:payroll.socioeconomics.export', ['only' => 'export']);
 
@@ -110,6 +112,26 @@ class PayrollSocioeconomicController extends Controller
      */
     public function store(Request $request)
     {
+        // Revisión de existencia en registros borrados
+        $deletedFinancial = PayrollSocioeconomic::withTrashed()
+        ->where('payroll_staff_id', $request->payroll_staff_id)
+        ->whereNotNull('deleted_at')
+        ->first();
+
+        if ($deletedFinancial) {
+            $hasRestorePermission = auth()->user()->hasPermission('payroll.socioeconomics.restore');
+            // Devolver respuesta JSON con el código de error y el ID del registro borrado para modal de restauracion
+            return response()->json([
+                'result'     => false,
+                'message'    => $hasRestorePermission
+                ? 'El trabajador ya tiene datos socioeconómicos registrados pero el registro se encuentra inactivo (borrado).'
+                : 'El trabajador ya tiene datos socioeconómicos registrados pero el registro se encuentra inactivo (borrado). Contacte al administrador del sistema.',
+                // Datos específicos solicitados
+                'error_code' => $hasRestorePermission ? 'ACC_DEL_EXISTS_001' : 'ACC_DEL_EXISTS_002',
+                'deleted_id' => $deletedFinancial->id, // ID del registro borrado
+            ], 422); // 422 Unprocessable Entity
+        }
+
         $rules = $this->rules;
         $messages = $this->messages;
         $hasSurvive = $request->survivor_first_name ||
@@ -136,8 +158,10 @@ class PayrollSocioeconomicController extends Controller
                 },
             ],
             'payroll_childrens.*.payroll_relationships_id' => 'required|integer',
-            // Add other validation rules for the nested fields as needed
+            'payroll_staff_id' => ['required','unique:payroll_socioeconomics,payroll_staff_id'],
         ], [
+            'payroll_staff_id.required' => 'El campo trabajador es obligatorio.',
+            'payroll_staff_id.unique' => 'El trabajador ya posee datos de información socioeconómica registrados.',
             'payroll_childrens.*.payroll_relationships_id.required' => 'La información del pariente es obligatoria.',
         ]);
         foreach ($request->payroll_childrens ?? [] as $i => $payrollChildren) {
@@ -486,27 +510,27 @@ class PayrollSocioeconomicController extends Controller
         $payrollSocioeconomic->payroll_staff_id = $request->payroll_staff_id;
         $payrollSocioeconomic->marital_status_id = $request->marital_status_id;
         $payrollSocioeconomic->save();
-        if (count($request->payroll_childrens) != count($payrollSocioeconomic->payrollChildrens)) {
+
+        // Eliminar hijos existentes
+        if (count($payrollSocioeconomic->payrollChildrens) > 0) {
             foreach ($payrollSocioeconomic->payrollChildrens as $payrollChildren) {
                 $payrollChildren->delete();
             }
         }
 
+        // Agregar nuevos hijos o restaurar y actualizar eliminados
         if ($request->payroll_childrens && !empty($request->payroll_childrens)) {
             foreach ($request->payroll_childrens as $payrollChildren) {
-                if (!is_null($payrollChildren["id_number"]) && !empty($payrollChildren["id_number"])) {
-                    $indentifier = [
-                        'first_name' => $payrollChildren['first_name'],
-                        'id_number' => $payrollChildren['id_number'],
-                        'last_name' => $payrollChildren['last_name'],
-                    ];
-                } else {
-                    $indentifier =
-                        [
-                            'first_name' => $payrollChildren['first_name'],
-                            'last_name' => $payrollChildren['last_name'],
-                        ];
-                }
+                /**
+                 * Para ubicar hijos existentes se usa coincidencia de nombre, apellido y fecha de nacimiento de los
+                 * que estan relacionados a datos socioeconomicos.
+                 */
+                $indentifier = [
+                    'first_name' => $payrollChildren['first_name'],
+                    'payroll_socioeconomic_id' => $payrollSocioeconomic->id,
+                    'last_name' => $payrollChildren['last_name'],
+                ];
+
                 PayrollFamilyBurden::withTrashed()->updateOrCreate(
                     $indentifier,
                     [
@@ -556,6 +580,19 @@ class PayrollSocioeconomicController extends Controller
         return response()->json([
             'result' => true, 'redirect' => route('payroll.socioeconomics.index'),
         ], 200);
+    }
+
+    /**
+     * Restaurar un registro de datos financieros eliminado
+     *
+     * @param int $id
+     * @return void
+     */
+    public function restore($id)
+    {
+        restore_record(PayrollSocioeconomic::class, ['id' => $id]);
+
+        return response()->json(['message' => 'Success', 'redirect' => route('payroll.socioeconomics.edit', ['socioeconomic' => $id])], 200);
     }
 
     /**
@@ -613,13 +650,21 @@ class PayrollSocioeconomicController extends Controller
     public function destroy($id)
     {
         $payrollSocioeconomic = PayrollSocioeconomic::find($id);
-        $payrollSocioeconomic->delete();
-
-        $payrollChildrens = PayrollFamilyBurden::where('payroll_socioeconomic_id', $payrollSocioeconomic->id)->get();
-        foreach ($payrollChildrens as $payrollChildren) {
-            $payrollChildren->delete();
+        if (!$payrollSocioeconomic) {
+            return response()->json(['message' => 'Registro no encontrado.'], 404);
         }
 
+        // Eliminar relaciones hasMany (payrollChildrens)
+        if (method_exists($payrollSocioeconomic, 'payrollChildrens')) {
+            $childrens = $payrollSocioeconomic->payrollChildrens;
+            if ($childrens && count($childrens)) {
+                foreach ($childrens as $child) {
+                    $child->delete();
+                }
+            }
+        }
+
+        $payrollSocioeconomic->delete();
         return response()->json(['record' => $payrollSocioeconomic, 'message' => 'Success'], 200);
     }
 

@@ -141,8 +141,15 @@ Route::group([
     /* Rutas para gestionar los subproyectos */
     Route::resource('subprojects', 'ProjectTrackingSubProjectController', ['except' => ['show']]);
 
+    /* Ruta para obtener el listado de subproyectos asociados a un responsable en específico */
+    Route::get('get-subprojects-by-responsable/{id}', 'ProjectTrackingSubProjectController@getSubProjectsByResponsable')->name('projecttracking.subprojects_by_responsable.get');
+
     /* Ruta para obtener el listado de proyectos */
     Route::get('get-projects', 'ProjectTrackingProjectController@getProjects')->name('projecttracking.projects.get');
+
+    /* Ruta para obtener el listado de proyectos asociados a un responsable en específico */
+    Route::get('get-projects-by-responsable/{id}', 'ProjectTrackingProjectController@getProjectsByResponsable')->name('projecttracking.projects_by_responsable.get');
+
     Route::get('subprojects/get-detail-subproject/{id?}', 'ProjectTrackingSubProjectController@getDetailSubProject')->name('projecttracking.subprojects.getDetailSubProject');
 
     /* Rutas para gestionar el plan de actividades */
@@ -199,6 +206,9 @@ Route::group([
     /* Ruta para obtener el listado de productos */
     Route::get('get-products', 'ProjectTrackingProductController@getProducts')->name('projecttracking.products.get');
 
+    /* Ruta para obtener el listado de proyectos asociados a un responsable en específico */
+    Route::get('get-products-by-responsable/{id}', 'ProjectTrackingProductController@getProductsByResponsable')->name('projecttracking.products_by_responsable.get');
+
     /* Rutas para gestionar las tareas */
     Route::resource('tasks', 'ProjectTrackingTaskController', ['as' => 'projecttracking', 'except' => ['show']]);
 
@@ -237,4 +247,29 @@ Route::group([
 
     /** Ruta para obtener los comentarios de las tareas */
     Route::get('get-task-comments', 'ProjectTrackingTaskCommentController@getTaskComments')->name('projecttracking.task.comment.get');
+
+    /** Ruta para obtener los datos para crear el gráfico del reporte */
+    Route::post('get-graph-data', 'ProjectTrackingReportController@getGraphData');
+
+    /*
+     | --------------------------------------------------------------------------------------
+     | Grupo de rutas para gestionar la generación de reportes en el módulo de talento humano
+     | --------------------------------------------------------------------------------------
+     */
+
+    Route::group([
+        'middleware' => ['web', 'auth', 'verified'],
+        'prefix' => 'reports'
+    ], function () {
+        Route::get('show/{filename}', 'ProjectTrackingReportController@show')
+            ->name('project-tracking.reports.show');
+
+        /* Rutas que permiten generar el reporte de trabajadores */
+
+        Route::get('personal-registers', 'ProjectTrackingReportController@personalRegisters')
+            ->name('project-tracking.reports.personal-registers');
+
+        Route::post('personal-register/create', 'ProjectTrackingReportController@create')
+            ->name('payroll.reports.personal-register.create');
+    });
 });

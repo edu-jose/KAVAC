@@ -34,16 +34,22 @@
                     {{ __('Actividades Externas') }}
                 </a>
             </li>
-            {{-- <li class="">
+            <li class="{!! set_active_menu(
+                [
+                    'workattendance.permissions.index',
+                    'workattendance.permissions.create',
+                    'workattendance.permissions.edit',
+                ]
+            ) !!}">
                 <a
-                    href="javascript:void(0)"
+                    href="{{ route('workattendance.permissions.index') }}"
                     title="registrar permisos y/o motivos de inasistencia"
                     data-toggle="tooltip"
                     data-placement="right"
                 >
                     {{ __('Permisos') }}
                 </a>
-            </li> --}}
+            </li>
             <li>
                 <a href="javascript:void(0)" data-toggle="tooltip" data-placement="right" title="Reportes">Reportes</a>
                 <ul

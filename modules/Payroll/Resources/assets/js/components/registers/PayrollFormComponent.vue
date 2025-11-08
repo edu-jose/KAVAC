@@ -240,15 +240,16 @@
         created() {
             const vm = this;
             vm.reset();
-            vm.getPayrollConcepts();
-            vm.getPayrollPaymentTypes();
-            //vm.getPayrollParametersResettable();
-        },
-        mounted() {
-            const vm = this;
-            if (vm.payroll_id) {
-                vm.showRecord(vm.payroll_id);
-            }
+
+            Promise.all([
+                vm.getPayrollPaymentTypes(),
+                vm.getPayrollConcepts(),
+                // vm.getPayrollParametersResettable()
+            ]).then(() => {
+                if (vm.payroll_id) {
+                    vm.showRecord(vm.payroll_id);
+                }
+            });
         },
         watch: {
             /**

@@ -109,6 +109,10 @@ class PayrollSendRequestedReceiptsJob implements ShouldQueue
         protected ?Parameter $number_decimals = null,
         protected ?Parameter $round = null,
     ) {
+        if ('local' !== config('app.env')) {
+            $this->onQueue('bulk');
+        }
+
         $this->number_decimals = Parameter::query()->where([
             'p_key' => 'number_decimals',
             'required_by' => 'payroll',

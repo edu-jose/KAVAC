@@ -167,6 +167,13 @@ class PayrollRoleAndPermissionsTableSeeder extends Seeder
                 'slug_alt' => 'personal.eliminar',
             ],
             [
+                'name' => 'Restaurar el personal',
+                'slug' => 'payroll.staffs.restore',
+                'description' => 'Acceso para restaurar el personal',
+                'model' => 'Modules\Payroll\Models\PayrollStaff', 'model_prefix' => 'Talento Humano',
+                'slug_alt' => 'personal.restaurar',
+            ],
+            [
                 'name' => 'Importar datos personales',
                 'slug' => 'payroll.staffs.import',
                 'description' => 'Acceso para importar datos personales',
@@ -675,6 +682,15 @@ class PayrollRoleAndPermissionsTableSeeder extends Seeder
                 'model' => 'Modules\Payroll\Models\PayrollSocioeconomic',
                 'model_prefix' => 'Talento Humano',
                 'slug_alt' => 'socioeconomico.eliminar',
+            ],
+            [
+                'name' => 'Restaurar datos socioeconómicos',
+                'slug' => 'payroll.socioeconomics.restore',
+                'description' => 'Acceso para restaurar datos socioeconómicos en talento humanos',
+                'model' => 'Modules\Payroll\Models\PayrollSocioeconomic',
+                'model_prefix' => 'Talento Humano',
+                'slug_alt' => 'socioeconomico.restaurar',
+                'short_description' => 'Restaurar datos socioeconómicos',
             ],
             [
                 'name' => 'Importar datos socioeconómicos',
@@ -1447,6 +1463,15 @@ class PayrollRoleAndPermissionsTableSeeder extends Seeder
                 'model_prefix' => 'Talento Humano',
                 'slug_alt' => 'financial.eliminar',
                 'short_description' => 'Eliminar datos financieros',
+            ],
+            [
+                'name' => 'Restaurar datos financieros',
+                'slug' => 'payroll.financials.restore',
+                'description' => 'Acceso para restaurar datos financieros en talento humanos',
+                'model' => 'Modules\Payroll\Models\PayrollFinancial',
+                'model_prefix' => 'Talento Humano',
+                'slug_alt' => 'financial.restaurar',
+                'short_description' => 'Restaurar datos financieros',
             ],
             [
                 'name' => 'Importar datos financieros',

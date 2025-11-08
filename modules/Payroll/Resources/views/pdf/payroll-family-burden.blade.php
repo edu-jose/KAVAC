@@ -20,25 +20,21 @@
         <p style="margin-left: 15px; color: #42a4c1;">
             Carga Familiar:
         </p>
-        <br><br>
 
         <table cellspacing="0" cellpadding="1" border="1">
             <thead>
                 <tr style="background-color: #BDBDBD;">
-                    <th span="1">Nombres</th>
-                    <th span="1">Apellidos</th>
-                    <th span="1">Parentesco</th>
-                    <th span="1">Fecha de Nacimiento</th>
-                    <th span="1">Edad</th>
-                    <th span="1">Cédula</th>
-                    <th span="1">Género</th>
-                    <th span="1">Estudia</th>
-                    <th span="1">Nivel de Escolaridad</th>
-                    <th span="1">Centro de Estudio</th>
-                    <th span="1">Posee Beca</th>
-                    <th span="1">Posee Discapacidad</th>
-                    <th span="1">Discapacidad</th>
-                    <th span="1">Dirección</th>
+                    <th style="width: 8.93%;">Nombres</th>
+                    <th style="width: 8.93%;">Apellidos</th>
+                    <th style="width: 9.82%;">Parentesco</th>
+                    <th style="width: 10.71%;">Fecha de Nacimiento</th>
+                    <th style="width: 5.36%;">Edad</th>
+                    <th style="width: 8.93%;">Cédula</th>
+                    <th style="width: 8.93%;">Género</th>
+                    <th style="width: 7.14%;">Estudia</th>
+                    <th style="width: 9.82%;">Nivel de Escolaridad</th>
+                    <th style="width: 9.82%;">Tipo de Beca</th>
+                    <th style="width: 11.61%;">Discapacidad</th>
                 </tr>
             </thead>
             <tbody>
@@ -47,47 +43,38 @@
                         $birthdate = \Carbon\Carbon::parse($child->birthdate)->format('d/m/Y');
                     @endphp
                     <tr>
-                        <td>
+                        <td style="width: 8.93%;">
                             {{ $child->first_name }}
                         </td>
-                        <td>
+                        <td style="width: 8.93%;">
                             {{ $child->last_name }}
                         </td>
-                        <td>
+                        <td style="width: 9.82%;">
                             {{ $child->payrollRelationship->name ?? '' }}
                         </td>
-                        <td>
+                        <td style="width: 10.71%;">
                             {{ $birthdate }}
                         </td>
-                        <td>
+                        <td style="width: 5.36%;">
                             {{ age($child->birthdate) }}
                         </td>
-                        <td>
+                        <td style="width: 8.93%;">
                             {{ $child->id_number }}
                         </td>
-                        <td>
+                        <td style="width: 8.93%;">
                             {{ $child->payrollGender->name ?? '' }}
                         </td>
-                        <td>
+                        <td style="width: 7.14%;">
                             {{ $child->is_student == 1 ? 'Si' : 'No' }}
                         </td>
-                        <td>
+                        <td style="width: 9.82%;">
                             {{ $child->payrollSchoolingLevel->name ?? '' }}
                         </td>
-                        <td>
-                            {{ $child->study_center }}
+                        <td style="width: 9.82%;">
+                            {{ $child?->payrollScholarshipType?->name ?? '' }}
                         </td>
-                        <td>
-                            {{ $child->has_scolarships }}
-                        </td>
-                        <td>
-                            {{ $child->has_disability }}
-                        </td>
-                        <td>
+                        <td style="width: 11.61%;">
                             {{ $child->payrollDisability->name ?? '' }}
-                        </td>
-                        <td>
-                            {{ $child->address }}
                         </td>
                     </tr>
                 @endforeach

@@ -159,7 +159,7 @@
                                         <tbody>
                                             <tr v-for="staff in visibleRows" :key="staff.id">
                                                 <td>{{ staff.index }}</td>
-                                                <td>{{ staff.worksheet_code }}</td>
+                                                <td>{{ staff.worksheet_code ? staff.worksheet_code : staff.id_number }}</td>
                                                 <td>{{ staff.name }}</td>
                                                 <td v-for="(field, fIndex) in totalDays" :key="fIndex"
                                                     class="td-with-border"
@@ -169,7 +169,13 @@
                                                             record.data_source[staff.id + '-' + field['month'] + '-' + field['day']] &&
                                                             record.data_source[staff.id + '-' + field['month'] + '-' + field['day']].length > 0">
                                                         <div class="btn-group" style="background-color: white; color: darkgray; white-space: nowrap;">
-                                                            <button id="custom-multiselect_button" type="button" class="btn btn-secondary dropdown-toggle text-left" data-toggle="dropdown" data-display="static" aria-expanded="false"
+                                                            <button id="custom-multiselect_button"
+                                                                    type="button"
+                                                                    class="btn btn-secondary dropdown-toggle text-left"
+                                                                    data-toggle="dropdown"
+                                                                    data-display="static"
+                                                                    aria-expanded="false"
+                                                                    @click.stop.prevent="noop"
                                                                     style="background-color: white; color: darkgray;">
                                                                 <div class="multiselect__tags" style="display: flex; flex-wrap: wrap; cursor: auto;">
                                                                     <div class="multiselect__tags-wrap" style="inline-grid"
@@ -257,6 +263,7 @@
                 },
                 errors: [],
                 payroll_supervised_groups: [],
+                payroll_staffs: [],
                 months: [],
                 editColumns: {},
                 daysPerMonth: [],
@@ -283,6 +290,11 @@
             }
         },
         methods: {
+            // noop handler to explicitly prevent any action on click
+            noop() {
+                return null;
+            },
+
             changePage(page) {
                 const vm = this;
                 vm.page = page;
@@ -302,11 +314,8 @@
             },
             async getDatasupervisedGroup() {
                 const vm = this;
-                if ('' !== vm.record.payroll_supervised_group_id) {
-                    let payroll_supervised_group = vm.payroll_supervised_groups.find(function ($group) {
-                        return vm.record.payroll_supervised_group_id == $group['id'];
-                    });
-                    Vue.set(vm.record.payroll_supervised_group, 'payroll_staffs', payroll_supervised_group['payroll_staffs']);
+                if (vm.record.payroll_supervised_group_id) {
+                    await Vue.set(vm.record.payroll_supervised_group, 'payroll_staffs', vm.payroll_staffs);
                 } else {
                     vm.record.payroll_supervised_group = null;
                 }
@@ -351,18 +360,37 @@
                 }
                 if (vm.record.payroll_supervised_group) {
                     vm.page = 1;
-                    vm.lastPage = Math.ceil(vm.record.payroll_supervised_group.payroll_staffs.length / vm.perPage);
+                    let records = (vm.record.payroll_supervised_group)
+                        ? vm.record.payroll_supervised_group.payroll_staffs
+                            ? vm.record.payroll_supervised_group.payroll_staffs
+                            : []
+                        : [];
+                    vm.lastPage = Math.ceil(records.length / vm.perPage);
                 }
+                vm.loading = false;
+            },
+
+            async getPayrollSupervisedGroupStaffs(id) {
+                const vm = this;
+                if (id == '') {
+                    vm.payroll_staffs = [];
+                    return false;
+                }
+                vm.loading = true;
+                await axios.get(`${window.app_url}/payroll/get-supervised-groups-staffs/${id}`).then(response => {
+                    vm.payroll_staffs = response.data.records;
+                }).catch(error => {
+                    console.error(error);
+                });
                 vm.loading = false;
             },
         },
         mounted() {
             const vm = this;
 
-            $("#PayrollGuardSchemeInfo").on('show.bs.modal', function() {
-                vm.getPayrollSupervisedGroups(vm.record.id, 'scheme').then(() => {
-                    vm.getDatasupervisedGroup();
-                });
+            $("#PayrollGuardSchemeInfo").on('show.bs.modal', async function() {
+                await vm.getPayrollSupervisedGroupStaffs(vm.record.payroll_supervised_group_id);
+                await vm.getDatasupervisedGroup();
             });
         },
         computed: {
@@ -381,18 +409,19 @@
                     records = records.filter(function (staff) {
                         return (
                             staff.name.toLowerCase().includes(vm.search.toLowerCase()) ||
-                            staff.worksheet_code.toLowerCase().includes(vm.search.toLowerCase())
+                            staff.worksheet_code.toLowerCase().includes(vm.search.toLowerCase()) ||
+                            staff.id_number.toLowerCase().includes(vm.search.toLowerCase())
                         );
                     })
                 }
                 const startIndex = (vm.page - 1) * vm.perPage;
                 const endIndex = startIndex + vm.perPage;
                 vm.lastPage = Math.ceil(records.length / vm.perPage);
-
-                return records.slice(startIndex, endIndex).map((staff, index) => ({
+                records = records.slice(startIndex, endIndex).map((staff, index) => ({
                     ...staff,
                     index: startIndex + index + 1
                 }));
+                return records;
             },
         },
     }

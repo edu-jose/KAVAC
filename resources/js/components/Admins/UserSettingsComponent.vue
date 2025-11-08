@@ -26,11 +26,11 @@
                 </div>
                 <div class="modal-body">
                     <div class="row">
-                        <div class="col-12 col-md-5">
+                        <div class="col-12 col-md-4">
                             <div
                                 class="custom-control custom-switch"
                                 data-toggle="tooltip"
-                                title="Desbloquear usuario / Bloquear usuario"
+                                title="Desbloquear / Bloquear usuario"
                             >
                                 <input
                                     type="checkbox"
@@ -40,15 +40,15 @@
                                     :value="true"
                                 >
                                 <label class="custom-control-label" for="settingUserBlock">
-                                    Desbloquear usuario / Bloquear usuario
+                                    Desbloquear / Bloquear usuario
                                 </label>
                             </div>
                         </div>
-                        <div class="col-12 col-md-5">
+                        <div class="col-12 col-md-4">
                             <div
                                 class="custom-control custom-switch"
                                 data-toggle="tooltip"
-                                title="Desactivar usuario / Activar usuario"
+                                title="Desactivar / Activar usuario"
                             >
                                 <input
                                     type="checkbox"
@@ -61,6 +61,26 @@
                                     for="settingUserActive"
                                 >
                                     Desactivar usuario / Activar usuario
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <div
+                                class="custom-control custom-switch"
+                                data-toggle="tooltip"
+                                title="Verificar usuario"
+                            >
+                                <input
+                                    type="checkbox"
+                                    class="custom-control-input"
+                                    id="settingUserVerify"
+                                    v-model="record.email_verified_at" :value="true"
+                                >
+                                <label
+                                    class="custom-control-label"
+                                    for="settingUserVerify"
+                                >
+                                    Verificar usuario
                                 </label>
                             </div>
                         </div>
@@ -108,7 +128,8 @@
                 record: {
                     userId: '',
                     blocked_at: false,
-                    active: false
+                    active: false,
+                    email_verified_at: false
                 }
             }
         },
@@ -122,6 +143,8 @@
                     vm.record.userId = id;
                     vm.record.blocked_at = (response.data.user.blocked_at !== null) ? true : false;
                     vm.record.active = (response.data.user.active===true)?true:false;
+                    vm.record.email_verified_at = (response.data.user.email_verified_at !== null) ? true : false;
+                    document.getElementById('settingUserVerify').disabled = vm.record.email_verified_at;
                 }).catch(error => {
                     console.error(error);
                 });
@@ -132,7 +155,8 @@
                 await axios.post(`${window.app_url}/auth/settings/users`, {
                     user_id: vm.record.userId,
                     blocked_at: vm.record.blocked_at,
-                    active: vm.record.active
+                    active: vm.record.active,
+                    email_verified_at: vm.record.email_verified_at
                 }).then(response => {
                     vm.showMessage(
                         'custom', 'Éxito', 'success', 'screen-ok', 'Configuración establecida'
@@ -188,7 +212,8 @@
                 vm.record = {
                     userId: '',
                     blocked_at: false,
-                    active: false
+                    active: false,
+                    email_verified_at: false
                 };
             });
 

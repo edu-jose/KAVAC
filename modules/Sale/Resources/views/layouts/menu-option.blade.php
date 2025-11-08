@@ -1,5 +1,5 @@
 {{-- Gestión de comercialización --}}
-{{-- <li>
+<li>
     <a href="javascript:void(0)" title="Gestión de comercialización" data-toggle="tooltip" data-placement="right">
         <i class="ion ion-briefcase"></i><span>Comercialización</span>
     </a>
@@ -8,11 +8,15 @@
             <a href="{{ route('sale.settings.index') }}" data-toggle="tooltip" data-placement="right" 
                title="Configuración de Comercialización">Configuración</a>
         </li>
-        <li class="{!! set_active_menu('sale.services.index') !!}">
+        <li class="{!! set_active_menu('sale.customer-management.index') !!}">
+            <a href="{{ route('sale.customer-management.index') }}" data-toggle="tooltip" data-placement="right" 
+               title="Gestión de Clientes">Gestión de Clientes</a>
+        </li>        
+{{--    <li class="{!! set_active_menu('sale.services.index') !!}">
             <a href="{{ route('sale.services.index') }}" data-toggle="tooltip" data-placement="right" 
                title="Solicitud de servicios">Solicitud de servicios</a>
         </li>
-        <li class="{!! set_active_menu('sale.bills.index') !!}">
+       <li class="{!! set_active_menu('sale.bills.index') !!}">
             <a href="{{ route('sale.bills.index') }}" data-toggle="tooltip" data-placement="right" 
                title="Facturas">Facturas</a>
         </li>
@@ -64,6 +68,6 @@
                     <a href="{{ route('sale.report.quote') }}">Cotizaciones</a>
                 </li>
             </ul>
-        </li>
+        </li> --}}
     </ul>
-</li> --}}
+</li>

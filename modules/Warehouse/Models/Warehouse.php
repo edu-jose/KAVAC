@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use OwenIt\Auditing\Contracts\Auditable;
 use OwenIt\Auditing\Auditable as AuditableTrait;
 use App\Traits\ModelsTrait;
+use Illuminate\Database\Eloquent\Casts\AsArrayObject;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @class Warehouse
@@ -37,7 +39,22 @@ class Warehouse extends Model implements Auditable
      *
      * @var array $fillable
      */
-    protected $fillable = ['name', 'active', 'address','parish_id'];
+    protected $fillable = [
+        'name',
+        'active',
+        'address',
+        'parish_id',
+        'responsibles',
+    ];
+
+        /**
+     * Lista de atributos para moldear.
+     *
+     * @var array<string, string> $casts
+     */
+    protected $casts = [
+        'responsibles' => AsArrayObject::class,
+    ];
 
     /**
      * Método que obtiene la parroquia donde esta ubicado el almacén
@@ -61,5 +78,29 @@ class Warehouse extends Model implements Auditable
     public function warehouseInstitutionWarehouses()
     {
         return $this->hasMany(WarehouseInstitutionWarehouse::class);
+    }
+
+    /**
+     * Método que obtiene las solicitudes de los productos del almacén
+     *
+     * @author Natanael Rojo <ndrojo@cenditel.gob.ve> | <rojonatanael99@gmail.com>
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function warehouseRequests(): HasMany
+    {
+        return $this->hasMany(WarehouseRequest::class);
+    }
+
+    /**
+     * Método que obtiene las solicitudes de productos del almacén
+     *
+     * @author Pedro Contreras <pmcontreras@cenditel.gob.ve>
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function warehouseExternalRequests(): HasMany
+    {
+        return $this->hasMany(WarehouseExternalRequest::class);
     }
 }

@@ -132,9 +132,9 @@ class Payroll extends Model implements Auditable
      *
      * @return \Illuminate\Database\Eloquent\Relations\MorphOne
      */
-    public function purchaseCommonBudgetaryAvailability()
+    public function budgetCommonBudgetaryAvailability()
     {
-        return (Module::has('Purchase') && Module::isEnabled('Purchase'))
-            ? $this->morphOne(\Modules\Purchase\Models\PurchaseCommonBudgetaryAvailability::class, 'budgetable') : [];
+        return (Module::has('Budget') && Module::isEnabled('Budget'))
+            ? $this->morphOne(\Modules\Budget\Models\BudgetCommonBudgetaryAvailability::class, 'budgetable') : [];
     }
 }

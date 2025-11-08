@@ -277,19 +277,6 @@ Route::group([
 
     /*
      | -----------------------------------------------------------------------
-     | Rutas para la gestión de Disponibilidad presupuestaria
-     | -----------------------------------------------------------------------
-     |
-     | Gestiona los datos de los tipos de operaciones
-     */
-    Route::resource('budgetary_availability', 'PurchaseBudgetaryAvailabilityController', [
-        'as'     => 'purchase',
-    ]);
-    Route::post('budgetary_availability/approve', 'PurchaseBudgetaryAvailabilityController@approveBudgetaryAvailability')
-    ->name('purchase.budgetary_availability.approve');
-
-    /*
-     | -----------------------------------------------------------------------
      | Rutas para la consulta de producto del modulo Warehouse con la informacion de
      | -----------------------------------------------------------------------
      |

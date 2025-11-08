@@ -33,7 +33,7 @@
                             type="text"
                             readonly
                             class="form-control input-sm"
-                            v-model="payroll.purchase_common_budgetary_availability.code"
+                            v-model="payroll.budget_common_budgetary_availability.code"
                         />
                     </div>
                 </div>
@@ -305,7 +305,7 @@ export default {
                         vm.errors = [];
                         vm.loading = false;
                         vm.showMessage("store");
-                        location.href = `${window.app_url}/purchase/budgetary_availability`;
+                        location.href = `${window.app_url}/budget/budgetary_availability`;
                     }
                 })
                 .catch((error) => {

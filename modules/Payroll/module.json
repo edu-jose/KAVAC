@@ -21,7 +21,8 @@
     "order": 1,
     "priority": 1,
     "providers": [
-        "Modules\\Payroll\\Providers\\PayrollServiceProvider"
+        "Modules\\Payroll\\Providers\\PayrollServiceProvider",
+        "Modules\\Payroll\\Providers\\PayrollAuthServiceProvider"
     ],
     "aliases": [],
     "files": [

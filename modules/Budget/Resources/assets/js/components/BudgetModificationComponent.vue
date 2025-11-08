@@ -139,7 +139,7 @@
                                             data-target="#add_account" @click="editAccount(index)">
                                             <i class="fa fa-edit"></i>
                                         </a>
-                                        <a v-if="edit_object == ''" class="btn btn-sm btn-danger btn-action" href="#"
+                                        <a class="btn btn-sm btn-danger btn-action" href="#"
                                             @click="deleteAccount(index)" title="Eliminar este registro"
                                             data-toggle="tooltip">
                                             <i class="fa fa-minus-circle"></i>
@@ -202,7 +202,7 @@
                                             data-target="#add_account" @click="editAccount(index)">
                                             <i class="fa fa-edit"></i>
                                         </a>
-                                        <a v-if="edit_object == ''" class="btn btn-sm btn-danger btn-action" href="#"
+                                        <a class="btn btn-sm btn-danger btn-action" href="#"
                                             @click="deleteAccount(index)" title="Eliminar este registro"
                                             data-toggle="tooltip">
                                             <i class="fa fa-minus-circle"></i>
@@ -217,7 +217,12 @@
                     <div class="modal-dialog vue-crud">
                         <div class="modal-content">
                             <div class="modal-header">
-                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <button type="button"
+                                    class="close"
+                                    data-dismiss="modal"
+                                    aria-label="Close"
+                                    @click="reset"
+                                >
                                     <span aria-hidden="true">×</span>
                                 </button>
                                 <h6>
@@ -296,7 +301,8 @@
                                                 @focus="selectText"
                                                 class="form-control input-sm"
                                                 data-toggle="tooltip" v-model="from_amount"
-                                                title="Indique el monto a asignar para la cuenta seleccionada">
+                                                title="Indique el monto a asignar para la cuenta seleccionada"
+                                                :disabled="(type_modification === 'TR')">
                                         </div>
                                     </div>
                                 </div>
@@ -306,42 +312,59 @@
                                             <hr>
                                             <h6 class="text-center">
                                                 Cuenta a Acreditar
+                                                <i v-if="editIndex == null" data-toggle="tooltip"
+                                                    title="Agregar nueva cuenta a acreditar"
+                                                    class="text-blue fa fa-plus-circle cursor-pointer"
+                                                    @click="addToAccountTR()">
+                                                </i>
                                             </h6>
                                         </div>
                                     </div>
-                                    <div class="row">
-                                        <div class="col-6">
-                                            <div class="form-group is-required">
-                                                <label for="budget_to_specific_action_id">Acción Específica:</label>
-                                                <select2
-                                                    id="budget_to_specific_action_id"
-                                                    :options="specific_actions" v-model="to_specific_action_id"
-                                                    @input="isDisableTR()"
-                                                />
+                                    <div v-for="(to_acc, index) in to_accounts" :key="index">
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <div class="form-group is-required">
+                                                    <label :for="'budget_to_specific_action_id' + index">Acción Específica:</label>
+                                                    <select2
+                                                        :id="'budget_to_specific_action_id' + index"
+                                                        :options="specific_actions" v-model="to_acc.to_specific_action_id"
+                                                        @input="isDisableTR()"
+                                                    />
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div class="col-6">
-                                            <div class="form-group is-required">
-                                                <label for="accountsAC">Cuenta:</label>
-                                                <select2
-                                                    id="accountsAC" :options="accountsAC"
-                                                    v-model="to_account_id"
-                                                />
+                                            <div class="col-md-4">
+                                                <div class="form-group is-required">
+                                                    <label :for="'accountsAC' + index">Cuenta:</label>
+                                                    <select2
+                                                        :id="'accountsAC' + index" :options="accountsAC"
+                                                        v-model="to_acc.to_account_id"
+                                                    />
+                                                </div>
                                             </div>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-3">
-                                            <div class="form-group is-required">
-                                                <label for="budget_to_amount">Monto:</label>
-                                                <input
-                                                    type="text" id="budget_to_amount"
-                                                    v-input-mask data-inputmask="'alias': 'numeric','allowMinus': 'false'"
-                                                    @focus="selectText" class="form-control input-sm"
-                                                    data-toggle="tooltip" readonly
-                                                    title="Indique el monto a asignar para la cuenta seleccionada"
-                                                    v-model="to_amount"
-                                                />
+                                            <div :class="editIndex == null ? 'col-md-3' : 'col-md-4'">
+                                                <div class="form-group is-required">
+                                                    <label :for="'budget_to_amount' + index">Monto:</label>
+                                                    <input
+                                                        type="text" :id="'budget_to_amount' + index"
+                                                        v-input-mask data-inputmask="'alias': 'numeric','allowMinus': 'false','digits': 2"
+                                                        @focus="selectText" class="form-control input-sm"
+                                                        data-toggle="tooltip"
+                                                        title="Indique el monto a asignar para la cuenta seleccionada"
+                                                        v-model="to_acc.to_amount"
+                                                        @input="sumToAmountTR()"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div class="col-md-1 mt-4" v-show="editIndex == null">
+                                                <button
+                                                    class="btn btn-sm btn-danger btn-action"
+                                                    type="button"
+                                                    @click="removeRow(index, to_accounts); sumToAmountTR();"
+                                                    title="Eliminar este dato"
+                                                    data-toggle="tooltip"
+                                                >
+                                                    <i class="fa fa-minus-circle"></i>
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
@@ -415,6 +438,14 @@ export default {
             /*
              * Variables para cuentas a agregar en traspasos
              */
+            to_accounts: [{
+                to_account_id: '',
+                to_account_original: '',
+                to_amount: 0,
+                to_amount_edit: 0,
+                to_specific_action_id: '',
+                to_amount_original: 0,
+            }],
             to_specific_action_id: '',
             to_account_id: '',
             to_account_original: '',
@@ -481,6 +512,17 @@ export default {
             this.to_account_id = '';
             this.to_amount = 0;
             this.editIndex = null;
+
+            if (this.type_modification === 'TR') {
+                this.to_accounts = [{
+                    to_account_id: '',
+                    to_account_original: '',
+                    to_amount: 0,
+                    to_amount_edit: 0,
+                    to_specific_action_id: '',
+                    to_amount_original: 0,
+                }];
+            }
         },
         showDocument() {
             return `${window.app_url}/${this.record.documentUrl}`;
@@ -614,12 +656,9 @@ export default {
          * @author Ing. Roldan Vargas <rvargas@cenditel.gob.ve> | <roldandvg@gmail.com>
          * @return {boolean} Devuelve falso si no se ha indicado alguna información requerida
          */
-        addAccount: function () {
+        async addAccount() {
             const vm = this;
-            let amountEdit;
-            if (vm.editIndex != null) {
-                amountEdit = vm.modification_accounts[vm.editIndex]['from_amount_edit'];
-            }
+            let amountEdit = vm.editIndex != null ? vm.modification_accounts[vm.editIndex]['from_amount_edit'] : undefined;
             let to_add = {
                 from_spac_description: '',
                 from_code: '',
@@ -630,151 +669,104 @@ export default {
                 from_account_original: '',
                 from_amount_original: '',
                 from_specific_action_id: '',
-                to_spac_description: '',
-                to_code: '',
-                to_description: '',
-                to_amount: 0,
-                to_amount_edit: 0,
-                to_account_id: '',
-                to_account_original: '',
-                to_amount_original: '',
-                to_specific_action_id: '',
                 operation: '',
+                to_accounts: []
             };
 
+            // Validaciones
             if (!vm.from_specific_action_id) {
-                vm.showMessage(
-                    'custom', 'Alerta!', 'danger', 'screen-error',
-                    'Debe seleccionar una acción específica'
-                );
+                vm.showMessage('custom', 'Alerta!', 'danger', 'screen-error', 'Debe seleccionar una acción específica');
                 return false;
             }
             if (!vm.from_account_id) {
-                vm.showMessage(
-                    'custom', 'Alerta!', 'danger', 'screen-error',
-                    'Debe seleccionar una cuenta presupuestaria'
-                );
+                vm.showMessage('custom', 'Alerta!', 'danger', 'screen-error', 'Debe seleccionar una cuenta presupuestaria');
                 return false;
             }
             if (vm.from_amount <= 0) {
-                vm.showMessage(
-                    'custom', 'Alerta!', 'danger', 'screen-error',
-                    'Debe indicar un monto'
-                );
+                vm.showMessage('custom', 'Alerta!', 'danger', 'screen-error', 'Debe indicar un monto');
                 return false;
             }
-            if (vm.type_modification == 'RE' || vm.type_modification == 'TR') {
-                for (let acc of vm.accounts) {
-                    if (acc.id == vm.from_account_id) {
-                        if (Number(vm.from_amount) > Number(acc.amount) + Number(vm.from_amount_original)) {
-                            vm.showMessage(
-                                "custom",
-                                "Alerta!",
-                                "warning",
-                                "screen-error",
-                                "El campo monto no puede ser mayor al asignado"
-                            );
-                            return;
-                        }
+            if (['RE', 'TR'].includes(vm.type_modification)) {
+                const acc = vm.accounts.find(acc => acc.id == vm.from_account_id);
+                let total_amount = Number(vm.from_amount);
+
+                // Se suma al total_amount el monto de las cuentas que ya estan en el modification_amounts que tengan el mismo id
+                vm.modification_accounts.forEach(element => {
+                    if (element.from_account_id == vm.from_account_id) {
+                        total_amount += Number(element.from_amount);
                     }
+                });
+
+                if (acc && Number(total_amount) > Number(acc.amount) + Number(vm.from_amount_original)) {
+                    vm.showMessage("custom", "Alerta!", "warning", "screen-error", "El campo monto no puede ser mayor al asignado");
+                    return;
                 }
             }
 
-            /** Obtiene datos de la acción específica seleccionada */
-            axios.get(
-                `${window.app_url}/budget/detail-specific-actions/${vm.from_specific_action_id}`
-            ).then(response => {
-                if (response.data.result) {
-                    let spec = response.data.record;
+            try {
+                // Obtiene datos de la acción específica y cuenta presupuestaria
+                const specRes = await axios.get(`${window.app_url}/budget/detail-specific-actions/${vm.from_specific_action_id}`);
+                if (!specRes.data.result) return;
+                const spec = specRes.data.record;
 
-                    /** Obtiene datos de la cuenta presupuestaria */
-                    axios.get(
-                        `${window.app_url}/budget/detail-accounts/${vm.from_account_id}`
-                    ).then(response => {
-                        if (response.data.result) {
-                            let acc = response.data.record;
-                            to_add.from_code = `${acc.group}.${acc.item}.${acc.generic}.${acc.specific}.${acc.subspecific}`;
-                            to_add.from_description = acc.denomination;
-                            to_add.from_spac_description = `${spec.specificable.code} - ${spec.code} | ${spec.name}`;
-                            to_add.from_amount = vm.from_amount;
-                            to_add.from_account_id = vm.from_account_id;
-                            to_add.from_account_original = vm.from_account_original;
-                            to_add.from_amount_original = vm.from_amount_original;
-                            to_add.from_specific_action_id = vm.from_specific_action_id;
+                const accRes = await axios.get(`${window.app_url}/budget/detail-accounts/${vm.from_account_id}`);
+                if (!accRes.data.result) return;
+                const acc = accRes.data.record;
 
-                            if (this.type_modification === "TR") {
-                                axios.get(
-                                    `${window.app_url}/budget/detail-specific-actions/${vm.to_specific_action_id}`
-                                ).then(response => {
-                                    if (response.data.result) {
-                                        let to_spec = response.data.record;
+                Object.assign(to_add, {
+                    from_code: `${acc.group}.${acc.item}.${acc.generic}.${acc.specific}.${acc.subspecific}`,
+                    from_description: acc.denomination,
+                    from_spac_description: `${spec.specificable.code} - ${spec.code} | ${spec.name}`,
+                    from_amount: vm.from_amount,
+                    from_account_id: vm.from_account_id,
+                    from_account_original: vm.from_account_original,
+                    from_amount_original: vm.from_amount_original,
+                    from_specific_action_id: vm.from_specific_action_id
+                });
 
-                                        /** Obtiene datos de la cuenta presupuestaria */
-                                        axios.get(
-                                            `${window.app_url}/budget/detail-accounts/${vm.to_account_id}`
-                                        ).then(response => {
-                                            if (response.data.result) {
-                                                if (vm.editIndex != null) {
-                                                    vm.modification_accounts.splice(vm.editIndex, 1);
-                                                    let to_acc = response.data.record;
-                                                    to_add.to_code = `${to_acc.group}.${to_acc.item}.${to_acc.generic}.${to_acc.specific}.${to_acc.subspecific}`;
-                                                    to_add.to_description = to_acc.denomination;
-                                                    to_add.to_spac_description = `${to_spec.specificable.code} - ${to_spec.code} | ${to_spec.name}`;
-                                                    to_add.to_amount = vm.to_amount;
-                                                    to_add.to_amount_edit = amountEdit;
-                                                    to_add.to_account_id = vm.to_account_id;
-                                                    to_add.to_account_original = vm.to_account_original;
-                                                    to_add.to_amount_original = vm.to_amount_original;
-                                                    to_add.to_specific_action_id = vm.to_specific_action_id;
-                                                    vm.modification_accounts.push(to_add);
+                if (vm.type_modification === "TR") {
+                    for (const to_accs of vm.to_accounts) {
+                        const toSpecRes = await axios.get(`${window.app_url}/budget/detail-specific-actions/${to_accs.to_specific_action_id}`);
+                        if (!toSpecRes.data.result) continue;
+                        const to_spec = toSpecRes.data.record;
 
-                                                    $('.close').click();
-                                                    vm.reset();
-                                                } else {
-                                                    let to_acc = response.data.record;
-                                                    to_add.to_code = `${to_acc.group}.${to_acc.item}.${to_acc.generic}.${to_acc.specific}.${to_acc.subspecific}`;
-                                                    to_add.to_description = to_acc.denomination;
-                                                    to_add.to_spac_description = `${to_spec.specificable.code} - ${to_spec.code} | ${to_spec.name}`;
-                                                    to_add.to_amount = vm.to_amount;
-                                                    to_add.to_account_id = vm.to_account_id;
-                                                    to_add.to_account_original = vm.to_account_original;
-                                                    to_add.to_amount_original = vm.to_amount_original;
-                                                    to_add.to_specific_action_id = vm.to_specific_action_id;
-                                                    vm.modification_accounts.push(to_add);
+                        const toAccRes = await axios.get(`${window.app_url}/budget/detail-accounts/${to_accs.to_account_id}`);
+                        if (!toAccRes.data.result) continue;
+                        const to_acc = toAccRes.data.record;
 
-                                                    $('.close').click();
-                                                    vm.reset();
-                                                }
-                                            }
-                                        }).catch(error => {
-                                            console.log(error);
-                                        });
-                                    }
-                                }).catch(error => {
-                                    console.log(error);
-                                });
-                            }
-                            else {
-                                if (vm.editIndex != null) {
-                                    vm.modification_accounts.splice(vm.editIndex, 1);
-                                    vm.modification_accounts.push(to_add);
-                                    $('.close').click();
-                                    vm.reset();
-                                } else {
-                                    vm.modification_accounts.push(to_add);
-                                    $('.close').click();
-                                    vm.reset();
-                                }
-                            }
+                        let tr_add = {
+                            ...to_add,
+                            to_code: `${to_acc.group}.${to_acc.item}.${to_acc.generic}.${to_acc.specific}.${to_acc.subspecific}`,
+                            to_description: to_acc.denomination,
+                            to_spac_description: `${to_spec.specificable.code} - ${to_spec.code} | ${to_spec.name}`,
+                            to_amount: to_accs.to_amount,
+                            to_amount_edit: amountEdit,
+                            to_account_id: to_accs.to_account_id,
+                            to_account_original: to_accs.to_account_id,
+                            to_amount_original: to_accs.to_amount_original,
+                            to_specific_action_id: to_accs.to_specific_action_id,
+                            from_amount: to_accs.to_amount
+                        };
 
+                        if (vm.editIndex != null) {
+                            vm.modification_accounts.splice(vm.editIndex, 1, tr_add);
+                        } else {
+                            vm.modification_accounts.push(tr_add);
                         }
-                    }).catch(error => {
-                        console.log(error);
-                    });
+                    }
+                } else {
+                    if (vm.editIndex != null) {
+                        vm.modification_accounts.splice(vm.editIndex, 1, to_add);
+                    } else {
+                        vm.modification_accounts.push(to_add);
+                    }
                 }
-            }).catch(error => {
-                console.log(error);
-            });
+
+                $('.close').click();
+                vm.reset();
+            } catch (error) {
+                console.error(error);
+            }
         },
         /**
          * Elimina una cuenta del listado de cuentas agregadas
@@ -815,6 +807,17 @@ export default {
             vm.from_amount = '';
             vm.from_specific_action_id = '';
             vm.editIndex = null;
+
+            if (vm.type_modification === 'TR') {
+                vm.to_accounts = [{
+                    to_account_id: '',
+                    to_account_original: '',
+                    to_amount: 0,
+                    to_amount_edit: 0,
+                    to_specific_action_id: '',
+                    to_amount_original: 0,
+                }];
+            }
         },
         /**
          * Edita una cuenta del listado de cuentas agregadas
@@ -829,6 +832,7 @@ export default {
             vm.from_amount_original = '';
             vm.from_amount = '';
             vm.from_specific_action_id = '';
+            vm.to_accounts = '';
             vm.to_account_id = '';
             vm.to_account_original = '';
             vm.to_amount_original = '';
@@ -841,10 +845,13 @@ export default {
             vm.from_amount_original = vm.record.budget_account_id[vm.editIndex]['from_amount_original'];
             vm.from_amount = vm.record.budget_account_id[vm.editIndex]['from_amount'];
             vm.from_specific_action_id = vm.record.budget_account_id[vm.editIndex]['from_specific_action_id'];
-            vm.to_account_original = vm.record.budget_account_id[vm.editIndex]['to_account_original'];
-            vm.to_amount_original = vm.record.budget_account_id[vm.editIndex]['to_amount_original'];
-            vm.to_amount = vm.record.budget_account_id[vm.editIndex]['to_amount'];
-            vm.to_specific_action_id = vm.record.budget_account_id[vm.editIndex]['to_specific_action_id'];
+            vm.to_accounts = [{
+                to_account_original: vm.record.budget_account_id[vm.editIndex]['to_account_original'],
+                to_amount_original: vm.record.budget_account_id[vm.editIndex]['to_amount_original'],
+                to_amount: vm.record.budget_account_id[vm.editIndex]['to_amount'],
+                to_specific_action_id: vm.record.budget_account_id[vm.editIndex]['to_specific_action_id'],
+                to_account_id: vm.record.budget_account_id[vm.editIndex]['to_account_id'],
+            }];
         },
 
         /**
@@ -965,6 +972,8 @@ export default {
          */
         isDisable() {
             const vm = this;
+            if (vm.type_modification === 'TR') return;
+
             let accountsTable = [{ "id": "", "text": "Seleccione..." }];
             for (let acc of vm.modification_accounts) {
                 accountsTable.push(acc);
@@ -1207,6 +1216,43 @@ export default {
                 }
                 vm.loading = false;
             });
+        },
+
+        /**
+         * Método que permite agregar una nueva cuenta dentro del modal de traspasos
+         *
+         * @author  Daniel Contreras <dcontreras@cenditel.gob.ve>
+         *
+         */
+        addToAccountTR() {
+            const vm = this;
+
+            vm.to_accounts.push({
+                to_account_id: '',
+                to_account_original: '',
+                to_amount: 0,
+                to_amount_edit: 0,
+                to_specific_action_id: '',
+                to_amount_original: 0,
+            });
+        },
+
+        /**
+         * Método que permite sumar el total de los montos a traspasar
+         *
+         * @author  Daniel Contreras <dcontreras@cenditel.gob.ve>
+         *
+         */
+        sumToAmountTR() {
+            const vm = this;
+
+            let total = 0;
+            for (let to_acc of vm.to_accounts) {
+                if (to_acc.to_amount) {
+                    total += parseFloat(to_acc.to_amount);
+                }
+            }
+            vm.from_amount = vm.currencyFormat(total);
         },
     },
     mounted() {

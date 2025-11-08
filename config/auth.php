@@ -13,6 +13,7 @@ return [
     | pero son un comienzo perfecto para la mayoría de las aplicaciones.
     |
     */
+    'email_verified_by_default' => env('EMAIL_VERIFIED_BY_DEFAULT', false),
     'active_directory' => [
         'enabled' => env('ACTIVE_DIRECTORY', false),
         'url' => env('ACTIVE_DIRECTORY_URL', null),

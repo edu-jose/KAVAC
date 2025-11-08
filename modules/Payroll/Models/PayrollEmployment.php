@@ -110,18 +110,6 @@ class PayrollEmployment extends Model implements Auditable
     }
 
     /**
-     * Método que obtiene el dato laboral del trabajador que está asociada a muchas organizaciones
-     *
-     * @author  William Páez <wpaez@cenditel.gob.ve>
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
-    public function payrollOrganizations()
-    {
-        return $this->hasMany(PayrollOrganization::class);
-    }
-
-    /**
      * Método que obtiene el dato laboral del trabajador asociado a un dato personal del mismo
      *
      * @author  William Páez <wpaez@cenditel.gob.ve>

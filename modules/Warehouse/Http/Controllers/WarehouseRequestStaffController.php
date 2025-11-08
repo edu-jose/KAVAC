@@ -7,6 +7,9 @@ use Illuminate\Routing\Controller;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Support\Facades\DB;
 use App\Models\CodeSetting;
+use App\Models\FiscalYear;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 use Modules\Warehouse\Models\WarehouseInventoryProduct;
 use Modules\Warehouse\Models\WarehouseInventoryProductRequest;
 use Modules\Warehouse\Models\WarehouseRequest;
@@ -62,9 +65,10 @@ class WarehouseRequestStaffController extends Controller
             'payroll_position_id'  => ['required'],
             'payroll_staff_id'     => ['required'],
             'motive'               => ['required'],
-            'request_date'         => ['required']
+            'request_date'         => ['required'],
+            'institution_id' => ['required', 'integer'],
+            'warehouse_id' => ['required', 'integer'],
         ];
-
 
         /* Define los mensajes de validación para las reglas del formulario */
         $this->messages = [
@@ -73,7 +77,9 @@ class WarehouseRequestStaffController extends Controller
             'payroll_position_id.required' => 'El campo "Cargo" es obligatorio',
             'payroll_staff_id.required'    => 'El campo "Solicitante" es obligatorio',
             'motive.required'              => 'El campo "Motivo de la solicitud" es obligatorio',
-            'request_date.required'        => 'El campo "Fecha de la solicitud" es obligatorio'
+            'request_date.required'        => 'El campo "Fecha de la solicitud" es obligatorio',
+            'institution_id.required'              => 'El campo institución es obligatorio',
+            'warehouse_id.required'              => 'El campo nombre del almacén es obligatorio',
         ];
     }
 
@@ -126,6 +132,7 @@ class WarehouseRequestStaffController extends Controller
             'table' => 'warehouse_requests',
             'type'  => $codeFilter
         ])->first();
+
         if (is_null($codeSetting)) {
             $request->session()->flash('message', [
                 'type' => 'other', 'title' => 'Alerta', 'icon' => 'screen-error', 'class' => 'growl-danger',
@@ -134,14 +141,18 @@ class WarehouseRequestStaffController extends Controller
             return response()->json(['result' => false, 'redirect' => route('warehouse.setting.index')], 200);
         }
 
-        $code  = generate_registration_code(
+        $currentFiscalYear = FiscalYear::select('year')
+            ->where(['active' => true, 'closed' => false])->orderBy('year', 'desc')->first();
+
+        $code = generate_registration_code(
             $codeSetting->format_prefix,
             strlen($codeSetting->format_digits),
-            (strlen($codeSetting->format_year) == 2) ? date('y') : date('Y'),
+            (strlen($codeSetting->format_year) == 2) ? (isset($currentFiscalYear) ?
+                substr($currentFiscalYear->year, 2, 2) : date('y')) : (isset($currentFiscalYear) ?
+                $currentFiscalYear->year : date('Y')),
             $codeSetting->model,
             $codeSetting->field
         );
-
 
         DB::transaction(function () use ($request, $code) {
             $data_request = WarehouseRequest::create([
@@ -150,8 +161,13 @@ class WarehouseRequestStaffController extends Controller
                 'state' => 'Pendiente',
                 'department_id' => $request->input('department_id'),
                 'motive' => $request->input('motive'),
-                'payroll_staff_id' => $request->input('payroll_staff_id')
+                'payroll_staff_id' => $request->input('payroll_staff_id'),
+                'institution_id' => $request->input('institution_id'),
+                'warehouse_id' => $request->input('warehouse_id'),
             ]);
+
+            /* Registra la solicitud en la tabla unificada de solicitudes de almacén */
+            $data_request->registerUnified();
 
             foreach ($request->warehouse_products as $product) {
                 $inventory_product = WarehouseInventoryProduct::find($product['id']);
@@ -238,7 +254,6 @@ class WarehouseRequestStaffController extends Controller
             ]);
         }
 
-
         $this->validate($request, $validateRules, $this->messages);
 
         DB::transaction(function () use ($request, $warehouse_request) {
@@ -246,6 +261,8 @@ class WarehouseRequestStaffController extends Controller
             $warehouse_request->motive = $request->input('motive');
             $warehouse_request->department_id = $request->input('department_id');
             $warehouse_request->payroll_staff_id = $request->input('payroll_staff_id');
+            $warehouse_request->institution_id = $request->input('institution_id');
+            $warehouse_request->warehouse_id = $request->input('warehouse_id');
             $warehouse_request->save();
 
             $update = now();
@@ -299,6 +316,47 @@ class WarehouseRequestStaffController extends Controller
     }
 
     /**
+     * Elimina una solicitud de almacén del personal
+     *
+     * @author Pablo Sulbarán <psulbaran@cenditel.gob.ve>
+     *
+     * @param  integer $id Identificador único de la solicitud de almacén
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function destroy($id)
+    {
+        $request = WarehouseRequest::find($id);
+
+        if (!$request) {
+            return response()->json(['error' => 'Solicitud no encontrada.'], 404);
+        }
+        if ($request->state !== 'Pendiente') {
+            return response()->json(['error' => 'Solo se pueden eliminar solicitudes en estado Pendiente.'], 403);
+        }
+        try {
+            DB::transaction(function () use ($request) {
+                foreach ($request->warehouseInventoryProductRequests as $productRequest) {
+                    $inventoryProduct = $productRequest->warehouseInventoryProduct;
+                    if ($inventoryProduct) {
+                        $inventoryProduct->exist += $productRequest->quantity;
+                        $inventoryProduct->save();
+                    }
+                    $productRequest->delete();
+                }
+                $request->forceDelete();
+            });
+
+            return response()->json(['success' => 'Solicitud eliminada correctamente.']);
+        } catch (\Exception $e) {
+            Log::error($e);
+            return response()->json([
+                'error' => 'No se pudo eliminar la solicitud.',
+                'exception' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Vizualiza información de una solicitud de almacén
      *
      * @author Henry Paredes <hparedes@cenditel.gob.ve>
@@ -307,12 +365,20 @@ class WarehouseRequestStaffController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function vueInfo($id)
+    public function vueInfo($id): JsonResponse
     {
-        return response()->json(['records' => WarehouseRequest::where('id', $id)->with(
-            [
+        return response()->json([
+            'records' => WarehouseRequest::query()
+                ->where('id', $id)
+                ->with([
                 'payrollStaff',
                 'department',
+                'institution' => function ($query): void {
+                    $query->select(['id', 'name']);
+                },
+            'warehouse' => function ($query): void {
+                $query->select(['id', 'name']);
+            },
                 'warehouseInventoryProductRequests' => function ($query) {
                     $query->with(['warehouseInventoryProduct' => function ($query) {
                         $query->with(['warehouseProduct' => function ($query) {
@@ -320,8 +386,7 @@ class WarehouseRequestStaffController extends Controller
                         }, 'currency']);
                     }]);
                 }
-            ]
-        )->first()], 200);
+            ])->first()], JsonResponse::HTTP_OK);
     }
 
     /**
@@ -333,10 +398,19 @@ class WarehouseRequestStaffController extends Controller
      */
     public function vueList()
     {
-        $warehouse_requests = WarehouseRequest::with('department', 'payrollStaff')
-            ->whereNotNull('payroll_staff_id')
+        $warehouse_requests = WarehouseRequest::query()
+            ->with([
+                'department',
+                'payrollStaff',
+                            'institution' => function ($query): void {
+                                $query->select(['id', 'name']);
+                            },
+            'warehouse' => function ($query): void {
+                $query->select(['id', 'name']);
+            },
+            ])->whereNotNull('payroll_staff_id')
             ->orWhere('state', 'Rechazado')
             ->get();
-        return response()->json(['records' => $warehouse_requests], 200);
+        return response()->json(['records' => $warehouse_requests], JsonResponse::HTTP_OK);
     }
 }

@@ -44,7 +44,8 @@ class WarehouseProduct extends Model implements Auditable
         'measurement_unit_id',
         'budget_account_id',
         'accounting_account_id',
-        'history_tax_id'
+        'history_tax_id',
+        'purchase_product_id'
     ];
 
     /**
@@ -109,5 +110,24 @@ class WarehouseProduct extends Model implements Auditable
     public function historyTax()
     {
         return $this->belongsTo(\App\Models\HistoryTax::class);
+    }
+
+
+    public function warehouseInventoryProducts()
+    {
+        return $this->hasMany(WarehouseInventoryProduct::class, 'warehouse_product_id');
+    }
+
+    /**
+     * Método que obtiene el producto de compra asociado al insumo/producto registrado
+     *
+     * @author Pedro Contreras <pmcontreras@cenditel.gob.ve>
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo|null
+     */
+    public function purchaseProduct()
+    {
+        return (Module::has('Purchase') && Module::isEnabled('Purchase')
+        ) ? $this->belongsTo(\Modules\Purchase\Models\PurchaseProduct::class, 'purchase_product_id') : null;
     }
 }

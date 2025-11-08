@@ -86,6 +86,13 @@
             <div slot="attendance_time" slot-scope="props" class="text-center">
                 {{ props.row.work_time_formated ?? '---' }}
             </div>
+            <div slot="id" slot-scope="props" class="text-center">
+                <workattendance-history-edit
+                    :infoData="props.row"
+                    :recordId="props.row.id"
+                    v-if="can_update"
+                ></workattendance-history-edit>
+            </div>
         </v-server-table>
     </div>
 </template>
@@ -112,7 +119,8 @@
                     'payroll_staff_id',
                     'entry_time',
                     'exit_time',
-                    'attendance_time'
+                    'attendance_time',
+                    'id'
                 ],
                 table_options: {
                     requestFunction: this.customRequestFunction,
@@ -129,7 +137,8 @@
                         payroll_staff_id: "Nombres y Apellidos",
                         entry_time: 'Hora de entrada',
                         exit_time: 'Hora de salida',
-                        attendance_time: 'Total Asistencia'
+                        attendance_time: 'Total Asistencia',
+                        id: 'Acciones'
                     },
                     columnsClasses: {
                         day_name: 'col-md-2',
@@ -138,7 +147,8 @@
                         payroll_staff_id: 'col-md-2',
                         entry_time: 'col-md-1',
                         exit_time: 'col-md-1',
-                        attendance_time: 'col-md-2'
+                        attendance_time: 'col-md-1',
+                        id: 'col-md-1'
                     },
                     sortable: ['date_at', 'payroll_staff_id'],
                     filterable: false,
@@ -146,6 +156,12 @@
                     perPageValues: [5, 10, 20, 50]
                 }
             }
+        },
+        props: {
+            can_update: {
+                type: Boolean|String,
+                required: true,
+            },
         },
         methods: {
             resetFilters() {
@@ -196,7 +212,8 @@
                 payroll_staff_id: "Nombres y Apellidos",
                 entry_time: 'Hora de entrada',
                 exit_time: "Hora de salida",
-                attendance_time: 'Total Asistencia'
+                attendance_time: 'Total Asistencia',
+                id: 'Acciones'
             };
             this.table_options.sortable = [
                 "day_name",
@@ -215,7 +232,8 @@
 				'payroll_staff_id': 'col-md-2',
                 'entry_time': 'col-md-1',
                 'exit_time': 'col-md-1',
-                'attendance_time': 'col-md-2',
+                'attendance_time': this.can_update ? 'col-md-1' : 'col-md-2',
+                'id': this.can_update ? 'col-md-1' : 'd-none'
 			};
             this.table_options.requestFunction = this.customRequestFunction;
         },
@@ -223,6 +241,6 @@
             const _self = this;
             await _self.getPositions();
             _self.employments = [{id: '', text: 'Seleccione...'}];
-        }
+        },
     }
 </script>

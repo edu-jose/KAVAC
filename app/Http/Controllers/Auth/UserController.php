@@ -237,7 +237,7 @@ class UserController extends Controller
                         '%' . str_replace(' ', '', trim(strtolower($person->last_name))) . '%'
                     );
                 })->first();
-                $employeeId = $staff ? $staff?->payrollEmployment->id : null;
+                $employeeId = $staff ? $staff?->payrollEmployment?->id : null;
             }
             return [$employeeId => $employeeFullName];
         });
@@ -656,6 +656,7 @@ class UserController extends Controller
         $user = User::find($request->user_id);
         $user->blocked_at = ($request->blocked_at === true) ? Carbon::now() : null;
         $user->active = ($request->active === true) ? true : false;
+        $user->email_verified_at = ($request->email_verified_at === true) ? Carbon::now() : null;
         $user->save();
         return response()->json(['result' => true], 200);
     }

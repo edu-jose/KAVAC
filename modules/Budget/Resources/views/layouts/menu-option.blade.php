@@ -21,14 +21,14 @@
                 {{ __('Formulaciones') }}
             </a>
         </li>
-        @if (Module::has('Purchase')  && Module::isEnabled('Purchase') )
-            <li class="{!! set_active_menu(['purchase.budgetary_availability.index', 'purchase.budgetary_availability.create', 'purchase.budgetary_availability.edit']) !!}">
-                <a href="{{ route('purchase.budgetary_availability.index') }}"
-                title="Disponibilidad Presupuestaria" data-toggle="tooltip" data-placement="right">
+        {{--  @if (Module::has('Purchase')  && Module::isEnabled('Purchase') )  --}}
+        <li class="{!! set_active_menu(['budget.budgetary_availability.index', 'budget.budgetary_availability.create', 'budget.budgetary_availability.edit']) !!}">
+            <a href="{{ route('budget.budgetary_availability.index') }}"
+            title="Disponibilidad Presupuestaria" data-toggle="tooltip" data-placement="right">
                 Disponibilidad Presupuestaria
             </a>
         </li>
-        @endif
+        {{--  @endif  --}}
 
         <li class="{!! set_active_menu(['budget.aditional-credits.index', 'budget.aditional-credits.create', 'budget.aditional-credits.edit', 'budget.reductions.index', 'budget.reductions.create', 'budget.reductions.edit', 'budget.transfers.index', 'budget.transfers.create', 'budget.transfers.edit', 'budget.modifications.index', 'budget.modifications.create', 'budget.modifications.edit']) !!}">
             <a href="{{ route('budget.modifications.index') }}" data-toggle="tooltip"

@@ -9,11 +9,11 @@
 @stop
 
 @section('maproute-actual')
-    {{ __('Gestión de Asistencia a Actividades Externas') }}
+    {{ __('Gestión de Asistencia') }}
 @stop
 
 @section('maproute-title')
-    {{ __('Asistencia a Actividades Externas') }}
+    {{ __('Actividades Externas') }}
 @stop
 
 @section('content')

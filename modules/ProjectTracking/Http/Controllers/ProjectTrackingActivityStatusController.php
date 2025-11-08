@@ -102,10 +102,19 @@ class ProjectTrackingActivityStatusController extends Controller
             'text' => 'Seleccione...'
         ]);
         foreach ($activitystatusesList->all() as $activitystatus) {
-            array_push($activitystatuses, [
-                'id' => $activitystatus->id,
-                'text' => $activitystatus->name . ' ' . $activitystatus->last_name
-            ]);
+            if (!isset($activitystatus->last_name)) {
+                array_push($activitystatuses, [
+                    'id' => $activitystatus->id,
+                    'text' => $activitystatus->name,
+                    'color' => $activitystatus->color
+                ]);
+            } else {
+                array_push($activitystatuses, [
+                    'id' => $activitystatus->id,
+                    'text' => $activitystatus->name . ' ' . $activitystatus->last_name,
+                    'color' => $activitystatus->color
+                ]);
+            }
         }
         return response()->json($activitystatuses);
     }

@@ -3,8 +3,6 @@
 namespace Modules\Payroll\Http\Controllers;
 
 use App\Models\Department;
-use Illuminate\Contracts\Support\Renderable;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -471,7 +469,7 @@ class PayrollSupervisedGroupController extends Controller
                 ->select('id', 'code', 'supervisor_id', 'approver_id')
                 ->with(['supervisor', 'approver', 'payrollSupervisedGroupStaff.payrollStaff'])
                 ->get()
-                ->map(function ($group) use ($getWorkloadsView) {
+                ->map(function ($group) {
                     return [
                         'id' => $group->id,
                         'text' => $group->code,
@@ -487,21 +485,6 @@ class PayrollSupervisedGroupController extends Controller
                                 $group->approver->first_name . ' ' . $group->approver->last_name,
                             'department' => $group->approver->payrollEmployment?->department?->name ?? '',
                         ] : null,
-                        'payroll_staffs' => $group->payrollSupervisedGroupStaff
-                            ->sortBy(function ($staff) {
-                                return $staff->payrollStaff->first_name;
-                            })
-                            ->map(function ($staff) use ($getWorkloadsView) {
-                                return [
-                                    'id' => $staff->payrollStaff->id,
-                                    'id_number' => $staff->payrollStaff->id_number,
-                                    'name' => $staff->payrollStaff->fullName,
-                                    'worksheet_code' => $staff->payrollStaff->payrollEmployment?->worksheet_code ?? '',
-                                    'workload' => $getWorkloadsView[$staff->payrollStaff->id] ?? 0
-                                ];
-                            })
-                            ->values()
-                            ->toArray(),
                         'last_date_guard_scheme' => $group->payrollGuardSchemes()->orderBy('to_date', 'desc')->first()?->to_date ?? '',
                     ];
                 })
@@ -513,7 +496,9 @@ class PayrollSupervisedGroupController extends Controller
                 ->where('supervisor_id', $profileUser->employee_id)
                 ->orWhere('approver_id', $profileUser->employee_id)
                 ->get()
-                ->map(function ($group) use ($getWorkloadsView) {
+                ->map(function ($group) {
+
+
                     return [
                         'id' => $group->id,
                         'text' => $group->code,
@@ -529,49 +514,10 @@ class PayrollSupervisedGroupController extends Controller
                                 $group->approver->first_name . ' ' . $group->approver->last_name,
                             'department' => $group->approver->payrollEmployment?->department?->name ?? '',
                         ] : null,
-                        'payroll_staffs' => $group->payrollSupervisedGroupStaff
-                            ->sortBy(function ($staff) {
-                                return $staff->payrollStaff->first_name;
-                            })
-                            ->map(function ($staff) use ($getWorkloadsView) {
-                                return [
-                                    'id' => $staff->payrollStaff->id,
-                                    'id_number' => $staff->payrollStaff->id_number,
-                                    'name' => $staff->payrollStaff->fullName,
-                                    'worksheet_code' => $staff->payrollStaff->payrollEmployment?->worksheet_code ?? '',
-                                    'workload' => $getWorkloadsView[$staff->payrollStaff->id] ?? 0
-                                ];
-                            })
-                            ->values()
-                            ->toArray(),
                         'last_date_guard_scheme' => $group->payrollGuardSchemes()->orderBy('to_date', 'desc')->first()?->to_date ?? '',
                     ];
                 })
                 ->toArray();
-        }
-
-        if (count($staffs) > 0) {
-            foreach ($records as $key => $record) {
-                if (
-                    $record['id'] == ($timeSheet->payroll_supervised_group_id ??
-                        $guardScheme->payroll_supervised_group_id)
-                ) {
-                    foreach ($staffs as $item) {
-                        $exist = false;
-
-                        foreach ($record['payroll_staffs'] as $elemento) {
-                            if ($elemento['id_number'] === $item['id_number']) {
-                                $exist = true;
-                                break;
-                            }
-                        }
-
-                        if (!$exist) {
-                            $records[$key]['payroll_staffs'][] = $item;
-                        }
-                    }
-                }
-            }
         }
 
         return response()->json(
@@ -618,6 +564,35 @@ class PayrollSupervisedGroupController extends Controller
             return strnatcasecmp($a['name'], $b['name']);
         });
         return response()->json($supervisedGroupStaff);
+    }
+
+    /**
+     * Método que obtiene la información de los trabajadores asociados a un grupo supervisado
+     *
+     * @param int $payroll_supervised_group_id Identificador del grupo supervisado
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getPayrollSupervisedGroupStaffs($payroll_supervised_group_id)
+    {
+        $supervisedGroupStaffs = PayrollSupervisedGroupStaff::where('payroll_supervised_group_id', $payroll_supervised_group_id)
+            ->with('payrollStaff')
+            ->get()
+            ->map(function ($staff) {
+                return [
+                    'id' => $staff->payrollStaff->id,
+                    'id_number' => $staff->payrollStaff->id_number,
+                    'name' => $staff->payrollStaff->fullName,
+                    'worksheet_code' => $staff->payrollStaff->payrollEmployment?->worksheet_code ?? '',
+                ];
+            })
+            ->toArray();
+
+        usort($supervisedGroupStaffs, function ($a, $b) {
+            return strnatcasecmp($a['name'], $b['name']);
+        });
+
+        return response()->json(['records' => $supervisedGroupStaffs], 200);
     }
     /**
      * Obtiene los datos de grupos supervisados

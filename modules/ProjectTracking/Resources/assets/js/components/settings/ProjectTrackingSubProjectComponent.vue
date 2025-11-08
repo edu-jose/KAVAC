@@ -117,7 +117,7 @@
                                     <label>Tipos de Producto:</label>
                                     <v-multiselect :options="product_types_list" track_by="text" :hide_selected="false"
                                         data-toggle="tooltip" title="Indique los tipos de productos"
-                                        v-model="record.product_types">
+                                        v-model="record.product_types" style="margin-top: -1.5rem">
                                     </v-multiselect>
                                 </div>
                             </div>
@@ -394,11 +394,12 @@ export default {
                 vm.projects_list = response.data;
             });
         },
-        getCurrencies() {
+        async getCurrencies() {
             const vm = this;
-            axios.get(`${window.app_url}/get-currencies/{currency_id?}`).then(response => {
+            await axios.get(`${window.app_url}/get-currencies/{currency_id?}`).then(response => {
                 vm.currencies = response.data;
             });
+            vm.record.currency_id = vm.currencies.filter((currency) => currency.default == true)[0].id;
         },
         getDependencies() {
             const vm = this;

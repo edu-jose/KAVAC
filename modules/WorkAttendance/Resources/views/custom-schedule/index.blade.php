@@ -9,7 +9,7 @@
 @stop
 
 @section('maproute-actual')
-    {{ __('Gestión de Horarios Personalizados') }}
+    {{ __('Gestión de Asistencia') }}
 @stop
 
 @section('maproute-title')

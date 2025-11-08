@@ -128,7 +128,7 @@
                             </div>
                             <div class="modal-body">
                                 <div class="row">
-                                    <div class="col-md-12 pad-top-20">
+                                    <div class="pad-top-20 col-md-12">
                                         <table
                                             class="table table-hover table-striped"
                                         >
@@ -293,7 +293,7 @@
                     Cuentas presupuestarias de gastos
                 </h6>
                 <div class="row">
-                    <div class="col-md-12 pad-top-20">
+                    <div class="pad-top-20 col-md-12">
                         <table class="table table-hover table-striped">
                             <thead>
                                 <tr>
@@ -436,7 +436,7 @@
                     Cuentas presupuestarias de impuestos
                 </h6>
                 <div class="row">
-                    <div class="col-md-12 pad-top-20">
+                    <div class="pad-top-20 col-md-12">
                         <table class="table table-hover table-striped">
                             <thead>
                                 <tr>
@@ -631,7 +631,7 @@
                                     </div>
                                 </div>
                                 <div class="row">
-                                    <div class="col-md-3 mt-4">
+                                    <div class="mt-4 col-md-3">
                                         <div class="form-group is-required">
                                             <label for="budget_account_amount">Monto:</label>
                                             <input
@@ -649,7 +649,7 @@
                                             />
                                         </div>
                                     </div>
-                                    <div class="col-md-3 mt-4">
+                                    <div class="mt-4 col-md-3">
                                         <div class="form-group">
                                             <label for="budget_account_tax_id">Impuesto:</label>
                                             <select2
@@ -684,7 +684,7 @@
                 </div>
             </div>
         </div>
-        <div class="card-footer text-right">
+        <div class="text-right card-footer">
             <button
                 type="reset"
                 class="btn btn-default btn-icon btn-round"
@@ -1203,7 +1203,7 @@ export default {
                 ) {
                     vm.showMessage(
                         "custom",
-                        "Alerta!",
+                        "¡Alerta!",
                         "danger",
                         "screen-error",
                         "El monto a comprometer no puede ser mayor al asignado"

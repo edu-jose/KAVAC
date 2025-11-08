@@ -92,8 +92,8 @@ if (! function_exists('generate_budget_availability_code')) {
             ->withTrashed()->orderBy('id', 'desc')->first();
 
         $codeSetting = CodeSetting::where([
-                'module' => 'purchase',
-                'table'  => 'purchase_budgetary_availabilities',
+                'module' => 'budget',
+                'table'  => 'budget_budgetary_availabilities',
                 'field'  => 'code',
                 'type'   => null
             ])->first();

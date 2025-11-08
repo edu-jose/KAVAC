@@ -184,7 +184,11 @@
     <!--Sección de Configuración de parametros para reporte de nómina -->
     <!-- Consulta de los parametros almacenados en el modelo Parameter -->
     @php
-        $PayrollReportConfigurations = (Modules\Payroll\Models\Parameter::where(['active' => true, 'required_by' => 'payroll'])->orderBy('id')->get());
+        $PayrollReportConfigurations = (Modules\Payroll\Models\Parameter::where([
+            'active' => true, 'required_by' => 'payroll'
+        ])->where(function ($query) {
+            $query->where('p_key', 'number_decimals')->orWhere('p_key', 'round')->orWhere('p_key', 'max_digits');
+        })->orderBy('id')->get());
         $payrollTrustCode = (Modules\Payroll\Models\Parameter::where(['active' => true, 'required_by' => 'payroll', 'p_key' => 'trust_code'])->first());
     @endphp
     <div class="row">
@@ -211,34 +215,64 @@
                     @endif
                     <div class="row">
                         @if ($PayrollReportConfigurations)
-                            @foreach($PayrollReportConfigurations as $PayrollReportConfiguration)
-                                @if($PayrollReportConfiguration['p_key'] == 'number_decimals')
-                                    <div class="col-md-4" id="helpNumberDecimals">
-                                        <div class="form-group">
-                                            {!!
-                                            Form::label('number_decimals', 'Número de decimales', []) !!}
-                                            {!!
-                                            Form::text('number_decimals', ($PayrollReportConfiguration) ? $PayrollReportConfiguration['p_value'] : old('number_decimals'), [
-                                            'class' => 'form-control input-sm', 'data-toggle' => 'tooltip',
-                                            'title' => 'Indique el número de decimales',
-                                            'placeholder' => 'Número de decimales',
-                                            'data-inputmask' => "'mask': '9'"
+                            @php
+                                $decimalNumbers = $PayrollReportConfigurations->filter(function ($PayrollReportConfiguration) {
+                                    return $PayrollReportConfiguration['p_key'] == 'number_decimals';
+                                })->first();
+                                $round = $PayrollReportConfigurations->filter(function ($PayrollReportConfiguration) {
+                                    return $PayrollReportConfiguration['p_key'] == 'round';
+                                })->first();
+                                $maxDigits = $PayrollReportConfigurations->filter(function ($PayrollReportConfiguration) {
+                                    return $PayrollReportConfiguration['p_key'] == 'max_digits';
+                                })->first();
+                            @endphp
+                            <div class="col-md-2" id="helpNumberDecimals">
+                                <div class="form-group">
+                                    {!! Form::label('number_decimals', 'Número de decimales', []) !!}
+                                    <div class="col-md-6 px-0">
+                                        {!!
+                                            Form::text('number_decimals', ($decimalNumbers) ? $decimalNumbers->p_value : old('number_decimals'), [
+                                                'class' => 'form-control input-sm', 'data-toggle' => 'tooltip',
+                                                'title' => 'Indique el número de decimales',
+                                                'placeholder' => 'Número de decimales',
+                                                'data-inputmask' => "'mask': '9'"
                                             ])
-                                            !!}
-                                        </div>
+                                        !!}
                                     </div>
-                                @elseif($PayrollReportConfiguration['p_key'] == 'round')
-                                    <div class="col-md-4" id="helpRound">
-                                        <div class="form-group">
-                                            {!! Form::label('round', 'Redondear', []) !!}
-                                            <div class=" custom-control custom-switch">
-                                                {!! Form::checkbox('round', true, ( !is_null($PayrollReportConfiguration) && $PayrollReportConfiguration['p_value'] === 'true'), [ 'id' => 'round', 'class' => 'custom-control-input']) !!}
-                                                <label class="custom-control-label" for="round"></label>
-                                            </div>
-                                        </div>
+                                </div>
+                            </div>
+                            <div class="col-md-2" id="helpRound">
+                                <div class="form-group">
+                                    {!! Form::label('round', 'Redondear', []) !!}
+                                    <div class=" custom-control custom-switch">
+                                        {!!
+                                            Form::checkbox(
+                                                'round',
+                                                true,
+                                                (!is_null($round) && $round->p_value === 'true') ? true : old('round') ?? false,
+                                                [ 'id' => 'round', 'class' => 'custom-control-input']
+                                            )
+                                        !!}
+                                        <label class="custom-control-label" for="round">&nbsp;</label>
                                     </div>
-                                @endif
-                            @endforeach
+                                </div>
+                            </div>
+                            <div class="col-md-4" id="helpMaxDigits">
+                                <div class="form-group">
+                                    {!! Form::label('max_digits', 'Máximo de digitos para el número de archivo del txt de nómina', []) !!}
+                                    <div class="col-md-2 px-0">
+                                        {!!
+                                            Form::text('max_digits', ($maxDigits) ? $maxDigits->p_value : old('max_digits') ?? 2, [
+                                                'class' => 'form-control input-sm',
+                                                'data-toggle' => 'tooltip',
+                                                'title' => 'Indique el máximo de digitos para el número de archivo del txt de nómina',
+                                                'placeholder' => 'Máximo de digitos',
+                                                'data-inputmask' => "'mask': '9'"
+                                            ])
+                                        !!}
+                                    </div>
+                                </div>
+                            </div>
                         @endif
                     </div>
                 </div>
@@ -322,10 +356,10 @@
 
                         {{-- Cargos --}}
                         <payroll-positions></payroll-positions>
-                        <!--
                         {{-- Clasificaciones del personal --}}
+                        {{--
                         <payroll-staff-classifications></payroll-staff-classifications>
-                        -->
+                         --}}
                         {{-- Grados de instrucción --}}
                         <payroll-instruction-degrees></payroll-instruction-degrees>
 
@@ -341,10 +375,10 @@
                         {{-- Idiomas --}}
                         <payroll-languages></payroll-languages>
 
-                        <!--
                         {{-- Géneros --}}
+                        {{--
                         <payroll-genders></payroll-genders>
-                        -->
+                         --}}
 
                         {{-- Tipos de inactividad --}}
                         <payroll-inactivity-types></payroll-inactivity-types>
@@ -462,10 +496,11 @@
 
                         {{-- Políticas de Permisos --}}
                         <payroll-permission-policies></payroll-permission-policies>
-                        <!--
+
                         {{-- Tipos de liquidación --}}
+                        {{--
                         <payroll-settlement-types></payroll-settlement-types>
-                        -->
+                         --}}
 
                         {{-- Grupos de supervisados --}}
                         <payroll-supervised-groups></payroll-supervised-groups>
@@ -481,5 +516,5 @@
 
 @section('extra-js')
     @parent
-    {!! Html::script('js/ckeditor.js', [], Request::secure()) !!}
+    <script src="{{ url('js/ckeditor.js') }}" nonce="{{ session()->get('nonce') }}"></script>
 @stop

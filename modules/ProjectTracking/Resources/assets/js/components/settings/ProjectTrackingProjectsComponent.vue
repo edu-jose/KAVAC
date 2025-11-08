@@ -42,17 +42,20 @@
                             </div>
                         </div>
                         <div class="row">
-                            <div class="col-md-4">
+                            <div class="col-md-12">
                                 <div class="form-group">
-                                    <label for="budget">Cargar informacion de proyectos desde el modulo de
-                                        Presupuesto</label>
-                                    <div class="col-md-12">
-                                        <div class="custom-control custom-switch" data-toggle="tooltip"
-                                            title="Cargar informacion de proyectos desde el modulo de Presupuesto">
-                                            <input type="checkbox" class="custom-control-input" id="budget"
-                                                name="budget" v-model="budget" :value="true" @click="getBudgetProjects"
-                                                :disabled="editMode">
-                                            <label class="custom-control-label" for="budget"></label>
+                                    <div class="row col-md-12">
+                                        <label for="budget col-md-6 ">Cargar informacion de proyectos desde el modulo de
+                                            Presupuesto
+                                        </label>
+                                        <div class="col-md-6">
+                                            <div class="custom-control custom-switch" data-toggle="tooltip"
+                                                title="Cargar informacion de proyectos desde el modulo de Presupuesto">
+                                                <input type="checkbox" class="custom-control-input" id="budget"
+                                                    name="budget" v-model="budget" :value="true" @click="getBudgetProjects"
+                                                    :disabled="editMode">
+                                                <label class="custom-control-label" for="budget"></label>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -84,15 +87,6 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group is-required" name="category">
-                                    <label>Tipo de proyecto:</label>
-                                    <select2 :options="projects_list" id="project_type" data-toggle="tooltip"
-                                        title="Seleccione el tipo de proyecto (requerido)"
-                                        v-model="record.project_type_id">
-                                    </select2>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group is-required" name="category">
                                     <label>Dependencia:</label>
                                     <select2 :options="dependencies_list" id="dependency" data-toggle="tooltip"
                                         title="Seleccione la dependencia del Proyecto (requerido)"
@@ -102,11 +96,11 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group is-required" name="category">
-                                    <label>Tipos de Producto:</label>
-                                    <v-multiselect :options="products_list" track_by="text" :hide_selected="false"
-                                        data-toggle="tooltip" title="Indique los tipos de productos"
-                                        v-model="record.product_types">
-                                    </v-multiselect>
+                                    <label>Tipo de proyecto:</label>
+                                    <select2 :options="projects_list" id="project_type" data-toggle="tooltip"
+                                        title="Seleccione el tipo de proyecto (requerido)"
+                                        v-model="record.project_type_id">
+                                    </select2>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -127,14 +121,23 @@
                                 </div>
                             </div>
                             <div class="col-md-3">
-                                <div class="form-group is-required" name="category">
+                                <div class="form-group" name="category">
                                     <label>Moneda:</label>
                                     <select2 :options="currencies" id="currencyy" data-toggle="tooltip"
-                                        title="Seleccione el tipo de moneda (requerido)" v-model="record.currency_id">
+                                        title="Seleccione el tipo de moneda" v-model="record.currency_id">
                                     </select2>
                                 </div>
                             </div>
                             <div class="col-md-6">
+                                <div class="form-group is-required" name="category">
+                                    <label>Tipos de Producto:</label>
+                                    <v-multiselect :options="products_list" track_by="text" :hide_selected="false"
+                                        data-toggle="tooltip" title="Indique los tipos de productos"
+                                        v-model="record.product_types" style="margin-top: -1.5rem">
+                                    </v-multiselect>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
                                 <div class="form-group is-required">
                                     <label for="start_date">Fecha de inicio:</label>
                                     <input type="date" id="start_date" placeholder="Fecha inicial"
@@ -142,7 +145,7 @@
                                         title="Indique el monto de financiamiento" v-model="record.start_date" />
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-3">
                                 <div class="form-group is-required">
                                     <label for="end_date">Fecha de culminación:</label>
                                     <input type="date" id="end_date" placeholder="Fecha final"
@@ -414,13 +417,14 @@ export default {
                     vm.dependencies_list = response.data;
                 });
         },
-        getCurrencies() {
+        async getCurrencies() {
             const vm = this;
-            axios
+            await axios
                 .get(`${window.app_url}/get-currencies/{currency_id?}`)
                 .then((response) => {
                     vm.currencies = response.data;
                 });
+            vm.record.currency_id = vm.currencies.filter((currency) => currency.default == true)[0].id;
         },
         /**
          * Inicializa los registros base del formulario

@@ -24,6 +24,8 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Modules\Payroll\Imports\Staff\RegisterStaffImport;
 use Modules\Payroll\Jobs\PayrollExportNotification;
+use Illuminate\Support\Facades\Schema;
+use Nwidart\Modules\Facades\Module;
 
 /**
  * @class PayrollStaffController
@@ -68,6 +70,7 @@ class PayrollStaffController extends Controller
         $this->middleware('permission:payroll.staffs.create', ['only' => ['create', 'store']]);
         $this->middleware('permission:payroll.staffs.edit', ['only' => ['edit', 'update']]);
         $this->middleware('permission:payroll.staffs.delete', ['only' => 'destroy']);
+        $this->middleware('permission:payroll.staffs.restore', ['only' => 'restore']);
         $this->middleware('permission:payroll.staffs.import', ['only' => 'import']);
         $this->middleware('permission:payroll.staffs.export', ['only' => 'export']);
 
@@ -158,6 +161,42 @@ class PayrollStaffController extends Controller
      */
     public function store(Request $request)
     {
+        // Revisión de registros existencia borrados
+        // Define las columnas a buscar y los valores de la solicitud en un array.
+        // Esto simplifica la lógica para construir la consulta.
+        $uniqueFields = [
+            'id_number' => $request->id_number,
+            'rif'       => $request->rif,
+            'passport'  => $request->passport,
+        ];
+
+        // Construye una única consulta para verificar la existencia en registros borrados
+        $deletedStaff = PayrollStaff::onlyTrashed() // Usar onlyTrashed() es más directo y eficiente
+            // Iteramos sobre los campos para construir la cláusula 'where' anidada con 'orWhere'
+            ->where(function ($query) use ($uniqueFields) {
+                foreach ($uniqueFields as $column => $value) {
+                    // Solo agregamos la condición si el valor existe en el request
+                    if ($value) {
+                        $query->orWhere($column, $value);
+                    }
+                }
+            })
+            ->first();
+
+        if ($deletedStaff) {
+            $hasRestorePermission = auth()->user()->hasPermission('payroll.staffs.restore');
+            // Devolver respuesta JSON con el código de error y el ID del registro borrado
+            return response()->json([
+                'result'     => false,
+                'message'    => $hasRestorePermission
+                            ? 'Ya existe un registro con información única y se encuentra inactivo (borrado). Puede restaurarlo.'
+                            : 'Ya existe un registro con información única y se encuentra inactivo (borrado).',
+                // Datos específicos solicitados
+                'error_code' => $hasRestorePermission ? 'ACC_DEL_EXISTS_001' : 'ACC_DEL_EXISTS_002',
+                'deleted_id' => $deletedStaff->id, // ID del registro borrado
+            ], 422); // 422 Unprocessable Entity
+        }
+
         $parameter = Parameter::where([
             'active' => true, 'required_by' => 'payroll', 'p_key' => 'work_age',
         ])->first();
@@ -487,20 +526,108 @@ class PayrollStaffController extends Controller
     public function destroy($id)
     {
         $payrollStaff = PayrollStaff::find($id);
-        $payrollStaffUniformSize = PayrollStaffUniformSize::where('payroll_staff_id', $id);
-        /*Eliminar las relaciones de expediente*/
-        $payrollEmployment = PayrollEmployment::where('payroll_staff_id', $id);
-        $payrollProfessional = PayrollProfessional::where('payroll_staff_id', $id);
-        $payrollSocioeconomic = PayrollSocioeconomic::where('payroll_staff_id', $id);
-        $payrollFinancial = PayrollFinancial::where('payroll_staff_id', $id);
+        if (!$payrollStaff) {
+            return response()->json(['message' => 'Registro no encontrado.'], 404);
+        }
 
-        $payrollStaffUniformSize->delete();
-        $payrollEmployment->delete();
-        $payrollProfessional->delete();
-        $payrollSocioeconomic->delete();
-        $payrollFinancial->delete();
+        // Relaciones directas (hasOne, morphOne, belongsTo, etc.)
+        $directRelations = [
+            'payrollStaffUniformSize',
+            'payrollResponsibility',
+            'payrollSurvivor',
+            'phones',
+        ];
+
+        // Relaciones hasMany (uno a muchos)
+        $hasManyRelations = [
+            'payrollAriRegisters',
+            'payrollSavingsFundRegisters',
+            'payrollFortnightlyAdvanceDebtors',
+            'payrollStaffPayrolls',
+            'payrollPermissionRequests',
+            'payrollVacationRequests',
+            'payrollBenefitsRequests',
+            'payrollWageGarnishmentRegisters',
+            'payrollResetParameters',
+            'payrollArcResponsibles',
+            'payrollSupervisedGroupStaffs',
+        ];
+
+        // Borrar relaciones directas (hasOne, morphOne, belongsTo, etc.)
+        foreach ($directRelations as $relation) {
+            if (method_exists($payrollStaff, $relation)) {
+                $rel = $payrollStaff->$relation();
+                if (is_object($rel) && method_exists($rel, 'exists') && $rel->exists()) {
+                    $rel->delete();
+                }
+            }
+        }
+
+        // Borrar relaciones hasMany (uno a muchos)
+        foreach ($hasManyRelations as $relation) {
+            if (method_exists($payrollStaff, $relation)) {
+                $items = $payrollStaff->$relation;
+                if ($items && count($items)) {
+                    foreach ($items as $item) {
+                        $item->delete();
+                    }
+                }
+            }
+        }
+
+        // Relaciones de módulos externos (verifica que la relación no sea array antes de exists())
+        $externalRelations = [
+            // relación => acción (delete o detach)
+            ['relation' => 'purchasePlans', 'action' => 'delete', 'module' => 'Purchase'],
+            ['relation' => 'warehouseRequests', 'action' => 'delete', 'module' => 'Warehouse'],
+            ['relation' => 'workAttendances', 'action' => 'delete', 'module' => 'WorkAttendance'],
+            ['relation' => 'workAttendanceCustomSchedules', 'action' => 'delete', 'module' => 'WorkAttendance'],
+            ['relation' => 'workAttendanceExternalActivityStaffs', 'action' => 'delete', 'module' => 'WorkAttendance'],
+            ['relation' => 'workAttendancePermissions', 'action' => 'delete', 'module' => 'WorkAttendance'],
+            ['relation' => 'citizenServiceRegister', 'action' => 'delete', 'module' => 'CitizenService'],
+            ['relation' => 'citizenServiceDepartments', 'action' => 'detach', 'module' => 'CitizenService', 'table' => 'citizen_service_department_payroll_staff'],
+            ['relation' => 'componentManagerHistory', 'action' => 'delete', 'module' => 'Budget'],
+            ['relation' => 'assetAsignation', 'action' => 'delete', 'module' => 'Asset'],
+            ['relation' => 'saleGoodsToBeTraded', 'action' => 'detach', 'module' => 'Sale', 'table' => 'sale_good_to_be_traded_payroll_staff'],
+            ['relation' => 'payrollConceptAssignOptions', 'action' => 'delete'],
+        ];
+        foreach ($externalRelations as $ext) {
+            $modOk = true;
+            if (isset($ext['module'])) {
+                $modOk = Module::has($ext['module']) && Module::isEnabled($ext['module']);
+            }
+            if ($modOk && method_exists($payrollStaff, $ext['relation'])) {
+                // Si requiere tabla pivote, verificar existencia
+                if (isset($ext['table']) && !Schema::hasTable($ext['table'])) {
+                    continue;
+                }
+                $rel = $payrollStaff->{$ext['relation']}();
+                if (is_object($rel) && method_exists($rel, 'exists') && $rel->exists()) {
+                    if ($ext['action'] === 'delete') {
+                        $rel->delete();
+                    } elseif ($ext['action'] === 'detach') {
+                        $rel->detach();
+                    }
+                }
+            }
+        }
+
         $payrollStaff->delete();
         return response()->json(['record' => $payrollStaff, 'message' => 'Registro eliminado con exito.'], 200);
+    }
+
+    /**
+     * Restaurar un registro de información personal del trabajador
+     *
+     * @param int $id
+     * @return void
+     */
+    public function restore($id)
+    {
+
+        $restored = PayrollStaff::withTrashed()->where('id', $id)->restore();
+
+        return response()->json(['message' => 'Success', 'redirect' => route('payroll.staffs.edit', ['staff' => $id])], 200);
     }
 
     /**
@@ -577,6 +704,33 @@ class PayrollStaffController extends Controller
                         'text' => 'Seleccione...'
                     ])
             );
+        } elseif ($type === 'all-with-user') {
+                                    return response()->json(
+                                        PayrollStaff::query()
+                                        ->select('id', 'id_number', 'first_name', 'last_name')
+                                        ->whereHas('payrollEmployment', function ($query) {
+                                            $query->whereHas('profile', function ($query) {
+                                                $query->has('user');
+                                            })->where('active', true);
+                                        })->get()
+                                        ->sortBy([
+                                        ['first_name', 'asc'],
+                                        ['last_name', 'asc'],
+                                        ])->map(function ($staff) {
+                                            return [
+                                            'id' => $staff->id,
+                                            'text' => $staff->id_number
+                                            . ' - '
+                                            . $staff->first_name
+                                            . ' '
+                                            . $staff->last_name,
+                                            ];
+                                        })
+                                        ->prepend([
+                                        'id' => '',
+                                        'text' => 'Seleccione...'
+                                        ])
+                                    );
         } elseif ($type === 'all-active') {
             return response()->json(
                 PayrollStaff::query()

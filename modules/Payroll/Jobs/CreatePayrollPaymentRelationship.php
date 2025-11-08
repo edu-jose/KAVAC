@@ -2,10 +2,11 @@
 
 namespace Modules\Payroll\Jobs;
 
-use App\Events\SystemNotification as EventSystemNotification;
 use App\Models\User;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Illuminate\Bus\Queueable;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Modules\Payroll\Models\Payroll;
 use Modules\Payroll\Models\Parameter;
@@ -13,16 +14,16 @@ use Illuminate\Queue\SerializesModels;
 use Modules\Payroll\Models\Institution;
 use Illuminate\Queue\InteractsWithQueue;
 use App\Notifications\SystemNotification;
+use Modules\Payroll\Models\DocumentStatus;
 use Modules\Payroll\Models\PayrollConcept;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Modules\Payroll\Models\PayrollStaffPayroll;
 use Illuminate\Queue\MaxAttemptsExceededException;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\DB;
+use Modules\Payroll\Models\PayrollFortnightlyAdvanceDebtor;
+use App\Events\SystemNotification as EventSystemNotification;
 use Modules\Payroll\Actions\PayrollPaymentRelationshipAction;
 use Modules\Payroll\Exceptions\FailedPayrollConceptException;
-use Modules\Payroll\Models\DocumentStatus;
 use Modules\Payroll\Repositories\PayrollAssociatedParametersRepository;
 
 /**
@@ -188,7 +189,7 @@ class CreatePayrollPaymentRelationship implements ShouldQueue
             /**
              * Se recorren los conceptos establecidos para la generación de la nómina
              * Se obtienen los trabajadores que aplican para cada concepto.
-            */
+             */
 
             $assignToRules = $payrollParameters->loadData('assignTo');
             $finalResults = [];
@@ -204,6 +205,8 @@ class CreatePayrollPaymentRelationship implements ShouldQueue
                 $conceptFilters = json_decode($payrollConcept['field']->assign_to) ?? [];
                 $isStrict = $payrollConcept['field']->is_strict ?? false;
                 $conceptOptions = $payrollConcept['field']->payrollConceptAssignOptions;
+                $isConceptAdvancement = $payrollConcept['field']->is_concept_advancement ?? false;
+                $isAdvanceDeduction = $payrollConcept['field']->is_advance_deduction ?? false;
 
                 // Llamar a findAssignableStaff para obtener IDs para ESTE concepto
                 $assignableStaffs = findAssignableStaff(
@@ -217,6 +220,35 @@ class CreatePayrollPaymentRelationship implements ShouldQueue
                 );
 
                 $assignableIds = $assignableStaffs->pluck('id')->filter()->toArray();
+
+                if ($isConceptAdvancement) {
+                    $insertData = [];
+                    foreach ($assignableIds as $staffId) {
+                        $insertData[] = [
+                            'payroll_concept_id' => $conceptId,
+                            'payroll_payment_type_id' => $period->payroll_payment_type_id,
+                            'payroll_payment_period_id' => $payroll->payroll_payment_period_id,
+                            'payroll_staff_id' => $staffId,
+                            'filter_rule' => 'all_staff_not_in_vacation',
+                            'in_debt' => true,
+                        ];
+                    }
+
+                    if (!empty($insertData)) {
+                        PayrollFortnightlyAdvanceDebtor::upsert(
+                            $insertData,
+                            ['payroll_concept_id', 'payroll_payment_type_id', 'payroll_payment_period_id', 'payroll_staff_id'],
+                            ['filter_rule', 'in_debt']
+                        );
+                    }
+                }
+
+                if ($isAdvanceDeduction) {
+                    if (!empty($assignableIds)) {
+                        PayrollFortnightlyAdvanceDebtor::whereIn('payroll_staff_id', $assignableIds)->forceDelete();
+                    }
+                }
+
                 $assignableIdsSqlArray = '{' . implode(',', $assignableIds) . '}';
 
                 $results = DB::select(
@@ -461,13 +493,13 @@ class CreatePayrollPaymentRelationship implements ShouldQueue
                 new SystemNotification(
                     'Fallido',
                     'Ah ocurrido un error en la ejecución de la nómina, ' .
-                    'para mas información comuniquese con el administrador.'
+                        'para mas información comuniquese con el administrador.'
                 )
             );
         } else {
             $user->notify(
                 new SystemNotification('Fallido', 'Ah ocurrido un error en la ejecución de la nómina ' .
-                $exception->getMessage())
+                    $exception->getMessage())
             );
         }
         Log::error($exception->getMessage());

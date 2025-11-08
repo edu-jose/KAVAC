@@ -18,7 +18,6 @@ use Modules\Budget\Models\BudgetStage;
 use Modules\Accounting\Models\Accountable;
 use Modules\Accounting\Models\Institution;
 use Modules\Budget\Models\BudgetCompromise;
-use Illuminate\Contracts\Support\Renderable;
 use Modules\Accounting\Models\BudgetAccount;
 use Modules\Budget\Models\BudgetAccountOpen;
 use Modules\Accounting\Models\AccountingEntry;
@@ -1306,14 +1305,27 @@ class FinanceMovementsController extends Controller
      */
     public function getBudgetAccountingAccount($budget_account_id)
     {
-        $accountable = Accountable::query()->where([
-            'accountable_id' => $budget_account_id,
-            'accountable_type' => BudgetAccount::class,
-            'active' => true
-        ])->first(['accounting_account_id']);
+        try {
+            $accounting_account_id = Accountable::query()->where([
+                'accountable_id' => $budget_account_id,
+                'accountable_type' => BudgetAccount::class,
+                'active' => true
+            ])->value('accounting_account_id');
 
-        return response()->json([
-            'accounting_account_id' => $accountable?->accounting_account_id
-        ], 200);
+            if ($accounting_account_id) {
+                return response()->json([
+                    'accounting_account_id' => $accounting_account_id
+                ], 200);
+            }
+
+            $errors[] = 'La cuenta presupuestaria seleccionada no posee una cuenta contable vinculada. Contacte al administrador.';
+            return response()->json(['errors' => $errors], 422);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'accounting_account_id' => null,
+                'message' => 'Error al obtener la cuenta contable vinculada a esta cuenta presupuestaria. Contacte al administrador.',
+                'errors' => [ $th->getMessage() ]
+            ], 500);
+        }
     }
 }

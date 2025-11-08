@@ -38,7 +38,7 @@ class PayrollOrganization extends Model implements Auditable
      * @var array $fillable
      */
     protected $fillable = [
-        'name', 'start_date', 'end_date', 'payroll_sector_type_id', 'payroll_employment_id'
+        'name', 'start_date', 'end_date', 'payroll_sector_type_id'
     ];
 
     /**
@@ -51,17 +51,5 @@ class PayrollOrganization extends Model implements Auditable
     public function payrollSectorType()
     {
         return $this->belongsTo(PayrollSectorType::class);
-    }
-
-    /**
-     * PayrollOrganization pertenece a PayrollEmployment
-     *
-     * @author William Páez <wpaezs@cenditel.gob.ve>
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
-     */
-    public function payrollEmployment()
-    {
-        return $this->belongsTo(PayrollEmployment::class);
     }
 }
