@@ -84,11 +84,11 @@ class CreateBudgetBudgetaryAvailabilitiesTable extends Migration
         }
 
         if (Module::has('Purchase') && Module::isEnabled('Purchase')) {
-            foreach (\Modules\Purchase\Models\PurchaseCommonBudgetaryAvailability::withTrashed()->get() as $commonBudgetaryAvailability) {
+            foreach (\Modules\Budget\Models\BudgetCommonBudgetaryAvailability::withTrashed()->get() as $commonBudgetaryAvailability) {
                 BudgetCommonBudgetaryAvailability::create($commonBudgetaryAvailability->toArray());
             }
 
-            foreach (\Modules\Purchase\Models\PurchaseBudgetaryAvailability::withTrashed()->get() as $commonBudgetaryAvailability) {
+            foreach (\Modules\Budget\Models\BudgetBudgetaryAvailability::withTrashed()->get() as $commonBudgetaryAvailability) {
                 $data = $commonBudgetaryAvailability->toArray();
                 $data['budget_common_budgetary_availability_id'] = $commonBudgetaryAvailability->purchase_common_budgetary_availability_id;
                 $data['purchase_base_budget_id'] = $commonBudgetaryAvailability->purchase_base_budgets_id;
