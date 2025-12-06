@@ -120,7 +120,12 @@ class System extends Notification implements ShouldQueue
             ->line($this->description);
 
         foreach ($this->filesToEmail as $key => $file) {
-            $email->attachData($file['file'], $file['fileName'] ?? $key . '.xlsx');
+            if (isset($file['encoded']) && $file['encoded'] === true) {
+                $fileContent = base64_decode($file['file']);
+            } else {
+                $fileContent = $file['file'];
+            }
+            $email->attachData($fileContent, $file['fileName'] ?? $key . '.xlsx');
         }
 
         return $email;

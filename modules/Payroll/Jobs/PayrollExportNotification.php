@@ -93,8 +93,10 @@ class PayrollExportNotification implements ShouldQueue
 
         $excelFiles = [
             [
-                'file' => Excel::raw($worksheet, ExcelExcel::XLSX),
+                // Codifica el binario en base64 para que sea compatible con JSON cuando laravel serializa el job
+                'file' => base64_encode(Excel::raw($worksheet, ExcelExcel::XLSX)),
                 'fileName' => Str::snake($this->sheetName ?? 'Datos', '-') . '.xlsx',
+                'encoded' => true
             ]
         ];
 
