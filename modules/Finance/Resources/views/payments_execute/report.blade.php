@@ -190,19 +190,19 @@
 
             @foreach ($accountingEntry->accountingAccounts as $accountEntry)
                 <tr>
-                    <td style="text-align: center;">{{ $accountEntry->account ? $accountEntry->account->code : 'No definido' }}</td>
-                    <td style="text-align: center;">{{ $accountEntry->account ? $accountEntry->account->denomination : 'No definido' }}</td>
-                    <td style="text-align: right;">{{ number_format($accountEntry->debit, $payOrder[0]->currency->decimal_places, ",", ".") }}</td>
-                    <td style="text-align: right;">{{ number_format($accountEntry->assets, $payOrder[0]->currency->decimal_places, ",", ".") }}</td>
+                    <td style="text-align: center;"> </td>
+                    <td style="text-align: center;"> </td>
+                    <td style="text-align: right;"> </td>
+                    <td style="text-align: right;"> </td>
                 </tr>
             @endforeach
             <tr>
-                <td colspan="2" style="font-weight:bold;text-align: right">TOTAL {{ $payOrder[0]->currency->symbol }}</td>
+                <td colspan="2" style="font-weight:bold;text-align: right">TOTAL  </td>
                 <td style="font-weight:bold;text-align: right;border-top:solid 1px #000;">
-                    {{ number_format($accountingEntry->tot_debit, $payOrder[0]->currency->decimal_places, ",", ".") }}
+                    
                 </td>
                 <td style="font-weight:bold;text-align: right;border-top:solid 1px #000;">
-                    {{ number_format($accountingEntry->tot_assets, $payOrder[0]->currency->decimal_places, ",", ".") }}
+                    
                 </td>
             </tr>
         </tbody>

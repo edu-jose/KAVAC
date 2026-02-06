@@ -1514,14 +1514,32 @@ class FinancePayOrderController extends Controller
                 $q->with('account');
             }])->where('reference', $financePayOrder->code)->first();
 
+            // Separar cuentas por tipo (debe/haber) y ordenar
+            $debitAccounts = [];
+            $creditAccounts = [];
             $accountable = [];
-
+            
             if ($financePayOrder->documentSourceable) {
                 $budgetCompromise = \Modules\Budget\Models\BudgetCompromise::with('budgetCompromiseDetails')
                     ->find($financePayOrder->documentSourceable->id);
 
                 if ($accountingEntry) {
+                    // Primero, procesar todas las cuentas y separarlas por tipo
                     foreach ($accountingEntry->accountingAccounts as $entryAccount) {
+                        // Determinar si es débito (gastos por pagar) o crédito (ordenes de pago)
+                        if ((float)$entryAccount['debit'] > 0) {
+                            // Es débito - gastos por pagar
+                            $debitAccounts[] = $entryAccount;
+                        } else if ((float)$entryAccount['assets'] > 0) {
+                            // Es crédito - ordenes de pago
+                            $creditAccounts[] = $entryAccount;
+                        }
+                    }
+                    
+                    // Ahora procesar las cuentas en el orden requerido: primero débitos, luego créditos
+                    $orderedAccounts = array_merge($debitAccounts, $creditAccounts);
+                    
+                    foreach ($orderedAccounts as $entryAccount) {
                         if (Module::has('Payroll') && Module::isEnabled('Payroll')) {
                             $code = CodeSetting::where('table', 'payrolls')
                                 ->first();
@@ -1575,15 +1593,27 @@ class FinancePayOrderController extends Controller
                                 if (count($account) > 0) {
                                     foreach ($account as $keyAcc => $acc) {
                                         if ($acc->accounting_account_id == $entryAccount->accounting_account_id) {
-                                            $acc['amount'] += (float)$entryAccount['debit'] > 0 ?
-                                                (float)$entryAccount['debit'] / count($account) :
-                                                (float)$entryAccount['assets'] / count($account);
+                                            // Determinar el monto según el tipo de cuenta
+                                            if ((float)$entryAccount['debit'] > 0) {
+                                                // Para débitos (gastos por pagar)
+                                                $acc['amount'] = (float)$entryAccount['debit'] / count($account);
+                                                $acc['type'] = 'debit'; // Marcar como débito
+                                            } else if ((float)$entryAccount['assets'] > 0) {
+                                                // Para créditos (ordenes de pago)
+                                                $acc['amount'] = (float)$entryAccount['assets'] / count($account);
+                                                $acc['type'] = 'credit'; // Marcar como crédito
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
                     }
+                    
+                    // Crear un array ordenado para la vista
+                    $orderedAccountingEntry = clone $accountingEntry;
+                    $orderedAccountingEntry->accountingAccounts = collect($orderedAccounts);
+                    $accountingEntry = $orderedAccountingEntry;
                 }
             }
 
