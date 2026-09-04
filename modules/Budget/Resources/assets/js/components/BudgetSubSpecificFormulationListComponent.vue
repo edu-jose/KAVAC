@@ -37,7 +37,7 @@
         <!-- Final de filtros de la tabla -->
         <v-server-table
             :columns="columns"
-            :url="'budget/subspecific-formulations/vue-list'"
+            :url="'/budget/subspecific-formulations/vue-list'"
             :options="table_options"
             ref="tableResults"
             >
@@ -161,7 +161,7 @@ export default {
             id: "Acción",
         };
 
-        axios.get('get-currencies').then(response => {
+        axios.get(`${window.app_url}/get-currencies`).then(response => {
             if (response.data.length > 0) {
                 vm.currencyDefaultSymbol = response.data.find(currency => currency.default === true).text.split(" - ")[0];
                 
