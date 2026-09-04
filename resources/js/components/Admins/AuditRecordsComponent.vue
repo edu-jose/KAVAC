@@ -393,6 +393,8 @@ export default {
             'users': 'col-md-2',
             'id': 'col-md-1'
         };
+
+        // Tabla forzada a usar post
         vm.table_options.requestFunction = function(data) {
             return axios.post(window.app_url.replace(/\/$/, "") + '/app/audit-records', {
                 query: {
@@ -405,11 +407,16 @@ export default {
                 ascending: data.ascending,
                 page: data.page,
                 orderBy: data.orderBy
-            }).catch(error => {
-                if (
-                    !error.response.data.result &&
-                    error.response.status == 422
-                ) {
+            })
+            .then(response => {
+                // vue-tables-2 necesita un objeto con un array 'data' y un número 'count'
+                return {
+                    data: response.data.data,
+                    count: response.data.count
+                };
+            })
+            .catch(error => {
+                if (error.response && error.response.status == 422 && !error.response.data.result) {
                     vm.showMessage(
                         "custom",
                         "Error",
@@ -417,8 +424,15 @@ export default {
                         "screen-error",
                         error.response.data.message
                     );
+                } else {
+                    console.error(error);
                 }
-                console.error(error);
+                
+                // Retornar un arreglo vacío y conteo 0 en caso de error para que la tabla no se rompa
+                return {
+                    data: [],
+                    count: 0
+                };
             });
         };
 
