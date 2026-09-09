@@ -53,7 +53,7 @@
         <hr>
         <v-server-table
             :columns="columns"
-            :url="'budget/compromises/list/all'"
+            :url="'/budget/compromises/list/all'"
             :options="table_options"
             ref="tableResults"
         >
