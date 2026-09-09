@@ -65,7 +65,7 @@
         <hr>
         <v-server-table
             :columns="columns"
-            :url="'finance/pay-orders/vue-list'"
+            :url="'/finance/pay-orders/vue-list'"
             :options="table_options"
             ref="tableOptions"
         >
