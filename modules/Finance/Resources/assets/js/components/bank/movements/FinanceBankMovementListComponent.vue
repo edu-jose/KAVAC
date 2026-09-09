@@ -53,7 +53,7 @@
         <!-- Tabla de registros de Movimientos bancarios -->
         <v-server-table
             :columns="columns"
-            :url="'finance/movements/vue-list'"
+            :url="'/finance/movements/vue-list'"
             :options="table_options"
             ref="tableResults"
         >
