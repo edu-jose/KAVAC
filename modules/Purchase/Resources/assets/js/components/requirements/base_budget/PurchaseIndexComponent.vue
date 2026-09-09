@@ -54,7 +54,7 @@
         <!-- Final de filtros de la tabla -->
         <v-server-table
             :columns="columns"
-            :url="'purchase/base_budget/vue-list'"
+            :url="'/purchase/base_budget/vue-list'"
             :options="table_options"
             ref="tableOptions"
         >

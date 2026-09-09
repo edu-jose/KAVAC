@@ -60,7 +60,7 @@
         <hr>
         <v-server-table
             :columns="columns"
-            :url="'purchase/requirements/vue-list'"
+            :url="'/purchase/requirements/vue-list'"
             :options="table_options"
             ref="tableOptions"
         >
