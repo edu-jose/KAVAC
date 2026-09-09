@@ -53,7 +53,7 @@
         <!-- Tabla de registros de Emisiones de Pago -->
         <v-server-table
             :columns="columns"
-            :url="'finance/payment-execute/vue-list'"
+            :url="'/finance/payment-execute/vue-list'"
             :options="table_options"
             ref="tableOptions"
         >
