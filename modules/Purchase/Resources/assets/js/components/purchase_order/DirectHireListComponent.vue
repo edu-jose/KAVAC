@@ -62,7 +62,7 @@
         <hr>
         <v-server-table
             :columns="columns"
-            :url="'purchase/direct_hire/vue-list'"
+            :url="'/purchase/direct_hire/vue-list'"
             :options="table_options"
         >
             <div slot="date" slot-scope="props" class="text-center">
