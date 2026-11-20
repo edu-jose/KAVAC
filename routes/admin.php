@@ -52,7 +52,7 @@ Route::group(['middleware' => ['auth', 'verified', 'role:admin']], function () {
         )->name('institution.details');
 
         /* Gestión de la aplicación */
-        Route::group(['prefix' => 'app'], function () {
+        Route::group(['prefix' => 'audits'], function () {
             /* Gestión de registros eliminados */
             Route::post('deleted-records', 'AppManagementController@getDeletedRecords');
             Route::post('restore-record', 'AppManagementController@restoreRecord');

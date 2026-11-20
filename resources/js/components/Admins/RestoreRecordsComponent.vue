@@ -236,7 +236,7 @@ export default {
             bootbox.confirm('Está seguro de restaurar el registro seleccionado?', function(result) {
                 if (result) {
                     vm.loading = true;
-                    axios.post(window.app_url.replace(/\/$/, "") + '/app/restore-record', {
+                    axios.post(window.app_url.replace(/\/$/, "") + '/audits/restore-record', {
                         module: moduleClass,
                         id: id
                     }).then(response => {
@@ -267,7 +267,7 @@ export default {
         async readRecords() {
             const vm = this;
             vm.loading = true;
-            await axios.post(window.app_url.replace(/\/$/, "") + '/app/deleted-records', {
+            await axios.post(window.app_url.replace(/\/$/, "") + '/audits/deleted-records', {
                 start_delete_at: vm.start_delete_at,
                 end_delete_at: vm.end_delete_at,
                 module_delete_at: vm.module_delete_at

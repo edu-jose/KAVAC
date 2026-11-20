@@ -298,7 +298,7 @@ export default {
         async details(id) {
             const vm = this;
             vm.loading = true;
-            await axios.post(window.app_url.replace(/\/$/, "") + '/app/audit-details', {
+            await axios.post(window.app_url.replace(/\/$/, "") + '/audits/audit-details', {
                 id: id
             }).then(response => {
                 if (response.data.result) {
@@ -394,7 +394,7 @@ export default {
             'id': 'col-md-1'
         };
         vm.table_options.requestFunction = function(data) {
-            return axios.post(window.app_url.replace(/\/$/, "") + '/app/audit-records', {
+            return axios.post(window.app_url.replace(/\/$/, "") + '/audits/audit-records', {
                 query: {
                     start_date: vm.start_date,
                     end_date: vm.end_date,
